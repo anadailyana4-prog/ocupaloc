@@ -1,0 +1,2 @@
+-- Seed demo intentionally removed.
+-- Do not store demo credentials or user identifiers in repository SQL migrations.

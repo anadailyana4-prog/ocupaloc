@@ -1,0 +1,31 @@
+{
+  "name": "ocupaloc",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2024-09-23",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "OCUPALOC_D1",
+      "database_name": "ocupaloc",
+      "database_id": "55d1f19d-c4a3-4da7-b259-c92654d19268"
+    }
+  ],
+  "vars": {
+    "OCUPALOC_STORAGE_DRIVER": "d1",
+    "APP_URL": "https://www.ocupaloc.ro"
+  },
+  "routes": [
+    {
+      "pattern": "www.ocupaloc.ro/*",
+      "zone_name": "ocupaloc.ro"
+    },
+    {
+      "pattern": "ocupaloc.ro/*",
+      "zone_name": "ocupaloc.ro"
+    }
+  ]
+}
