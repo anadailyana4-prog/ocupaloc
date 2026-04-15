@@ -6,6 +6,7 @@
     "dev": "next dev -p 8788",
     "tsc": "tsc --noEmit",
     "build": "next build",
+    "pages:build": "opennextjs-cloudflare build",
     "build:cf": "opennextjs-cloudflare build && node fix-open-next-css.mjs",
     "preview": "npm run build:cf && npx wrangler dev",
     "deploy": "npm run build:cf && npx wrangler deploy",
