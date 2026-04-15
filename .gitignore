@@ -6,6 +6,7 @@ node_modules
 .vercel-cli-data
 .vercel-cli-config
 .npm-cache
+.pnpm-store
 dist
 .env
 .env.local
