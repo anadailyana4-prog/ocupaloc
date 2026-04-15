@@ -88,7 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           />
         ) : null}
       </head>
-      <body className={`${inter.variable} min-h-screen bg-background font-sans text-foreground antialiased`}>
+      <body className={`${inter.variable} min-h-screen bg-white font-sans text-gray-900 antialiased dark:bg-white dark:text-gray-900`}>
         <AnalyticsEvents />
         <Header />
         {children}
