@@ -1,8 +1,0 @@
-name = "ocupaloc"
-compatibility_date = "2024-11-11"
-
-[vars]
-NEXT_PUBLIC_SUPABASE_URL = "https://tffwoljimpdckvlogyqu.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_Q070lyzGYMnClZ45d_sdyw_LCORZrCy"
-NEXT_PUBLIC_SITE_URL = "https://www.ocupaloc.ro"
-NODE_VERSION = "20"
