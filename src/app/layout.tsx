@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 
 import { AnalyticsEvents } from "@/components/analytics/AnalyticsEvents";
 import { Header } from "@/components/Header";
+import { MONTHLY_PRICE_LEI } from "@/config/marketing";
 import "./globals.css";
 
 const inter = Inter({
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
     template: "%s | Ocupaloc"
   },
   description:
-    "Creează linkul tău de programare online în 2 minute. Gratuit pentru frizeri, coafori și saloane. Fără comisioane.",
+    "Programări online pentru saloane și frizerii din România. Preț fix lunar, zero comision pe rezervare. Link personalizat, confirmări și panou simplu.",
   keywords: ["programare online", "frizer", "coafor", "salon", "booking", "programari"],
   authors: [{ name: "Ocupaloc" }],
   creator: "Ocupaloc",
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
     url: "https://ocupaloc.ro",
     siteName: "Ocupaloc",
     title: "Ocupaloc - Programări online pentru saloane",
-    description: "Link de programare pentru frizeri și coafori",
+    description: "Programări online pentru saloane — preț fix lunar, zero comision pe rezervare.",
     images: [{ url: "/og-image.svg", width: 1200, height: 630 }]
   },
   twitter: {
@@ -48,9 +49,9 @@ export const metadata: Metadata = {
       follow: true
     }
   },
-  verification: {
-    google: "codul-tau-aici"
-  }
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } }
+    : {})
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -62,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     url: "https://ocupaloc.ro",
     offers: {
       "@type": "Offer",
-      price: "99.99",
+      price: String(MONTHLY_PRICE_LEI),
       priceCurrency: "RON"
     }
   };

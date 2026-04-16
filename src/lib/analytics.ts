@@ -28,7 +28,12 @@ export const trackCalculator = (appointments: number) => {
 };
 
 export const trackCTAClick = (location: string) => {
-  if (!canTrack()) return;
+  if (typeof window === "undefined") return;
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event: "cta_click",
+    cta_location: location
+  });
   window.gtag?.("event", "cta_click", {
     event_category: "engagement",
     event_label: location,

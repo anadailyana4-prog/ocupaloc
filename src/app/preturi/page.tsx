@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CalculatorEconomii } from "@/components/CalculatorEconomii";
+import { MONTHLY_PRICE_LABEL, TRIAL_DAYS } from "@/config/marketing";
 
 export const metadata: Metadata = {
-  title: "99,99 RON/lună pentru saloane beauty",
-  description:
-    "99,99 RON pe lună, fără comisioane ascunse. Vezi cât economisești față de Fresha și compară Ocupaloc cu alternativele."
+  title: `${MONTHLY_PRICE_LABEL} RON/lună pentru saloane beauty`,
+  description: `${MONTHLY_PRICE_LABEL} RON pe lună, fără comisioane ascunse. Vezi cât economisești față de Fresha și compară Ocupaloc cu alternativele.`
 };
 
 const comparisonRows = [
-  { feature: "Preț lunar", ocupaloc: "99,99 RON", fresha: "0 RON", stailer: "Variabil" },
+  { feature: "Preț lunar", ocupaloc: `${MONTHLY_PRICE_LABEL} RON`, fresha: "0 RON", stailer: "Variabil" },
   { feature: "Comision per programare", ocupaloc: "0 RON", fresha: "~10 RON", stailer: "Da" },
   { feature: "Suport în română", ocupaloc: "Da", fresha: "Limitat", stailer: "Da" },
   { feature: "Fără reclame", ocupaloc: "Da", fresha: "Nu", stailer: "Nu" },
@@ -24,14 +24,14 @@ export default function PreturiPage() {
     <main className="min-h-screen bg-zinc-950 px-6 py-14 text-zinc-100">
       <div className="mx-auto max-w-6xl space-y-10">
         <header className="space-y-4 text-center">
-          <h1 className="text-4xl font-bold tracking-tight md:text-5xl">99,99 RON pe lună. Atât.</h1>
+          <h1 className="text-4xl font-bold tracking-tight md:text-5xl">{MONTHLY_PRICE_LABEL} RON pe lună. Atât.</h1>
           <p className="text-lg text-zinc-400">Fără comisioane ascunse. Fără taxă per programare.</p>
         </header>
 
         <section className="mx-auto max-w-xl rounded-2xl border border-zinc-800 bg-zinc-900 p-8 text-center">
           <p className="text-sm uppercase tracking-wide text-zinc-400">Plan unic Ocupaloc</p>
           <p className="mt-3 text-5xl font-black">
-            99,99 <span className="text-xl font-medium text-zinc-400">RON/lună</span>
+            {MONTHLY_PRICE_LABEL} <span className="text-xl font-medium text-zinc-400">RON/lună</span>
           </p>
           <ul className="mt-6 space-y-2 text-left text-sm text-zinc-300">
             <li>✓ Programări nelimitate</li>
@@ -40,8 +40,12 @@ export default function PreturiPage() {
             <li>✓ Import clienți gratuit</li>
             <li>✓ Suport rapid în limba română</li>
           </ul>
-          <Link href="/signup" data-cta-location="preturi_hero_card" className="mt-6 inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
-            Încearcă 14 zile gratis
+          <Link
+            href="/signup"
+            data-cta-location="preturi_hero_card"
+            className="mt-6 inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500"
+          >
+            Încearcă {TRIAL_DAYS} zile gratis
           </Link>
         </section>
 

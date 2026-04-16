@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
 
+import { TRIAL_DAYS } from "@/config/marketing";
+
 export const metadata: Metadata = {
   title: "Programări Online Salon | Software 99,99 RON/lună Fără Comision",
   description:
@@ -65,7 +67,7 @@ export default function ProgramariOnlineSalonPage() {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/signup" data-cta-location="seo_programari_online_salon_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
-              Încearcă 14 zile gratis
+              Încearcă {TRIAL_DAYS} zile gratis
             </Link>
             <Link href="/signup" data-cta-location="seo_programari_online_salon_hero_secondary" className="rounded-lg border border-zinc-700 px-5 py-3 font-semibold text-zinc-200 hover:bg-zinc-800">
               Creează cont acum

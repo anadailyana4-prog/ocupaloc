@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from "react";
 
-const OCUPALOC_PRICE = 99.99;
+import { MONTHLY_PRICE_LEI } from "@/config/marketing";
+
+const OCUPALOC_PRICE = MONTHLY_PRICE_LEI;
 const COMMISSION_PER_BOOKING = 10;
 
 function formatRon(value: number): string {

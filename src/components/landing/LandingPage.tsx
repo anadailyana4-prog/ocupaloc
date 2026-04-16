@@ -1,80 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
 
 import { BookingCard } from "@/components/booking/BookingCard";
+import {
+  getSupportContactHref,
+  getSupportContactLabel,
+  MONTHLY_PRICE_LABEL,
+  TRIAL_DAYS
+} from "@/config/marketing";
 
 export function LandingPage() {
-  useEffect(() => {
-    const simDA = document.getElementById("simDA");
-    const simNU = document.getElementById("simNU");
-    const smsReply = document.getElementById("smsReply");
-    const smsStatus = document.getElementById("smsStatus");
-    const onDa = () => {
-      if (!smsReply || !smsStatus) return;
-      smsReply.textContent = "Confirm programarea. Mulțumesc!";
-      smsReply.classList.remove("hidden");
-      smsStatus.textContent = "Confirmat";
-      smsStatus.className = "text-sm font-medium text-emerald-400";
-      smsStatus.classList.remove("hidden");
-    };
-    const onNu = () => {
-      if (!smsReply || !smsStatus) return;
-      smsReply.textContent = "Nu pot ajunge, îmi pare rău.";
-      smsReply.classList.remove("hidden");
-      smsStatus.textContent = "Anulat";
-      smsStatus.className = "text-sm font-medium text-red-400";
-      smsStatus.classList.remove("hidden");
-    };
-    simDA?.addEventListener("click", onDa);
-    simNU?.addEventListener("click", onNu);
-    document.querySelectorAll(".booking-item").forEach((item) => {
-      item.addEventListener("click", () => {
-        window.alert("În aplicația reală poți edita, confirma sau anula programarea direct de aici.");
-      });
-    });
-    document.querySelectorAll(".faq-toggle").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const content = btn.nextElementSibling as HTMLElement | null;
-        const icon = btn.querySelector(".faq-icon");
-        content?.classList.toggle("hidden");
-        icon?.classList.toggle("rotate-180");
-      });
-    });
-    return () => {
-      simDA?.removeEventListener("click", onDa);
-      simNU?.removeEventListener("click", onNu);
-    };
-  }, []);
-
   return (
-    <div className="bg-black text-white antialiased">
-      <header className="border-b border-zinc-900">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="text-xl font-extrabold tracking-tight">ocupaloc.ro</div>
-          <Link
-            href="/signup"
-            data-analytics="homepage_cta_signup"
-            data-cta-location="homepage_header"
-            className="px-4 py-2 rounded-lg bg-[#1d4ed8] hover:bg-[#1e40af] text-white text-base font-semibold"
-          >
-            Încearcă 14 zile gratis
-          </Link>
-        </div>
-      </header>
-
-      <div className="bg-zinc-900 border-b border-zinc-800">
-        <div className="max-w-6xl mx-auto px-4 py-3 text-sm text-zinc-300 text-center">
-          Primești acces instant. După 7 zile gratuite, abonamentul se activează automat la 99,99 lei/lună. Poți anula oricând din cont.
+    <main className="bg-zinc-950 text-white antialiased">
+      <div className="relative overflow-hidden border-b border-zinc-800 bg-zinc-900/80">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.2),transparent_55%)]" />
+        <div className="mx-auto max-w-6xl px-4 py-3 text-center text-sm text-zinc-300">
+          Primești acces instant. <strong className="text-zinc-100">{TRIAL_DAYS} zile gratuit</strong>, fără card obligatoriu. După perioada de probă, abonamentul este{" "}
+          <strong className="text-zinc-100">
+            {MONTHLY_PRICE_LABEL} lei/lună
+          </strong>{" "}
+          (TVA inclus). Poți anula oricând din cont.
         </div>
       </div>
 
       <section className="max-w-6xl mx-auto px-4 pt-16 pb-12">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
+            <div className="mb-4 inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-300">
+              Platformă românească pentru saloane
+            </div>
             <h1 className="text-4xl md:text-6xl leading-[1.05] font-extrabold tracking-tight text-balance">
-              Software programări pentru saloane beauty. 99,99 RON/lună. Zero comision.
+              Software programări pentru saloane beauty. {MONTHLY_PRICE_LABEL} RON/lună. Zero comision.
             </h1>
             <p className="mt-5 text-lg text-zinc-400 max-w-xl">
               Frizerie, manichiură, cosmetică, masaj. Păstrezi 100% din încasări. Alternativă românească la Fresha.
@@ -86,7 +43,7 @@ export function LandingPage() {
                 data-cta-location="homepage_hero"
                 className="px-5 py-3 rounded-lg bg-[#1d4ed8] hover:bg-[#1e40af] text-white font-semibold text-base"
               >
-                Încearcă 14 zile gratis
+                Încearcă {TRIAL_DAYS} zile gratis
               </Link>
               <a href="#demo" className="px-5 py-3 rounded-lg border border-zinc-700 text-zinc-200 font-semibold text-base hover:bg-zinc-900">
                 Vezi cum funcționează
@@ -99,34 +56,37 @@ export function LandingPage() {
 
       <section className="max-w-6xl mx-auto px-4 pb-12">
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
-          <h2 className="text-2xl md:text-3xl font-bold text-center">Peste 40 de profesioniști au renunțat la comisioane</h2>
+          <h2 className="text-center text-2xl font-bold md:text-3xl">De ce să-ți muți programările pe Ocupaloc</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-zinc-400">
+            Construit pentru saloane mici și mijlocii din România: preț fix lunar, fără taxă per rezervare și suport în limba română.
+          </p>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-300">
-              &quot;Economisesc 600 RON lunar. Înainte plăteam 2€ per programare la Fresha.&quot;
-              <p className="mt-3 text-zinc-500">- Maria, manichiură București</p>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm leading-relaxed text-zinc-300">
+              <p className="font-semibold text-zinc-100">Zero comision pe programare</p>
+              <p className="mt-2">Plătești un abonament lunar predictibil. Nu „pierzi” procente din fiecare client, ca la multe platforme internaționale.</p>
             </div>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-300">
-              &quot;Clienții mei rezervă singuri la 2 dimineața. Eu dorm liniștit.&quot;
-              <p className="mt-3 text-zinc-500">- Andrei, frizerie Cluj</p>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm leading-relaxed text-zinc-300">
+              <p className="font-semibold text-zinc-100">Rezervări 24/7, fără mesaje pierdute</p>
+              <p className="mt-2">Clienții aleg slotul liber; tu vezi tot în panou. Mai puține telefoane, mai puține neînțelegeri.</p>
             </div>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-300">
-              &quot;Suport în română, răspund în 5 minute pe WhatsApp.&quot;
-              <p className="mt-3 text-zinc-500">- Elena, cosmetică Timișoara</p>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm leading-relaxed text-zinc-300">
+              <p className="font-semibold text-zinc-100">Limba română, de la onboarding la suport</p>
+              <p className="mt-2">Termeni și fluxuri gândite pentru piața locală — nu pentru o piață generică.</p>
             </div>
           </div>
-          <p className="mt-5 text-center text-sm font-semibold text-emerald-300">3.247 programări procesate luna trecută</p>
         </div>
       </section>
 
       <div className="border-y border-gray-800 py-12">
-        <p className="mb-6 text-center text-sm text-gray-400">Folosit de frizeri și saloane din România</p>
-        <div className="flex items-center justify-center gap-8 opacity-60">
-          <span className="text-2xl">💈</span>
-          <span className="text-gray-500">Salon Maria, București</span>
-          <span className="text-2xl">✂️</span>
-          <span className="text-gray-500">Barber Shop Cluj</span>
-          <span className="text-2xl">💇</span>
-          <span className="text-gray-500">Studio Iași</span>
+        <p className="mb-6 text-center text-sm text-gray-400">Potrivit pentru</p>
+        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-center text-sm text-zinc-400">
+          <span>Frizerie &amp; barber</span>
+          <span className="hidden text-zinc-700 sm:inline">·</span>
+          <span>Manichiură &amp; pedichiură</span>
+          <span className="hidden text-zinc-700 sm:inline">·</span>
+          <span>Cosmetică &amp; epilare</span>
+          <span className="hidden text-zinc-700 sm:inline">·</span>
+          <span>Salon &amp; coafor</span>
         </div>
       </div>
 
@@ -171,16 +131,10 @@ export function LandingPage() {
               <div className="p-3 rounded-lg bg-zinc-800 text-sm">
                 Bună! Mâine, 15 aprilie, ora 14:00 la Salon Elegance. Confirmi prezența? Răspunde cu DA sau NU
               </div>
-              <div className="flex gap-2">
-                <button id="simDA" type="button" className="flex-1 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-sm font-medium">
-                  Simulează DA
-                </button>
-                <button id="simNU" type="button" className="flex-1 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-sm font-medium">
-                  Simulează NU
-                </button>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-lg border border-emerald-700/40 bg-emerald-500/10 px-3 py-2 text-emerald-300">Răspuns DA</div>
+                <div className="rounded-lg border border-red-700/40 bg-red-500/10 px-3 py-2 text-red-300">Răspuns NU</div>
               </div>
-              <div id="smsReply" className="hidden p-3 rounded-lg bg-zinc-800 text-sm" />
-              <div id="smsStatus" className="hidden text-sm font-medium" />
             </div>
           </div>
         </div>
@@ -258,7 +212,7 @@ export function LandingPage() {
           </div>
           <div className="space-y-3">
             <div className="text-sm text-zinc-500 mb-2">Azi, duminică 13 aprilie</div>
-            <div className="p-4 rounded-lg bg-zinc-800/60 border border-zinc-700 flex items-center justify-between hover:bg-zinc-800 cursor-pointer booking-item">
+            <div className="p-4 rounded-lg bg-zinc-800/60 border border-zinc-700 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="text-center">
                   <div className="text-base font-bold">10:00</div>
@@ -282,7 +236,7 @@ export function LandingPage() {
         <div className="max-w-md mx-auto bg-zinc-900 border border-zinc-800 rounded-2xl p-8">
           <div className="text-center mb-6">
             <div className="text-3xl font-extrabold">
-              99,99 lei<span className="text-lg text-zinc-500 font-normal">/lună</span>
+              {MONTHLY_PRICE_LABEL} lei<span className="text-lg font-normal text-zinc-500">/lună</span>
             </div>
             <div className="text-sm text-zinc-500 mt-1">per locație • TVA inclus</div>
           </div>
@@ -316,7 +270,9 @@ export function LandingPage() {
           >
             Începe gratuit
           </Link>
-          <div className="text-sm text-zinc-500 text-center mt-3">7 zile gratuit, fără card.</div>
+          <div className="mt-3 text-center text-sm text-zinc-500">
+            {TRIAL_DAYS} zile gratuit — cardul nu e obligatoriu pentru început.
+          </div>
         </div>
       </section>
 
@@ -325,39 +281,20 @@ export function LandingPage() {
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">Întrebări frecvente</h2>
         </div>
         <div className="space-y-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl">
-            <button type="button" className="w-full px-6 py-4 text-left flex items-center justify-between faq-toggle">
-              <span className="text-base font-semibold">Cum îmi conectez Google Calendar?</span>
-              <svg className="w-5 h-5 text-zinc-500 transition-transform faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div className="px-6 pb-4 text-base text-zinc-400 hidden faq-content">
-              Te loghezi cu Google o singură dată. Toate programările noi apar instant în calendarul tău.
-            </div>
-          </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl">
-            <button type="button" className="w-full px-6 py-4 text-left flex items-center justify-between faq-toggle">
-              <span className="text-base font-semibold">Pot lua avans sau plata integrală?</span>
-              <svg className="w-5 h-5 text-zinc-500 transition-transform faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div className="px-6 pb-4 text-base text-zinc-400 hidden faq-content">
-              Da. Activezi plata online și clientul plătește cu cardul la rezervare.
-            </div>
-          </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl">
-            <button type="button" className="w-full px-6 py-4 text-left flex items-center justify-between faq-toggle">
-              <span className="text-base font-semibold">Se pot anula sau reprograma clienții?</span>
-              <svg className="w-5 h-5 text-zinc-500 transition-transform faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            <div className="px-6 pb-4 text-base text-zinc-400 hidden faq-content">
-              Da. Primesc link securizat în SMS/Email și pot anula sau reprograma singuri.
-            </div>
-          </div>
+          <details className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <summary className="cursor-pointer text-base font-semibold">Cum îmi conectez Google Calendar?</summary>
+            <p className="mt-3 text-base text-zinc-400">Te loghezi cu Google o singură dată. Toate programările noi apar instant în calendarul tău.</p>
+          </details>
+          <details className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <summary className="cursor-pointer text-base font-semibold">Există avans sau plată online la rezervare prin Ocupaloc?</summary>
+            <p className="mt-3 text-base text-zinc-400">
+              Nu. Ocupaloc funcționează pe bază de abonament lunar fix: nu intermediem bani de la clienții tăi, nu percepem avans per programare și nu există plată online integrată la rezervare în platformă.
+            </p>
+          </details>
+          <details className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+            <summary className="cursor-pointer text-base font-semibold">Se pot anula sau reprograma clienții?</summary>
+            <p className="mt-3 text-base text-zinc-400">Da. Clientul primește link securizat în SMS/Email și poate anula sau reprograma singur.</p>
+          </details>
         </div>
       </section>
 
@@ -388,8 +325,8 @@ export function LandingPage() {
               <div className="font-semibold mb-3 text-white">Suport</div>
               <ul className="space-y-2 text-zinc-500">
                 <li>
-                  <a href="https://wa.me/40700000000" target="_blank" className="hover:text-zinc-300" rel="noreferrer">
-                    WhatsApp
+                  <a href={getSupportContactHref()} target="_blank" className="hover:text-zinc-300" rel="noreferrer">
+                    {getSupportContactLabel()}
                   </a>
                 </li>
               </ul>
@@ -426,7 +363,7 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
-    </div>
+    </main>
   );
 }
 
@@ -460,7 +397,7 @@ export function DemoLandingPreview({ businessName, city, businessType, services,
       <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-8">
         <h1 className="text-4xl font-extrabold tracking-tight">{businessName} - {city}</h1>
         <p className="mt-3 text-zinc-300">
-          Exemplu de pagină pentru {businessType.toLowerCase()} cu programări online și preț fix 99,99 RON/lună, fără comision.
+          Exemplu de pagină pentru {businessType.toLowerCase()} cu programări online și preț fix {MONTHLY_PRICE_LABEL} RON/lună, fără comision.
         </p>
         <div className="mt-6 grid gap-3 md:grid-cols-3">
           {serviceLabels.map((service) => (

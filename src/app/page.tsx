@@ -1,6 +1,7 @@
 import Script from "next/script";
 
 import { LandingPage } from "@/components/landing/LandingPage";
+import { MONTHLY_PRICE_LEI } from "@/config/marketing";
 
 export default function Home() {
   const softwareSchema = {
@@ -10,7 +11,7 @@ export default function Home() {
     applicationCategory: "BusinessApplication",
     offers: {
       "@type": "Offer",
-      price: "99.99",
+      price: String(MONTHLY_PRICE_LEI),
       priceCurrency: "RON"
     },
     description: "Software de programări online pentru saloane beauty, cu zero comision pe programare.",
