@@ -4,13 +4,14 @@ Multi-tenant pentru profesioniști beauty: frizerii, manichiură, gene, pensat, 
 
 ## Cerințe
 
-- Node.js 20+
+- Node.js 22+
+- pnpm 9+ (`npm install -g pnpm`)
 - Cont [Supabase](https://supabase.com)
 
 ## Instalare locală
 
 ```bash
-npm install
+pnpm install
 ```
 
 1. Creează un proiect nou în Supabase.
@@ -27,9 +28,12 @@ npm install
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY` (doar server — folosit la `/api/public/slots` pentru citire programări fără a expune datele în browser)
    - `NEXT_PUBLIC_SITE_URL` (ex. `http://localhost:3000` sau `http://127.0.0.1:8788` pentru preview Cloudflare)
+   - `RESEND_API_KEY` + `RESEND_FROM` — pentru trimitere emailuri de confirmare
+   - `REMINDERS_CRON_SECRET` — secret pentru jobul cron `/api/jobs/send-reminders`
+   - `BOOKING_CONFIRMATION_SECRET` — secret opțional pentru confirmare booking
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 - Landing: [http://localhost:3000/](http://localhost:3000/)

@@ -57,3 +57,33 @@ test("handleBookRequest returns success when insert and notifications succeed", 
   assert.equal(result.body.success, true);
   assert.equal(insertSlug, "salon-test");
 });
+
+test("handleBookRequest still returns 200 when notifyProfesionist rejects", async () => {
+  const deps = makeDeps({
+    notifyProfesionist: async () => { throw new Error("SMTP timeout"); }
+  });
+
+  const result = await handleBookRequest(validPayload, "127.0.0.1", deps);
+  assert.equal(result.status, 200);
+  assert.equal(result.body.success, true);
+});
+
+test("handleBookRequest returns 403 when insertBooking returns block message", async () => {
+  const deps = makeDeps({
+    insertBooking: async () => ({ ok: false, message: "Ne pare rău, sună la salon pentru programare." })
+  });
+
+  const result = await handleBookRequest(validPayload, "127.0.0.1", deps);
+  assert.equal(result.status, 403);
+  assert.equal(result.body.success, false);
+});
+
+test("handleBookRequest returns 409 when slot is unavailable", async () => {
+  const deps = makeDeps({
+    insertBooking: async () => ({ ok: false, message: "Slotul nu mai e disponibil. Alege altă oră." })
+  });
+
+  const result = await handleBookRequest(validPayload, "127.0.0.1", deps);
+  assert.equal(result.status, 409);
+  assert.equal(result.body.success, false);
+});

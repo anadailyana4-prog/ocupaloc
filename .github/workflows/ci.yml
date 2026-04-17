@@ -41,6 +41,9 @@ jobs:
       - name: Lint
         run: pnpm exec eslint . --ignore-pattern next-env.d.ts
 
+      - name: Audit dependencies
+        run: pnpm audit --audit-level critical
+
       - name: Build
         run: pnpm exec next build
         env:
