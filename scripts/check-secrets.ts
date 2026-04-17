@@ -150,9 +150,10 @@ async function run() {
       ok: !hasHistoryLeak,
       details: hasHistoryLeak ? "❌ CRITICAL: ROTEȘTE CHEIA IMEDIAT" : undefined
     });
-  } catch (error: any) {
-    const stderr = typeof error?.stderr === "string" ? error.stderr : "";
-    const stdout = typeof error?.stdout === "string" ? error.stdout : "";
+  } catch (error: unknown) {
+    const e = error as { stderr?: unknown; stdout?: unknown };
+    const stderr = typeof e.stderr === "string" ? e.stderr : "";
+    const stdout = typeof e.stdout === "string" ? e.stdout : "";
     const combined = `${stdout}\n${stderr}`;
     if (combined.includes("not a git repository")) {
       console.log(

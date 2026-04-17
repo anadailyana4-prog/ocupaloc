@@ -6,6 +6,9 @@ type CheckResult = {
   details?: string;
 };
 
+type ConstraintRow = { constraint_name: string };
+type RlsRow = { relname: string; relrowsecurity: boolean };
+
 const REQUIRED_TABLES = ["profesionisti", "servicii", "programari", "profiles", "clienti_blocati"] as const;
 const DEPRECATED_TABLES = ["organizations", "appointments", "availability_rules", "blocked_slots"] as const;
 const REQUIRED_PROFILE_COLUMNS = ["id", "full_name", "phone", "role"] as const;
@@ -119,8 +122,8 @@ async function run(): Promise<number> {
         details: fkColumnsError?.message ?? fkRefsError?.message
       });
     } else {
-      const left = new Set((fkColumns ?? []).map((row) => String((row as any).constraint_name)));
-      const right = new Set((fkRefs ?? []).map((row) => String((row as any).constraint_name)));
+      const left = new Set((fkColumns as ConstraintRow[] | null | undefined ?? []).map((row) => String(row.constraint_name)));
+      const right = new Set((fkRefs as ConstraintRow[] | null | undefined ?? []).map((row) => String(row.constraint_name)));
       const hasProfFk = [...left].some((constraintName) => right.has(constraintName));
       results.push({
         name: "programari FK points to profesionisti",
@@ -141,7 +144,7 @@ async function run(): Promise<number> {
       });
     } else {
       const rlsMap = new Map<string, boolean>(
-        (rlsRows ?? []).map((row) => [String((row as any).relname), Boolean((row as any).relrowsecurity)])
+        (rlsRows as RlsRow[] | null | undefined ?? []).map((row) => [String(row.relname), Boolean(row.relrowsecurity)])
       );
       const missingRls = REQUIRED_RLS_TABLES.filter((table) => !rlsMap.get(table));
       results.push({
