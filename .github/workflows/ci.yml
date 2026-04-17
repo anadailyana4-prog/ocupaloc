@@ -53,6 +53,10 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           NEXT_PUBLIC_SITE_URL: https://ocupaloc.ro
 
+      - name: Install Playwright browser (E2E only)
+        if: ${{ vars.ENABLE_E2E == 'true' }}
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: E2E Smoke (optional on staging)
         if: ${{ vars.ENABLE_E2E == 'true' }}
         env:
