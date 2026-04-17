@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-type PageProps = { params: Promise<{ oras: string; serviciu: string }> };
+type PageProps = { params: Promise<{ slug: string; serviciu: string }> };
 
 const orase = ["bucuresti", "cluj-napoca", "timisoara", "iasi", "constanta", "brasov", "oradea", "sibiu"] as const;
 const servicii = ["frizerie", "salon", "manichiura", "cosmetica", "barber"] as const;
@@ -62,12 +62,12 @@ function serviceDisplay(slug: string): string {
 }
 
 export function generateStaticParams() {
-  return orase.flatMap((oras) => servicii.map((serviciu) => ({ oras, serviciu })));
+  return orase.flatMap((oras) => servicii.map((serviciu) => ({ slug: oras, serviciu })));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { oras, serviciu } = await params;
-  const orasTitle = cityDisplay(oras);
+  const { slug, serviciu } = await params;
+  const orasTitle = cityDisplay(slug);
   const serviciuTitle = serviceDisplay(serviciu);
 
   return {
@@ -77,15 +77,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function LocalServicePage({ params }: PageProps) {
-  const { oras, serviciu } = await params;
+  const { slug, serviciu } = await params;
 
-  if (!orase.includes(oras as (typeof orase)[number]) || !servicii.includes(serviciu as (typeof servicii)[number])) {
+  if (!orase.includes(slug as (typeof orase)[number]) || !servicii.includes(serviciu as (typeof servicii)[number])) {
     return null;
   }
 
-  const orasName = cityDisplay(oras);
+  const orasName = cityDisplay(slug);
   const serviciuName = serviceDisplay(serviciu);
-  const copy = cityCopy[oras as (typeof orase)[number]];
+  const copy = cityCopy[slug as (typeof orase)[number]];
   let salons: Array<{ id: string; business_name: string | null; slug: string | null }> = [];
   try {
     const supabase = await createSupabaseServerClient();
