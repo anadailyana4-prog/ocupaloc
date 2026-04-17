@@ -86,17 +86,19 @@ export default async function LocalServicePage({ params }: PageProps) {
   const orasName = cityDisplay(oras);
   const serviciuName = serviceDisplay(serviciu);
   const copy = cityCopy[oras as (typeof orase)[number]];
-  const supabase = await createSupabaseServerClient();
-
   let salons: Array<{ id: string; business_name: string | null; slug: string | null }> = [];
-  const { data } = await supabase
-    .from("profesionisti")
-    .select("id,business_name:nume_business,slug")
-    .ilike("oras", `%${orasName}%`)
-    .limit(6);
-
-  if (data) {
-    salons = data;
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from("profesionisti")
+      .select("id,business_name:nume_business,slug")
+      .ilike("oras", `%${orasName}%`)
+      .limit(6);
+    if (data) {
+      salons = data;
+    }
+  } catch {
+    // credentials unavailable (e.g. CI build without secrets); render empty list
   }
 
   return (
