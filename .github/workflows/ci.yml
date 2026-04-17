@@ -52,3 +52,13 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           NEXT_PUBLIC_SITE_URL: https://ocupaloc.ro
+
+      - name: E2E Smoke (optional on staging)
+        if: ${{ vars.ENABLE_E2E == 'true' }}
+        env:
+          PLAYWRIGHT_REQUIRE_EXECUTION: "true"
+          PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL }}
+          PLAYWRIGHT_BOOKING_SLUG: ${{ vars.PLAYWRIGHT_BOOKING_SLUG }}
+          PLAYWRIGHT_ENABLE_DEMO_SMOKE: ${{ vars.PLAYWRIGHT_ENABLE_DEMO_SMOKE }}
+        run: pnpm run test:e2e
+
