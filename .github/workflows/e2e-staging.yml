@@ -1,0 +1,37 @@
+name: E2E Staging
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  e2e-staging:
+    name: E2E Smoke (staging required)
+    runs-on: ubuntu-latest
+    if: ${{ vars.ENABLE_E2E == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E smoke against staging
+        env:
+          PLAYWRIGHT_REQUIRE_EXECUTION: "true"
+          PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL }}
+          PLAYWRIGHT_BOOKING_SLUG: ${{ vars.PLAYWRIGHT_BOOKING_SLUG }}
+          PLAYWRIGHT_ENABLE_DEMO_SMOKE: ${{ vars.PLAYWRIGHT_ENABLE_DEMO_SMOKE }}
+        run: pnpm run test:e2e
