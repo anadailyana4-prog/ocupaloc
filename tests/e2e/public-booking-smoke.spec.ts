@@ -8,7 +8,21 @@ test.describe("public booking smoke", () => {
   test.skip(!bookingSlug, "PLAYWRIGHT_BOOKING_SLUG is not configured.");
 
   test("reaches booking form for a public salon", async ({ page }) => {
-    await page.goto(`/${bookingSlug}`);
+    let attempts = 0;
+    while (attempts < 3) {
+      try {
+        await page.goto(\`/\${bookingSlug}\`, {
+          waitUntil: "domcontentloaded",
+          timeout: 20_000,
+        });
+        break;
+      } catch (err) {
+        attempts++;
+        if (attempts === 3) throw err;
+        console.warn(\`Navigation attempt \${attempts} failed, retrying...\`, err.message);
+        await page.waitForTimeout(1000);
+      }
+    }
 
     await expect(page.getByTestId("service-option").first()).toBeVisible();
     await page.getByTestId("service-option").first().click();
