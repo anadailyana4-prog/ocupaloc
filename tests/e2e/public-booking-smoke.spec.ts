@@ -8,7 +8,7 @@ test.describe("public booking smoke", () => {
   test.skip(!bookingSlug, "PLAYWRIGHT_BOOKING_SLUG is not configured.");
 
   test("reaches booking form for a public salon", async ({ page }) => {
-    await page.goto(`/s/${bookingSlug}`);
+    await page.goto(`/${bookingSlug}`);
 
     await expect(page.getByTestId("service-option").first()).toBeVisible();
     await page.getByTestId("service-option").first().click();
