@@ -1,5 +1,8 @@
 # Ocupaloc E2E Test Runbook
 
+**Scope:** Runtime incidents, E2E test troubleshooting, and operational procedures.  
+**Related:** See [RELEASE_RUNBOOK.md](RELEASE_RUNBOOK.md) for pre-release checklists and release procedures.
+
 ## Latest Green Run: ✅ 24564529883
 
 **Date:** 2026-04-17T12:15:07Z  
@@ -86,3 +89,51 @@ gh run rerun <RUN_ID> --repo anadailyana4-prog/ocupaloc
 E2E runs daily at 2 AM (scheduled) via `e2e-staging.yml` workflow, or manually via `workflow_dispatch`.
 
 Expected success rate: 100% (when staging infrastructure is operational).
+
+---
+
+## Scope Clarification
+
+This runbook covers **runtime E2E testing and incident response**:
+- E2E test failures and debugging
+- CI/CD pipeline troubleshooting  
+- Staging smoke test procedures
+- Re-run and log inspection workflows
+
+For **pre-release procedures, release steps, and production deployment checklists**, see [RELEASE_RUNBOOK.md](RELEASE_RUNBOOK.md).
+
+## E2E Test Behavior: Local vs. CI vs. Staging
+
+### Local Development (Developer-Friendly)
+```bash
+pnpm run test:e2e
+```
+- Tests **skip silently** if `PLAYWRIGHT_BASE_URL` is not set.
+- Reason: Developers may not have staging/local server running; skips avoid noise.
+- Override: Set `PLAYWRIGHT_BASE_URL` manually to run tests locally.
+
+### CI (Main Workflow)
+```yaml
+if: ${{ vars.ENABLE_E2E == 'true' }}
+```
+- Tests run **only if `ENABLE_E2E` variable is explicitly enabled** in GitHub (false by default).
+- Reason: CI pipeline should be fast for every commit; E2E is optional.
+- Playwright browser install step runs **only when E2E is enabled** to save time.
+- Result: Faster feedback for non-E2E work; explicit opt-in for E2E validation.
+
+### Staging (Scheduled/Manual)
+```yaml
+workflow: e2e-staging.yml
+```
+- Runs **daily at 2 AM UTC** (scheduled) or on manual dispatch.
+- Uses **strict assertions** on staging environment (`staging.ocupaloc.ro`).
+- Pre-warms server before test execution to reduce cold-start impact.
+- Result: Comprehensive end-to-end validation without blocking main CI.
+
+### Summary Table
+
+| Context | Skip Behavior | When | Reason |
+|---------|---|---|---|
+| Local dev | Skip if no BASE_URL | Always | Dev-friendly, avoid noise |
+| CI (main) | Skip if ENABLE_E2E=false | On every push | Fast CI, explicit opt-in |
+| Staging | Run (strict) | Daily 2 AM + manual | Comprehensive validation |
