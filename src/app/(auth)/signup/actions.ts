@@ -4,7 +4,63 @@ import { createClient } from "@supabase/supabase-js";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export async function bootstrapTenantAfterSignup(input: { orgName: string; slug: string }) {
+type BootstrapService = {
+  nume: string;
+  pret: string;
+  durata: string;
+};
+
+type BootstrapWorkDay = {
+  key: "luni" | "marti" | "miercuri" | "joi" | "vineri" | "sambata" | "duminica";
+  active: boolean;
+  start: string;
+  end: string;
+};
+
+function mapActivity(activity: string | undefined): string {
+  const value = (activity ?? "").toLowerCase();
+  if (value.includes("frizer")) return "frizerie";
+  if (value.includes("manichi")) return "manichiura";
+  if (value.includes("coaf")) return "coafor";
+  return "altul";
+}
+
+function buildProgram(workDays: BootstrapWorkDay[] | undefined): Record<string, [string, string] | []> {
+  const fallback: Record<string, [string, string] | []> = {
+    luni: ["09:00", "18:00"],
+    marti: ["09:00", "18:00"],
+    miercuri: ["09:00", "18:00"],
+    joi: ["09:00", "18:00"],
+    vineri: ["09:00", "18:00"],
+    sambata: [],
+    duminica: []
+  };
+
+  if (!workDays?.length) {
+    return fallback;
+  }
+
+  const program: Record<string, [string, string] | []> = { ...fallback };
+  workDays.forEach((day) => {
+    if (!day.active) {
+      program[day.key] = [];
+      return;
+    }
+    const start = /^\d{2}:\d{2}$/.test(day.start) ? day.start : "09:00";
+    const end = /^\d{2}:\d{2}$/.test(day.end) ? day.end : "18:00";
+    program[day.key] = [start, end];
+  });
+  return program;
+}
+
+export async function bootstrapTenantAfterSignup(input: {
+  orgName: string;
+  slug: string;
+  activity?: string;
+  phone?: string;
+  services?: BootstrapService[];
+  workDays?: BootstrapWorkDay[];
+}) {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -24,16 +80,52 @@ export async function bootstrapTenantAfterSignup(input: { orgName: string; slug:
   });
 
   const { data: existing } = await admin.from("profesionisti").select("id").eq("user_id", user.id).maybeSingle();
-  if (!existing?.id) {
+  let profesionistId = existing?.id ?? null;
+
+  if (!profesionistId) {
     const { error: insErr } = await admin.from("profesionisti").insert({
       user_id: user.id,
       nume_business: input.orgName,
-      tip_activitate: "frizerie",
+      tip_activitate: mapActivity(input.activity),
+      telefon: input.phone?.trim() || null,
       slug: input.slug,
-      onboarding_pas: 1
+      onboarding_pas: 4,
+      program: buildProgram(input.workDays)
     });
     if (insErr) {
       return { ok: false as const, error: insErr.message };
+    }
+
+    const { data: created } = await admin.from("profesionisti").select("id").eq("user_id", user.id).maybeSingle();
+    profesionistId = created?.id ?? null;
+  }
+
+  if (!profesionistId) {
+    return { ok: false as const, error: "Nu am putut pregăti profilul profesionistului." };
+  }
+
+  const draftServices = (input.services ?? [])
+    .map((service) => {
+      const name = service.nume.trim();
+      const duration = Number(service.durata);
+      const price = Number(service.pret);
+      if (!name) return null;
+      if (!Number.isFinite(duration) || duration <= 0) return null;
+      if (!Number.isFinite(price) || price < 0) return null;
+      return {
+        profesionist_id: profesionistId,
+        nume: name,
+        durata_minute: duration,
+        pret: price,
+        activ: true
+      };
+    })
+    .filter(Boolean);
+
+  if (draftServices.length > 0) {
+    const { error: servicesErr } = await admin.from("servicii").insert(draftServices);
+    if (servicesErr) {
+      return { ok: false as const, error: servicesErr.message };
     }
   }
 

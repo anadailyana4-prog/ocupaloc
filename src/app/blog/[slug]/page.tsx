@@ -13,10 +13,10 @@ type Post = {
 const POSTS: Post[] = [
   {
     slug: "fresha-cat-costa-romania",
-    title: "Fresha în România: cât costă cu adevărat și ce alternative ai",
+    title: "Cât te costă platformele cu comision și ce variantă e mai sănătoasă",
     description: "Analiză de cost, marjă și profit pentru saloane care folosesc programari online.",
     relatedLandingLinks: [
-      { href: "/alternativa-fresha-romania", label: "Alternativă Fresha România" },
+      { href: "/preturi", label: "Prețuri Ocupaloc" },
       { href: "/programari-online-salon", label: "Programări online salon" }
     ],
     content: `

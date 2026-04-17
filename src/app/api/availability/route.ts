@@ -1,39 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { parseProgramJson } from "@/lib/program";
+import { checkApiRateLimit } from "@/lib/rate-limit";
 import { computeFreeSlots } from "@/lib/slots";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import type { ProgramareRow } from "@/types/db";
 
-const RATE_LIMIT = new Map<string, { count: number; reset: number }>();
-
-function checkRateLimit(ip: string, maxRequests = 10, windowMs = 60_000): boolean {
-  const now = Date.now();
-  const record = RATE_LIMIT.get(ip);
-
-  if (!record || now > record.reset) {
-    RATE_LIMIT.set(ip, { count: 1, reset: now + windowMs });
-    return true;
-  }
-
-  if (record.count >= maxRequests) return false;
-
-  record.count += 1;
-  return true;
-}
-
 export async function GET(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  if (!checkRateLimit(ip)) {
+  const { searchParams } = new URL(req.url);
+  const slug = (searchParams.get("org") ?? "unknown").trim().toLowerCase();
+  const admin = createSupabaseServiceClient();
+  const rateLimit = await checkApiRateLimit(admin, `api:availability:${slug}:${ip}`, 60, 60_000);
+  if (!rateLimit.allowed) {
     return NextResponse.json({ slots: [], error: "Too many requests" }, { status: 429 });
   }
 
-  const { searchParams } = new URL(req.url);
-  const slug = searchParams.get("org");
+  const slugParam = searchParams.get("org");
   const serviceId = searchParams.get("service");
   const date = searchParams.get("date");
 
-  if (!slug || !serviceId || !date) {
+  if (!slugParam || !serviceId || !date) {
     return NextResponse.json({ slots: [], error: "Parametri lipsă: org, service, date." }, { status: 400 });
   }
 
@@ -42,8 +29,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ slots: [], error: "Format dată invalid (YYYY-MM-DD)." }, { status: 400 });
   }
 
-  const admin = createSupabaseServiceClient();
-  const { data: prof, error: profErr } = await admin.from("profesionisti").select("*").eq("slug", slug).maybeSingle();
+  const { data: prof, error: profErr } = await admin.from("profesionisti").select("*").eq("slug", slugParam).maybeSingle();
   if (profErr || !prof) {
     return NextResponse.json({ slots: [], error: "Pagina nu există." }, { status: 404 });
   }

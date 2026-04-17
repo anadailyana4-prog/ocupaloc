@@ -156,7 +156,22 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
     .order("ordine", { ascending: true });
 
   if (!servicii?.length) {
-    notFound();
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-950 to-black text-zinc-50">
+        <div className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-6 px-6 text-center">
+          <h1 className="text-3xl font-bold tracking-tight">{prof.nume_business}</h1>
+          <p className="max-w-md text-zinc-300">Pagina de programări este în configurare. Revenim foarte curând cu serviciile disponibile online.</p>
+          {prof.telefon ? (
+            <a
+              href={`tel:${String(prof.telefon).replace(/\s+/g, "")}`}
+              className="inline-flex items-center justify-center rounded-full bg-zinc-800/90 px-8 py-3 text-sm font-semibold text-white ring-1 ring-zinc-600/80 transition hover:bg-zinc-800 hover:ring-zinc-500"
+            >
+              Sună: {String(prof.telefon)}
+            </a>
+          ) : null}
+        </div>
+      </div>
+    );
   }
 
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";

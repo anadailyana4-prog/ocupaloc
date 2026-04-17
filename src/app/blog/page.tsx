@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 const posts = [
   {
     slug: "fresha-cat-costa-romania",
-    title: "Fresha în România: cât costă cu adevărat și ce alternative ai",
+    title: "Cât te costă platformele cu comision și cum îți protejezi marja",
     excerpt: "Analiză detaliată a costurilor pe comision și de ce modelul 99,99 RON fără comision poate fi mai profitabil."
   },
   {

@@ -20,3 +20,6 @@
 - [ ] `npx wrangler deploy` rulat
 - [ ] Test pe https://ocupaloc.ro/signup cu cont real
 - [ ] Verifică logs: `npx wrangler tail` să nu vezi erori
+
+## Documentație operațională
+- Consultă `RELEASE_RUNBOOK.md` pentru matricea completă de variabile (Vercel + Cloudflare), pași de release și rollback.

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 
@@ -15,26 +15,45 @@ function initialsFromEmail(email: string | null | undefined): string {
 }
 
 export function Header() {
+  const pathname = usePathname();
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
+  const isHomepage = pathname === "/";
+  const isAuthPage = pathname === "/login" || pathname === "/signup";
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
 
-    void supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session ?? null);
-    });
+    void (async () => {
+      const {
+        data: { user }
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setSession(null);
+        return;
+      }
+
+      const {
+        data: { session: currentSession }
+      } = await supabase.auth.getSession();
+      setSession(currentSession ?? null);
+    })();
 
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession ?? null);
+
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
+        router.refresh();
+      }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [router]);
 
   async function handleSignOut() {
     const supabase = createSupabaseBrowserClient();
@@ -43,28 +62,38 @@ export function Header() {
     router.refresh();
   }
 
+  if (isHomepage) {
+    return null;
+  }
+
   return (
-    <header className="border-b border-zinc-800 bg-zinc-950/80">
+    <header className="border-b border-amber-200/15 bg-slate-950/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href="/" className="text-sm font-semibold tracking-tight">
-          Ocuploc
+        <Link href="/" className="font-display text-xl font-semibold tracking-wide text-amber-100">
+          Ocupaloc
         </Link>
-        {session === null ? (
+        {isAuthPage ? null : session === null ? (
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm" className="rounded-full">
+            <Button asChild variant="outline" size="sm" className="rounded-full border-amber-200/25 bg-slate-900/50 text-amber-50 hover:bg-slate-800/70">
               <Link href="/login">Intră în cont</Link>
             </Button>
-            <Button asChild size="sm" className="rounded-full">
+            <Button asChild size="sm" className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105">
               <Link href="/signup">Creează cont</Link>
             </Button>
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 text-xs font-semibold">
+            <div className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-amber-200/20 bg-slate-800 text-xs font-semibold text-amber-100">
               {initialsFromEmail(session.user.email)}
             </div>
-            <span className="hidden text-sm text-zinc-300 sm:inline">{session.user.email ?? "utilizator"}</span>
-            <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={() => void handleSignOut()}>
+            <span className="hidden text-sm text-amber-50/80 sm:inline">{session.user.email ?? "utilizator"}</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full border-amber-200/25 bg-slate-900/50 text-amber-50 hover:bg-slate-800/70"
+              onClick={() => void handleSignOut()}
+            >
               Ieși din cont
             </Button>
           </div>

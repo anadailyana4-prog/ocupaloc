@@ -45,3 +45,29 @@ export const trackDemoCreated = (businessType: string) => {
   });
 };
 
+export const trackAuthEvent = (eventName: "login_success" | "signup_success" | "magic_link_sent" | "password_reset_sent", method: string) => {
+  if (!canTrack()) return;
+  window.gtag?.("event", eventName, {
+    event_category: "auth",
+    event_label: method,
+    method
+  });
+};
+
+export const trackBookingEvent = (
+  eventName:
+    | "booking_service_selected"
+    | "booking_day_selected"
+    | "booking_slot_selected"
+    | "booking_submit_started"
+    | "booking_submit_failed"
+    | "booking_submit_success",
+  payload: Record<string, string | number | boolean | null>
+) => {
+  if (!canTrack()) return;
+  window.gtag?.("event", eventName, {
+    event_category: "booking",
+    ...payload
+  });
+};
+

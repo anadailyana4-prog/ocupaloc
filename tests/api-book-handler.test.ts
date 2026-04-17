@@ -1,0 +1,59 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { handleBookRequest, type BookRouteDeps } from "../src/lib/booking/book-request-handler";
+
+const validPayload = {
+  orgSlug: "  SALON-TEST  ",
+  serviceId: "11111111-1111-4111-8111-111111111111",
+  startTime: "2026-05-01T10:00:00.000Z",
+  clientName: "Ana Client",
+  clientPhone: "0712 345 678",
+  clientEmail: "ana@example.com"
+};
+
+function makeDeps(overrides?: Partial<BookRouteDeps>): BookRouteDeps {
+  return {
+    createAdmin: () => ({}) as ReturnType<BookRouteDeps["createAdmin"]>,
+    checkRateLimit: async () => ({ allowed: true }),
+    insertBooking: async () => ({ ok: true, programareId: "p-1" }),
+    notifyProfesionist: async () => true,
+    notifyClient: async () => true,
+    ...overrides
+  };
+}
+
+test("handleBookRequest returns 400 for invalid payload", async () => {
+  const result = await handleBookRequest({}, "127.0.0.1", makeDeps());
+  assert.equal(result.status, 400);
+  assert.equal(result.body.success, false);
+});
+
+test("handleBookRequest applies normalized slug to rate-limit key", async () => {
+  let capturedKey = "";
+  const deps = makeDeps({
+    checkRateLimit: async (_admin, key) => {
+      capturedKey = key;
+      return { allowed: false };
+    }
+  });
+
+  const result = await handleBookRequest(validPayload, "127.0.0.1", deps);
+  assert.equal(result.status, 429);
+  assert.equal(capturedKey, "api:book:salon-test:127.0.0.1");
+});
+
+test("handleBookRequest returns success when insert and notifications succeed", async () => {
+  let insertSlug = "";
+  const deps = makeDeps({
+    insertBooking: async (_admin, input) => {
+      insertSlug = input.slug;
+      return { ok: true, programareId: "programare-123" };
+    }
+  });
+
+  const result = await handleBookRequest(validPayload, "127.0.0.1", deps);
+  assert.equal(result.status, 200);
+  assert.equal(result.body.success, true);
+  assert.equal(insertSlug, "salon-test");
+});

@@ -13,7 +13,7 @@ export default function Home() {
       price: "99.99",
       priceCurrency: "RON"
     },
-    description: "Software de programări online pentru saloane beauty, cu zero comision pe programare.",
+    description: "Software de programări online pentru orice business bazat pe rezervări, cu preț fix și flux complet de confirmare.",
     operatingSystem: "Web"
   };
 

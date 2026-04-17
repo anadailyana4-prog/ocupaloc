@@ -6,17 +6,17 @@ import { CalculatorEconomii } from "@/components/CalculatorEconomii";
 export const metadata: Metadata = {
   title: "99,99 RON/lună pentru saloane beauty",
   description:
-    "99,99 RON pe lună, fără comisioane ascunse. Vezi cât economisești față de Fresha și compară Ocupaloc cu alternativele."
+    "99,99 RON pe lună, fără comisioane ascunse. Vezi cât economisești față de platformele cu comision și compară Ocupaloc cu alternativele."
 };
 
 const comparisonRows = [
-  { feature: "Preț lunar", ocupaloc: "99,99 RON", fresha: "0 RON", stailer: "Variabil" },
-  { feature: "Comision per programare", ocupaloc: "0 RON", fresha: "~10 RON", stailer: "Da" },
-  { feature: "Suport în română", ocupaloc: "Da", fresha: "Limitat", stailer: "Da" },
-  { feature: "Fără reclame", ocupaloc: "Da", fresha: "Nu", stailer: "Nu" },
-  { feature: "Import clienți gratuit", ocupaloc: "Da", fresha: "Limitat", stailer: "Limitat" },
-  { feature: "Personalizare completă", ocupaloc: "Da", fresha: "Parțial", stailer: "Parțial" },
-  { feature: "Plată în RON", ocupaloc: "Da", fresha: "Nu", stailer: "Da" }
+  { feature: "Preț lunar", ocupaloc: "99,99 RON", standard: "Variabil", premium: "Variabil" },
+  { feature: "Comision per programare", ocupaloc: "0 RON", standard: "Da", premium: "Da" },
+  { feature: "Suport în română", ocupaloc: "Da", standard: "Limitat", premium: "Da" },
+  { feature: "Fără reclame", ocupaloc: "Da", standard: "Nu", premium: "Nu" },
+  { feature: "Import clienți gratuit", ocupaloc: "Da", standard: "Limitat", premium: "Limitat" },
+  { feature: "Personalizare completă", ocupaloc: "Da", standard: "Parțial", premium: "Parțial" },
+  { feature: "Plată în RON", ocupaloc: "Da", standard: "Nu", premium: "Da" }
 ] as const;
 
 export default function PreturiPage() {
@@ -41,7 +41,7 @@ export default function PreturiPage() {
             <li>✓ Suport rapid în limba română</li>
           </ul>
           <Link href="/signup" data-cta-location="preturi_hero_card" className="mt-6 inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
-            Încearcă 14 zile gratis
+            Încearcă 7 zile gratis
           </Link>
         </section>
 
@@ -53,8 +53,8 @@ export default function PreturiPage() {
               <tr>
                 <th className="px-4 py-3">Comparație</th>
                 <th className="px-4 py-3 text-emerald-300">Ocupaloc</th>
-                <th className="px-4 py-3">Fresha</th>
-                <th className="px-4 py-3">Stailer</th>
+                <th className="px-4 py-3">Platformă standard</th>
+                <th className="px-4 py-3">Platformă premium</th>
               </tr>
             </thead>
             <tbody>
@@ -64,8 +64,8 @@ export default function PreturiPage() {
                   <td className="px-4 py-3 font-semibold text-emerald-300">
                     {row.ocupaloc === "Da" ? "✓ Da" : row.ocupaloc}
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">{row.fresha}</td>
-                  <td className="px-4 py-3 text-zinc-400">{row.stailer}</td>
+                  <td className="px-4 py-3 text-zinc-400">{row.standard}</td>
+                  <td className="px-4 py-3 text-zinc-400">{row.premium}</td>
                 </tr>
               ))}
             </tbody>

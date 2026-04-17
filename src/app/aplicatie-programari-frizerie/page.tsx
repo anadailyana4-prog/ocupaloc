@@ -3,9 +3,9 @@ import Link from "next/link";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Aplicație Programări Frizerie | Alternativă Fresha",
+  title: "Aplicație Programări Frizerie | Fără Comision",
   description:
-    "Aplicație de programari online pentru frizeri și barberi: software salon fără comision, preț fix 99,99 RON, alternativă modernă la Fresha."
+    "Aplicație de programari online pentru frizeri și barberi: software salon fără comision, preț fix 99,99 RON, cu setup rapid."
 };
 
 const faqItems = [
@@ -33,7 +33,7 @@ const faqItems = [
 
 const relatedLinks = [
   { href: "/programari-online-salon", label: "Programări online salon" },
-  { href: "/alternativa-fresha-romania", label: "Alternativă Fresha România" },
+  { href: "/preturi", label: "Prețuri Ocupaloc" },
   { href: "/software-programari-manichiura", label: "Software programări manichiură" },
   { href: "/programari-online-cosmetica", label: "Programări online cosmetică" }
 ];

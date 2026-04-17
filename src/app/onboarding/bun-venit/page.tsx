@@ -15,7 +15,7 @@ export default function BunVenitPage() {
     if (lastSlug) setSlug(lastSlug);
   }, []);
 
-  const publicUrl = useMemo(() => `https://ocupaloc.ro/s/${slug}`, [slug]);
+  const publicUrl = useMemo(() => `https://ocupaloc.ro/${slug}`, [slug]);
 
   const copyUrl = async () => {
     try {
@@ -68,6 +68,11 @@ export default function BunVenitPage() {
             </CardContent>
           </Card>
         </section>
+
+        <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 p-4 text-center text-sm text-amber-200">
+          Dacă nu poți intra imediat în cont, verifică emailul și confirmă adresa. Pentru autentificare rapidă poți folosi și opțiunea
+          Intră cu link pe email din pagina de login.
+        </div>
 
         <div className="text-center">
           <Button asChild size="lg">

@@ -5,7 +5,7 @@ import Script from "next/script";
 export const metadata: Metadata = {
   title: "Programări Online Salon | Software 99,99 RON/lună Fără Comision",
   description:
-    "Software românesc de programări pentru saloane beauty. Frizerie, manichiură, cosmetică. Alternativă Fresha fără comision. 99,99 RON/lună."
+    "Software românesc de programări pentru saloane beauty. Frizerie, manichiură, cosmetică. Fără comision, la 99,99 RON/lună."
 };
 
 const faqItems = [
@@ -20,7 +20,7 @@ const faqItems = [
       "Prețul este fix: 99,99 RON pe lună, fără comision per programare. Știi exact cât plătești indiferent de numărul de rezervări."
   },
   {
-    question: "Pot să import clienții din Excel sau Fresha?",
+    question: "Pot să import clienții din Excel sau altă platformă?",
     answer:
       "Da, poți importa rapid datele clienților din CSV și porni mai repede fără să copiezi manual fiecare număr de telefon sau email."
   },
@@ -32,7 +32,7 @@ const faqItems = [
 ];
 
 const relatedLinks = [
-  { href: "/alternativa-fresha-romania", label: "Alternativă Fresha România" },
+  { href: "/preturi", label: "Prețuri Ocupaloc" },
   { href: "/software-programari-manichiura", label: "Software programări manichiură" },
   { href: "/aplicatie-programari-frizerie", label: "Aplicație programări frizerie" },
   { href: "/programari-online-cosmetica", label: "Programări online cosmetică" }
@@ -65,7 +65,7 @@ export default function ProgramariOnlineSalonPage() {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/signup" data-cta-location="seo_programari_online_salon_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
-              Încearcă 14 zile gratis
+              Încearcă 7 zile gratis
             </Link>
             <Link href="/signup" data-cta-location="seo_programari_online_salon_hero_secondary" className="rounded-lg border border-zinc-700 px-5 py-3 font-semibold text-zinc-200 hover:bg-zinc-800">
               Creează cont acum

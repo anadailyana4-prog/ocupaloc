@@ -59,22 +59,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 
-  const activeQuery = await supabase
-    .from("profesionisti")
-    .select("slug, updated_at")
-    .not("slug", "is", null)
-    .eq("activ", true);
+  const { data: rows } = await supabase.from("profesionisti").select("slug, created_at").not("slug", "is", null);
 
-  const fallbackQuery =
-    activeQuery.error != null
-      ? await supabase.from("profesionisti").select("slug, updated_at").not("slug", "is", null)
-      : activeQuery;
-
-  const profilPages: MetadataRoute.Sitemap = (fallbackQuery.data ?? [])
+  const profilPages: MetadataRoute.Sitemap = (rows ?? [])
     .filter((item) => Boolean(item.slug))
     .map((item) => ({
       url: `${baseUrl}/${item.slug}`,
-      lastModified: item.updated_at ? new Date(item.updated_at) : new Date(),
+      lastModified: item.created_at ? new Date(item.created_at) : new Date(),
       changeFrequency: "daily",
       priority: 0.9
     }));
