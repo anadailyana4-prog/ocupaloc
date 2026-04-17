@@ -11,7 +11,7 @@ test.describe("public booking smoke", () => {
     let attempts = 0;
     while (attempts < 3) {
       try {
-        await page.goto(\`/\${bookingSlug}\`, {
+        await page.goto("/" + bookingSlug, {
           waitUntil: "domcontentloaded",
           timeout: 20_000,
         });
@@ -19,7 +19,7 @@ test.describe("public booking smoke", () => {
       } catch (err) {
         attempts++;
         if (attempts === 3) throw err;
-        console.warn(\`Navigation attempt \${attempts} failed, retrying...\`, err.message);
+        console.warn(`Navigation attempt ${attempts} failed, retrying...`, String(err));
         await page.waitForTimeout(1000);
       }
     }
