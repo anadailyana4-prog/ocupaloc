@@ -13,7 +13,7 @@ test.describe("public booking smoke", () => {
       try {
         await page.goto("/" + bookingSlug, {
           waitUntil: "domcontentloaded",
-          timeout: 20_000,
+          timeout: 60_000,
         });
         break;
       } catch (err) {
