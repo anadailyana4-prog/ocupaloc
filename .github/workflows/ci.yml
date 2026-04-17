@@ -26,13 +26,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
-        run: pnpm run typecheck
+        run: pnpm exec tsc --noEmit
 
       - name: Lint
-        run: pnpm run lint
+        run: pnpm exec eslint . --ignore-pattern next-env.d.ts
 
       - name: Build
-        run: pnpm run build
+        run: pnpm exec next build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
