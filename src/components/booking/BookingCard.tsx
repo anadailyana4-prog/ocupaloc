@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { createPublicBooking } from "@/actions/public-booking";
+import { trackBookingEvent } from "@/lib/analytics";
 import { formatSlotLabel } from "@/lib/slots";
 import type { ServiciuRow } from "@/types/db";
 
@@ -125,6 +126,15 @@ function isTenantLive(props: LiveProps): props is LiveProps & { tenantBooking: t
   return props.tenantBooking === true;
 }
 
+function normalizePhone(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function isValidRoPhone(value: string): boolean {
+  const digits = value.replace(/\D/g, "");
+  return digits.length >= 10;
+}
+
 type SlotPick = { start: Date; staffId?: string };
 
 function BookingCardLive(props: LiveProps) {
@@ -140,6 +150,7 @@ function BookingCardLive(props: LiveProps) {
   const [step, setStep] = useState(1);
   const [nume, setNume] = useState("");
   const [telefon, setTelefon] = useState("");
+  const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [successSummary, setSuccessSummary] = useState<{ clientName: string; timeLabel: string } | null>(null);
 
@@ -228,10 +239,26 @@ function BookingCardLive(props: LiveProps) {
         toast.error("Slot invalid (lipsește specialistul).");
         return;
       }
-      if (!nume.trim() || !telefon.trim()) {
-        toast.error("Completează numele și telefonul.");
+      const cleanName = nume.trim();
+      const cleanPhone = normalizePhone(telefon);
+      const cleanEmail = email.trim().toLowerCase();
+      if (!cleanName || !cleanPhone || !cleanEmail) {
+        toast.error("Completează numele, telefonul și emailul.");
         return;
       }
+      if (!isValidRoPhone(cleanPhone)) {
+        toast.error("Introdu un număr de telefon valid.");
+        return;
+      }
+      if (!/^\S+@\S+\.\S+$/.test(cleanEmail)) {
+        toast.error("Introdu un email valid.");
+        return;
+      }
+      trackBookingEvent("booking_submit_started", {
+        mode: "tenant",
+        slug,
+        service_id: selectedService.id
+      });
       setSubmitting(true);
       try {
         const res = await fetch("/api/book", {
@@ -242,23 +269,36 @@ function BookingCardLive(props: LiveProps) {
             serviceId: selectedService.id,
             staffId: selectedPick.staffId,
             startTime: selectedPick.start.toISOString(),
-            clientName: nume.trim(),
-            clientPhone: telefon.trim()
+            clientName: cleanName,
+            clientPhone: cleanPhone,
+            clientEmail: cleanEmail
           })
         });
         const j = (await res.json()) as { success?: boolean; error?: string | Record<string, unknown> };
         if (!res.ok || !j.success) {
           const errMsg = typeof j.error === "string" ? j.error : "Nu s-a putut rezerva.";
+          trackBookingEvent("booking_submit_failed", {
+            mode: "tenant",
+            slug,
+            service_id: selectedService.id,
+            reason: errMsg
+          });
           toast.error(errMsg);
           return;
         }
+        trackBookingEvent("booking_submit_success", {
+          mode: "tenant",
+          slug,
+          service_id: selectedService.id
+        });
         setSuccessSummary({
-          clientName: nume.trim(),
+          clientName: cleanName,
           timeLabel: formatSlotLabel(selectedPick.start)
         });
         setModalOpen(false);
         setNume("");
         setTelefon("");
+        setEmail("");
         void loadSlots();
         setSelectedPick(null);
       } finally {
@@ -266,6 +306,26 @@ function BookingCardLive(props: LiveProps) {
       }
       return;
     }
+    const cleanName = nume.trim();
+    const cleanPhone = normalizePhone(telefon);
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanName || !cleanPhone || !cleanEmail) {
+      toast.error("Completează numele, telefonul și emailul.");
+      return;
+    }
+    if (!isValidRoPhone(cleanPhone)) {
+      toast.error("Introdu un număr de telefon valid.");
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(cleanEmail)) {
+      toast.error("Introdu un email valid.");
+      return;
+    }
+    trackBookingEvent("booking_submit_started", {
+      mode: "public",
+      slug,
+      service_id: selectedService.id
+    });
     setSubmitting(true);
     try {
       const res = await createPublicBooking({
@@ -273,11 +333,18 @@ function BookingCardLive(props: LiveProps) {
         serviciuId: selectedService.id,
         dateStr,
         slotIso: selectedPick.start.toISOString(),
-        numeClient: nume,
-        telefonClient: telefon,
-        emailClient: ""
+        numeClient: cleanName,
+        telefonClient: cleanPhone,
+        emailClient: cleanEmail
       });
       if (!res.ok) {
+        const reason = "message" in res && typeof res.message === "string" ? res.message : "validation_failed";
+        trackBookingEvent("booking_submit_failed", {
+          mode: "public",
+          slug,
+          service_id: selectedService.id,
+          reason
+        });
         if ("message" in res && typeof res.message === "string") {
           toast.error(res.message);
         } else {
@@ -285,11 +352,17 @@ function BookingCardLive(props: LiveProps) {
         }
         return;
       }
+      trackBookingEvent("booking_submit_success", {
+        mode: "public",
+        slug,
+        service_id: selectedService.id
+      });
       toast.success("Programare trimisă! Vei fi contactat pentru confirmare.");
       setModalOpen(false);
       setStep(1);
       setNume("");
       setTelefon("");
+      setEmail("");
       void loadSlots();
     } finally {
       setSubmitting(false);
@@ -363,7 +436,14 @@ function BookingCardLive(props: LiveProps) {
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => setSelectedServiceId(s.id)}
+                  onClick={() => {
+                    setSelectedServiceId(s.id);
+                    trackBookingEvent("booking_service_selected", {
+                      mode: tenant ? "tenant" : "public",
+                      slug,
+                      service_id: s.id
+                    });
+                  }}
                   className={`w-full border text-left transition-colors ${
                     publicPageLayout
                       ? `rounded-2xl px-5 py-5 ${
@@ -403,6 +483,11 @@ function BookingCardLive(props: LiveProps) {
                         onClick={() => {
                           setSelectedDay(day);
                           setSuccessSummary(null);
+                          trackBookingEvent("booking_day_selected", {
+                            mode: tenant ? "tenant" : "public",
+                            slug,
+                            date: format(day, "yyyy-MM-dd")
+                          });
                         }}
                         className={`flex min-w-[4.75rem] shrink-0 flex-col items-center rounded-full border-2 px-4 py-3 transition ${
                           isSel
@@ -492,10 +577,16 @@ function BookingCardLive(props: LiveProps) {
                         type="button"
                         onClick={() => {
                           setSelectedPick(pick);
+                          trackBookingEvent("booking_slot_selected", {
+                            mode: tenant ? "tenant" : "public",
+                            slug,
+                            slot: pick.start.toISOString()
+                          });
                           if (tenant) {
                             setSuccessSummary(null);
                             setNume("");
                             setTelefon("");
+                            setEmail("");
                             setStep(3);
                             setModalOpen(true);
                           }
@@ -582,7 +673,30 @@ function BookingCardLive(props: LiveProps) {
               </div>
               <div>
                 <Label htmlFor="tel">Telefon</Label>
-                <Input id="tel" value={telefon} onChange={(e) => setTelefon(e.target.value)} className="mt-1 border-zinc-700 bg-zinc-900 text-white" />
+                <Input
+                  id="tel"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="07xx xxx xxx"
+                  value={telefon}
+                  onChange={(e) => setTelefon(e.target.value)}
+                  className="mt-1 border-zinc-700 bg-zinc-900 text-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  placeholder="nume@exemplu.ro"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 border-zinc-700 bg-zinc-900 text-white"
+                />
+                <p className="mt-1 text-xs text-zinc-500">Fără cont. Emailul e folosit doar pentru confirmare sau anulare.</p>
               </div>
               <DialogFooter>
                 <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>
@@ -622,7 +736,30 @@ function BookingCardLive(props: LiveProps) {
                   </div>
                   <div>
                     <Label htmlFor="tel">Telefon</Label>
-                    <Input id="tel" value={telefon} onChange={(e) => setTelefon(e.target.value)} className="mt-1 border-zinc-700 bg-zinc-900 text-white" />
+                    <Input
+                      id="tel"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel"
+                      placeholder="07xx xxx xxx"
+                      value={telefon}
+                      onChange={(e) => setTelefon(e.target.value)}
+                      className="mt-1 border-zinc-700 bg-zinc-900 text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="nume@exemplu.ro"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="mt-1 border-zinc-700 bg-zinc-900 text-white"
+                    />
+                    <p className="mt-1 text-xs text-zinc-500">Fără cont. Emailul e folosit doar pentru confirmare sau anulare.</p>
                   </div>
                   <DialogFooter>
                     <Button variant="secondary" type="button" onClick={() => setStep(2)}>

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { trackAuthEvent } from "@/lib/analytics";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { loginSchema } from "@/lib/validators/auth";
 import { toast } from "sonner";
@@ -39,6 +40,8 @@ export default function LoginPage() {
       return;
     }
     toast.success("Autentificare reușită.");
+    trackAuthEvent("login_success", "password");
+    router.push("/dashboard");
     router.refresh();
   }
 
@@ -49,13 +52,64 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${origin}/auth/callback`
+        redirectTo: `${origin}/auth/callback?next=/dashboard`
       }
     });
     setBusy(false);
     if (error) {
       toast.error(error.message);
     }
+  }
+
+  async function signInWithMagicLink() {
+    const email = form.getValues("email").trim();
+    if (!email) {
+      toast.error("Introdu emailul pentru link-ul magic.");
+      return;
+    }
+
+    setBusy(true);
+    const supabase = createSupabaseBrowserClient();
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${origin}/auth/callback?next=/dashboard`
+      }
+    });
+    setBusy(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    trackAuthEvent("magic_link_sent", "email_link");
+    toast.success("Ți-am trimis un link de autentificare pe email.");
+  }
+
+  async function sendPasswordReset() {
+    const email = form.getValues("email").trim();
+    if (!email) {
+      toast.error("Introdu emailul pentru resetarea parolei.");
+      return;
+    }
+
+    setBusy(true);
+    const supabase = createSupabaseBrowserClient();
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${origin}/login`
+    });
+    setBusy(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    trackAuthEvent("password_reset_sent", "email_reset");
+    toast.success("Ți-am trimis emailul pentru resetarea parolei.");
   }
 
   return (
@@ -111,6 +165,17 @@ export default function LoginPage() {
           <Button type="button" variant="outline" className="w-full" onClick={() => void signInWithGoogle()} disabled={busy}>
             Continuă cu Google
           </Button>
+          <Button type="button" variant="secondary" className="w-full" onClick={() => void signInWithMagicLink()} disabled={busy}>
+            Intră cu link pe email
+          </Button>
+          <button
+            type="button"
+            className="w-full text-center text-sm text-primary underline-offset-4 hover:underline"
+            onClick={() => void sendPasswordReset()}
+            disabled={busy}
+          >
+            Ai uitat parola?
+          </button>
         </CardContent>
         <CardFooter className="flex justify-center border-t border-zinc-800 pt-4">
           <p className="text-sm text-muted-foreground">

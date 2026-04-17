@@ -1,34 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
+import { normalizeBookingSlug } from "@/lib/booking/normalize-booking-slug";
 import { parseProgramJson } from "@/lib/program";
+import { checkApiRateLimit } from "@/lib/rate-limit";
 import { computeFreeSlots } from "@/lib/slots";
 import type { ProgramareRow } from "@/types/db";
 
-const RATE_LIMIT = new Map<string, { count: number; reset: number }>();
-
-function checkRateLimit(ip: string, maxRequests = 10, windowMs = 60_000): boolean {
-  const now = Date.now();
-  const record = RATE_LIMIT.get(ip);
-
-  if (!record || now > record.reset) {
-    RATE_LIMIT.set(ip, { count: 1, reset: now + windowMs });
-    return true;
-  }
-
-  if (record.count >= maxRequests) return false;
-
-  record.count += 1;
-  return true;
-}
-
 export async function GET(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  if (!checkRateLimit(ip)) {
+  const slugRaw = req.nextUrl.searchParams.get("slug");
+  const normalizedSlug = normalizeBookingSlug(slugRaw ?? "unknown");
+  const admin = createSupabaseServiceClient();
+  const rateLimit = await checkApiRateLimit(admin, `api:public-slots:${normalizedSlug}:${ip}`, 60, 60_000);
+  if (!rateLimit.allowed) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const slug = req.nextUrl.searchParams.get("slug");
+  const slug = slugRaw ? normalizeBookingSlug(slugRaw) : null;
   const serviciuId = req.nextUrl.searchParams.get("serviciuId");
   const dateStr = req.nextUrl.searchParams.get("date");
   if (!slug || !serviciuId || !dateStr) {
@@ -36,7 +25,6 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const admin = createSupabaseServiceClient();
     const { data: prof, error: e1 } = await admin.from("profesionisti").select("*").eq("slug", slug).maybeSingle();
     if (e1 || !prof) {
       return NextResponse.json({ error: "Pagina nu există." }, { status: 404 });

@@ -28,7 +28,8 @@ const config: Config = {
         oc: "8px"
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"]
+        sans: ["var(--font-jakarta)", "system-ui", "sans-serif"],
+        display: ["var(--font-cormorant)", "Georgia", "serif"]
       },
       boxShadow: {
         oc: "0 1px 2px rgba(0, 0, 0, 0.04)"

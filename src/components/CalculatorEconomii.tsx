@@ -6,7 +6,7 @@ import { Slider } from "@/components/ui/slider";
 import { trackCalculator } from "@/lib/analytics";
 
 const OCUPALOC_PRICE = 99.99;
-const FRESHA_COMMISSION_RON = 10;
+const PLATFORM_COMMISSION_RON = 10;
 
 function formatRon(value: number): string {
   return new Intl.NumberFormat("ro-RO", {
@@ -18,15 +18,15 @@ function formatRon(value: number): string {
 export function CalculatorEconomii() {
   const [bookings, setBookings] = useState(60);
 
-  const fresha = useMemo(() => bookings * FRESHA_COMMISSION_RON, [bookings]);
-  const economieLunara = useMemo(() => Math.max(0, fresha - OCUPALOC_PRICE), [fresha]);
+  const platformCost = useMemo(() => bookings * PLATFORM_COMMISSION_RON, [bookings]);
+  const economieLunara = useMemo(() => Math.max(0, platformCost - OCUPALOC_PRICE), [platformCost]);
   const economieAnuala = useMemo(() => economieLunara * 12, [economieLunara]);
-  const maxBar = Math.max(fresha, OCUPALOC_PRICE);
+  const maxBar = Math.max(platformCost, OCUPALOC_PRICE);
 
   return (
     <section className="space-y-6 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Calculează cât economisești față de Fresha</h2>
+        <h2 className="text-2xl font-bold">Calculează cât economisești față de platformele cu comision</h2>
         <p className="text-sm text-zinc-400">Câte programări faci pe lună? <span className="font-semibold text-zinc-100">{bookings}</span></p>
       </div>
 
@@ -44,9 +44,9 @@ export function CalculatorEconomii() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-          <p className="text-sm text-zinc-400">Fresha</p>
-          <p className="mt-1 text-2xl font-bold">{formatRon(fresha)} RON/lună</p>
-          <p className="text-xs text-zinc-500">~2€ comision / programare</p>
+          <p className="text-sm text-zinc-400">Platformă cu comision</p>
+          <p className="mt-1 text-2xl font-bold">{formatRon(platformCost)} RON/lună</p>
+          <p className="text-xs text-zinc-500">Comision mediu / programare</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
           <p className="text-sm text-zinc-400">Ocupaloc</p>
@@ -65,11 +65,11 @@ export function CalculatorEconomii() {
       <div className="space-y-3">
         <div>
           <div className="mb-1 flex items-center justify-between text-xs text-zinc-400">
-            <span>Fresha</span>
-            <span>{formatRon(fresha)} RON</span>
+            <span>Platformă cu comision</span>
+            <span>{formatRon(platformCost)} RON</span>
           </div>
           <div className="h-3 w-full rounded-full bg-zinc-800">
-            <div className="h-full rounded-full bg-rose-500" style={{ width: `${(fresha / maxBar) * 100}%` }} />
+            <div className="h-full rounded-full bg-rose-500" style={{ width: `${(platformCost / maxBar) * 100}%` }} />
           </div>
         </div>
         <div>

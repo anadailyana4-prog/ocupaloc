@@ -4,48 +4,48 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 221 83% 53%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --background: 218 37% 8%;
+    --foreground: 36 57% 94%;
+    --card: 219 33% 11%;
+    --card-foreground: 36 57% 94%;
+    --popover: 219 33% 11%;
+    --popover-foreground: 36 57% 94%;
+    --primary: 38 68% 67%;
+    --primary-foreground: 220 39% 10%;
+    --secondary: 217 32% 15%;
+    --secondary-foreground: 36 57% 94%;
+    --muted: 217 26% 18%;
+    --muted-foreground: 36 16% 72%;
+    --accent: 194 52% 57%;
+    --accent-foreground: 220 39% 10%;
+    --destructive: 0 78% 62%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 221 83% 53%;
-    --radius: 0.5rem;
+    --border: 217 24% 26%;
+    --input: 217 24% 24%;
+    --ring: 38 68% 67%;
+    --radius: 0.85rem;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 221 83% 53%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --background: 218 37% 8%;
+    --foreground: 36 57% 94%;
+    --card: 219 33% 11%;
+    --card-foreground: 36 57% 94%;
+    --popover: 219 33% 11%;
+    --popover-foreground: 36 57% 94%;
+    --primary: 38 68% 67%;
+    --primary-foreground: 220 39% 10%;
+    --secondary: 217 32% 15%;
+    --secondary-foreground: 36 57% 94%;
+    --muted: 217 26% 18%;
+    --muted-foreground: 36 16% 72%;
+    --accent: 194 52% 57%;
+    --accent-foreground: 220 39% 10%;
+    --destructive: 0 78% 62%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 221 83% 53%;
+    --border: 217 24% 26%;
+    --input: 217 24% 24%;
+    --ring: 38 68% 67%;
   }
 }
 
@@ -53,10 +53,62 @@
   * {
     @apply border-border;
   }
+
+  body {
+    background-color: hsl(var(--background));
+    background-image: radial-gradient(circle at 15% 15%, rgba(246, 197, 110, 0.12), transparent 34%),
+      radial-gradient(circle at 82% 0%, rgba(84, 177, 206, 0.14), transparent 36%),
+      radial-gradient(circle at 50% 100%, rgba(8, 91, 117, 0.22), transparent 44%);
+    color: hsl(var(--foreground));
+  }
 }
 
 .text-balance {
   text-wrap: balance;
+}
+
+.lux-card {
+  @apply rounded-2xl border border-amber-300/20 bg-slate-950/40 backdrop-blur-sm;
+  box-shadow: 0 10px 40px rgba(2, 6, 23, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.lux-cta {
+  @apply rounded-xl px-5 py-3 font-semibold;
+  background: linear-gradient(135deg, #f7d488 0%, #e8b45a 52%, #bb7f2a 100%);
+  color: #111827;
+  box-shadow: 0 10px 24px rgba(246, 197, 110, 0.28);
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.lux-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 14px 30px rgba(246, 197, 110, 0.34);
+}
+
+.lux-outline {
+  @apply rounded-xl border border-amber-200/30 bg-slate-900/40 px-5 py-3 font-semibold text-amber-100;
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+
+.lux-outline:hover {
+  border-color: rgba(253, 230, 138, 0.46);
+  background-color: rgba(23, 37, 84, 0.4);
+}
+
+.section-reveal {
+  animation: section-reveal 600ms ease-out both;
+}
+
+@keyframes section-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Force readable Sonner toasts in dark UI */

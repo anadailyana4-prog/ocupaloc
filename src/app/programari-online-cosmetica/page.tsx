@@ -32,7 +32,7 @@ const faqItems = [
 
 const relatedLinks = [
   { href: "/programari-online-salon", label: "Programări online salon" },
-  { href: "/alternativa-fresha-romania", label: "Alternativă Fresha România" },
+  { href: "/preturi", label: "Prețuri Ocupaloc" },
   { href: "/software-programari-manichiura", label: "Software programări manichiură" },
   { href: "/aplicatie-programari-frizerie", label: "Aplicație programări frizerie" }
 ];

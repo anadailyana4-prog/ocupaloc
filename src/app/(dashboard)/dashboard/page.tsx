@@ -1,12 +1,12 @@
 import { subDays } from "date-fns";
-import { formatInTimeZone } from "date-fns-tz";
+import { formatInTimeZone, toDate } from "date-fns-tz";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { ActivationWidgets } from "./activation-widgets";
 import { CopyPublicLinkButton } from "./copy-public-link";
 import { ProgramariTable, type ProgramareRow } from "./programari-table";
-import { updatePublicSalonFields } from "./actions";
+import { updatePublicSalonFields, updateSmartRules } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,7 +52,9 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   const { data: prof, error: profErr } = await supabase
     .from("profesionisti")
-    .select("id, slug, telefon, description, nume_business, onboarding_pas, program")
+    .select(
+      "id, slug, telefon, description, nume_business, onboarding_pas, program, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes"
+    )
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -86,6 +88,45 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     .order("data_start", { ascending: true })
     .limit(50);
 
+  const todayLocal = formatInTimeZone(new Date(), "Europe/Bucharest", "yyyy-MM-dd");
+  const dayStartIso = toDate(`${todayLocal}T00:00:00`, { timeZone: "Europe/Bucharest" }).toISOString();
+  const dayEndIso = toDate(`${todayLocal}T23:59:59`, { timeZone: "Europe/Bucharest" }).toISOString();
+  const sevenDaysAgoIso = subDays(new Date(), 7).toISOString();
+
+  const { count: remindersSentToday } = await supabase
+    .from("programari_reminders")
+    .select("*", { count: "exact", head: true })
+    .eq("profesionist_id", prof.id)
+    .gte("sent_at", dayStartIso)
+    .lte("sent_at", dayEndIso);
+
+  const { count: cancelledByClient } = await supabase
+    .from("programari_status_events")
+    .select("*", { count: "exact", head: true })
+    .eq("profesionist_id", prof.id)
+    .eq("status", "anulat")
+    .eq("source", "client_link")
+    .gte("created_at", sevenDaysAgoIso);
+
+  const { count: cancelledBySalon } = await supabase
+    .from("programari_status_events")
+    .select("*", { count: "exact", head: true })
+    .eq("profesionist_id", prof.id)
+    .eq("status", "anulat")
+    .eq("source", "salon_dashboard")
+    .gte("created_at", sevenDaysAgoIso);
+
+  const { count: clientConfirmations } = await supabase
+    .from("programari_status_events")
+    .select("*", { count: "exact", head: true })
+    .eq("profesionist_id", prof.id)
+    .eq("status", "confirmat")
+    .eq("source", "client_link")
+    .gte("created_at", sevenDaysAgoIso);
+
+  const clientDecisions = (clientConfirmations ?? 0) + (cancelledByClient ?? 0);
+  const confirmationRate7d = clientDecisions > 0 ? Math.round(((clientConfirmations ?? 0) / clientDecisions) * 100) : null;
+
   const programari: ProgramareRow[] =
     !progErr && rawProg
       ? (rawProg as ProgRow[]).map((p) => {
@@ -104,12 +145,12 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
       : [];
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 section-reveal">
       <ActivationWidgets slug={prof.slug ?? null} profileDone={profileDone} serviciiCount={serviciiCount ?? 0} programSetat={programSetat} />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight">Bun venit, {greetName}</h1>
+          <h1 className="font-display text-3xl font-semibold tracking-wide text-amber-50">Bun venit, {greetName}</h1>
           <p className="text-sm text-muted-foreground">Autentificat ca {user.email ?? "—"}</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -129,9 +170,33 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
         <div className="rounded-2xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-200">{decodeURIComponent(sp.error)}</div>
       ) : null}
 
-      <section className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-6">
-        <h2 className="text-lg font-semibold tracking-tight">Date publice</h2>
-        <p className="text-sm text-muted-foreground">Telefonul și descrierea apar pe pagina publică a salonului.</p>
+      <section className="space-y-4">
+        <div>
+          <h2 className="font-display text-2xl font-semibold tracking-wide text-amber-100">Pulse business</h2>
+          <p className="text-sm text-muted-foreground">KPI operaționali pentru ultimele 7 zile.</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="lux-card p-5">
+            <p className="text-sm text-amber-100/75">Reminder-e trimise azi</p>
+            <p className="mt-2 text-3xl font-bold text-amber-50">{remindersSentToday ?? 0}</p>
+          </div>
+          <div className="lux-card p-5">
+            <p className="text-sm text-amber-100/75">Anulări client vs salon (7z)</p>
+            <p className="mt-2 text-3xl font-bold text-amber-50">
+              {cancelledByClient ?? 0} <span className="text-amber-200/40">/</span> {cancelledBySalon ?? 0}
+            </p>
+            <p className="mt-1 text-xs text-amber-100/50">client / salon</p>
+          </div>
+          <div className="lux-card p-5">
+            <p className="text-sm text-amber-100/75">Rată confirmare client (7z)</p>
+            <p className="mt-2 text-3xl font-bold text-amber-50">{confirmationRate7d === null ? "—" : `${confirmationRate7d}%`}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="lux-card space-y-4 p-6">
+        <h2 className="font-display text-2xl font-semibold tracking-wide text-amber-100">Date publice</h2>
+        <p className="text-sm text-muted-foreground">Telefonul și descrierea apar pe pagina publică a business-ului tău.</p>
         <form action={updatePublicSalonFields} className="max-w-xl space-y-4">
           <div className="space-y-2">
             <Label htmlFor="telefon">Telefon</Label>
@@ -155,8 +220,87 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
               className="resize-y border-zinc-700 bg-zinc-900"
             />
           </div>
-          <Button type="submit" className="rounded-full">
+          <Button type="submit" className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105">
             Salvează datele publice
+          </Button>
+        </form>
+      </section>
+
+      <section className="lux-card space-y-4 p-6">
+        <h2 className="font-display text-2xl font-semibold tracking-wide text-amber-100">Reguli smart pentru programări</h2>
+        <p className="text-sm text-muted-foreground">
+          Aceste reguli sunt opționale și se aplică doar dacă le activezi. Tu alegi cum îți protejezi agenda.
+        </p>
+        <form action={updateSmartRules} className="max-w-2xl space-y-4">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              name="smart_rules_enabled"
+              type="checkbox"
+              defaultChecked={Boolean(prof.smart_rules_enabled)}
+              className="h-4 w-4 rounded border-zinc-700 bg-zinc-900"
+            />
+            Activează reguli smart
+          </label>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="smart_max_future_bookings">Maxim programări viitoare per client</Label>
+              <Input
+                id="smart_max_future_bookings"
+                name="smart_max_future_bookings"
+                type="number"
+                min={0}
+                max={10}
+                defaultValue={prof.smart_max_future_bookings ?? 0}
+                className="border-zinc-700 bg-zinc-900"
+              />
+              <p className="text-xs text-muted-foreground">0 = fără limită</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="smart_min_notice_minutes">Minim minute înainte de programare</Label>
+              <Input
+                id="smart_min_notice_minutes"
+                name="smart_min_notice_minutes"
+                type="number"
+                min={0}
+                max={1440}
+                defaultValue={prof.smart_min_notice_minutes ?? 0}
+                className="border-zinc-700 bg-zinc-900"
+              />
+              <p className="text-xs text-muted-foreground">0 = permit inclusiv rezervări imediate</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="smart_client_cancel_threshold">Blocare după anulări client</Label>
+              <Input
+                id="smart_client_cancel_threshold"
+                name="smart_client_cancel_threshold"
+                type="number"
+                min={0}
+                max={10}
+                defaultValue={prof.smart_client_cancel_threshold ?? 0}
+                className="border-zinc-700 bg-zinc-900"
+              />
+              <p className="text-xs text-muted-foreground">0 = dezactivat</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="smart_cancel_window_days">Fereastră analiză anulări (zile)</Label>
+              <Input
+                id="smart_cancel_window_days"
+                name="smart_cancel_window_days"
+                type="number"
+                min={7}
+                max={365}
+                defaultValue={prof.smart_cancel_window_days ?? 60}
+                className="border-zinc-700 bg-zinc-900"
+              />
+            </div>
+          </div>
+
+          <Button type="submit" className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105">
+            Salvează reguli smart
           </Button>
         </form>
       </section>

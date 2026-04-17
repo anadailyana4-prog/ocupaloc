@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import { Toaster } from "sonner";
 
@@ -7,22 +7,29 @@ import { AnalyticsEvents } from "@/components/analytics/AnalyticsEvents";
 import { Header } from "@/components/Header";
 import "./globals.css";
 
-const inter = Inter({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  variable: "--font-inter",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-jakarta",
+  display: "swap"
+});
+
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-cormorant",
   display: "swap"
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://ocupaloc.ro"),
   title: {
-    default: "Ocupaloc - Link de programare pentru frizeri și saloane",
+    default: "Ocupaloc - Programări online pentru orice business",
     template: "%s | Ocupaloc"
   },
   description:
-    "Creează linkul tău de programare online în 2 minute. Gratuit pentru frizeri, coafori și saloane. Fără comisioane.",
-  keywords: ["programare online", "frizer", "coafor", "salon", "booking", "programari"],
+    "Creează linkul tău de programare online în 2 minute. Potrivit pentru saloane, clinici, consultanți, studiouri și orice business bazat pe programări.",
+  keywords: ["programare online", "booking", "programari", "rezervari", "software programari", "business"],
   authors: [{ name: "Ocupaloc" }],
   creator: "Ocupaloc",
   openGraph: {
@@ -30,14 +37,14 @@ export const metadata: Metadata = {
     locale: "ro_RO",
     url: "https://ocupaloc.ro",
     siteName: "Ocupaloc",
-    title: "Ocupaloc - Programări online pentru saloane",
-    description: "Link de programare pentru frizeri și coafori",
+    title: "Ocupaloc - Programări online pentru orice business",
+    description: "Link de programare pentru servicii, clinici, saloane și profesioniști independenți",
     images: [{ url: "/og-image.svg", width: 1200, height: 630 }]
   },
   twitter: {
     card: "summary_large_image",
     title: "Ocupaloc",
-    description: "Programări online pentru saloane",
+    description: "Programări online pentru orice business",
     images: ["/og-image.svg"]
   },
   robots: {
@@ -88,7 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           />
         ) : null}
       </head>
-      <body className={`${inter.variable} min-h-screen bg-background font-sans text-foreground antialiased`}>
+      <body className={`${jakarta.variable} ${cormorant.variable} min-h-screen bg-background font-sans text-foreground antialiased`}>
         <AnalyticsEvents />
         <Header />
         {children}

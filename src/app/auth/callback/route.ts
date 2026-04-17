@@ -17,8 +17,8 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
-  const safeNext = next.startsWith("/") && !next.startsWith("//") && !next.includes("://") ? next : "/";
+  const next = searchParams.get("next") ?? "/dashboard";
+  const safeNext = next.startsWith("/") && !next.startsWith("//") && !next.includes("://") ? next : "/dashboard";
 
   if (code) {
     const response = NextResponse.redirect(new URL(safeNext, request.url));

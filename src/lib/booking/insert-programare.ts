@@ -17,6 +17,35 @@ export type InsertProgramareResult =
   | { ok: true; programareId: string }
   | { ok: false; message: string };
 
+async function countClientCancellationsInWindow(
+  admin: SupabaseClient,
+  profesionistId: string,
+  phone: string,
+  cutoffIso: string
+): Promise<number> {
+  const { data: events } = await admin
+    .from("programari_status_events")
+    .select("programare_id")
+    .eq("profesionist_id", profesionistId)
+    .eq("status", "anulat")
+    .eq("source", "client_link")
+    .gte("created_at", cutoffIso);
+
+  const bookingIds = Array.from(new Set((events ?? []).map((e) => e.programare_id).filter(Boolean)));
+  if (bookingIds.length === 0) {
+    return 0;
+  }
+
+  const { count } = await admin
+    .from("programari")
+    .select("id", { count: "exact", head: true })
+    .in("id", bookingIds)
+    .eq("profesionist_id", profesionistId)
+    .eq("telefon_client", phone);
+
+  return count ?? 0;
+}
+
 /**
  * Inserează o programare publică pentru un profesionist (slug).
  * Verifică clienti_blocati, serviciu, slot liber, apoi insert.
@@ -46,6 +75,45 @@ export async function insertProgramareForProfSlug(
     };
   }
 
+  const startRequest = new Date(input.slotIso);
+  if (Number.isNaN(startRequest.getTime())) {
+    return { ok: false, message: "Oră invalidă." };
+  }
+
+  if (prof.smart_rules_enabled) {
+    const minNotice = Number(prof.smart_min_notice_minutes ?? 0);
+    if (minNotice > 0) {
+      const minAllowed = new Date(Date.now() + minNotice * 60_000);
+      if (startRequest.getTime() < minAllowed.getTime()) {
+        return { ok: false, message: `Rezervările se fac cu minim ${minNotice} minute înainte.` };
+      }
+    }
+
+    const maxFuture = Number(prof.smart_max_future_bookings ?? 0);
+    if (maxFuture > 0) {
+      const { count: futureCount } = await admin
+        .from("programari")
+        .select("id", { count: "exact", head: true })
+        .eq("profesionist_id", prof.id)
+        .eq("telefon_client", phone)
+        .eq("status", "confirmat")
+        .gte("data_start", new Date().toISOString());
+      if ((futureCount ?? 0) >= maxFuture) {
+        return { ok: false, message: "Ai atins limita de programări active pentru această locație." };
+      }
+    }
+
+    const cancelThreshold = Number(prof.smart_client_cancel_threshold ?? 0);
+    const windowDays = Number(prof.smart_cancel_window_days ?? 60);
+    if (cancelThreshold > 0) {
+      const cutoff = new Date(Date.now() - Math.max(7, windowDays) * 24 * 60 * 60 * 1000).toISOString();
+      const cancellations = await countClientCancellationsInWindow(admin, prof.id, phone, cutoff);
+      if (cancellations >= cancelThreshold) {
+        return { ok: false, message: `Momentan nu poți rezerva online. Te rugăm să contactezi direct ${prof.telefon ?? "business-ul"}.` };
+      }
+    }
+  }
+
   const { data: srv, error: e2 } = await admin
     .from("servicii")
     .select("*")
@@ -57,7 +125,7 @@ export async function insertProgramareForProfSlug(
     return { ok: false, message: "Serviciu invalid." };
   }
 
-  const dataStart = new Date(input.slotIso);
+  const dataStart = startRequest;
   if (Number.isNaN(dataStart.getTime())) {
     return { ok: false, message: "Oră invalidă." };
   }
@@ -118,6 +186,10 @@ export async function insertProgramareForProfSlug(
     .select("id")
     .single();
   if (ins || !inserted?.id) {
+    const code = (ins as { code?: string } | null)?.code;
+    if (code === "23P01") {
+      return { ok: false, message: "Slotul nu mai e disponibil. Alege altă oră." };
+    }
     return { ok: false, message: ins?.message ?? "Nu am putut crea programarea." };
   }
 
