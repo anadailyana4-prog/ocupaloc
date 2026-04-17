@@ -49,12 +49,12 @@ export async function middleware(request: NextRequest) {
   });
 
   const {
-    data: { session }
-  } = await supabase.auth.getSession();
+    data: { user }
+  } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const hasSession = session != null;
-  const userId = session?.user?.id;
+  const hasSession = user != null;
+  const userId = user?.id;
 
   if ((path.startsWith("/dashboard") || path === "/onboarding") && !hasSession) {
     const redirect = NextResponse.redirect(new URL("/login", request.url));
