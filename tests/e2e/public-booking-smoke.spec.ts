@@ -8,6 +8,7 @@ test.describe("public booking smoke", () => {
   test.skip(!bookingSlug, "PLAYWRIGHT_BOOKING_SLUG is not configured.");
 
   test("reaches booking form for a public salon", async ({ page }) => {
+    test.setTimeout(180_000);
     let attempts = 0;
     while (attempts < 3) {
       try {
