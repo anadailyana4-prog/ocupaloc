@@ -5,7 +5,7 @@ import Script from "next/script";
 export const metadata: Metadata = {
   title: "Programări Online Cosmetică | Software Salon",
   description:
-    "Software salon pentru programari online în cosmetică: fără comision, preț fix 99,99 RON și organizare simplă pentru tratamente faciale și corporale."
+    "Software salon pentru programari online în cosmetică: fără comision, preț fix 59,99 RON și organizare simplă pentru tratamente faciale și corporale."
 };
 
 const faqItems = [
@@ -21,7 +21,7 @@ const faqItems = [
   },
   {
     question: "Care este prețul?",
-    answer: "Prețul este 99,99 RON pe lună, fără comision pe rezervare."
+    answer: "Prețul este 59,99 RON pe lună, fără comision pe rezervare."
   },
   {
     question: "Ce canale pot folosi pentru link-ul de rezervare?",
@@ -55,7 +55,7 @@ export default function ProgramariOnlineCosmeticaPage() {
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Gestionează programările pentru cosmetică</h1>
           <p className="mt-4 text-lg leading-relaxed text-zinc-300">
-            Cu Ocupaloc ai programari online fără comision pentru servicii de cosmetică. Software salon cu preț fix 99,99 RON și control complet pe program.
+            Cu Ocupaloc ai programari online fără comision pentru servicii de cosmetică. Software salon cu preț fix 59,99 RON și control complet pe program.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/signup" data-cta-location="seo_cosmetica_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
@@ -86,7 +86,7 @@ export default function ProgramariOnlineCosmeticaPage() {
           </p>
           <p className="leading-relaxed text-zinc-300">
             Pentru cabinetele de cosmetică, predictibilitatea costurilor este la fel de importantă ca predictibilitatea agendei. Un model fără comision îți protejează
-            marja, mai ales în lunile aglomerate. La 99,99 RON lunar, poți calcula simplu cât investești în platformă și poți decide mai bine ce buget aloci pentru
+            marja, mai ales în lunile aglomerate. La 59,99 RON lunar, poți calcula simplu cât investești în platformă și poți decide mai bine ce buget aloci pentru
             produse, training sau promovare. Programari online trebuie să genereze profit, nu să îl consume prin taxe variabile.
           </p>
           <p className="leading-relaxed text-zinc-300">
@@ -106,7 +106,7 @@ export default function ProgramariOnlineCosmeticaPage() {
           </p>
           <p className="leading-relaxed text-zinc-300">
             Dacă vrei să construiești un business de cosmetică modern și profitabil, ai nevoie de procese clare, nu doar de prezență online. Cu software salon fără
-            comision, la 99,99 RON, ai fundația potrivită pentru creștere sustenabilă. Programari online nu mai sunt un „nice to have”, ci standardul pe care clientele
+            comision, la 59,99 RON, ai fundația potrivită pentru creștere sustenabilă. Programari online nu mai sunt un „nice to have”, ci standardul pe care clientele
             îl așteaptă deja.
           </p>
         </section>

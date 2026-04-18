@@ -129,7 +129,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" autoComplete="email" {...field} />
+                      <Input data-testid="login-email-input" type="email" autoComplete="email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -142,13 +142,13 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Parolă</FormLabel>
                     <FormControl>
-                      <Input type="password" autoComplete="current-password" {...field} />
+                      <Input data-testid="login-password-input" type="password" autoComplete="current-password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={busy}>
+              <Button data-testid="login-submit" type="submit" className="w-full" disabled={busy}>
                 {busy ? "Se autentifică…" : "Continuă"}
               </Button>
               {submitError ? <p className="text-sm text-red-400">{submitError}</p> : null}

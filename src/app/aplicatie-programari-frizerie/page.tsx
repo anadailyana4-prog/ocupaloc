@@ -5,7 +5,7 @@ import Script from "next/script";
 export const metadata: Metadata = {
   title: "Aplicație Programări Frizerie | Fără Comision",
   description:
-    "Aplicație de programari online pentru frizeri și barberi: software salon fără comision, preț fix 99,99 RON, cu setup rapid."
+    "Aplicație de programari online pentru frizeri și barberi: software salon fără comision, preț fix 59,99 RON, cu setup rapid."
 };
 
 const faqItems = [
@@ -22,7 +22,7 @@ const faqItems = [
   {
     question: "De ce fără comision este important?",
     answer:
-      "Pentru că la volum mare de rezervări comisioanele cresc mult. Cu 99,99 RON lunar ai cost fix și marjă mai bună."
+      "Pentru că la volum mare de rezervări comisioanele cresc mult. Cu 59,99 RON lunar ai cost fix și marjă mai bună."
   },
   {
     question: "Pot începe fără echipă tehnică?",
@@ -56,7 +56,7 @@ export default function AplicatieProgramariFrizeriePage() {
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Aplicație programări pentru frizeri și barberi</h1>
           <p className="mt-4 text-lg leading-relaxed text-zinc-300">
-            Organizează agenda rapid cu programari online fără comision. Ocupaloc este software salon pentru frizerie, cu preț clar: 99,99 RON pe lună.
+            Organizează agenda rapid cu programari online fără comision. Ocupaloc este software salon pentru frizerie, cu preț clar: 59,99 RON pe lună.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/signup" data-cta-location="seo_frizerie_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
@@ -87,7 +87,7 @@ export default function AplicatieProgramariFrizeriePage() {
           </p>
           <p className="leading-relaxed text-zinc-300">
             Din punct de vedere financiar, modelul fără comision este critic. Dacă plătești taxă per rezervare, cu cât muncești mai mult, cu atât platforma îți ia mai
-            mult din venit. Cu Ocupaloc ai 99,99 RON fix pe lună. Acest cost predictibil îți permite să investești în oameni, în training sau în amenajare, nu în comisioane.
+            mult din venit. Cu Ocupaloc ai 59,99 RON fix pe lună. Acest cost predictibil îți permite să investești în oameni, în training sau în amenajare, nu în comisioane.
             Pentru un software salon destinat creșterii, aceasta este una dintre cele mai importante decizii.
           </p>
           <p className="leading-relaxed text-zinc-300">
@@ -106,7 +106,7 @@ export default function AplicatieProgramariFrizeriePage() {
           </p>
           <p className="leading-relaxed text-zinc-300">
             Dacă vrei să construiești o frizerie care crește constant, ai nevoie de infrastructură digitală, nu doar de marketing. Un software salon fără comision,
-            la 99,99 RON, îți oferă baza potrivită pentru volum, retenție și reputație. Programari online nu înseamnă doar tehnologie, ci control asupra timpului tău.
+            la 59,99 RON, îți oferă baza potrivită pentru volum, retenție și reputație. Programari online nu înseamnă doar tehnologie, ci control asupra timpului tău.
           </p>
         </section>
 

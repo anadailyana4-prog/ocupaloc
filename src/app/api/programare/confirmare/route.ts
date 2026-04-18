@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { logBookingStatusEvent } from "@/lib/booking/status-events";
 import { verifyBookingConfirmationLink } from "@/lib/booking/confirmation-link";
 import { notifyProfesionistClientResponse } from "@/lib/email/programare-notify";
+import { reportError } from "@/lib/observability";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 export async function GET(req: NextRequest) {
@@ -47,7 +48,14 @@ export async function GET(req: NextRequest) {
       status: targetStatus,
       source: "client_link"
     });
-    await notifyProfesionistClientResponse(booking, targetStatus);
+    try {
+      await notifyProfesionistClientResponse(booking, targetStatus);
+    } catch (notifyError) {
+      reportError("email", "notify_profesionist_client_response_failed", notifyError, {
+        bookingId: booking,
+        status: targetStatus
+      });
+    }
   }
 
   const rel = current.profesionisti as { slug?: string } | { slug?: string }[] | null;

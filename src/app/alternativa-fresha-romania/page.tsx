@@ -3,16 +3,16 @@ import Link from "next/link";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Comparație Costuri Programări | Fără Comision 99,99 RON",
+  title: "Comparație Costuri Programări | Fără Comision 59,99 RON",
   description:
-    "Descoperă de ce Ocupaloc este alegerea potrivită pentru saloane din România: software în română, fără comision, la 99,99 RON pe lună."
+    "Descoperă de ce Ocupaloc este alegerea potrivită pentru saloane din România: software în română, fără comision, la 59,99 RON pe lună."
 };
 
 const faqItems = [
   {
     question: "De ce este Ocupaloc o alternativă la platformele cu comision?",
     answer:
-      "Pentru că oferă software salon în limba română, cost fix de 99,99 RON și model fără comision per programare."
+      "Pentru că oferă software salon în limba română, cost fix de 59,99 RON și model fără comision per programare."
   },
   {
     question: "Pot migra rapid de pe altă platformă?",
@@ -27,12 +27,12 @@ const faqItems = [
   {
     question: "Există costuri ascunse?",
     answer:
-      "Nu. Prețul este 99,99 RON pe lună, fără comision, fără taxe suplimentare pe rezervări."
+      "Nu. Prețul este 59,99 RON pe lună, fără comision, fără taxe suplimentare pe rezervări."
   }
 ];
 
 const comparisons = [
-  { label: "Preț lunar", ocupaloc: "99,99 RON", platforma: "Variabil" },
+  { label: "Preț lunar", ocupaloc: "59,99 RON", platforma: "Variabil" },
   { label: "Comision per programare", ocupaloc: "Fără comision", platforma: "Da" },
   { label: "Suport în română", ocupaloc: "Da", platforma: "Limitat" },
   { label: "Fără reclame", ocupaloc: "Da", platforma: "Nu" },
@@ -64,7 +64,7 @@ export default function ComparatieCosturiProgramariPage() {
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Comparație costuri: platforme cu comision vs Ocupaloc</h1>
           <p className="mt-4 text-lg leading-relaxed text-zinc-300">
-            Dacă vrei programari online fără comision, suport local și cost clar de 99,99 RON, Ocupaloc este software salon construit pentru piața din România.
+            Dacă vrei programari online fără comision, suport local și cost clar de 59,99 RON, Ocupaloc este software salon construit pentru piața din România.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/signup" data-cta-location="seo_alternativa_fresha_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
@@ -105,7 +105,7 @@ export default function ComparatieCosturiProgramariPage() {
             este exact situația în care apare nevoia unei alternative locale: o soluție simplă, care îți oferă control financiar.
           </p>
           <p className="leading-relaxed text-zinc-300">
-            Ocupaloc folosește un model transparent: 99,99 RON pe lună, fără comision. Pentru proprietarii de software salon, această predictibilitate este o diferență
+            Ocupaloc folosește un model transparent: 59,99 RON pe lună, fără comision. Pentru proprietarii de software salon, această predictibilitate este o diferență
             majoră. Poți bugeta corect, poți seta campanii și oferte fără să te întrebi cât vei mai plăti la final de lună în taxe ascunse. Practic, performanța ta nu
             mai este penalizată. Dacă faci mai multe programari online, păstrezi beneficiul în business.
           </p>
@@ -127,7 +127,7 @@ export default function ComparatieCosturiProgramariPage() {
           <p className="leading-relaxed text-zinc-300">
             Din perspectiva marketingului, modelul fără comision îți oferă libertate mai mare de testare. Poți rula promoții de tip „sloturi de dimineață”, pachete
             pentru clienți recurenți sau campanii sezoniere fără să îți fie teamă că platforma îți „mănâncă” profitul prin taxe crescute. Când costul este fix la
-            99,99 RON, fiecare rezervare suplimentară are impact direct pozitiv în încasări.
+            59,99 RON, fiecare rezervare suplimentară are impact direct pozitiv în încasări.
           </p>
           <p className="leading-relaxed text-zinc-300">
             Trebuie menționată și componenta de brand. Un salon care folosește software programari online modern transmite profesionalism, organizare și grijă pentru
@@ -136,7 +136,7 @@ export default function ComparatieCosturiProgramariPage() {
           </p>
           <p className="leading-relaxed text-zinc-300">
             Dacă obiectivul tău este creștere sustenabilă, nu doar volum temporar, atunci alternativa corectă trebuie să îți ofere control, claritate și suport local.
-            Ocupaloc bifează exact aceste puncte: programari online fără comision, software salon adaptat pieței românești și preț fix de 99,99 RON. Pentru multe
+            Ocupaloc bifează exact aceste puncte: programari online fără comision, software salon adaptat pieței românești și preț fix de 59,99 RON. Pentru multe
             business-uri, această combinație este suficientă ca să facă schimbarea de pe platformele cu comision și să păstreze mai mult din valoarea pe care o creează în fiecare zi.
           </p>
         </section>

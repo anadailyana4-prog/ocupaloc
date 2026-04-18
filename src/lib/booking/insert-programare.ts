@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { checkBookingEntitlement } from "@/lib/billing/entitlements";
 import { parseProgramJson } from "@/lib/program";
 import { calcDataFinalProgramare, computeFreeSlots } from "@/lib/slots";
 
@@ -60,6 +61,16 @@ export async function insertProgramareForProfSlug(
   const { data: prof, error: e1 } = await admin.from("profesionisti").select("*").eq("slug", input.slug).maybeSingle();
   if (e1 || !prof) {
     return { ok: false, message: "Pagina nu există." };
+  }
+
+  // Entitlement check: subscription active / within trial window
+  const entitlement = await checkBookingEntitlement(
+    admin,
+    prof.id as string,
+    prof.created_at as string
+  );
+  if (!entitlement.allowed) {
+    return { ok: false, message: entitlement.reason };
   }
 
   const { data: blocked } = await admin

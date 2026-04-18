@@ -3,9 +3,9 @@ import Link from "next/link";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Software Programări Manichiură | 99,99 RON/lună",
+  title: "Software Programări Manichiură | 59,99 RON/lună",
   description:
-    "Programari online pentru manichiură și pedichiură: software salon fără comision, preț fix 99,99 RON și proces simplu pentru cliente."
+    "Programari online pentru manichiură și pedichiură: software salon fără comision, preț fix 59,99 RON și proces simplu pentru cliente."
 };
 
 const faqItems = [
@@ -21,7 +21,7 @@ const faqItems = [
   },
   {
     question: "Cât costă abonamentul?",
-    answer: "Costul este 99,99 RON pe lună, fără comision la rezervări."
+    answer: "Costul este 59,99 RON pe lună, fără comision la rezervări."
   },
   {
     question: "Cum încep?",
@@ -54,7 +54,7 @@ export default function SoftwareProgramariManichiuraPage() {
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Programări online pentru manichiură și pedichiură</h1>
           <p className="mt-4 text-lg leading-relaxed text-zinc-300">
-            Dacă lucrezi în nail care, ai nevoie de un software salon care simplifică fiecare zi. Cu Ocupaloc ai programari online fără comision, cost fix 99,99 RON și
+            Dacă lucrezi în nail care, ai nevoie de un software salon care simplifică fiecare zi. Cu Ocupaloc ai programari online fără comision, cost fix 59,99 RON și
             control complet asupra agendei.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
@@ -86,7 +86,7 @@ export default function SoftwareProgramariManichiuraPage() {
           </p>
           <p className="leading-relaxed text-zinc-300">
             Costul contează la fel de mult. În zona de beauty, marja poate fi afectată rapid de taxe și comisioane. Un model fără comision este mai sănătos pe termen
-            lung, mai ales când ai volum bun de programari online. Cu 99,99 RON pe lună, știi exact cât plătești și păstrezi mai mult din încasări. Pentru orice
+            lung, mai ales când ai volum bun de programari online. Cu 59,99 RON pe lună, știi exact cât plătești și păstrezi mai mult din încasări. Pentru orice
             profesionist independent, predictibilitatea financiară face diferența între muncă multă și profit real.
           </p>
           <p className="leading-relaxed text-zinc-300">

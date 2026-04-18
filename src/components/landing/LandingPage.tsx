@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { BookingCard } from "@/components/booking/BookingCard";
+import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
 
 export function LandingPage() {
   const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
@@ -54,6 +55,13 @@ export function LandingPage() {
           <div className="flex items-center gap-2 sm:gap-3">
             <nav className="hidden items-center gap-6 text-sm text-amber-100/75 md:flex">
               <a href="#pricing" className="hover:text-amber-50">Prețuri</a>
+              <a
+                href={CONTACT_MAILTO}
+                aria-label={`Contactează echipa Ocupaloc la ${CONTACT_EMAIL}`}
+                className="rounded-sm transition hover:text-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              >
+                Contact
+              </a>
             </nav>
             <Link
               href="/login"
@@ -84,7 +92,7 @@ export function LandingPage() {
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link href="/signup" data-analytics="homepage_cta_signup" data-cta-location="homepage_hero" className="lux-cta">
-                Încearcă 7 zile gratis
+                Încearcă 14 zile gratis
               </Link>
               <button type="button" className="lux-outline" onClick={() => setIsWalkthroughOpen(true)}>
                 Vezi fluxul complet
@@ -160,7 +168,7 @@ export function LandingPage() {
 
               <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-amber-200/15 pt-5">
                 <Link href="/signup" className="lux-cta" data-cta-location="homepage_walkthrough_modal">
-                  Încearcă 7 zile gratis
+                  Încearcă 14 zile gratis
                 </Link>
                 <a href="#pricing" className="lux-outline" onClick={() => setIsWalkthroughOpen(false)}>
                   Vezi prețurile
@@ -237,7 +245,7 @@ export function LandingPage() {
         <div className="max-w-md mx-auto lux-card p-8">
           <div className="text-center mb-6">
             <div className="text-3xl font-extrabold">
-              99,99 lei<span className="text-lg text-amber-100/50 font-normal">/lună</span>
+              59,99 lei<span className="text-lg text-amber-100/50 font-normal">/lună</span>
             </div>
             <div className="text-sm text-amber-100/50 mt-1">per locație • TVA inclus</div>
           </div>
@@ -292,10 +300,10 @@ export function LandingPage() {
       <section className="mx-auto max-w-4xl px-4 pb-16 pt-4 text-center">
         <div className="lux-card p-8">
           <h3 className="font-display text-3xl font-semibold text-amber-50 md:text-4xl">Dacă programările sunt haotice, soluția poate fi simplă.</h3>
-          <p className="mt-3 text-base text-amber-100/70">Pornire rapidă, fără implementări complicate. Primești acces instant și poți testa complet 7 zile.</p>
+          <p className="mt-3 text-base text-amber-100/70">Pornire rapidă, fără implementări complicate. Primești acces instant și poți testa complet 14 zile.</p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link href="/signup" data-analytics="homepage_cta_signup" data-cta-location="homepage_final_cta" className="lux-cta">
-              Încearcă 7 zile gratis
+              Încearcă 14 zile gratis
             </Link>
             <button type="button" className="lux-outline" onClick={() => setIsWalkthroughOpen(true)}>
               Vezi fluxul complet
@@ -331,6 +339,16 @@ export function LandingPage() {
               <div className="font-semibold mb-3 text-white">Suport</div>
               <ul className="space-y-2 text-zinc-500">
                 <li>
+                  <a
+                    href={CONTACT_MAILTO}
+                    aria-label={`Trimite email către ${CONTACT_EMAIL}`}
+                    className="inline-flex rounded-sm text-zinc-300 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                  >
+                    Contact
+                  </a>
+                </li>
+                <li className="text-zinc-400">{CONTACT_EMAIL}</li>
+                <li>
                   <a href="https://wa.me/40700000000" target="_blank" className="hover:text-zinc-300" rel="noreferrer">
                     WhatsApp
                   </a>
@@ -365,7 +383,16 @@ export function LandingPage() {
           </div>
           <div className="pt-8 border-t border-zinc-900 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-zinc-600">
             <div>© 2026 ocupaloc.ro. Toate drepturile rezervate.</div>
-            <div>Date găzduite în UE. Conform GDPR.</div>
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+              <span>Date găzduite în UE. Conform GDPR.</span>
+              <a
+                href={CONTACT_MAILTO}
+                aria-label={`Contactează Ocupaloc la ${CONTACT_EMAIL}`}
+                className="rounded-sm text-zinc-400 underline decoration-zinc-700 underline-offset-4 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              >
+                {CONTACT_EMAIL}
+              </a>
+            </div>
           </div>
         </div>
       </footer>
@@ -403,7 +430,7 @@ export function DemoLandingPreview({ businessName, city, businessType, services,
       <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-8">
         <h1 className="text-4xl font-extrabold tracking-tight">{businessName} - {city}</h1>
         <p className="mt-3 text-zinc-300">
-          Exemplu de pagină pentru {businessType.toLowerCase()} cu programări online și preț fix 99,99 RON/lună, fără comision.
+          Exemplu de pagină pentru {businessType.toLowerCase()} cu programări online și preț fix 59,99 RON/lună, fără comision.
         </p>
         <div className="mt-6 grid gap-3 md:grid-cols-3">
           {serviceLabels.map((service) => (

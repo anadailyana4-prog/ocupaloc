@@ -1,6 +1,7 @@
 import { formatInTimeZone } from "date-fns-tz";
 
 import { createBookingConfirmationLink } from "@/lib/booking/confirmation-link";
+import { reportError } from "@/lib/observability";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 const TZ = "Europe/Bucharest";
@@ -14,6 +15,44 @@ export type ProgramareNotifyInput = {
   appointmentStart: Date;
 };
 
+async function sendResendEmail(input: {
+  to: string[];
+  subject: string;
+  text: string;
+  event: string;
+  context?: Record<string, unknown>;
+}): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const from = process.env.RESEND_FROM?.trim();
+
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY lipsă");
+  }
+
+  if (!from) {
+    throw new Error("RESEND_FROM lipsă");
+  }
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from,
+      to: input.to,
+      subject: input.subject,
+      text: input.text
+    })
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Resend ${res.status}: ${body || input.event}`);
+  }
+}
+
 /**
  * Notificare salon după programare nouă (Resend).
  * Fără RESEND_API_KEY emailul nu se trimite.
@@ -24,40 +63,18 @@ export async function notifyProfesionistNewProgramare(input: ProgramareNotifyInp
   const subject = `Rezervare nouă - ${input.clientName}`;
   const text = `${input.clientName} (${input.clientPhone}) a rezervat ${input.serviceName} pe ${dataStr} la ${timeStr}`;
 
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) {
-    console.warn("RESEND_API_KEY lipsă - emailul nu a fost trimis");
-    return;
-  }
-
   const dest = input.to?.trim();
   if (!dest) {
     return;
   }
 
-  const from = process.env.RESEND_FROM;
-
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        from,
-        to: [dest],
-        subject,
-        text
-      })
-    });
-    if (!res.ok) {
-      const b = await res.text().catch(() => "");
-      console.error("[notifyProfesionistNewProgramare] Resend", res.status, b);
-    }
-  } catch (e) {
-    console.error("[notifyProfesionistNewProgramare]", e);
-  }
+  await sendResendEmail({
+    to: [dest],
+    subject,
+    text,
+    event: "notify_profesionist_new_booking_failed",
+    context: { dest }
+  });
 }
 
 type ProgramareNotifyContext = {
@@ -129,7 +146,6 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
   const confirmLink = createBookingConfirmationLink({ bookingId: row.id, action: "confirm" });
   const cancelLink = createBookingConfirmationLink({ bookingId: row.id, action: "cancel" });
 
-  const from = process.env.RESEND_FROM;
   const subject = `Confirmă programarea la ${salonName}`;
   const text = [
     `Salut ${row.nume_client},`,
@@ -142,33 +158,16 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
     "Dacă nu ai făcut tu această rezervare, poți ignora acest email."
   ].join("\n");
 
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        from,
-        to: [clientEmail],
-        subject,
-        text
-      })
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error("[notifyClientBookingConfirmation] Resend", res.status, body);
-    }
-  } catch (e) {
-    console.error("[notifyClientBookingConfirmation]", e);
-  }
+  await sendResendEmail({
+    to: [clientEmail],
+    subject,
+    text,
+    event: "notify_client_booking_confirmation_failed",
+    context: { clientEmail, bookingId: row.id }
+  });
 }
 
 export async function notifyClientBookingCancelledBySalon(programareId: string): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) return;
-
   const admin = createSupabaseServiceClient();
   const { data: row } = await admin
     .from("programari")
@@ -186,8 +185,6 @@ export async function notifyClientBookingCancelledBySalon(programareId: string):
   const salonName = profesionist?.nume_business?.trim() || "salon";
   const dataStr = formatInTimeZone(new Date(String(row.data_start)), TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(new Date(String(row.data_start)), TZ, "HH:mm");
-  const from = process.env.RESEND_FROM;
-
   const subject = `Actualizare programare la ${salonName}`;
   const text = [
     `Salut ${row.nume_client},`,
@@ -196,26 +193,16 @@ export async function notifyClientBookingCancelledBySalon(programareId: string):
     "",
     "Dacă dorești, poți face o nouă rezervare folosind pagina salonului."
   ].join("\n");
-
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      from,
-      to: [row.email_client.trim()],
-      subject,
-      text
-    })
-  }).catch(() => undefined);
+  await sendResendEmail({
+    to: [row.email_client.trim()],
+    subject,
+    text,
+    event: "notify_client_booking_cancelled_failed",
+    context: { programareId, clientEmail: row.email_client.trim() }
+  });
 }
 
 export async function notifyClientBookingRescheduledBySalon(programareId: string): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) return;
-
   const admin = createSupabaseServiceClient();
   const { data: row } = await admin
     .from("programari")
@@ -233,7 +220,6 @@ export async function notifyClientBookingRescheduledBySalon(programareId: string
   const salonName = profesionist?.nume_business?.trim() || "salon";
   const dataStr = formatInTimeZone(new Date(String(row.data_start)), TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(new Date(String(row.data_start)), TZ, "HH:mm");
-  const from = process.env.RESEND_FROM;
   const rebookUrl = `${(process.env.NEXT_PUBLIC_SITE_URL || "https://ocupaloc.ro").replace(/\/$/, "")}/${profesionist?.slug ?? ""}`;
 
   const subject = `Programare reprogramată la ${salonName}`;
@@ -245,20 +231,13 @@ export async function notifyClientBookingRescheduledBySalon(programareId: string
     "",
     `Detalii/Reprogramare: ${rebookUrl}`
   ].join("\n");
-
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      from,
-      to: [row.email_client.trim()],
-      subject,
-      text
-    })
-  }).catch(() => undefined);
+  await sendResendEmail({
+    to: [row.email_client.trim()],
+    subject,
+    text,
+    event: "notify_client_booking_rescheduled_failed",
+    context: { programareId, clientEmail: row.email_client.trim() }
+  });
 }
 
 export async function notifyClientReminder(programareId: string, tip: "24h" | "2h"): Promise<boolean> {
@@ -283,8 +262,6 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
   const startsAt = new Date(String(row.data_start));
   const dataStr = formatInTimeZone(startsAt, TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(startsAt, TZ, "HH:mm");
-  const from = process.env.RESEND_FROM;
-
   const subject = tip === "24h" ? `Reminder: ai programare mâine la ${salonName}` : `Reminder: ai programare în curând la ${salonName}`;
   const text = [
     `Salut ${row.nume_client},`,
@@ -296,39 +273,22 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
   ].join("\n");
 
   try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        from,
-        to: [row.email_client.trim()],
-        subject,
-        text
-      })
+    await sendResendEmail({
+      to: [row.email_client.trim()],
+      subject,
+      text,
+      event: "notify_client_reminder_failed",
+      context: { programareId, tip, clientEmail: row.email_client.trim() }
     });
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error("[notifyClientReminder] Resend", res.status, body);
-      return false;
-    }
 
     return true;
   } catch (e) {
-    console.error("[notifyClientReminder]", e);
+    reportError("email", "notify_client_reminder_failed", e, { programareId, tip });
     return false;
   }
 }
 
 export async function notifyProfesionistClientResponse(programareId: string, status: "confirmat" | "anulat"): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  if (!apiKey) {
-    return;
-  }
-
   const admin = createSupabaseServiceClient();
   const { data: row, error } = await admin
     .from("programari")
@@ -361,27 +321,11 @@ export async function notifyProfesionistClientResponse(programareId: string, sta
     `Telefon: ${row.telefon_client}`
   ].join("\n");
 
-  const from = process.env.RESEND_FROM;
-
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        from,
-        to: [to],
-        subject,
-        text
-      })
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error("[notifyProfesionistClientResponse] Resend", res.status, body);
-    }
-  } catch (e) {
-    console.error("[notifyProfesionistClientResponse]", e);
-  }
+  await sendResendEmail({
+    to: [to],
+    subject,
+    text,
+    event: "notify_profesionist_client_response_failed",
+    context: { programareId, status, to }
+  });
 }

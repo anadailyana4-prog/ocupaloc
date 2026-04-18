@@ -1,29 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
-
-function extractBearerToken(authHeader: string | null): string | null {
-  if (!authHeader) return null;
-  const [scheme, token] = authHeader.split(" ");
-  if (!scheme || !token) return null;
-  if (scheme.toLowerCase() !== "bearer") return null;
-  return token.trim() || null;
-}
+import { validateCronSecret } from "@/lib/cron-auth";
 
 export async function GET(req: NextRequest) {
-  const configured = (process.env.RATE_LIMITS_CRON_SECRET || process.env.REMINDERS_CRON_SECRET || "").trim();
-
-  if (!configured && process.env.NODE_ENV === "production") {
-    return NextResponse.json({ ok: false, error: "RATE_LIMITS_CRON_SECRET is not configured" }, { status: 500 });
-  }
-
-  if (configured) {
-    const customHeaderToken = req.headers.get("x-cron-secret")?.trim();
-    const bearerToken = extractBearerToken(req.headers.get("authorization"));
-    const token = customHeaderToken || bearerToken;
-    if (!token || token !== configured) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-    }
+  const configured = (process.env.RATE_LIMITS_CRON_SECRET || process.env.REMINDERS_CRON_SECRET || "").trim() || undefined;
+  if (!validateCronSecret(req.headers, configured)) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
   const admin = createSupabaseServiceClient();

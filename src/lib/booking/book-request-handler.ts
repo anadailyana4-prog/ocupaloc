@@ -107,12 +107,15 @@ export async function handleBookRequest(
       };
     }
 
-    const [notifyProfResult] = await Promise.allSettled([
+    const [notifyProfResult, notifyClientResult] = await Promise.allSettled([
       deps.notifyProfesionist(res.programareId),
       deps.notifyClient(res.programareId)
     ]);
     if (notifyProfResult.status === "rejected") {
       reportError("booking", "notify_profesionist_failed", notifyProfResult.reason, { slug: normalizedSlug });
+    }
+    if (notifyClientResult.status === "rejected") {
+      reportError("email", "notify_client_failed", notifyClientResult.reason, { slug: normalizedSlug });
     }
 
     return {

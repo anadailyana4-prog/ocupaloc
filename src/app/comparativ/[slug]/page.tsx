@@ -35,7 +35,7 @@ export default async function ComparativPage({ params }: PageProps) {
   const faqItems = [
     {
       q: "Care este diferența principală față de platformele cu comision?",
-      a: "Ocupaloc are preț fix 99,99 RON/lună, comision 0 și suport în limba română."
+      a: "Ocupaloc are preț fix 59,99 RON/lună, comision 0 și suport în limba română."
     },
     {
       q: "Există comision pe rezervări la Ocupaloc?",
@@ -80,7 +80,7 @@ export default async function ComparativPage({ params }: PageProps) {
             <tbody>
               <tr className="border-t border-zinc-800">
                 <td className="px-4 py-3">Preț lunar</td>
-                <td className="px-4 py-3 font-semibold text-emerald-300">99,99 RON</td>
+                <td className="px-4 py-3 font-semibold text-emerald-300">59,99 RON</td>
               </tr>
               <tr className="border-t border-zinc-800">
                 <td className="px-4 py-3">Comision per programare</td>

@@ -155,6 +155,11 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
         </div>
         <div className="flex flex-wrap gap-2">
           <CopyPublicLinkButton slug={prof.slug} />
+          <form action="/api/billing/portal" method="post">
+            <Button type="submit" variant="secondary" className="rounded-full">
+              Gestionează abonamentul
+            </Button>
+          </form>
           <Button asChild variant="secondary" className="rounded-full">
             <Link href={`/${prof.slug}`} target="_blank" rel="noreferrer">
               Deschide pagina publică

@@ -1,0 +1,5 @@
+WARNING! NEXT_PUBLIC_ variables can be seen by anyone visiting your site
+Retrieving project…
+? Add NEXT_PUBLIC_CONTACT_EMAIL to which Git branch? (leave empty for all
+Preview branches)?[1A[94G[1B
+[?25h

@@ -11,7 +11,7 @@ const posts = [
   {
     slug: "fresha-cat-costa-romania",
     title: "Cât te costă platformele cu comision și cum îți protejezi marja",
-    excerpt: "Analiză detaliată a costurilor pe comision și de ce modelul 99,99 RON fără comision poate fi mai profitabil."
+    excerpt: "Analiză detaliată a costurilor pe comision și de ce modelul 59,99 RON fără comision poate fi mai profitabil."
   },
   {
     slug: "cum-sa-reduci-anularile",

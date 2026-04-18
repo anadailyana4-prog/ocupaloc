@@ -6,6 +6,7 @@ import { z } from "zod";
 import { insertProgramareForProfSlug } from "@/lib/booking/insert-programare";
 import { normalizeBookingSlug } from "@/lib/booking/normalize-booking-slug";
 import { notifyClientBookingConfirmation, notifyProfesionistDespreProgramare } from "@/lib/email/programare-notify";
+import { reportError } from "@/lib/observability";
 import { checkApiRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
@@ -48,11 +49,21 @@ export async function createPublicBooking(raw: z.infer<typeof schema>) {
     if (!res.ok) {
       return { ok: false as const, message: res.message };
     }
-    await notifyProfesionistDespreProgramare(res.programareId);
-    await notifyClientBookingConfirmation(res.programareId);
+    const [notifyProfResult, notifyClientResult] = await Promise.allSettled([
+      notifyProfesionistDespreProgramare(res.programareId),
+      notifyClientBookingConfirmation(res.programareId)
+    ]);
+    if (notifyProfResult.status === "rejected") {
+      reportError("email", "notify_profesionist_failed", notifyProfResult.reason, { slug: normalizedSlug });
+    }
+    if (notifyClientResult.status === "rejected") {
+      reportError("email", "notify_client_failed", notifyClientResult.reason, { slug: normalizedSlug });
+    }
+
     return { ok: true as const };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Eroare la salvare.";
+    reportError("booking", "public_booking_failed", e, { slug: normalizedSlug });
     return { ok: false as const, message };
   }
 }

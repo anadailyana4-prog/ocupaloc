@@ -31,7 +31,7 @@ export default function DemoPage() {
       <form action={loginDemo} className="w-full max-w-md space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-6 text-center">
         <h1 className="text-xl font-semibold">Acces demo</h1>
         <p className="text-sm text-zinc-400">Autentificarea demo se face securizat, doar din variabile de mediu server-side.</p>
-        <Button type="submit" className="w-full">
+        <Button data-testid="demo-login-submit" type="submit" className="w-full">
           Intră în demo
         </Button>
       </form>

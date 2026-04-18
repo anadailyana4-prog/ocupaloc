@@ -69,7 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     url: "https://ocupaloc.ro",
     offers: {
       "@type": "Offer",
-      price: "99.99",
+      price: "59.99",
       priceCurrency: "RON"
     }
   };

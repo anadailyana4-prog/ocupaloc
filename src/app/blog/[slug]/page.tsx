@@ -22,7 +22,7 @@ const POSTS: Post[] = [
     content: `
 Multe saloane aleg platforme pe comision pentru programari online fiindcă par simple la început. Problema apare când volumul crește, iar costul variabil începe să consume marja. În România, unde costurile operaționale cresc constant, predictibilitatea este critică.
 
-Un software salon pe comision taxează performanța. Cu cât ai mai multe rezervări, cu atât plătești mai mult. Dacă faci 60 de programări și comisionul mediu este în jur de 10 RON, ajungi la aproximativ 600 RON lunar. Dacă urci la 120 programări, costul aproape se dublează. În modelul cu 99,99 RON fără comision, costul rămâne fix.
+Un software salon pe comision taxează performanța. Cu cât ai mai multe rezervări, cu atât plătești mai mult. Dacă faci 60 de programări și comisionul mediu este în jur de 10 RON, ajungi la aproximativ 600 RON lunar. Dacă urci la 120 programări, costul aproape se dublează. În modelul cu 59,99 RON fără comision, costul rămâne fix.
 
 Diferența de cost nu este doar contabilă, ci strategică. Banii economisiți pot susține training, marketing local sau investiții în experiența din salon. Asta înseamnă creștere care rămâne în business, nu într-o taxă care crește odată cu succesul.
 
@@ -32,7 +32,7 @@ Din perspectiva brandului, programari online ar trebui să consolideze relația 
 
 Migrarea poate fi făcută etapizat: setezi serviciile principale, configurezi programul, publici link-ul în canalele active și imporți baza de clienți. În două săptămâni, de regulă, fluxul devine stabil.
 
-Pe termen lung, diferența dintre comision și abonament fix poate însemna mii de lei economisiți anual. Aceste sume pot fi reinvestite în proiecte cu impact real. Pentru multe saloane, modelul 99,99 RON fără comision este o alegere de business mai sănătoasă.
+Pe termen lung, diferența dintre comision și abonament fix poate însemna mii de lei economisiți anual. Aceste sume pot fi reinvestite în proiecte cu impact real. Pentru multe saloane, modelul 59,99 RON fără comision este o alegere de business mai sănătoasă.
 
 Concluzia este clară: dacă vrei control financiar și creștere sustenabilă, programari online cu cost fix și software salon local reprezintă o fundație mai bună decât un model taxat per rezervare.
 
@@ -64,7 +64,7 @@ Analiza datelor este esențială. Urmărește ce intervale au cele mai multe anu
 
 Poți aplica reguli diferențiate: flexibilitate pentru clienții corecți, confirmare mai strictă pentru cei cu istoric de no-show. Acest echilibru protejează venitul fără să afecteze experiența bună.
 
-Impactul financiar este mare. O reducere modestă a no-show-urilor poate adăuga mii de lei anual. Dacă ai și model fără comision la 99,99 RON, păstrezi și mai mult din valoarea fiecărei rezervări.
+Impactul financiar este mare. O reducere modestă a no-show-urilor poate adăuga mii de lei anual. Dacă ai și model fără comision la 59,99 RON, păstrezi și mai mult din valoarea fiecărei rezervări.
 
 Pe termen lung, consistența operațională devine avantaj competitiv. Clienții apreciază punctualitatea, iar echipa lucrează cu mai puțin stres.
 
@@ -90,7 +90,7 @@ Din perspectiva timpului, diferența este mare. Minutele consumate pe apeluri re
 
 Conversia crește când traseul este scurt: alegere serviciu, alegere interval, confirmare. În modelul pe telefon, clientul poate amâna sau abandona.
 
-Costul platformei contează. Dacă există comision per rezervare, marja scade odată cu creșterea. Cu cost fix 99,99 RON și fără comision, păstrezi predictibilitatea.
+Costul platformei contează. Dacă există comision per rezervare, marja scade odată cu creșterea. Cu cost fix 59,99 RON și fără comision, păstrezi predictibilitatea.
 
 Telefonul poate rămâne canal secundar pentru excepții, dar fluxul principal merită mutat în digital. Clienții se adaptează rapid când procesul este comunicat clar.
 
@@ -150,7 +150,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
         <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/20 p-6 text-center">
           <h3 className="text-xl font-semibold">Vrei mai multe rezervări fără comision?</h3>
-          <p className="mt-2 text-sm text-zinc-300">Începe cu un software salon la 99,99 RON și mută toate programările în online.</p>
+          <p className="mt-2 text-sm text-zinc-300">Începe cu un software salon la 59,99 RON și mută toate programările în online.</p>
           <Link href="/signup" data-cta-location={`blog_${post.slug}_cta`} className="mt-4 inline-flex rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-500">
             Creează cont gratuit
           </Link>

@@ -3,9 +3,9 @@ import Link from "next/link";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Programări Online Salon | Software 99,99 RON/lună Fără Comision",
+  title: "Programări Online Salon | Software 59,99 RON/lună Fără Comision",
   description:
-    "Software românesc de programări pentru saloane beauty. Frizerie, manichiură, cosmetică. Fără comision, la 99,99 RON/lună."
+    "Software românesc de programări pentru saloane beauty. Frizerie, manichiură, cosmetică. Fără comision, la 59,99 RON/lună."
 };
 
 const faqItems = [
@@ -17,7 +17,7 @@ const faqItems = [
   {
     question: "Cât costă software-ul pentru programari online?",
     answer:
-      "Prețul este fix: 99,99 RON pe lună, fără comision per programare. Știi exact cât plătești indiferent de numărul de rezervări."
+      "Prețul este fix: 59,99 RON pe lună, fără comision per programare. Știi exact cât plătești indiferent de numărul de rezervări."
   },
   {
     question: "Pot să import clienții din Excel sau altă platformă?",
@@ -60,12 +60,12 @@ export default function ProgramariOnlineSalonPage() {
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Programari online pentru salonul tău, fără comision</h1>
           <p className="mt-4 max-w-3xl text-lg leading-relaxed text-zinc-300">
             Dacă ai un software salon care simplifică rezervările, câștigi timp, reduci conversațiile repetitive și păstrezi 100% din încasări. Ocupaloc este
-            soluția de programari online creată pentru saloane beauty din România: frizerie, manichiură, cosmetică și masaj. Preț fix 99,99 RON pe lună, fără comision
+            soluția de programari online creată pentru saloane beauty din România: frizerie, manichiură, cosmetică și masaj. Preț fix 59,99 RON pe lună, fără comision
             la fiecare client nou.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/signup" data-cta-location="seo_programari_online_salon_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
-              Încearcă 7 zile gratis
+              Încearcă 14 zile gratis
             </Link>
             <Link href="/signup" data-cta-location="seo_programari_online_salon_hero_secondary" className="rounded-lg border border-zinc-700 px-5 py-3 font-semibold text-zinc-200 hover:bg-zinc-800">
               Creează cont acum
@@ -83,7 +83,7 @@ export default function ProgramariOnlineSalonPage() {
           <article className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
             <h2 className="text-xl font-semibold">Fără comision</h2>
             <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-              Cu 99,99 RON pe lună ai cost predictibil. Nu pierzi bani la fiecare client, ceea ce contează enorm când agenda începe să se umple.
+              Cu 59,99 RON pe lună ai cost predictibil. Nu pierzi bani la fiecare client, ceea ce contează enorm când agenda începe să se umple.
             </p>
           </article>
           <article className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
@@ -97,7 +97,7 @@ export default function ProgramariOnlineSalonPage() {
         <section className="rounded-2xl border border-emerald-700/40 bg-emerald-950/20 p-6">
           <h2 className="text-2xl font-bold">Cât economisești cu Ocupaloc</h2>
           <p className="mt-3 leading-relaxed text-zinc-200">
-            Dacă ai 60 de programari online într-o lună și plătești comision per rezervare, costul poate trece ușor de 600 RON. Cu Ocupaloc plătești 99,99 RON, fără
+            Dacă ai 60 de programari online într-o lună și plătești comision per rezervare, costul poate trece ușor de 600 RON. Cu Ocupaloc plătești 59,99 RON, fără
             comision. Diferența rămâne în business și o poți reinvesti în produse, training sau echipamente. Pe termen lung, un software salon cu preț fix te ajută
             să crești sănătos și să nu fii penalizat tocmai când ai cele mai multe programări.
           </p>
@@ -123,7 +123,7 @@ export default function ProgramariOnlineSalonPage() {
           </p>
           <p className="leading-relaxed text-zinc-300">
             Costul este, de asemenea, un factor decisiv. Mulți antreprenori acceptă comisioane mari pentru că par mici la început. Când faci calculele pe 6 sau 12 luni,
-            comisionul depășește rapid un abonament fix. 99,99 RON este un prag simplu de înțeles și ușor de planificat. Nu ești surprins la final de lună și nu trebuie
+            comisionul depășește rapid un abonament fix. 59,99 RON este un prag simplu de înțeles și ușor de planificat. Nu ești surprins la final de lună și nu trebuie
             să ajustezi prețurile din cauza platformei. Un model fără comision îți păstrează marja și te ajută să scalezi când cererea crește.
           </p>
           <p className="leading-relaxed text-zinc-300">
@@ -142,7 +142,7 @@ export default function ProgramariOnlineSalonPage() {
             Cu software salon potrivit, ai mai mult timp pentru calitatea serviciilor și pentru creșterea business-ului.
           </p>
           <p className="leading-relaxed text-zinc-300">
-            În final, programari online nu sunt doar un trend, ci o infrastructură de lucru pentru salonul modern. Când combini preț fix 99,99 RON, model fără comision
+            În final, programari online nu sunt doar un trend, ci o infrastructură de lucru pentru salonul modern. Când combini preț fix 59,99 RON, model fără comision
             și experiență simplă pentru client, obții un avantaj competitiv real. Iar acest avantaj nu vine din promisiuni mari, ci din procese zilnice mai bune, care
             îți aduc încasări mai stabile, clienți mai mulțumiți și mai puțin stres operațional.
           </p>

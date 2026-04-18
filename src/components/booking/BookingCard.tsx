@@ -436,6 +436,7 @@ function BookingCardLive(props: LiveProps) {
                 <button
                   key={s.id}
                   type="button"
+                  data-testid="service-option"
                   onClick={() => {
                     setSelectedServiceId(s.id);
                     trackBookingEvent("booking_service_selected", {
@@ -480,6 +481,7 @@ function BookingCardLive(props: LiveProps) {
                       <button
                         key={day.toISOString()}
                         type="button"
+                        data-testid="day-option"
                         onClick={() => {
                           setSelectedDay(day);
                           setSuccessSummary(null);
@@ -535,6 +537,7 @@ function BookingCardLive(props: LiveProps) {
                       <button
                         key={day.toISOString()}
                         type="button"
+                        data-testid="day-option"
                         onClick={() => setSelectedDay(day)}
                         className={`flex aspect-square items-center justify-center rounded ${
                           isSel ? "bg-[#1d4ed8] font-semibold text-white" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
@@ -575,6 +578,7 @@ function BookingCardLive(props: LiveProps) {
                       <button
                         key={`${pick.start.toISOString()}_${pick.staffId ?? "x"}`}
                         type="button"
+                        data-testid="slot-option"
                         onClick={() => {
                           setSelectedPick(pick);
                           trackBookingEvent("booking_slot_selected", {
@@ -619,6 +623,7 @@ function BookingCardLive(props: LiveProps) {
             </div>
             <button
               type="button"
+              data-testid="booking-continue"
               disabled={!selectedService || !selectedDay || !selectedPick}
               onClick={() => {
                 if (tenant) {
@@ -669,12 +674,19 @@ function BookingCardLive(props: LiveProps) {
               ) : null}
               <div>
                 <Label htmlFor="nume">Nume</Label>
-                <Input id="nume" value={nume} onChange={(e) => setNume(e.target.value)} className="mt-1 border-zinc-700 bg-zinc-900 text-white" />
+                <Input
+                  id="nume"
+                  data-testid="booking-name-input"
+                  value={nume}
+                  onChange={(e) => setNume(e.target.value)}
+                  className="mt-1 border-zinc-700 bg-zinc-900 text-white"
+                />
               </div>
               <div>
                 <Label htmlFor="tel">Telefon</Label>
                 <Input
                   id="tel"
+                  data-testid="booking-phone-input"
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"
@@ -688,6 +700,7 @@ function BookingCardLive(props: LiveProps) {
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
+                  data-testid="booking-email-input"
                   type="email"
                   inputMode="email"
                   autoComplete="email"
@@ -702,7 +715,7 @@ function BookingCardLive(props: LiveProps) {
                 <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>
                   Anulează
                 </Button>
-                <Button className="bg-[#1d4ed8] hover:bg-[#1e40af]" disabled={submitting} type="button" onClick={() => void submitBooking()}>
+                <Button data-testid="booking-submit" className="bg-[#1d4ed8] hover:bg-[#1e40af]" disabled={submitting} type="button" onClick={() => void submitBooking()}>
                   {submitting ? "Se trimite…" : "Trimite"}
                 </Button>
               </DialogFooter>
@@ -712,7 +725,7 @@ function BookingCardLive(props: LiveProps) {
               {step === 1 && (
                 <div className="space-y-3">
                   <p className="text-sm text-zinc-300">Serviciu: {selectedService ? serviceTitle(selectedService) : "—"}</p>
-                  <Button className="w-full bg-[#1d4ed8] hover:bg-[#1e40af]" onClick={() => setStep(2)}>
+                  <Button data-testid="booking-step-1-continue" className="w-full bg-[#1d4ed8] hover:bg-[#1e40af]" onClick={() => setStep(2)}>
                     Continuă
                   </Button>
                 </div>
@@ -723,7 +736,7 @@ function BookingCardLive(props: LiveProps) {
                     {selectedDay ? format(selectedDay, "EEEE, d MMMM yyyy", { locale: ro }) : ""} —{" "}
                     {selectedPick ? formatSlotLabel(selectedPick.start) : ""}
                   </p>
-                  <Button className="w-full bg-[#1d4ed8] hover:bg-[#1e40af]" onClick={() => setStep(3)}>
+                  <Button data-testid="booking-step-2-continue" className="w-full bg-[#1d4ed8] hover:bg-[#1e40af]" onClick={() => setStep(3)}>
                     Continuă
                   </Button>
                 </div>
@@ -732,12 +745,19 @@ function BookingCardLive(props: LiveProps) {
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="nume">Nume</Label>
-                    <Input id="nume" value={nume} onChange={(e) => setNume(e.target.value)} className="mt-1 border-zinc-700 bg-zinc-900 text-white" />
+                    <Input
+                      id="nume"
+                      data-testid="booking-name-input"
+                      value={nume}
+                      onChange={(e) => setNume(e.target.value)}
+                      className="mt-1 border-zinc-700 bg-zinc-900 text-white"
+                    />
                   </div>
                   <div>
                     <Label htmlFor="tel">Telefon</Label>
                     <Input
                       id="tel"
+                      data-testid="booking-phone-input"
                       type="tel"
                       inputMode="tel"
                       autoComplete="tel"
@@ -751,6 +771,7 @@ function BookingCardLive(props: LiveProps) {
                     <Label htmlFor="email">Email</Label>
                     <Input
                       id="email"
+                      data-testid="booking-email-input"
                       type="email"
                       inputMode="email"
                       autoComplete="email"
@@ -765,7 +786,7 @@ function BookingCardLive(props: LiveProps) {
                     <Button variant="secondary" type="button" onClick={() => setStep(2)}>
                       Înapoi
                     </Button>
-                    <Button className="bg-[#1d4ed8] hover:bg-[#1e40af]" disabled={submitting} type="button" onClick={() => void submitBooking()}>
+                    <Button data-testid="booking-submit" className="bg-[#1d4ed8] hover:bg-[#1e40af]" disabled={submitting} type="button" onClick={() => void submitBooking()}>
                       Trimite
                     </Button>
                   </DialogFooter>

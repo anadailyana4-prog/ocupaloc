@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-const OCUPALOC_PRICE = 99.99;
+const OCUPALOC_PRICE = 59.99;
 const COMMISSION_PER_BOOKING = 10;
 
 function formatRon(value: number): string {

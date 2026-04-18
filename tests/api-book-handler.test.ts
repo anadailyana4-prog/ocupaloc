@@ -68,6 +68,18 @@ test("handleBookRequest still returns 200 when notifyProfesionist rejects", asyn
   assert.equal(result.body.success, true);
 });
 
+test("handleBookRequest still returns 200 when notifyClient rejects", async () => {
+  const deps = makeDeps({
+    notifyClient: async () => {
+      throw new Error("SMTP timeout");
+    }
+  });
+
+  const result = await handleBookRequest(validPayload, "127.0.0.1", deps);
+  assert.equal(result.status, 200);
+  assert.equal(result.body.success, true);
+});
+
 test("handleBookRequest returns 403 when insertBooking returns block message", async () => {
   const deps = makeDeps({
     insertBooking: async () => ({ ok: false, message: "Ne pare rău, sună la salon pentru programare." })

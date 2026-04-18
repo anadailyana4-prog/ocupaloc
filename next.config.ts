@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const securityHeaders = [
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
@@ -56,4 +57,22 @@ const nextConfig: NextConfig = {
   }
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Source map upload — only when SENTRY_ORG and SENTRY_PROJECT are set
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  // Don't print Sentry logs during build unless CI
+  silent: !process.env.CI,
+  // Wider client file upload for better stack traces
+  widenClientFileUpload: true,
+  // Tunnel Sentry requests through own domain to avoid ad-blockers
+  tunnelRoute: "/monitoring",
+  webpack: {
+    // Keep our cron alerting manual.
+    automaticVercelMonitors: false,
+    treeshake: {
+      removeDebugLogging: true
+    }
+  }
+});

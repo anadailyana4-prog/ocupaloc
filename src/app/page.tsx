@@ -10,7 +10,7 @@ export default function Home() {
     applicationCategory: "BusinessApplication",
     offers: {
       "@type": "Offer",
-      price: "99.99",
+      price: "59.99",
       priceCurrency: "RON"
     },
     description: "Software de programări online pentru orice business bazat pe rezervări, cu preț fix și flux complet de confirmare.",

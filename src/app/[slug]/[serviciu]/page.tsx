@@ -72,7 +72,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: `Programări online ${serviciuTitle} ${orasTitle}`,
-    description: `Programări online pentru ${serviciuTitle} în ${orasTitle}. Preț fix 99,99 RON/lună, fără comision.`
+    description: `Programări online pentru ${serviciuTitle} în ${orasTitle}. Preț fix 59,99 RON/lună, fără comision.`
   };
 }
 

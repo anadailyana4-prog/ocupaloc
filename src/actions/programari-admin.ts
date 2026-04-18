@@ -5,6 +5,7 @@ import { formatInTimeZone, toDate } from "date-fns-tz";
 
 import { logBookingStatusEvent } from "@/lib/booking/status-events";
 import { notifyClientBookingRescheduledBySalon } from "@/lib/email/programare-notify";
+import { reportError } from "@/lib/observability";
 import { calcDataFinalProgramare } from "@/lib/slots";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -142,7 +143,11 @@ export async function moveProgramare(input: { programareId: string; targetDateSt
     .eq("profesionist_id", profId);
   if (up) return { ok: false as const, message: up.message };
   await logBookingStatusEvent({ bookingId: row.id, status: "confirmat", source: "salon_reschedule" });
-  await notifyClientBookingRescheduledBySalon(row.id);
+  try {
+    await notifyClientBookingRescheduledBySalon(row.id);
+  } catch (error) {
+    reportError("email", "notify_client_reschedule_failed", error, { bookingId: row.id });
+  }
   return { ok: true as const };
 }
 
@@ -198,6 +203,10 @@ export async function rescheduleProgramare(input: { programareId: string; dataSt
     .eq("profesionist_id", profId);
   if (up) return { ok: false as const, message: up.message };
   await logBookingStatusEvent({ bookingId: row.id, status: "confirmat", source: "salon_reschedule" });
-  await notifyClientBookingRescheduledBySalon(row.id);
+  try {
+    await notifyClientBookingRescheduledBySalon(row.id);
+  } catch (error) {
+    reportError("email", "notify_client_reschedule_failed", error, { bookingId: row.id });
+  }
   return { ok: true as const };
 }
