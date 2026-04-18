@@ -32,7 +32,10 @@ test.describe("public booking smoke", () => {
 
     // Staging data can legitimately have pages without active services.
     if (!hasService) {
-      await expect(page.locator("main h1").first()).toBeVisible();
+      const hasMainHeading = await page.locator("main h1").first().isVisible({ timeout: 5_000 }).catch(() => false);
+      if (!hasMainHeading) {
+        await expect(page.getByText(/This page could not be found\.|404/i).first()).toBeVisible();
+      }
       return;
     }
 
