@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { BILLING_TRIAL_DAYS, isBillingEnabled } from "@/lib/billing/config";
+import { isBookingStatusEligible, normalizeBillingStatus } from "@/lib/billing/subscriptions";
 
 export type BookingEntitlementResult = {
   allowed: boolean;
@@ -8,11 +9,10 @@ export type BookingEntitlementResult = {
 };
 
 export async function checkBookingEntitlement(
-  _admin: SupabaseClient,
-  _profesionistId: string,
+  admin: SupabaseClient,
+  profesionistId: string,
   profesionistCreatedAt: string
 ): Promise<BookingEntitlementResult> {
-  // Billing checks are soft-gated until full webhook persistence is enabled.
   if (!isBillingEnabled()) {
     return { allowed: true, reason: "" };
   }
@@ -27,6 +27,26 @@ export async function checkBookingEntitlement(
     return { allowed: true, reason: "" };
   }
 
-  // Keep booking path available; Stripe enforces charging cadence after trial.
-  return { allowed: true, reason: "" };
+  const { data, error } = await admin
+    .from("billing_subscriptions")
+    .select("status,trial_end")
+    .eq("profesionist_id", profesionistId)
+    .maybeSingle();
+
+  if (error) {
+    return { allowed: false, reason: "Abonamentul nu este activ." };
+  }
+
+  // A future trial_end from Stripe snapshot extends access even after local signup trial window.
+  const subscriptionTrialEnd = data?.trial_end ? new Date(data.trial_end) : null;
+  if (subscriptionTrialEnd && !Number.isNaN(subscriptionTrialEnd.getTime()) && Date.now() <= subscriptionTrialEnd.getTime()) {
+    return { allowed: true, reason: "" };
+  }
+
+  const status = normalizeBillingStatus(data?.status);
+  if (isBookingStatusEligible(status)) {
+    return { allowed: true, reason: "" };
+  }
+
+  return { allowed: false, reason: "Abonamentul nu este activ." };
 }
