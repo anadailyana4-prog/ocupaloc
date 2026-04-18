@@ -177,3 +177,34 @@ To activate Stripe later:
    - export completed timestamp
    - delete completed timestamp
    - operator
+
+## Restore Drill Evidence (Mandatory)
+For each monthly restore drill, record all fields below in release notes or incident log:
+
+- operator name
+- date and local timezone
+- source project ref
+- target non-production environment
+- dump file name (example: `backups/2026-04-18.sql`)
+- validation queries executed:
+   - `select count(*) from billing_subscriptions;`
+   - `select count(*) from billing_webhook_events;`
+- result (`pass` / `fail`) and remediation notes
+
+If Docker or local tooling blocks execution, do not mark drill as done. Record it as `blocked`, include blocker reason, and set a new owner/date.
+
+## Legal Review Register (Mandatory)
+Before production release, legal review is considered complete only with an explicit sign-off entry:
+
+- reviewer name (jurist/lawyer)
+- review date
+- reviewed pages:
+   - `/confidentialitate`
+   - `/termeni`
+   - `/cookies`
+   - `/gdpr`
+- status (`approved` / `changes_requested`)
+- required edits and owner
+- final approval timestamp
+
+Without this register entry, mark legal review as pending.
