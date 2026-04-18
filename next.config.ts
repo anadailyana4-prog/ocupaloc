@@ -1,11 +1,26 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "frame-ancestors 'self'",
+  "object-src 'none'",
+  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://*.supabase.co https://*.sentry.io https://www.google-analytics.com https://region1.google-analytics.com",
+  "frame-src 'self' https://checkout.stripe.com",
+  "form-action 'self' https://checkout.stripe.com"
+].join("; ");
+
 const securityHeaders = [
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" }
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  { key: "Content-Security-Policy", value: contentSecurityPolicy }
 ];
 
 const nextConfig: NextConfig = {
@@ -23,6 +38,13 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Canonical host: www → apex
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.ocupaloc.ro" }],
+        destination: "https://ocupaloc.ro/:path*",
+        permanent: true
+      },
       {
         source: "/inscriere",
         destination: "/signup",
