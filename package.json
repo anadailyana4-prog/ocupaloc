@@ -2,6 +2,7 @@
   "name": "ocupaloc-ro",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@9.7.1",
   "scripts": {
     "dev": "next dev -p 8788",
     "start": "next start -p 8788",
@@ -14,7 +15,7 @@
     "tsc": "tsc --noEmit",
     "build": "next build",
     "pages:build": "opennextjs-cloudflare build",
-    "build:cf": "opennextjs-cloudflare build && node fix-open-next-css.mjs",
+    "build:cf": "SKIP_WRANGLER_CONFIG_CHECK=yes opennextjs-cloudflare build && node fix-open-next-css.mjs",
     "preview": "pnpm run build:cf && npx wrangler dev",
     "deploy": "pnpm run build:cf && npx wrangler deploy",
     "deploy:pages": "pnpm run build:cf && npx wrangler pages deploy .open-next",
