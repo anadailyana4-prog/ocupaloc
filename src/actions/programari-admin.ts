@@ -4,7 +4,7 @@ import { isBefore, parseISO } from "date-fns";
 import { formatInTimeZone, toDate } from "date-fns-tz";
 
 import { logBookingStatusEvent } from "@/lib/booking/status-events";
-import { notifyClientBookingRescheduledBySalon } from "@/lib/email/programare-notify";
+import { notifyClientBookingRescheduledBySalon, notifyProfesionistDespreProgramare } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
 import { calcDataFinalProgramare } from "@/lib/slots";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
@@ -75,7 +75,9 @@ export async function createStaffProgramare(input: {
   const clash = ocupate.some((o) => rangesOverlap(dataStart, dataFinal, o.start, o.end));
   if (clash) return { ok: false as const, message: "Interval ocupat. Alege altă oră." };
 
-  const { error: ins } = await admin.from("programari").insert({
+  const { data: insertedRow, error: ins } = await admin
+    .from("programari")
+    .insert({
     profesionist_id: profId,
     serviciu_id: srv.id,
     nume_client: input.numeClient.trim(),
@@ -85,8 +87,22 @@ export async function createStaffProgramare(input: {
     data_final: dataFinal.toISOString(),
     status: "confirmat",
     creat_de: "profesionist"
-  });
+    })
+    .select("id")
+    .single();
   if (ins) return { ok: false as const, message: ins.message };
+
+  if (insertedRow?.id) {
+    try {
+      await notifyProfesionistDespreProgramare(insertedRow.id);
+    } catch (notifyError) {
+      reportError("email", "notify_profesionist_manual_booking_failed", notifyError, {
+        bookingId: insertedRow.id,
+        source: "salon_dashboard"
+      });
+    }
+  }
+
   return { ok: true as const };
 }
 

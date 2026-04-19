@@ -288,7 +288,13 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
   }
 }
 
-export async function notifyProfesionistClientResponse(programareId: string, status: "confirmat" | "anulat"): Promise<void> {
+type ProfesionistStatusSource = "client" | "salon" | "system";
+
+export async function notifyProfesionistStatusUpdate(
+  programareId: string,
+  status: "confirmat" | "anulat",
+  source: ProfesionistStatusSource
+): Promise<void> {
   const admin = createSupabaseServiceClient();
   const { data: row, error } = await admin
     .from("programari")
@@ -312,10 +318,12 @@ export async function notifyProfesionistClientResponse(programareId: string, sta
 
   const dataStr = formatInTimeZone(new Date(row.data_start), TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(new Date(row.data_start), TZ, "HH:mm");
+  const actor = source === "client" ? "Clientul" : source === "salon" ? "Salonul" : "Sistemul";
+  const actionVerb = status === "confirmat" ? "confirmat" : "anulat";
   const statusLabel = status === "confirmat" ? "confirmată" : "anulată";
-  const subject = `Clientul a ${status === "confirmat" ? "confirmat" : "anulat"} programarea`;
+  const subject = `${actor} a ${actionVerb} programarea`;
   const text = [
-    `Programarea pentru ${serviciu?.nume ?? "Serviciu"} din ${dataStr}, ora ${timeStr} a fost ${statusLabel} de client.`,
+    `Programarea pentru ${serviciu?.nume ?? "Serviciu"} din ${dataStr}, ora ${timeStr} a fost ${statusLabel}.`,
     "",
     `Client: ${row.nume_client}`,
     `Telefon: ${row.telefon_client}`
@@ -325,7 +333,11 @@ export async function notifyProfesionistClientResponse(programareId: string, sta
     to: [to],
     subject,
     text,
-    event: "notify_profesionist_client_response_failed",
-    context: { programareId, status, to }
+    event: "notify_profesionist_status_update_failed",
+    context: { programareId, status, source, to }
   });
+}
+
+export async function notifyProfesionistClientResponse(programareId: string, status: "confirmat" | "anulat"): Promise<void> {
+  await notifyProfesionistStatusUpdate(programareId, status, "client");
 }

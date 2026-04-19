@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { logBookingStatusEvent } from "@/lib/booking/status-events";
-import { notifyClientBookingCancelledBySalon } from "@/lib/email/programare-notify";
+import { notifyClientBookingCancelledBySalon, notifyProfesionistStatusUpdate } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -47,6 +47,11 @@ export async function cancelBooking(id: string): Promise<BookingActionResult> {
     await notifyClientBookingCancelledBySalon(parsed.data);
   } catch (error) {
     reportError("email", "notify_client_cancellation_failed", error, { bookingId: parsed.data });
+  }
+  try {
+    await notifyProfesionistStatusUpdate(parsed.data, "anulat", "salon");
+  } catch (error) {
+    reportError("email", "notify_profesionist_cancellation_failed", error, { bookingId: parsed.data });
   }
   revalidatePath("/dashboard");
   return { success: true };
