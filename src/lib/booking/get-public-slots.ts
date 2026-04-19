@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { normalizeBookingSlug } from "@/lib/booking/normalize-booking-slug";
+import { getOccupiedIntervals } from "@/lib/booking/occupied-intervals";
 import { parseProgramJson } from "@/lib/program";
 import { computeFreeSlots } from "@/lib/slots";
 
@@ -63,19 +64,11 @@ export async function getPublicSlots(admin: SupabaseClient, input: GetPublicSlot
 
   const startDay = `${input.date}T00:00:00.000Z`;
   const endDay = `${input.date}T23:59:59.999Z`;
-
-  const { data: progs } = await admin
-    .from("programari")
-    .select("data_start,data_final,status")
-    .eq("profesionist_id", prof.id)
-    .neq("status", "anulat")
-    .lt("data_start", endDay)
-    .gt("data_final", startDay);
-
-  const occupied = (progs ?? []).map((p) => ({
-    start: new Date(String(p.data_start)),
-    end: new Date(String(p.data_final))
-  }));
+  const occupied = await getOccupiedIntervals(admin, {
+    profesionistId: String(prof.id),
+    startDayIso: startDay,
+    endDayIso: endDay
+  });
 
   const prep = prof.lucreaza_acasa ? Number(prof.timp_pregatire ?? 0) : 0;
   const slots = computeFreeSlots(

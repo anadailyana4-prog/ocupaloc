@@ -3,6 +3,7 @@
 import { isBefore, parseISO } from "date-fns";
 import { formatInTimeZone, toDate } from "date-fns-tz";
 
+import { getOccupiedIntervals } from "@/lib/booking/occupied-intervals";
 import { logBookingStatusEvent } from "@/lib/booking/status-events";
 import { notifyClientBookingRescheduledBySalon, notifyProfesionistDespreProgramare } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
@@ -54,19 +55,11 @@ export async function createStaffProgramare(input: {
   const dateStr = formatInTimeZone(dataStart, TZ, "yyyy-MM-dd");
   const startDay = `${dateStr}T00:00:00.000Z`;
   const endDay = `${dateStr}T23:59:59.999Z`;
-
-  const { data: progs } = await admin
-    .from("programari")
-    .select("data_start,data_final,status")
-    .eq("profesionist_id", profId)
-    .neq("status", "anulat")
-    .lt("data_start", endDay)
-    .gt("data_final", startDay);
-
-  const ocupate = (progs ?? []).map((p) => ({
-    start: new Date(p.data_start),
-    end: new Date(p.data_final)
-  }));
+  const ocupate = await getOccupiedIntervals(admin, {
+    profesionistId: profId,
+    startDayIso: startDay,
+    endDayIso: endDay
+  });
 
   const prep = prof.lucreaza_acasa ? prof.timp_pregatire : 0;
   const hasEarlier = ocupate.some((o) => isBefore(o.start, dataStart));
@@ -130,20 +123,12 @@ export async function moveProgramare(input: { programareId: string; targetDateSt
   const dayStr = input.targetDateStr;
   const startDay = `${dayStr}T00:00:00.000Z`;
   const endDay = `${dayStr}T23:59:59.999Z`;
-
-  const { data: progs } = await admin
-    .from("programari")
-    .select("id, data_start, data_final, status")
-    .eq("profesionist_id", profId)
-    .neq("status", "anulat")
-    .neq("id", row.id)
-    .lt("data_start", endDay)
-    .gt("data_final", startDay);
-
-  const ocupate = (progs ?? []).map((p) => ({
-    start: new Date(p.data_start),
-    end: new Date(p.data_final)
-  }));
+  const ocupate = await getOccupiedIntervals(admin, {
+    profesionistId: profId,
+    startDayIso: startDay,
+    endDayIso: endDay,
+    excludeProgramareId: row.id
+  });
 
   const prep = prof.lucreaza_acasa ? prof.timp_pregatire : 0;
   const hasEarlier = ocupate.some((o) => isBefore(o.start, newStart));
@@ -190,20 +175,12 @@ export async function rescheduleProgramare(input: { programareId: string; dataSt
   const dayStr = formatInTimeZone(newStart, TZ, "yyyy-MM-dd");
   const startDay = `${dayStr}T00:00:00.000Z`;
   const endDay = `${dayStr}T23:59:59.999Z`;
-
-  const { data: progs } = await admin
-    .from("programari")
-    .select("id, data_start, data_final, status")
-    .eq("profesionist_id", profId)
-    .neq("status", "anulat")
-    .neq("id", row.id)
-    .lt("data_start", endDay)
-    .gt("data_final", startDay);
-
-  const ocupate = (progs ?? []).map((p) => ({
-    start: new Date(p.data_start),
-    end: new Date(p.data_final)
-  }));
+  const ocupate = await getOccupiedIntervals(admin, {
+    profesionistId: profId,
+    startDayIso: startDay,
+    endDayIso: endDay,
+    excludeProgramareId: row.id
+  });
 
   const prep = prof.lucreaza_acasa ? prof.timp_pregatire : 0;
   const hasEarlier = ocupate.some((o) => isBefore(o.start, newStart));

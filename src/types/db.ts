@@ -56,3 +56,12 @@ export type ClientBlocatRow = {
   motiv: string | null;
   created_at: string;
 };
+
+export type ProgramareBlocajRow = {
+  id: string;
+  profesionist_id: string;
+  start_at: string;
+  end_at: string;
+  note: string | null;
+  created_at: string;
+};
