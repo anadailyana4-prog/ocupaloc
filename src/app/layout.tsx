@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import { Toaster } from "sonner";
 
+import { ConsentAwareAnalytics } from "@/components/analytics/ConsentAwareAnalytics";
 import { AnalyticsEvents } from "@/components/analytics/AnalyticsEvents";
 import { Header } from "@/components/Header";
 import "./globals.css";
@@ -78,24 +79,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ro" className="dark" suppressHydrationWarning>
       <head>
         <Script id="organization-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
-        {gaId ? <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" /> : null}
-        {gaId ? (
-          <Script
-            id="ga4-init"
-            strategy="afterInteractive"
-            dangerouslySetInnerHTML={{
-              __html: `
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                window.gtag = gtag;
-                gtag('js', new Date());
-                gtag('config', '${gaId}');
-              `
-            }}
-          />
-        ) : null}
       </head>
       <body className={`${jakarta.variable} ${cormorant.variable} min-h-screen bg-background font-sans text-foreground antialiased`}>
+        <ConsentAwareAnalytics gaId={gaId} />
         <AnalyticsEvents />
         <Header />
         {children}
