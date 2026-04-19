@@ -1,7 +1,8 @@
-import { copyFileSync, cpSync, existsSync, readdirSync, readFileSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 const openNextRoot = ".open-next";
+const publishRoot = "open-next-dist";
 const workerPath = join(openNextRoot, "worker.js");
 const pagesWorkerPath = join(openNextRoot, "_worker.js");
 const assetsDir = ".open-next/assets";
@@ -43,3 +44,8 @@ for (const fileName of new Set(matches)) {
     console.log(`Fixed missing CSS asset: ${fileName}`);
   }
 }
+
+// Cloudflare Pages can be strict with dot-prefixed publish dirs. Mirror final output to non-dot dir.
+rmSync(publishRoot, { recursive: true, force: true });
+cpSync(openNextRoot, publishRoot, { recursive: true });
+console.log("Mirrored .open-next to open-next-dist for Cloudflare publish");
