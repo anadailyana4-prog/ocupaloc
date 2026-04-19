@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, readdirSync, readFileSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const openNextRoot = ".open-next";
@@ -12,6 +12,12 @@ const indexPath = join(assetsDir, "index.html");
 if (existsSync(workerPath) && !existsSync(pagesWorkerPath)) {
   copyFileSync(workerPath, pagesWorkerPath);
   console.log("Created .open-next/_worker.js from worker.js");
+}
+
+// Pages serves static files from publish root; mirror assets there.
+if (existsSync(assetsDir)) {
+  cpSync(assetsDir, openNextRoot, { recursive: true });
+  console.log("Mirrored .open-next/assets into .open-next root");
 }
 
 if (!existsSync(cssDir) || !existsSync(indexPath)) {
