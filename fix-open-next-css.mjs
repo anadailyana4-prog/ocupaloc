@@ -1,9 +1,18 @@
 import { copyFileSync, existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
+const openNextRoot = ".open-next";
+const workerPath = join(openNextRoot, "worker.js");
+const pagesWorkerPath = join(openNextRoot, "_worker.js");
 const assetsDir = ".open-next/assets";
 const cssDir = join(assetsDir, "_next/static/css");
 const indexPath = join(assetsDir, "index.html");
+
+// Cloudflare Pages expects _worker.js in the output root.
+if (existsSync(workerPath) && !existsSync(pagesWorkerPath)) {
+  copyFileSync(workerPath, pagesWorkerPath);
+  console.log("Created .open-next/_worker.js from worker.js");
+}
 
 if (!existsSync(cssDir) || !existsSync(indexPath)) {
   process.exit(0);
