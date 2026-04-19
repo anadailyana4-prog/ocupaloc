@@ -18,6 +18,10 @@ function stateMessage(state?: string): string | null {
       return "Programarea a fost reprogramată.";
     case "invalid_slot":
       return "Slot indisponibil. Alege altă oră.";
+    case "past_time":
+      return "Nu poți reprograma în trecut. Alege o dată viitoare.";
+    case "invalid_state":
+      return "Programarea nu mai poate fi modificată în acest status.";
     default:
       return null;
   }

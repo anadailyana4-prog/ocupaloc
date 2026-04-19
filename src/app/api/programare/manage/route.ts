@@ -47,6 +47,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(new URL("/programare/confirmare?state=not_found", req.url));
   }
 
+  if (current.status === "finalizat") {
+    return redirectManage(req, { booking, exp, sig, state: "invalid_state" });
+  }
+
   if (op === "confirm" || op === "cancel") {
     const targetStatus = op === "cancel" ? "anulat" : "confirmat";
     const { error } = await admin.from("programari").update({ status: targetStatus }).eq("id", booking);
@@ -76,6 +80,10 @@ export async function POST(req: NextRequest) {
   }
 
   if (op === "reschedule") {
+    if (current.status !== "confirmat") {
+      return redirectManage(req, { booking, exp, sig, state: "invalid_state" });
+    }
+
     const newStartLocal = String(data.get("newStartLocal") ?? "");
     if (!newStartLocal) {
       return redirectManage(req, { booking, exp, sig, state: "invalid_slot" });
@@ -86,15 +94,29 @@ export async function POST(req: NextRequest) {
       return redirectManage(req, { booking, exp, sig, state: "invalid_slot" });
     }
 
+    if (newStart.getTime() <= Date.now()) {
+      return redirectManage(req, { booking, exp, sig, state: "past_time" });
+    }
+
     const { data: srv } = await admin.from("servicii").select("durata_minute").eq("id", current.serviciu_id).maybeSingle();
     const { data: prof } = await admin
       .from("profesionisti")
-      .select("program,pauza_intre_clienti,timp_pregatire,lucreaza_acasa")
+      .select("program,pauza_intre_clienti,timp_pregatire,lucreaza_acasa,smart_rules_enabled,smart_min_notice_minutes")
       .eq("id", current.profesionist_id)
       .maybeSingle();
 
     if (!srv || !prof) {
       return redirectManage(req, { booking, exp, sig, state: "error" });
+    }
+
+    if (prof.smart_rules_enabled) {
+      const minNotice = Number(prof.smart_min_notice_minutes ?? 0);
+      if (minNotice > 0) {
+        const minAllowed = Date.now() + minNotice * 60_000;
+        if (newStart.getTime() < minAllowed) {
+          return redirectManage(req, { booking, exp, sig, state: "invalid_slot" });
+        }
+      }
     }
 
     const dayStr = formatInTimeZone(newStart, "Europe/Bucharest", "yyyy-MM-dd");
