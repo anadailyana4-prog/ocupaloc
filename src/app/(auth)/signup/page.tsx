@@ -392,15 +392,6 @@ export default function SignupPage() {
                 </Button>
                 <Button
                   type="button"
-                  className="bg-emerald-600 text-white hover:bg-emerald-700"
-                  onClick={() => {
-                    setStep(3);
-                  }}
-                >
-                  Finalizare
-                </Button>
-                <Button
-                  type="button"
                   variant="ghost"
                   onClick={() => {
                     setStep(3);
@@ -455,11 +446,16 @@ export default function SignupPage() {
               Înapoi
             </Button>
             {step < 3 ? (
-              <Button type="button" onClick={nextStep}>
+              <Button type="button" onClick={nextStep} className="px-6 text-base font-extrabold tracking-wide">
                 Continuă
               </Button>
             ) : (
-              <Button type="button" disabled={isSubmitting} onClick={() => void onCreateAccount()}>
+              <Button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => void onCreateAccount()}
+                className="px-6 text-base font-extrabold tracking-wide"
+              >
                 {isSubmitting ? "Se creează contul..." : "Creează cont gratuit"}
               </Button>
             )}
