@@ -392,6 +392,15 @@ export default function SignupPage() {
                 </Button>
                 <Button
                   type="button"
+                  className="bg-emerald-600 text-white hover:bg-emerald-700"
+                  onClick={() => {
+                    setStep(3);
+                  }}
+                >
+                  Finalizare
+                </Button>
+                <Button
+                  type="button"
                   variant="ghost"
                   onClick={() => {
                     setStep(3);
