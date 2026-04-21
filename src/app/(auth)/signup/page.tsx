@@ -86,69 +86,6 @@ function presetDays(start: string, end: string, weekendActive = false): WorkDay[
   ];
 }
 
-const PRESET_SERVICES: Record<Activitate, ServiceDraft[]> = {
-  "Consultanță / Coaching": [
-    { nume: "Sesiune consultanță 30 min", pret: "150", durata: "30" },
-    { nume: "Sesiune consultanță 60 min", pret: "250", durata: "60" },
-    { nume: "Audit + plan acțiune", pret: "450", durata: "90" }
-  ],
-  "Clinică / Medical": [
-    { nume: "Consultație inițială", pret: "220", durata: "45" },
-    { nume: "Control periodic", pret: "180", durata: "30" },
-    { nume: "Procedură", pret: "350", durata: "60" }
-  ],
-  "Sport / Fitness": [
-    { nume: "Antrenament personal", pret: "170", durata: "60" },
-    { nume: "Evaluare inițială", pret: "120", durata: "45" },
-    { nume: "Program nutriție", pret: "220", durata: "60" }
-  ],
-  "Educație / Cursuri": [
-    { nume: "Lecție individuală", pret: "120", durata: "60" },
-    { nume: "Ședință recapitulare", pret: "90", durata: "45" },
-    { nume: "Consultare plan de studiu", pret: "150", durata: "60" }
-  ],
-  "Auto / Service": [
-    { nume: "Diagnoză", pret: "120", durata: "45" },
-    { nume: "Revizie", pret: "320", durata: "90" },
-    { nume: "Schimb consumabile", pret: "180", durata: "60" }
-  ],
-  "Frizerie/Barber": [
-    { nume: "Tuns", pret: "80", durata: "45" },
-    { nume: "Tuns + barbă", pret: "120", durata: "60" },
-    { nume: "Aranjat barbă", pret: "50", durata: "30" }
-  ],
-  "Manichiură/Pedichiură": [
-    { nume: "Manichiură", pret: "120", durata: "60" },
-    { nume: "Pedichiură", pret: "140", durata: "60" },
-    { nume: "Gel + întreținere", pret: "170", durata: "90" }
-  ],
-  "Salon înfrumusețare": [
-    { nume: "Coafat", pret: "130", durata: "60" },
-    { nume: "Tratament facial", pret: "220", durata: "75" },
-    { nume: "Pachet premium", pret: "350", durata: "120" }
-  ],
-  "Cosmetică": [
-    { nume: "Curățare facială", pret: "180", durata: "60" },
-    { nume: "Tratament anti-age", pret: "260", durata: "75" },
-    { nume: "Consult cosmetic", pret: "120", durata: "45" }
-  ],
-  Masaj: [
-    { nume: "Masaj relaxare", pret: "170", durata: "60" },
-    { nume: "Masaj terapeutic", pret: "220", durata: "60" },
-    { nume: "Masaj profund", pret: "300", durata: "90" }
-  ],
-  Coafor: [
-    { nume: "Tuns + styling", pret: "130", durata: "60" },
-    { nume: "Vopsit", pret: "320", durata: "120" },
-    { nume: "Tratament păr", pret: "180", durata: "60" }
-  ],
-  Altele: [
-    { nume: "Consultație", pret: "150", durata: "45" },
-    { nume: "Sesiune standard", pret: "200", durata: "60" },
-    { nume: "Serviciu extins", pret: "300", durata: "90" }
-  ]
-};
-
 const PRESET_SCHEDULES: Record<Activitate, { days: WorkDay[]; weekend: boolean }> = {
   "Consultanță / Coaching": { days: presetDays("09:00", "18:00", false), weekend: false },
   "Clinică / Medical": { days: presetDays("08:00", "17:00", false), weekend: false },
@@ -177,7 +114,6 @@ export default function SignupPage() {
   const [services, setServices] = useState<ServiceDraft[]>(EMPTY_SERVICES);
   const [workDays, setWorkDays] = useState<WorkDay[]>(DEFAULT_DAYS);
   const [workWeekend, setWorkWeekend] = useState(false);
-  const [servicesTouched, setServicesTouched] = useState(false);
   const [scheduleTouched, setScheduleTouched] = useState(false);
 
   const progress = useMemo(() => (step / 3) * 100, [step]);
@@ -194,18 +130,7 @@ export default function SignupPage() {
     }
   }, [activity, scheduleTouched]);
 
-  function applyActivityTemplate() {
-    setServicesTouched(false);
-    setScheduleTouched(false);
-    setServices(PRESET_SERVICES[activity].map((item) => ({ ...item })));
-    const preset = PRESET_SCHEDULES[activity];
-    setWorkDays(cloneDays(preset.days));
-    setWorkWeekend(preset.weekend);
-    toast.success("Template-ul pentru activitatea ta a fost aplicat.");
-  }
-
   const updateService = (index: number, field: keyof ServiceDraft, value: string) => {
-    setServicesTouched(true);
     setServices((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   };
 
