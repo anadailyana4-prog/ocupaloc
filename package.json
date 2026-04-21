@@ -14,13 +14,6 @@
     "typecheck": "tsc --noEmit",
     "tsc": "tsc --noEmit",
     "build": "next build",
-    "pages:build": "SKIP_WRANGLER_CONFIG_CHECK=yes opennextjs-cloudflare build",
-    "build:cf": "SKIP_WRANGLER_CONFIG_CHECK=yes opennextjs-cloudflare build && node fix-open-next-css.mjs",
-    "preview": "pnpm run build:cf && npx wrangler dev",
-    "deploy": "pnpm run build:cf && npx wrangler deploy",
-    "deploy:pages": "pnpm run build:cf && npx wrangler pages deploy .open-next",
-    "cf:secrets": "wrangler secret put RESEND_API_KEY && wrangler secret put RESEND_FROM",
-    "deploy:safe": "pnpm run verify:secrets && pnpm run verify:db && npx wrangler deploy",
     "verify:db": "tsx scripts/verify-production-readiness.ts",
     "verify:secrets": "tsx scripts/check-secrets.ts"
   },
@@ -59,7 +52,6 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@opennextjs/cloudflare": "^1.19.1",
     "@playwright/test": "^1.59.1",
     "@types/canvas-confetti": "^1.6.4",
     "@types/node": "^22.7.5",
@@ -73,7 +65,6 @@
     "tailwindcss": "^3.4.13",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.21.0",
-    "typescript": "^5.6.2",
-    "wrangler": "^4.0.0"
+    "typescript": "^5.6.2"
   }
 }
