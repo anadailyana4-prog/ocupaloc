@@ -59,9 +59,15 @@ const DEFAULT_DAYS: WorkDay[] = [
 ];
 
 const EMPTY_SERVICES: ServiceDraft[] = [
-  { nume: "", pret: "", durata: "30" },
-  { nume: "", pret: "", durata: "45" },
-  { nume: "", pret: "", durata: "60" }
+  { nume: "", pret: "", durata: "" },
+  { nume: "", pret: "", durata: "" },
+  { nume: "", pret: "", durata: "" }
+];
+
+const SERVICE_EXAMPLES: ServiceDraft[] = [
+  { nume: "Manichiură", pret: "120", durata: "60" },
+  { nume: "Pedichiură", pret: "140", durata: "60" },
+  { nume: "Gel + întreținere", pret: "170", durata: "90" }
 ];
 
 function cloneDays(days: WorkDay[]): WorkDay[] {
@@ -181,15 +187,12 @@ export default function SignupPage() {
   }, [step]);
 
   useEffect(() => {
-    if (!servicesTouched) {
-      setServices(PRESET_SERVICES[activity].map((item) => ({ ...item })));
-    }
     if (!scheduleTouched) {
       const preset = PRESET_SCHEDULES[activity];
       setWorkDays(cloneDays(preset.days));
       setWorkWeekend(preset.weekend);
     }
-  }, [activity, servicesTouched, scheduleTouched]);
+  }, [activity, scheduleTouched]);
 
   function applyActivityTemplate() {
     setServicesTouched(false);
@@ -407,48 +410,55 @@ export default function SignupPage() {
 
           {step === 2 ? (
             <section className="space-y-4">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="text-xl font-semibold">Primele tale servicii</h2>
-                  <p className="text-sm text-muted-foreground">Template activ: {activity}</p>
-                </div>
-                <Button type="button" variant="outline" onClick={applyActivityTemplate}>
-                  Reaplică template
-                </Button>
-              </div>
+              <h2 className="text-xl font-semibold">Serviciile tale</h2>
               <div className="space-y-3">
+                <div className="grid gap-2 px-3 md:grid-cols-3">
+                  <p className="text-xs font-medium text-zinc-400">Serviciul oferit</p>
+                  <p className="text-xs font-medium text-zinc-400">Timp de execuție (min)</p>
+                  <p className="text-xs font-medium text-zinc-400">Prețul (RON)</p>
+                </div>
                 {services.map((service, index) => (
                   <div key={`service-${index + 1}`} className="grid gap-2 rounded-lg border border-zinc-800 p-3 md:grid-cols-3">
                     <Input
-                      placeholder={`Serviciu ${index + 1}`}
+                      placeholder={SERVICE_EXAMPLES[index]?.nume ?? "ex: Serviciu"}
                       value={service.nume}
                       onChange={(event) => updateService(index, "nume", event.target.value)}
                     />
                     <Input
                       type="number"
-                      placeholder="Preț (RON)"
-                      value={service.pret}
-                      onChange={(event) => updateService(index, "pret", event.target.value)}
+                      placeholder={SERVICE_EXAMPLES[index]?.durata ?? "ex: 60"}
+                      value={service.durata}
+                      onChange={(event) => updateService(index, "durata", event.target.value)}
                     />
                     <Input
                       type="number"
-                      placeholder="Durată (minute)"
-                      value={service.durata}
-                      onChange={(event) => updateService(index, "durata", event.target.value)}
+                      placeholder={SERVICE_EXAMPLES[index]?.pret ?? "ex: 120"}
+                      value={service.pret}
+                      onChange={(event) => updateService(index, "pret", event.target.value)}
                     />
                   </div>
                 ))}
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setServices(EMPTY_SERVICES);
-                  setStep(3);
-                }}
-              >
-                Adaugă mai târziu
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setServices((prev) => [...prev, { nume: "", pret: "", durata: "" }]);
+                  }}
+                >
+                  Adaugă alte servicii
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setStep(3);
+                  }}
+                >
+                  Amintește-mi mai târziu
+                </Button>
+              </div>
             </section>
           ) : null}
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { BILLING_TRIAL_DAYS, getSiteUrl, getStripePriceId, isBillingEnabled } from "@/lib/billing/config";
 import { getOrCreateStripeCustomer } from "@/lib/billing/customer";
+import { buildBillingLoginRedirect } from "@/lib/billing/login";
 import { getStripeClient } from "@/lib/billing/stripe";
 import { reportError } from "@/lib/observability";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
@@ -19,7 +20,7 @@ export async function POST() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.redirect(new URL("/auth/login", getSiteUrl()), 303);
+      return NextResponse.redirect(buildBillingLoginRedirect(getSiteUrl()), 303);
     }
 
     const admin = createSupabaseServiceClient();

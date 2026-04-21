@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { checkBookingEntitlement } from "@/lib/billing/entitlements";
+import { getOccupiedIntervals } from "@/lib/booking/occupied-intervals";
 import { parseProgramJson } from "@/lib/program";
 import { calcDataFinalProgramare, computeFreeSlots } from "@/lib/slots";
 
@@ -143,18 +144,11 @@ export async function insertProgramareForProfSlug(
 
   const startDay = `${input.dateStr}T00:00:00.000Z`;
   const endDay = `${input.dateStr}T23:59:59.999Z`;
-  const { data: progs } = await admin
-    .from("programari")
-    .select("data_start,data_final,status")
-    .eq("profesionist_id", prof.id)
-    .neq("status", "anulat")
-    .lt("data_start", endDay)
-    .gt("data_final", startDay);
-
-  const ocupate = (progs ?? []).map((p) => ({
-    start: new Date(p.data_start as string),
-    end: new Date(p.data_final as string)
-  }));
+  const ocupate = await getOccupiedIntervals(admin, {
+    profesionistId: String(prof.id),
+    startDayIso: startDay,
+    endDayIso: endDay
+  });
 
   const program = parseProgramJson(prof.program);
   const prep = prof.lucreaza_acasa ? (prof.timp_pregatire as number) : 0;

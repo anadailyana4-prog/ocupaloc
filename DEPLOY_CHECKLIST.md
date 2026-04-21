@@ -1,11 +1,10 @@
 ## Pre-Deploy Checklist
 - [ ] Rulează `node --import tsx scripts/check-secrets.ts` - trebuie să vezi ✅ OK
 - [ ] Rulează `node --import tsx scripts/verify-production-readiness.ts` - trebuie toate ✅
-- [ ] SAU rulează `pnpm run deploy:safe` care le face pe ambele + deploy
 - [ ] `npx supabase db push` rulat - confirmă că șterge tabelele deprecated
 - [ ] `npx next build` trece fără warnings
 - [ ] `pnpm tsc --noEmit` trece
-- [ ] `wrangler secret list` conține: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY, RESEND_FROM
+- [ ] În Vercel (Project Settings -> Environment Variables) există: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `NEXT_PUBLIC_SITE_URL`
 - [ ] RESEND_FROM = noreply@ocupaloc.ro și domeniul e verificat în Resend
 - [ ] `.env.local` e în `.gitignore` - rulează `git check-ignore .env.local` să confirmi
 
@@ -17,9 +16,9 @@
 5. Verifică /dashboard/servicii -> CRUD pe servicii funcționează
 
 ## Post-Deploy
-- [ ] `npx wrangler deploy` rulat
+- [ ] Deploy-ul pe Vercel a trecut (Production)
 - [ ] Test pe https://ocupaloc.ro/signup cu cont real
-- [ ] Verifică logs: `npx wrangler tail` să nu vezi erori
+- [ ] Verifică Vercel Runtime Logs să nu vezi erori
 
 ## Documentație operațională
-- Consultă `RELEASE_RUNBOOK.md` pentru matricea completă de variabile (Vercel + Cloudflare), pași de release și rollback.
+- Consultă `RELEASE_RUNBOOK.md` pentru pași de release, rollback și validări operaționale.
