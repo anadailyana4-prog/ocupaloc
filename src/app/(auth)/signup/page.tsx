@@ -215,9 +215,9 @@ export default function SignupPage() {
     while (true) {
       const { data, error } = await supabase.rpc("is_slug_available", { slug_to_check: slug });
       if (error) {
-        setIsSubmitting(false);
-        toast.error("Nu am putut verifica slug-ul business-ului.");
-        return;
+        // Do not block signup on transient RPC issues.
+        // The server bootstrap flow also handles slug conflicts safely.
+        break;
       }
       if (data) break;
       suffix += 1;
@@ -455,11 +455,16 @@ export default function SignupPage() {
               Înapoi
             </Button>
             {step < 3 ? (
-              <Button type="button" onClick={nextStep}>
+              <Button type="button" onClick={nextStep} className="px-6 text-base font-extrabold tracking-wide">
                 Continuă
               </Button>
             ) : (
-              <Button type="button" disabled={isSubmitting} onClick={() => void onCreateAccount()}>
+              <Button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => void onCreateAccount()}
+                className="px-6 text-base font-extrabold tracking-wide"
+              >
                 {isSubmitting ? "Se creează contul..." : "Creează cont gratuit"}
               </Button>
             )}
