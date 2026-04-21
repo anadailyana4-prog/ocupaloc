@@ -53,6 +53,16 @@ function buildProgram(workDays: BootstrapWorkDay[] | undefined): Record<string, 
   return program;
 }
 
+function sanitizeSlug(raw: string | undefined): string {
+  const value = (raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return value || "studio";
+}
+
 export async function bootstrapTenantAfterSignup(input: {
   orgName: string;
   slug: string;
@@ -83,21 +93,42 @@ export async function bootstrapTenantAfterSignup(input: {
   let profesionistId = existing?.id ?? null;
 
   if (!profesionistId) {
-    const { error: insErr } = await admin.from("profesionisti").insert({
-      user_id: user.id,
-      nume_business: input.orgName,
-      tip_activitate: mapActivity(input.activity),
-      telefon: input.phone?.trim() || null,
-      slug: input.slug,
-      onboarding_pas: 4,
-      program: buildProgram(input.workDays)
-    });
-    if (insErr) {
+    const baseSlug = sanitizeSlug(input.slug || input.orgName);
+    for (let attempt = 1; attempt <= 15 && !profesionistId; attempt += 1) {
+      const slugCandidate = attempt === 1 ? baseSlug : `${baseSlug}-${attempt}`;
+      const { data: inserted, error: insErr } = await admin
+        .from("profesionisti")
+        .insert({
+          user_id: user.id,
+          nume_business: input.orgName,
+          tip_activitate: mapActivity(input.activity),
+          telefon: input.phone?.trim() || null,
+          slug: slugCandidate,
+          onboarding_pas: 4,
+          program: buildProgram(input.workDays)
+        })
+        .select("id")
+        .maybeSingle();
+
+      if (!insErr) {
+        profesionistId = inserted?.id ?? null;
+        continue;
+      }
+
+      const isSlugConflict = insErr.code === "23505" && insErr.message.toLowerCase().includes("slug");
+      if (isSlugConflict) {
+        continue;
+      }
+
+      const isUserConflict = insErr.code === "23505" && insErr.message.toLowerCase().includes("user_id");
+      if (isUserConflict) {
+        const { data: created } = await admin.from("profesionisti").select("id").eq("user_id", user.id).maybeSingle();
+        profesionistId = created?.id ?? null;
+        continue;
+      }
+
       return { ok: false as const, error: insErr.message };
     }
-
-    const { data: created } = await admin.from("profesionisti").select("id").eq("user_id", user.id).maybeSingle();
-    profesionistId = created?.id ?? null;
   }
 
   if (!profesionistId) {
