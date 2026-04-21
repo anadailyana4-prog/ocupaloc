@@ -53,16 +53,6 @@ export function LandingPage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <div className="font-display text-2xl font-semibold tracking-wide text-amber-100">ocupaloc.ro</div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <nav className="hidden items-center gap-6 text-sm text-amber-100/75 md:flex">
-              <a href="#pricing" className="hover:text-amber-50">Prețuri</a>
-              <a
-                href={CONTACT_MAILTO}
-                aria-label={`Contactează echipa Ocupaloc la ${CONTACT_EMAIL}`}
-                className="rounded-sm transition hover:text-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-              >
-                Contact
-              </a>
-            </nav>
             <Link
               href="/login"
               className="inline-flex h-9 items-center justify-center rounded-full border border-amber-200/25 bg-slate-900/50 px-3 text-xs font-medium text-amber-50 hover:bg-slate-800/70 sm:px-4 sm:text-sm"

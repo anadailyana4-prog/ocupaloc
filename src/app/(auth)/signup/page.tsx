@@ -239,6 +239,24 @@ export default function SignupPage() {
     });
 
     if (error || !data.user) {
+      const errorText = (error?.message ?? "").toLowerCase();
+      const alreadyRegistered = errorText.includes("already registered") || errorText.includes("already exists");
+      if (alreadyRegistered) {
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email: cleanEmail,
+          options: {
+            emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth/callback?next=/dashboard` : undefined
+          }
+        });
+        setIsSubmitting(false);
+        if (otpError) {
+          toast.error("Emailul există deja. Intră în cont sau folosește resetarea parolei.");
+          return;
+        }
+        toast.success("Emailul este deja înregistrat. Ți-am trimis un link de autentificare.");
+        router.push("/login");
+        return;
+      }
       setIsSubmitting(false);
       toast.error(error?.message ?? "Nu am putut crea contul.");
       return;
