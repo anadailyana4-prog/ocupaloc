@@ -31,6 +31,8 @@ type WorkDay = {
   end: string;
 };
 
+const SIGNUP_STEP_STORAGE_KEY = "ocupaloc:signupStep";
+
 const ACTIVITATI = [
   "Consultanță / Coaching",
   "Clinică / Medical",
@@ -120,6 +122,19 @@ export default function SignupPage() {
 
   useEffect(() => {
     trackSignup(step);
+  }, [step]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const savedStep = Number(localStorage.getItem(SIGNUP_STEP_STORAGE_KEY));
+    if (Number.isInteger(savedStep) && savedStep >= 1 && savedStep <= 3) {
+      setStep(savedStep);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(SIGNUP_STEP_STORAGE_KEY, String(step));
   }, [step]);
 
   useEffect(() => {
@@ -246,6 +261,7 @@ export default function SignupPage() {
     }
 
     localStorage.setItem("ocupaloc:lastSlug", slug);
+    localStorage.removeItem(SIGNUP_STEP_STORAGE_KEY);
     localStorage.setItem("ocupaloc:lastImportedClients", String(importedCount));
     localStorage.setItem("ocupaloc:onboardingServices", JSON.stringify(services));
     localStorage.setItem("ocupaloc:onboardingSchedule", JSON.stringify(workDays));
@@ -373,6 +389,15 @@ export default function SignupPage() {
                   }}
                 >
                   Adaugă alte servicii
+                </Button>
+                <Button
+                  type="button"
+                  className="bg-emerald-600 text-white hover:bg-emerald-700"
+                  onClick={() => {
+                    setStep(3);
+                  }}
+                >
+                  Finalizare
                 </Button>
                 <Button
                   type="button"
