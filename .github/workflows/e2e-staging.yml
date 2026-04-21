@@ -1,15 +1,13 @@
 name: E2E Staging
 
 on:
-  schedule:
-    - cron: "0 2 * * *"
   workflow_dispatch:
 
 jobs:
   e2e-staging:
     name: E2E Smoke (staging required)
     runs-on: ubuntu-latest
-    if: ${{ vars.ENABLE_E2E == 'true' }}
+    if: ${{ vars.ENABLE_E2E == 'true' && vars.ENABLE_E2E_STAGING == 'true' }}
     steps:
       - uses: actions/checkout@v4
 
