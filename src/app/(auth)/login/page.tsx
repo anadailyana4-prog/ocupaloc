@@ -48,7 +48,7 @@ export default function LoginPage() {
   async function signInWithGoogle() {
     setBusy(true);
     const supabase = createSupabaseBrowserClient();
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/$/, "");
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -83,6 +83,20 @@ export default function LoginPage() {
       return;
     }
 
+    const supabase = createSupabaseBrowserClient();
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin).replace(/\/$/, "");
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${siteUrl}/auth/callback?next=/dashboard`
+      }
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
     trackAuthEvent("magic_link_sent", "email_link");
     toast.success(payload?.message ?? "Dacă emailul există, am trimis linkul.");
   }
@@ -106,6 +120,17 @@ export default function LoginPage() {
 
     if (!response.ok) {
       toast.error(payload?.message ?? "Nu am putut procesa cererea acum.");
+      return;
+    }
+
+    const supabase = createSupabaseBrowserClient();
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin).replace(/\/$/, "");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteUrl}/login`
+    });
+
+    if (error) {
+      toast.error(error.message);
       return;
     }
 

@@ -13,8 +13,17 @@ async function isProfileComplete(
   supabase: ReturnType<typeof createServerClient>,
   userId: string
 ): Promise<boolean> {
-  const { data: profile } = await supabase.from("profiles").select("full_name, phone, role").eq("id", userId).maybeSingle();
-  return Boolean(profile?.full_name?.trim() && profile?.phone?.trim() && profile?.role?.trim());
+  const { data: profile } = await supabase
+    .from("profesionisti")
+    .select("nume_business, telefon, tip_activitate, onboarding_pas")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return Boolean(
+    profile?.nume_business?.trim() &&
+      profile?.telefon?.trim() &&
+      profile?.tip_activitate?.trim() &&
+      (profile?.onboarding_pas ?? 0) >= 4
+  );
 }
 
 export async function middleware(request: NextRequest) {

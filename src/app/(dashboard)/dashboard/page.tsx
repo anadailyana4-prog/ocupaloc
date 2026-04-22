@@ -42,13 +42,6 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   }
 
   let greetName = user.email?.split("@")[0] ?? "acolo";
-  const { data: profile } = await supabase.from("profiles").select("full_name, phone, role").eq("id", user.id).maybeSingle();
-  if (!profile?.full_name?.trim() || !profile?.phone?.trim() || !profile?.role?.trim()) {
-    redirect("/onboarding");
-  }
-  if (profile?.full_name?.trim()) {
-    greetName = profile.full_name.trim();
-  }
 
   const { data: prof, error: profErr } = await supabase
     .from("profesionisti")
@@ -64,6 +57,10 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   if ((prof.onboarding_pas ?? 0) < 4) {
     redirect("/onboarding");
+  }
+
+  if (prof.nume_business?.trim()) {
+    greetName = prof.nume_business.trim();
   }
 
   const sp = searchParams ? await searchParams : {};

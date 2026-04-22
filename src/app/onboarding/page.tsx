@@ -20,12 +20,17 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
 
   const supabase = await createSupabaseServerClient();
   const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, phone, role")
-    .eq("id", user.id)
+    .from("profesionisti")
+    .select("nume_business, telefon, tip_activitate, onboarding_pas")
+    .eq("user_id", user.id)
     .maybeSingle();
 
-  if (profile?.full_name?.trim() && profile?.phone?.trim() && profile?.role?.trim()) {
+  if (
+    profile?.nume_business?.trim() &&
+    profile?.telefon?.trim() &&
+    profile?.tip_activitate?.trim() &&
+    (profile?.onboarding_pas ?? 0) >= 4
+  ) {
     redirect("/dashboard");
   }
 
@@ -46,39 +51,39 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
 
       <form action={saveOnboardingProfile} className="mt-8 space-y-5 rounded-2xl border border-zinc-800 bg-zinc-950/50 p-6">
         <div className="space-y-2">
-          <Label htmlFor="full_name">Nume</Label>
+          <Label htmlFor="nume_business">Nume business</Label>
           <Input
-            id="full_name"
-            name="full_name"
+            id="nume_business"
+            name="nume_business"
             required
             maxLength={120}
-            defaultValue={profile?.full_name ?? ""}
-            placeholder="Ana Popescu"
+            defaultValue={profile?.nume_business ?? ""}
+            placeholder="Salon Ana"
             className="border-zinc-700 bg-zinc-900"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="phone">Telefon</Label>
+          <Label htmlFor="telefon">Telefon</Label>
           <Input
-            id="phone"
-            name="phone"
+            id="telefon"
+            name="telefon"
             type="tel"
             required
             maxLength={40}
-            defaultValue={profile?.phone ?? ""}
+            defaultValue={profile?.telefon ?? ""}
             placeholder="07xx xxx xxx"
             className="border-zinc-700 bg-zinc-900"
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="role">Rol</Label>
+          <Label htmlFor="tip_activitate">Tip activitate</Label>
           <Input
-            id="role"
-            name="role"
+            id="tip_activitate"
+            name="tip_activitate"
             required
-            maxLength={60}
-            defaultValue={profile?.role ?? ""}
-            placeholder="Proprietar"
+            maxLength={80}
+            defaultValue={profile?.tip_activitate ?? ""}
+            placeholder="Salon înfrumusețare"
             className="border-zinc-700 bg-zinc-900"
           />
         </div>

@@ -205,6 +205,7 @@ export default function SignupPage() {
 
     const cleanEmail = email.trim().toLowerCase();
     const cleanPhone = telefon.trim().replace(/\s+/g, " ");
+    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/$/, "");
 
     setIsSubmitting(true);
     const supabase = createSupabaseBrowserClient();
@@ -234,7 +235,7 @@ export default function SignupPage() {
           phone: cleanPhone,
           activity
         },
-        emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth/callback?next=/dashboard` : undefined
+        emailRedirectTo: siteUrl ? `${siteUrl}/auth/callback?next=/dashboard` : undefined
       }
     });
 
@@ -253,6 +254,19 @@ export default function SignupPage() {
 
         if (!response.ok) {
           toast.error(payload?.message ?? "Emailul există deja. Intră în cont sau folosește resetarea parolei.");
+          return;
+        }
+
+        const { error: magicLinkError } = await supabase.auth.signInWithOtp({
+          email: cleanEmail,
+          options: {
+            emailRedirectTo: siteUrl ? `${siteUrl}/auth/callback?next=/dashboard` : undefined
+          }
+        });
+
+        if (magicLinkError) {
+          setIsSubmitting(false);
+          toast.error(magicLinkError.message);
           return;
         }
 
