@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
   const supabase = await createSupabaseServerClient();
   const { data: prof } = await supabase
-    .from("profesionisti")
+    .from("profesionisti_public")
     .select("nume_business, description, tip_activitate, oras, logo_url")
     .eq("slug", slug)
     .maybeSingle();
@@ -89,7 +89,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(" ");
     const { data: profesionisti } = await supabase
-      .from("profesionisti")
+      .from("profesionisti_public")
       .select("slug, nume_business, tip_activitate, description")
       .ilike("oras", `%${orasName}%`)
       .not("slug", "is", null)
@@ -140,7 +140,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
     );
   }
   const { data: prof, error } = await supabase
-    .from("profesionisti")
+    .from("profesionisti_public")
     .select("id,slug,nume_business,tip_activitate,description,oras,logo_url,telefon,lucreaza_acasa,adresa_publica,program")
     .eq("slug", slug)
     .maybeSingle();

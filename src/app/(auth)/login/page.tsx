@@ -69,23 +69,22 @@ export default function LoginPage() {
     }
 
     setBusy(true);
-    const supabase = createSupabaseBrowserClient();
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${origin}/auth/callback?next=/dashboard`
-      }
+    const response = await fetch("/api/auth/magic-link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
     });
+
+    const payload = (await response.json().catch(() => null)) as { message?: string } | null;
     setBusy(false);
 
-    if (error) {
-      toast.error(error.message);
+    if (!response.ok) {
+      toast.error(payload?.message ?? "Nu am putut trimite linkul acum.");
       return;
     }
 
     trackAuthEvent("magic_link_sent", "email_link");
-    toast.success("Ți-am trimis un link de autentificare pe email.");
+    toast.success(payload?.message ?? "Dacă emailul există, am trimis linkul.");
   }
 
   async function sendPasswordReset() {
@@ -96,20 +95,22 @@ export default function LoginPage() {
     }
 
     setBusy(true);
-    const supabase = createSupabaseBrowserClient();
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}/login`
+    const response = await fetch("/api/auth/password-reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email })
     });
+
+    const payload = (await response.json().catch(() => null)) as { message?: string } | null;
     setBusy(false);
 
-    if (error) {
-      toast.error(error.message);
+    if (!response.ok) {
+      toast.error(payload?.message ?? "Nu am putut procesa cererea acum.");
       return;
     }
 
     trackAuthEvent("password_reset_sent", "email_reset");
-    toast.success("Ți-am trimis emailul pentru resetarea parolei.");
+    toast.success(payload?.message ?? "Dacă emailul există, am trimis instrucțiunile.");
   }
 
   return (

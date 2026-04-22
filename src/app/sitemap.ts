@@ -59,7 +59,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 
-  const { data: rows } = await supabase.from("profesionisti").select("slug, created_at").not("slug", "is", null);
+  const { data: rows } = await supabase.from("profesionisti_public").select("slug, created_at").not("slug", "is", null);
 
   const profilPages: MetadataRoute.Sitemap = (rows ?? [])
     .filter((item) => Boolean(item.slug))

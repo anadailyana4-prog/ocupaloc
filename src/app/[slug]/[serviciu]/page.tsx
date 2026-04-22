@@ -90,7 +90,7 @@ export default async function LocalServicePage({ params }: PageProps) {
   try {
     const supabase = await createSupabaseServerClient();
     const { data } = await supabase
-      .from("profesionisti")
+      .from("profesionisti_public")
       .select("id,business_name:nume_business,slug")
       .ilike("oras", `%${orasName}%`)
       .limit(6);

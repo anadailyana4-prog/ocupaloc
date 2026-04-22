@@ -10,7 +10,7 @@ export default async function PublicSalonPage({ params }: Props) {
   const { slug } = await params;
   const supabase = await createSupabaseServerClient();
   const { data: prof, error } = await supabase
-    .from("profesionisti")
+    .from("profesionisti_public")
     .select("id,slug,nume_business,logo_url,lucreaza_acasa,adresa_publica")
     .eq("slug", slug)
     .maybeSingle();

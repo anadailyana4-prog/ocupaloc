@@ -242,18 +242,21 @@ export default function SignupPage() {
       const errorText = (error?.message ?? "").toLowerCase();
       const alreadyRegistered = errorText.includes("already registered") || errorText.includes("already exists");
       if (alreadyRegistered) {
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: cleanEmail,
-          options: {
-            emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth/callback?next=/dashboard` : undefined
-          }
+        const response = await fetch("/api/auth/magic-link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cleanEmail })
         });
+
+        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
         setIsSubmitting(false);
-        if (otpError) {
-          toast.error("Emailul există deja. Intră în cont sau folosește resetarea parolei.");
+
+        if (!response.ok) {
+          toast.error(payload?.message ?? "Emailul există deja. Intră în cont sau folosește resetarea parolei.");
           return;
         }
-        toast.success("Emailul este deja înregistrat. Ți-am trimis un link de autentificare.");
+
+        toast.success(payload?.message ?? "Emailul este deja înregistrat. Dacă emailul există, am trimis linkul.");
         router.push("/login");
         return;
       }
