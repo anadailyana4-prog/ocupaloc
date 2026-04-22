@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
   }
 
   const supabase = createClient(url, anon, {
-    auth: { persistSession: false, autoRefreshToken: false }
+    auth: { persistSession: false, autoRefreshToken: false, flowType: "pkce" }
   });
 
   try {
