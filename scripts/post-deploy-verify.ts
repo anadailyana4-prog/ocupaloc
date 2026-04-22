@@ -440,6 +440,30 @@ async function httpPost(
   }
 }
 
+async function httpGetPublicSlots(url: string, description: string): Promise<void> {
+  try {
+    const res = await fetch(url, { method: "GET", redirect: "follow" });
+    if (res.status !== 200) {
+      const text = await res.text().catch(() => "");
+      const snippet = text.slice(0, 200).replace(/\n/g, " ");
+      fail("http", description, `expected 200, got ${res.status} — ${snippet}`);
+      return;
+    }
+
+    const payload = (await res.json().catch(() => null)) as { slots?: unknown } | null;
+    const slots = payload?.slots;
+    const isValidSlots = Array.isArray(slots) && slots.every((s) => typeof s === "string");
+    if (!isValidSlots) {
+      fail("http", description, "invalid JSON shape — expected { slots: string[] }");
+      return;
+    }
+
+    pass("http", description, `HTTP 200 with ${slots.length} slots`);
+  } catch (e) {
+    fail("http", description, `fetch error: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
 async function runHttpChecks(): Promise<void> {
   section("HTTP — Public routes");
 
@@ -461,7 +485,7 @@ async function runHttpChecks(): Promise<void> {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const dateStr = tomorrow.toISOString().split("T")[0];
     if (PUBLIC_SERVICE_ID) {
-      await httpGet(
+      await httpGetPublicSlots(
         `${BASE_URL}/api/public/slots?slug=${encodeURIComponent(PUBLIC_SLUG)}&serviciuId=${encodeURIComponent(PUBLIC_SERVICE_ID)}&date=${dateStr}`,
         `GET /api/public/slots?slug=${PUBLIC_SLUG}&serviciuId=${PUBLIC_SERVICE_ID}&date=${dateStr}`
       );
