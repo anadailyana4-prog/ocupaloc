@@ -1,4 +1,5 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import type { EmailOtpType, User } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
 import { sendWelcomeEmail } from "@/lib/email/welcome-user";
@@ -6,6 +7,20 @@ import { sendWelcomeEmail } from "@/lib/email/welcome-user";
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
 export const dynamic = "force-dynamic";
+
+async function maybeSendWelcomeEmail(user: User | null, supabase: ReturnType<typeof createServerClient>) {
+  const emailConfirmed = Boolean(user?.email_confirmed_at);
+  const alreadySent = Boolean((user?.user_metadata as { welcome_email_sent?: boolean } | undefined)?.welcome_email_sent);
+  if (user?.email && emailConfirmed && !alreadySent) {
+    await sendWelcomeEmail(user.email, user.user_metadata?.full_name ?? "");
+    await supabase.auth.updateUser({
+      data: {
+        ...(user.user_metadata ?? {}),
+        welcome_email_sent: true
+      }
+    });
+  }
+}
 
 export async function GET(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -17,10 +32,12 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+  const tokenHash = searchParams.get("token_hash");
+  const otpType = searchParams.get("type") as EmailOtpType | null;
   const next = searchParams.get("next") ?? "/dashboard";
   const safeNext = next.startsWith("/") && !next.startsWith("//") && !next.includes("://") ? next : "/dashboard";
 
-  if (code) {
+  if (code || (tokenHash && otpType)) {
     const response = NextResponse.redirect(new URL(safeNext, request.url));
     const supabase = createServerClient(url, anon, {
       cookies: {
@@ -32,23 +49,24 @@ export async function GET(request: NextRequest) {
         }
       }
     });
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    let error: Error | null = null;
+    if (code) {
+      const result = await supabase.auth.exchangeCodeForSession(code);
+      error = result.error;
+    } else if (tokenHash && otpType) {
+      const result = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: otpType
+      });
+      error = result.error;
+    }
+
     if (!error) {
       const {
         data: { user }
       } = await supabase.auth.getUser();
-
-      const emailConfirmed = Boolean(user?.email_confirmed_at);
-      const alreadySent = Boolean((user?.user_metadata as { welcome_email_sent?: boolean } | undefined)?.welcome_email_sent);
-      if (user?.email && emailConfirmed && !alreadySent) {
-        await sendWelcomeEmail(user.email, user.user_metadata?.full_name ?? "");
-        await supabase.auth.updateUser({
-          data: {
-            ...(user.user_metadata ?? {}),
-            welcome_email_sent: true
-          }
-        });
-      }
+      await maybeSendWelcomeEmail(user, supabase);
       return response;
     }
   }
