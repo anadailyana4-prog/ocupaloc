@@ -501,9 +501,15 @@ export default function SignupPage() {
 
         <CardFooter className="flex flex-col gap-4 border-t border-zinc-800 pt-6">
           <div className="flex w-full items-center justify-between">
-            <Button type="button" variant="ghost" onClick={previousStep} disabled={step === 1}>
-              Înapoi
-            </Button>
+            {step === 1 ? (
+              <Button type="button" variant="ghost" onClick={() => router.push("/")}>
+                Înapoi
+              </Button>
+            ) : (
+              <Button type="button" variant="ghost" onClick={previousStep}>
+                Înapoi
+              </Button>
+            )}
             {step < 3 ? (
               <Button type="button" onClick={nextStep} className="px-6 text-base font-extrabold tracking-wide">
                 Continuă
