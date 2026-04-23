@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { writeWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type SupabaseServer = Awaited<ReturnType<typeof createSupabaseServerClient>>;
@@ -60,18 +61,18 @@ export async function savePageSettings(formData: FormData) {
     redirect("/dashboard/pagina?error=" + encodeURIComponent(msg));
   }
 
-  const { error } = await supabase
-    .from("profesionisti")
-    .update({
+  const { error } = await writeWithTelefonFallback(
+    async (values) => await supabase.from("profesionisti").update(values).eq("id", profId),
+    {
       nume_business: parsed.data.name,
       telefon: parsed.data.phone,
       description: parsed.data.description,
       email: parsed.data.email
-    })
-    .eq("id", profId);
+    }
+  );
 
   if (error) {
-    redirect("/dashboard/pagina?error=" + encodeURIComponent(error.message));
+    redirect("/dashboard/pagina?error=" + encodeURIComponent(error.message ?? "Nu am putut salva datele."));
   }
 
   const { data: prof } = await supabase.from("profesionisti").select("slug").eq("id", profId).maybeSingle();

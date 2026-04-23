@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type PageProps = {
@@ -26,11 +27,17 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
     redirect("/onboarding");
   }
 
-  const { data: org, error } = await supabase
-    .from("profesionisti")
-    .select("nume_business, telefon, email, description, slug")
-    .eq("id", profMeta.id)
-    .maybeSingle();
+  const { data: org, error } = await selectWithTelefonFallback<{
+    nume_business: string | null;
+    telefon?: string | null;
+    email: string | null;
+    description: string | null;
+    slug: string | null;
+  }>(
+    async (columns) => await supabase.from("profesionisti").select(columns).eq("id", profMeta.id).maybeSingle(),
+    "nume_business, telefon, email, description, slug",
+    "nume_business, email, description, slug"
+  );
 
   if (error || !org) {
     return (
@@ -82,7 +89,7 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
             name="name"
             required
             maxLength={200}
-            defaultValue={org.nume_business}
+            defaultValue={org.nume_business ?? ""}
             className="border-zinc-700 bg-zinc-900"
           />
         </div>
