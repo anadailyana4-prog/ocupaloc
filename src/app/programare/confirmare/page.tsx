@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 type PageProps = {
   searchParams?: Promise<{ state?: string; slug?: string }>;
 };

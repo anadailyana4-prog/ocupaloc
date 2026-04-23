@@ -82,18 +82,27 @@ export async function generateStaticParams() {
 
 export default async function PublicSalonSlugPage({ params }: PageProps) {
   const { slug } = await params;
-  const supabase = await createSupabaseServerClient();
   if ((ORASE_TARGET as readonly string[]).includes(slug)) {
     const orasName = slug
       .split("-")
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(" ");
-    const { data: profesionisti } = await supabase
-      .from("profesionisti_public")
-      .select("slug, nume_business, tip_activitate, description")
-      .ilike("oras", `%${orasName}%`)
-      .not("slug", "is", null)
-      .limit(10);
+    let profesionisti:
+      | Array<{ slug: string | null; nume_business: string | null; tip_activitate: string | null; description: string | null }>
+      | null = null;
+
+    try {
+      const supabase = await createSupabaseServerClient();
+      const { data } = await supabase
+        .from("profesionisti_public")
+        .select("slug, nume_business, tip_activitate, description")
+        .ilike("oras", `%${orasName}%`)
+        .not("slug", "is", null)
+        .limit(10);
+      profesionisti = data;
+    } catch {
+      profesionisti = null;
+    }
 
     return (
       <main className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -139,6 +148,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
       </main>
     );
   }
+  const supabase = await createSupabaseServerClient();
   const { data: prof, error } = await supabase
     .from("profesionisti_public")
     .select("id,slug,nume_business,tip_activitate,description,oras,logo_url,telefon,lucreaza_acasa,adresa_publica,program")
