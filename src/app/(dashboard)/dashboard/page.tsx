@@ -182,11 +182,11 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
               Gestionează abonamentul
             </Button>
           </form>
-          {prof.slug ? (
+          {prof.slug?.trim() ? (
             <Button asChild variant="secondary" className="rounded-full">
-              <Link href={`/${prof.slug}`} target="_blank" rel="noreferrer">
+              <a href={`/${prof.slug.trim()}`} target="_blank" rel="noreferrer">
                 Deschide pagina publică
-              </Link>
+              </a>
             </Button>
           ) : null}
         </div>

@@ -53,6 +53,18 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
           </Link>
           . Emailul e opțional și e folosit doar pentru alerte la rezervări noi.
         </p>
+        <div className="flex flex-wrap gap-2 pt-2">
+          <Button asChild variant="outline" className="rounded-full">
+            <Link href="/dashboard">Înapoi la dashboard</Link>
+          </Button>
+          {org.slug?.trim() ? (
+            <Button asChild variant="secondary" className="rounded-full">
+              <a href={`/${org.slug.trim()}`} target="_blank" rel="noreferrer">
+                Deschide pagina publică
+              </a>
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {sp.saved === "1" ? (
