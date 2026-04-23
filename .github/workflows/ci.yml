@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  # Opt into Node.js 24 runtime for all actions (removes Node20 deprecation warning).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   check:
     name: Typecheck, Lint & Build
@@ -32,6 +36,23 @@ jobs:
             exit 1
           fi
 
+      - name: Scan for hardcoded credentials in E2E tests
+        run: |
+          echo "Scanning tests/e2e/ for hardcoded email addresses and password literals..."
+          if grep -rn --include="*.ts" --include="*.js" \
+            -E "@(gmail|yahoo|hotmail|outlook)\.(com|ro)" \
+            tests/e2e/ 2>/dev/null; then
+            echo "::error::Hardcoded email addresses detected in E2E tests. Use PLAYWRIGHT_LOGIN_EMAIL / PLAYWRIGHT_TEST_CLIENT_EMAIL env vars."
+            exit 1
+          fi
+          if grep -rn --include="*.ts" --include="*.js" \
+            -E "(P|p)assword\s*=\s*'[^'\$\{]" \
+            tests/e2e/ 2>/dev/null; then
+            echo "::error::Hardcoded password literals detected in E2E tests. Use PLAYWRIGHT_LOGIN_PASSWORD env var."
+            exit 1
+          fi
+          echo "Credential scan passed — no hardcoded credentials found."
+
       - name: Unit tests, types, lint, audit
         run: pnpm run check:all
 
@@ -55,5 +76,7 @@ jobs:
           PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL }}
           PLAYWRIGHT_BOOKING_SLUG: ${{ vars.PLAYWRIGHT_BOOKING_SLUG }}
           PLAYWRIGHT_ENABLE_DEMO_SMOKE: ${{ vars.PLAYWRIGHT_ENABLE_DEMO_SMOKE }}
+          PLAYWRIGHT_LOGIN_EMAIL: ${{ secrets.PLAYWRIGHT_LOGIN_EMAIL }}
+          PLAYWRIGHT_LOGIN_PASSWORD: ${{ secrets.PLAYWRIGHT_LOGIN_PASSWORD }}
         run: pnpm run test:e2e
 

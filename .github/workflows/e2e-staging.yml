@@ -5,6 +5,10 @@ on:
     - cron: "0 2 * * *"
   workflow_dispatch:
 
+env:
+  # Opt into Node.js 24 runtime for all actions (removes Node20 deprecation warning).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   e2e-staging:
     name: E2E Smoke (staging required)
@@ -37,4 +41,6 @@ jobs:
           PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL }}
           PLAYWRIGHT_BOOKING_SLUG: ${{ vars.PLAYWRIGHT_BOOKING_SLUG }}
           PLAYWRIGHT_ENABLE_DEMO_SMOKE: ${{ vars.PLAYWRIGHT_ENABLE_DEMO_SMOKE }}
+          PLAYWRIGHT_LOGIN_EMAIL: ${{ secrets.PLAYWRIGHT_LOGIN_EMAIL }}
+          PLAYWRIGHT_LOGIN_PASSWORD: ${{ secrets.PLAYWRIGHT_LOGIN_PASSWORD }}
         run: pnpm run test:e2e
