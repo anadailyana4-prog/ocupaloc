@@ -45,14 +45,20 @@ test.describe("public booking smoke", () => {
     await firstServiceOption.click();
 
     // First visible day may have zero slots (program / timezone / data). Try several days.
+    // Cap attempts × wait so total work stays under test timeout (21×25s was killing CI).
+    const maxDayAttempts = 7;
+    const slotVisibleMs = 12_000;
     const dayOptions = page.getByTestId("day-option");
     const dayCount = await dayOptions.count();
     const firstSlot = page.getByTestId("slot-option").first();
     let pickedSlot = false;
-    for (let i = 0; i < Math.min(dayCount, 21); i += 1) {
-      await dayOptions.nth(i).click();
+    for (let i = 0; i < Math.min(dayCount, maxDayAttempts); i += 1) {
+      if (page.isClosed()) break;
+      const day = dayOptions.nth(i);
+      await day.scrollIntoViewIfNeeded().catch(() => {});
+      await day.click();
       try {
-        await expect(firstSlot).toBeVisible({ timeout: 25_000 });
+        await expect(firstSlot).toBeVisible({ timeout: slotVisibleMs });
         await firstSlot.click();
         pickedSlot = true;
         break;
