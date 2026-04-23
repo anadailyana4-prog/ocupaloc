@@ -1,0 +1,260 @@
+name: Chaos-lite Reliability Drills
+
+on:
+  schedule:
+    - cron: "0 4 15 * *"
+  workflow_dispatch:
+    inputs:
+      drill_scope:
+        description: "Drill scope: all | api | db | fallback | timeout"
+        required: false
+        default: "all"
+
+permissions:
+  issues: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  TARGET: "https://ocupaloc.ro"
+
+jobs:
+  chaos-drills:
+    name: Run Chaos-lite Drills
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create chaos-lite   --color 374151 --description "Chaos-lite reliability drill" --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create drill-fail   --color b60205 --description "Drill found a failure"         --repo "${{ github.repository }}" 2>/dev/null || true
+
+      - name: Drill 1 - 404 fallback (missing resource)
+        id: d1
+        run: |
+          SCOPE="${{ github.event.inputs.drill_scope }}"
+          if [ "$SCOPE" != "all" ] && [ "$SCOPE" != "fallback" ]; then
+            echo "result=SKIP" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$TARGET/booking/nonexistent-service-xyz-404test" || echo "000")
+          echo "http=$HTTP" >> "$GITHUB_OUTPUT"
+
+          if [ "$HTTP" = "404" ] || [ "$HTTP" = "200" ]; then
+            echo "result=PASS" >> "$GITHUB_OUTPUT"
+            echo "detail=Missing resource returned HTTP $HTTP (expected graceful handling)" >> "$GITHUB_OUTPUT"
+          elif [ "$HTTP" = "500" ] || [ "$HTTP" = "503" ]; then
+            echo "result=FAIL" >> "$GITHUB_OUTPUT"
+            echo "detail=Missing resource caused server error HTTP $HTTP (blast: users see error page)" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=WARN" >> "$GITHUB_OUTPUT"
+            echo "detail=Missing resource returned HTTP $HTTP (unexpected, verify behavior)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Drill 2 - API invalid payload (error handling)
+        id: d2
+        run: |
+          SCOPE="${{ github.event.inputs.drill_scope }}"
+          if [ "$SCOPE" != "all" ] && [ "$SCOPE" != "api" ]; then
+            echo "result=SKIP" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+            -X POST "$TARGET/api/book" \
+            -H "Content-Type: application/json" \
+            -d '{"__chaos_test":true,"invalid_field":"x"}' \
+            || echo "000")
+          echo "http=$HTTP" >> "$GITHUB_OUTPUT"
+
+          if [ "$HTTP" = "400" ] || [ "$HTTP" = "401" ] || [ "$HTTP" = "422" ] || [ "$HTTP" = "403" ]; then
+            echo "result=PASS" >> "$GITHUB_OUTPUT"
+            echo "detail=Invalid payload correctly rejected with HTTP $HTTP" >> "$GITHUB_OUTPUT"
+          elif [ "$HTTP" = "500" ] || [ "$HTTP" = "503" ]; then
+            echo "result=FAIL" >> "$GITHUB_OUTPUT"
+            echo "detail=Invalid payload caused server error HTTP $HTTP (blast: DB may see malformed writes)" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=WARN" >> "$GITHUB_OUTPUT"
+            echo "detail=Invalid payload returned HTTP $HTTP (verify validation logic)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Drill 3 - Unauthenticated access to protected endpoint
+        id: d3
+        run: |
+          SCOPE="${{ github.event.inputs.drill_scope }}"
+          if [ "$SCOPE" != "all" ] && [ "$SCOPE" != "api" ]; then
+            echo "result=SKIP" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$TARGET/dashboard" || echo "000")
+          echo "http=$HTTP" >> "$GITHUB_OUTPUT"
+
+          if [ "$HTTP" = "302" ] || [ "$HTTP" = "301" ] || [ "$HTTP" = "307" ] || [ "$HTTP" = "308" ]; then
+            echo "result=PASS" >> "$GITHUB_OUTPUT"
+            echo "detail=Unauthenticated dashboard access correctly redirected (HTTP $HTTP)" >> "$GITHUB_OUTPUT"
+          elif [ "$HTTP" = "401" ] || [ "$HTTP" = "403" ]; then
+            echo "result=PASS" >> "$GITHUB_OUTPUT"
+            echo "detail=Unauthenticated access correctly blocked (HTTP $HTTP)" >> "$GITHUB_OUTPUT"
+          elif [ "$HTTP" = "200" ]; then
+            echo "result=FAIL" >> "$GITHUB_OUTPUT"
+            echo "detail=Dashboard accessible without auth (HTTP 200) - blast: data exposure risk" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=WARN" >> "$GITHUB_OUTPUT"
+            echo "detail=Dashboard returned unexpected HTTP $HTTP" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Drill 4 - Slow response / timeout detection
+        id: d4
+        run: |
+          SCOPE="${{ github.event.inputs.drill_scope }}"
+          if [ "$SCOPE" != "all" ] && [ "$SCOPE" != "timeout" ]; then
+            echo "result=SKIP" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          START=$(date +%s%3N)
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "$TARGET/api/health/detailed" || echo "000")
+          END=$(date +%s%3N)
+          ELAPSED=$(( END - START ))
+
+          echo "http=$HTTP"       >> "$GITHUB_OUTPUT"
+          echo "elapsed=$ELAPSED" >> "$GITHUB_OUTPUT"
+
+          if [ "$HTTP" = "200" ] && awk -v v="$ELAPSED" 'BEGIN{exit (v<500)?0:1}'; then
+            echo "result=PASS" >> "$GITHUB_OUTPUT"
+            echo "detail=Health endpoint responded in ${ELAPSED}ms (HTTP $HTTP)" >> "$GITHUB_OUTPUT"
+          elif awk -v v="$ELAPSED" 'BEGIN{exit (v>5000)?0:1}'; then
+            echo "result=FAIL" >> "$GITHUB_OUTPUT"
+            echo "detail=Health endpoint took ${ELAPSED}ms - blast: slow DB connection causing user-facing latency" >> "$GITHUB_OUTPUT"
+          elif awk -v v="$ELAPSED" 'BEGIN{exit (v>2000)?0:1}'; then
+            echo "result=WARN" >> "$GITHUB_OUTPUT"
+            echo "detail=Health endpoint slow: ${ELAPSED}ms (threshold 2000ms)" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=PASS" >> "$GITHUB_OUTPUT"
+            echo "detail=Health endpoint responded in ${ELAPSED}ms (HTTP $HTTP)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Drill 5 - DB health check (Supabase connectivity)
+        id: d5
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          SCOPE="${{ github.event.inputs.drill_scope }}"
+          if [ "$SCOPE" != "all" ] && [ "$SCOPE" != "db" ]; then
+            echo "result=SKIP" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "result=SKIP" >> "$GITHUB_OUTPUT"
+            echo "detail=Supabase secrets not configured" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          START=$(date +%s%3N)
+          HTTP=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/operational_events?select=id&limit=1" \
+            || echo "000")
+          END=$(date +%s%3N)
+          DB_LATENCY=$(( END - START ))
+
+          echo "http=$HTTP"           >> "$GITHUB_OUTPUT"
+          echo "db_latency=$DB_LATENCY" >> "$GITHUB_OUTPUT"
+
+          if [ "$HTTP" = "200" ] && awk -v v="$DB_LATENCY" 'BEGIN{exit (v<300)?0:1}'; then
+            echo "result=PASS" >> "$GITHUB_OUTPUT"
+            echo "detail=DB reachable in ${DB_LATENCY}ms (HTTP $HTTP)" >> "$GITHUB_OUTPUT"
+          elif [ "$HTTP" != "200" ]; then
+            echo "result=FAIL" >> "$GITHUB_OUTPUT"
+            echo "detail=DB unreachable (HTTP $HTTP) - blast: full booking flow down" >> "$GITHUB_OUTPUT"
+          elif awk -v v="$DB_LATENCY" 'BEGIN{exit (v>2000)?0:1}'; then
+            echo "result=WARN" >> "$GITHUB_OUTPUT"
+            echo "detail=DB reachable but slow: ${DB_LATENCY}ms (threshold 2000ms)" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=PASS" >> "$GITHUB_OUTPUT"
+            echo "detail=DB reachable in ${DB_LATENCY}ms" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Evaluate overall drill verdict
+        id: verdict
+        run: |
+          D1="${{ steps.d1.outputs.result }}"
+          D2="${{ steps.d2.outputs.result }}"
+          D3="${{ steps.d3.outputs.result }}"
+          D4="${{ steps.d4.outputs.result }}"
+          D5="${{ steps.d5.outputs.result }}"
+
+          OVERALL="PASS"
+          FAILS=0
+          WARNS=0
+
+          for R in "$D1" "$D2" "$D3" "$D4" "$D5"; do
+            if [ "$R" = "FAIL" ]; then FAILS=$(( FAILS + 1 )); fi
+            if [ "$R" = "WARN" ]; then WARNS=$(( WARNS + 1 )); fi
+          done
+
+          if [ "$FAILS" -gt 0 ]; then OVERALL="FAIL"; elif [ "$WARNS" -gt 0 ]; then OVERALL="WARN"; fi
+
+          echo "overall=$OVERALL" >> "$GITHUB_OUTPUT"
+          echo "fails=$FAILS"     >> "$GITHUB_OUTPUT"
+          echo "warns=$WARNS"     >> "$GITHUB_OUTPUT"
+
+      - name: Write drill summary
+        if: always()
+        run: |
+          DATE=$(date -u +"%Y-%m-%d %H:%M UTC")
+          OVERALL="${{ steps.verdict.outputs.overall }}"
+          FAILS="${{ steps.verdict.outputs.fails }}"
+          WARNS="${{ steps.verdict.outputs.warns }}"
+
+          printf "## Chaos-lite Drill Results - %s\n\n" "$DATE"                     >> "$GITHUB_STEP_SUMMARY"
+          printf "**Overall:** %s  (fails: %s, warns: %s)\n\n" "$OVERALL" "$FAILS" "$WARNS" >> "$GITHUB_STEP_SUMMARY"
+          printf "### Drill Results\n\n"                                              >> "$GITHUB_STEP_SUMMARY"
+          printf "Drill 1 - 404 fallback:          %s - %s\n" "${{ steps.d1.outputs.result }}" "${{ steps.d1.outputs.detail }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "Drill 2 - API invalid payload:   %s - %s\n" "${{ steps.d2.outputs.result }}" "${{ steps.d2.outputs.detail }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "Drill 3 - Unauthenticated access: %s - %s\n" "${{ steps.d3.outputs.result }}" "${{ steps.d3.outputs.detail }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "Drill 4 - Slow response:          %s - %s\n" "${{ steps.d4.outputs.result }}" "${{ steps.d4.outputs.detail }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "Drill 5 - DB health:              %s - %s\n" "${{ steps.d5.outputs.result }}" "${{ steps.d5.outputs.detail }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open issue on drill failures
+        if: steps.verdict.outputs.overall != 'PASS'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date -u +"%Y-%m-%d")
+          OVERALL="${{ steps.verdict.outputs.overall }}"
+          TITLE="[CHAOS-LITE] ${OVERALL}: Reliability drill - $DATE"
+          EXISTS=$(gh issue list --repo "${{ github.repository }}" --state open --label chaos-lite \
+            --json title -q ".[].title" | grep -F "$TITLE" | head -1)
+          if [ -n "$EXISTS" ]; then echo "Deduplicated."; exit 0; fi
+
+          D1_R="${{ steps.d1.outputs.result }}"
+          D1_D="${{ steps.d1.outputs.detail }}"
+          D2_R="${{ steps.d2.outputs.result }}"
+          D2_D="${{ steps.d2.outputs.detail }}"
+          D3_R="${{ steps.d3.outputs.result }}"
+          D3_D="${{ steps.d3.outputs.detail }}"
+          D4_R="${{ steps.d4.outputs.result }}"
+          D4_D="${{ steps.d4.outputs.detail }}"
+          D5_R="${{ steps.d5.outputs.result }}"
+          D5_D="${{ steps.d5.outputs.detail }}"
+          FAILS="${{ steps.verdict.outputs.fails }}"
+          WARNS="${{ steps.verdict.outputs.warns }}"
+
+          BODY=$(printf "Chaos-lite reliability drill result: %s on %s.\n\nFailed drills: %s  Warnings: %s\n\nDrill results:\n- 404 fallback: %s - %s\n- API invalid payload: %s - %s\n- Unauthenticated access: %s - %s\n- Slow response: %s - %s\n- DB health: %s - %s\n\nBlast radius: see FAIL entries above for user impact scope.\n\nRecommended: Fix FAIL items before next release. WARN items to be monitored.\n\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            "$OVERALL" "$DATE" "$FAILS" "$WARNS" \
+            "$D1_R" "$D1_D" "$D2_R" "$D2_D" "$D3_R" "$D3_D" "$D4_R" "$D4_D" "$D5_R" "$D5_D")
+
+          LABELS="chaos-lite"
+          if [ "$OVERALL" = "FAIL" ]; then LABELS="chaos-lite,drill-fail,incident"; fi
+
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "$TITLE" \
+            --body "$BODY" \
+            --label "$LABELS"

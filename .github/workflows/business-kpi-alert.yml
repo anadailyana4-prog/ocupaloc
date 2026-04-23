@@ -1,0 +1,200 @@
+name: Business KPI Alerting
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  kpi-check:
+    name: Check Business KPIs (24h)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure KPI labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create kpi-alert   --color e11d48 --description "Business KPI critical alert"  --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create kpi-warn    --color f97316 --description "Business KPI warning"           --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create kpi-digest  --color 6366f1 --description "Daily KPI digest"               --repo "${{ github.repository }}" 2>/dev/null || true
+
+      - name: Query booking metrics (24h)
+        id: metrics
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          SINCE=$(date -u -d "24 hours ago" +"%Y-%m-%dT%H:%M:%SZ")
+          TODAY=$(date -u +"%Y-%m-%d")
+
+          ROWS=$(curl -sf \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/operational_events?select=flow,outcome,latency_ms,step,event_type,created_at&created_at=gte.${SINCE}&limit=5000" \
+            || echo "[]")
+
+          B_TOTAL=$(echo "$ROWS" | jq '[.[] | select(.flow=="booking")] | length')
+          B_OK=$(echo "$ROWS"    | jq '[.[] | select(.flow=="booking" and .outcome=="success")] | length')
+          B_FAIL=$(echo "$ROWS"  | jq '[.[] | select(.flow=="booking" and .outcome=="failure")] | length')
+
+          B_RATE=$(awk -v ok="$B_OK" -v tot="$B_TOTAL" \
+            'BEGIN{if(tot==0) print "-1"; else printf "%.1f", (ok*100)/tot}')
+          B_FAIL_RATE=$(awk -v fail="$B_FAIL" -v tot="$B_TOTAL" \
+            'BEGIN{if(tot==0) print "0"; else printf "%.1f", (fail*100)/tot}')
+
+          B_P50=$(echo "$ROWS" | jq -r \
+            '[.[] | select(.flow=="booking") | .latency_ms | select(type=="number")] | sort | if length==0 then "-1" else .[((length*0.50)|floor)] end')
+          B_P95=$(echo "$ROWS" | jq -r \
+            '[.[] | select(.flow=="booking") | .latency_ms | select(type=="number")] | sort | if length==0 then "-1" else .[((length*0.95)|floor)] end')
+
+          S_SERVICE=$(echo "$ROWS" | jq '[.[] | select(.step=="select_service" or .event_type=="select_service")] | length')
+          S_SLOT=$(echo "$ROWS"    | jq '[.[] | select(.step=="select_slot"    or .event_type=="select_slot")]    | length')
+          S_FORM=$(echo "$ROWS"    | jq '[.[] | select(.step=="fill_form"      or .event_type=="fill_form")]      | length')
+          S_SUBMIT=$(echo "$ROWS"  | jq '[.[] | select(.step=="submit"         or .event_type=="submit")]         | length')
+
+          echo "b_total=$B_TOTAL"         >> "$GITHUB_OUTPUT"
+          echo "b_rate=$B_RATE"           >> "$GITHUB_OUTPUT"
+          echo "b_fail_rate=$B_FAIL_RATE" >> "$GITHUB_OUTPUT"
+          echo "b_p50=$B_P50"             >> "$GITHUB_OUTPUT"
+          echo "b_p95=$B_P95"             >> "$GITHUB_OUTPUT"
+          echo "s_service=$S_SERVICE"     >> "$GITHUB_OUTPUT"
+          echo "s_slot=$S_SLOT"           >> "$GITHUB_OUTPUT"
+          echo "s_form=$S_FORM"           >> "$GITHUB_OUTPUT"
+          echo "s_submit=$S_SUBMIT"       >> "$GITHUB_OUTPUT"
+          echo "today=$TODAY"             >> "$GITHUB_OUTPUT"
+
+      - name: Evaluate KPI thresholds
+        id: eval
+        run: |
+          B_RATE="${{ steps.metrics.outputs.b_rate }}"
+          B_FAIL_RATE="${{ steps.metrics.outputs.b_fail_rate }}"
+          B_P95="${{ steps.metrics.outputs.b_p95 }}"
+          B_TOTAL="${{ steps.metrics.outputs.b_total }}"
+
+          ALERT_LEVEL="ok"
+          REASONS=""
+
+          if [ "$B_TOTAL" != "0" ] && [ "$B_TOTAL" != "-1" ]; then
+            if awk -v v="$B_RATE" 'BEGIN{exit (v>=0 && v<95)?0:1}'; then
+              ALERT_LEVEL="critical"
+              REASONS="Conversion CRITICAL ${B_RATE}% below 95%25 threshold"
+            elif awk -v v="$B_RATE" 'BEGIN{exit (v>=0 && v<97)?0:1}'; then
+              if [ "$ALERT_LEVEL" = "ok" ]; then ALERT_LEVEL="warn"; fi
+              REASONS="Conversion WARNING ${B_RATE}% below 97%25 threshold"
+            fi
+
+            if awk -v v="$B_FAIL_RATE" 'BEGIN{exit (v>10)?0:1}'; then
+              ALERT_LEVEL="critical"
+              REASONS="${REASONS}; Failure rate CRITICAL ${B_FAIL_RATE}% above 10%25"
+            elif awk -v v="$B_FAIL_RATE" 'BEGIN{exit (v>5)?0:1}'; then
+              if [ "$ALERT_LEVEL" = "ok" ]; then ALERT_LEVEL="warn"; fi
+              REASONS="${REASONS}; Failure rate WARNING ${B_FAIL_RATE}% above 5%25"
+            fi
+
+            if [ "$B_P95" != "-1" ] && [ "$B_P95" != "" ]; then
+              if awk -v v="$B_P95" 'BEGIN{exit (v>3000)?0:1}'; then
+                ALERT_LEVEL="critical"
+                REASONS="${REASONS}; p95 CRITICAL ${B_P95}ms above 3000ms"
+              elif awk -v v="$B_P95" 'BEGIN{exit (v>1500)?0:1}'; then
+                if [ "$ALERT_LEVEL" = "ok" ]; then ALERT_LEVEL="warn"; fi
+                REASONS="${REASONS}; p95 WARNING ${B_P95}ms above 1500ms"
+              fi
+            fi
+          fi
+
+          echo "alert_level=$ALERT_LEVEL" >> "$GITHUB_OUTPUT"
+          echo "reasons=$REASONS"         >> "$GITHUB_OUTPUT"
+
+      - name: Write job summary
+        if: always()
+        run: |
+          TODAY="${{ steps.metrics.outputs.today }}"
+          B_TOTAL="${{ steps.metrics.outputs.b_total }}"
+          B_RATE="${{ steps.metrics.outputs.b_rate }}"
+          B_FAIL="${{ steps.metrics.outputs.b_fail_rate }}"
+          B_P50="${{ steps.metrics.outputs.b_p50 }}"
+          B_P95="${{ steps.metrics.outputs.b_p95 }}"
+          S_SVC="${{ steps.metrics.outputs.s_service }}"
+          S_SLOT="${{ steps.metrics.outputs.s_slot }}"
+          S_FORM="${{ steps.metrics.outputs.s_form }}"
+          S_SUB="${{ steps.metrics.outputs.s_submit }}"
+          LEVEL="${{ steps.eval.outputs.alert_level }}"
+          REASONS="${{ steps.eval.outputs.reasons }}"
+
+          printf "## Daily KPI Report - %s\n\n" "$TODAY"                               >> "$GITHUB_STEP_SUMMARY"
+          printf "**Status:** %s\n\n"            "$LEVEL"                               >> "$GITHUB_STEP_SUMMARY"
+          printf "### Booking Metrics\n\n"                                               >> "$GITHUB_STEP_SUMMARY"
+          printf "- Total bookings: %s\n"         "$B_TOTAL"                            >> "$GITHUB_STEP_SUMMARY"
+          printf "- Conversion rate: %s%%  (warn <97%%, crit <95%%)\n" "$B_RATE"       >> "$GITHUB_STEP_SUMMARY"
+          printf "- Failure rate: %s%%  (warn >5%%, crit >10%%)\n"     "$B_FAIL"       >> "$GITHUB_STEP_SUMMARY"
+          printf "- p50 latency: %s ms\n"         "$B_P50"                              >> "$GITHUB_STEP_SUMMARY"
+          printf "- p95 latency: %s ms  (warn >1500ms, crit >3000ms)\n" "$B_P95"       >> "$GITHUB_STEP_SUMMARY"
+          printf "\n### Funnel Drop-off\n\n"                                             >> "$GITHUB_STEP_SUMMARY"
+          printf "- select_service: %s events\n"  "$S_SVC"                              >> "$GITHUB_STEP_SUMMARY"
+          printf "- select_slot: %s events\n"     "$S_SLOT"                             >> "$GITHUB_STEP_SUMMARY"
+          printf "- fill_form: %s events\n"       "$S_FORM"                             >> "$GITHUB_STEP_SUMMARY"
+          printf "- submit: %s events\n"          "$S_SUB"                              >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$REASONS" ]; then
+            printf "\n### Alert Reasons\n\n%s\n" "$REASONS"                             >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Create critical alert issue
+        if: steps.eval.outputs.alert_level == 'critical'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TODAY="${{ steps.metrics.outputs.today }}"
+          TITLE="[KPI-CRITICAL] Business KPI Alert - $TODAY"
+          EXISTS=$(gh issue list --repo "${{ github.repository }}" --state open --label kpi-alert \
+            --json title -q ".[].title" | grep -F "$TITLE" | head -1)
+          if [ -n "$EXISTS" ]; then echo "Deduplicated."; exit 0; fi
+
+          B_TOTAL="${{ steps.metrics.outputs.b_total }}"
+          B_RATE="${{ steps.metrics.outputs.b_rate }}"
+          B_FAIL="${{ steps.metrics.outputs.b_fail_rate }}"
+          B_P95="${{ steps.metrics.outputs.b_p95 }}"
+          REASONS="${{ steps.eval.outputs.reasons }}"
+          S_SVC="${{ steps.metrics.outputs.s_service }}"
+          S_SLOT="${{ steps.metrics.outputs.s_slot }}"
+          S_FORM="${{ steps.metrics.outputs.s_form }}"
+          S_SUB="${{ steps.metrics.outputs.s_submit }}"
+
+          BODY=$(printf "CRITICAL business KPI degradation detected on %s.\n\nAlert reasons:\n%s\n\nMetrics (last 24h):\n- Bookings total: %s\n- Conversion rate: %s%%\n- Failure rate: %s%%\n- p95 latency: %s ms\n\nFunnel drop-off:\n- select_service events: %s\n- select_slot events: %s\n- fill_form events: %s\n- submit events: %s\n\nImmediate action: Investigate booking flow, check Supabase logs and Vercel function errors.\n\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            "$TODAY" "$REASONS" "$B_TOTAL" "$B_RATE" "$B_FAIL" "$B_P95" \
+            "$S_SVC" "$S_SLOT" "$S_FORM" "$S_SUB")
+
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "$TITLE" \
+            --body "$BODY" \
+            --label "kpi-alert,incident"
+
+      - name: Create warning issue
+        if: steps.eval.outputs.alert_level == 'warn'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TODAY="${{ steps.metrics.outputs.today }}"
+          TITLE="[KPI-WARN] Business KPI Warning - $TODAY"
+          EXISTS=$(gh issue list --repo "${{ github.repository }}" --state open --label kpi-warn \
+            --json title -q ".[].title" | grep -F "$TITLE" | head -1)
+          if [ -n "$EXISTS" ]; then echo "Deduplicated."; exit 0; fi
+
+          B_TOTAL="${{ steps.metrics.outputs.b_total }}"
+          B_RATE="${{ steps.metrics.outputs.b_rate }}"
+          REASONS="${{ steps.eval.outputs.reasons }}"
+
+          BODY=$(printf "Business KPI warning on %s.\n\nReasons:\n%s\n\nMetrics (last 24h):\n- Bookings total: %s\n- Conversion rate: %s%%\n\nRecommended: Monitor for the next 2 hours. No immediate action required unless trend worsens.\n\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            "$TODAY" "$REASONS" "$B_TOTAL" "$B_RATE")
+
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "$TITLE" \
+            --body "$BODY" \
+            --label "kpi-warn"
