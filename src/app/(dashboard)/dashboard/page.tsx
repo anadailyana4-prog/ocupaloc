@@ -15,7 +15,7 @@ import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
 
 type PageProps = {
-  searchParams?: Promise<{ saved?: string; error?: string }>;
+  searchParams?: Promise<{ saved?: string; error?: string; filter?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -78,7 +78,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   }
 
   const sp = searchParams ? await searchParams : {};
-  const since = subDays(new Date(), 1).toISOString();
+  const filter = sp.filter === "azi" || sp.filter === "toate" ? sp.filter : "viitoare";
   const { count: serviciiCount } = await supabase
     .from("servicii")
     .select("*", { count: "exact", head: true })
@@ -91,18 +91,28 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   );
   const profileDone = Boolean(prof.nume_business?.trim() && (!telefonColumnAvailable || prof.telefon?.trim()));
 
-  const { data: rawProg, error: progErr } = await supabase
-    .from("programari")
-    .select("id, data_start, data_final, status, nume_client, telefon_client, servicii(nume)")
-    .eq("profesionist_id", prof.id)
-    .gte("data_start", since)
-    .order("data_start", { ascending: true })
-    .limit(50);
-
   const todayLocal = formatInTimeZone(new Date(), "Europe/Bucharest", "yyyy-MM-dd");
   const dayStartIso = toDate(`${todayLocal}T00:00:00`, { timeZone: "Europe/Bucharest" }).toISOString();
   const dayEndIso = toDate(`${todayLocal}T23:59:59`, { timeZone: "Europe/Bucharest" }).toISOString();
   const sevenDaysAgoIso = subDays(new Date(), 7).toISOString();
+
+  let progQuery = supabase
+    .from("programari")
+    .select("id, data_start, data_final, status, nume_client, telefon_client, servicii(nume)")
+    .eq("profesionist_id", prof.id)
+    .order("data_start", { ascending: filter !== "toate" })
+    .limit(100);
+
+  if (filter === "azi") {
+    progQuery = progQuery.gte("data_start", dayStartIso).lte("data_start", dayEndIso);
+  } else if (filter === "viitoare") {
+    progQuery = progQuery.gte("data_start", new Date().toISOString());
+  } else {
+    // toate — show last 30 days + future
+    progQuery = progQuery.gte("data_start", subDays(new Date(), 30).toISOString());
+  }
+
+  const { data: rawProg, error: progErr } = await progQuery;
 
   const { count: remindersSentToday } = await supabase
     .from("programari_reminders")
@@ -324,9 +334,28 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
       </section>
 
       <section className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Programări</h2>
-          <p className="text-sm text-muted-foreground">De ieri în viitor, primele 50.</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">Programări</h2>
+            <p className="text-sm text-muted-foreground">
+              {filter === "azi" ? "Programările de azi" : filter === "viitoare" ? "Programări viitoare" : "Ultimele 30 de zile + viitoare"}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {(["azi", "viitoare", "toate"] as const).map((f) => (
+              <Link
+                key={f}
+                href={`/dashboard?filter=${f}`}
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                  filter === f
+                    ? "bg-amber-300 text-slate-900"
+                    : "border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+                }`}
+              >
+                {f === "azi" ? "Azi" : f === "viitoare" ? "Viitoare" : "Toate"}
+              </Link>
+            ))}
+          </div>
         </div>
         {progErr ? (
           <div className="rounded-lg border border-destructive/50 p-4 text-sm text-destructive">{progErr.message}</div>

@@ -91,6 +91,11 @@ export async function insertProgramareForProfSlug(
     return { ok: false, message: "Oră invalidă." };
   }
 
+  // Always reject bookings in the past (independent of smart rules)
+  if (startRequest.getTime() <= Date.now()) {
+    return { ok: false, message: "Slot expirat — alege o oră viitoare." };
+  }
+
   if (prof.smart_rules_enabled) {
     const minNotice = Number(prof.smart_min_notice_minutes ?? 0);
     if (minNotice > 0) {

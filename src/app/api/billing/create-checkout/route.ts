@@ -9,7 +9,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST() {
   if (!isBillingEnabled()) {
-    return NextResponse.json({ error: "Billing is disabled." }, { status: 503 });
+    return NextResponse.redirect(new URL("/preturi", getSiteUrl()), 303);
   }
 
   try {

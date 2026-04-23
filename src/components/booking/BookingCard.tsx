@@ -1,6 +1,6 @@
 "use client";
 
-import { addDays, addMonths, eachDayOfInterval, endOfMonth, format, isSameDay, startOfDay, startOfMonth } from "date-fns";
+import { addDays, addMonths, eachDayOfInterval, endOfMonth, format, isBefore, isSameDay, startOfDay, startOfMonth } from "date-fns";
 import { ro } from "date-fns/locale";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -572,12 +572,15 @@ function BookingCardLive(props: LiveProps) {
                   ))}
                   {monthDays.map((day) => {
                     const isSel = selectedDay && isSameDay(day, selectedDay);
+                    const isPast = isBefore(startOfDay(day), startOfDay(new Date()));
                     return (
                       <button
                         key={day.toISOString()}
                         type="button"
                         data-testid="day-option"
+                        disabled={isPast}
                         onClick={() => {
+                          if (isPast) return;
                           setSelectedDay(day);
                           trackBookingEvent("booking_day_selected", {
                             mode: tenant ? "tenant" : "public",
@@ -588,7 +591,11 @@ function BookingCardLive(props: LiveProps) {
                           });
                         }}
                         className={`flex aspect-square items-center justify-center rounded ${
-                          isSel ? "bg-[#1d4ed8] font-semibold text-white" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
+                          isPast
+                            ? "cursor-not-allowed text-zinc-700"
+                            : isSel
+                              ? "bg-[#1d4ed8] font-semibold text-white"
+                              : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
                         }`}
                       >
                         {format(day, "d")}

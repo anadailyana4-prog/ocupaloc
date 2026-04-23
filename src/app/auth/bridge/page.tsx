@@ -41,6 +41,23 @@ export default function AuthBridgePage() {
             refresh_token: action.refreshToken
           });
           if (error) throw error;
+        } else {
+          // kind=none: no auth params present — check if already has a session
+          const { data } = await supabase.auth.getSession();
+          if (data.session) {
+            if (!cancelled) window.location.replace(safeNext);
+            return;
+          }
+          const current = new URL(window.location.href);
+          const oauthError = current.searchParams.get("error");
+          const oauthDesc = current.searchParams.get("error_description");
+          if (oauthError) {
+            const reason = encodeURIComponent(oauthDesc ?? oauthError);
+            if (!cancelled) window.location.replace(`/login?error=auth&reason=${reason}`);
+            return;
+          }
+          if (!cancelled) window.location.replace("/login?error=auth&reason=sesiune_lipsa");
+          return;
         }
 
         let sessionFound = false;

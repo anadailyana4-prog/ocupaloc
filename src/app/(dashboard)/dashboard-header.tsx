@@ -1,24 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
 export function DashboardHeader() {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function logout() {
     setLoading(true);
-    const res = await fetch("/api/auth/signout?all=true", { method: "POST", credentials: "include" });
-    setLoading(false);
-    if (!res.ok) {
-      return;
+    try {
+      const res = await fetch("/api/auth/signout?all=true", { method: "POST", credentials: "include" });
+      if (!res.ok) {
+        // Force client-side sign out even if server endpoint fails
+        const { createSupabaseBrowserClient } = await import("@/lib/supabase/client");
+        await createSupabaseBrowserClient().auth.signOut();
+      }
+    } catch {
+      // best-effort
+    } finally {
+      setLoading(false);
     }
-    router.push("/login");
-    router.refresh();
+    window.location.replace("/login");
   }
 
   return (
