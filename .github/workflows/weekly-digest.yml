@@ -1,9 +1,5 @@
 name: Weekly Executive Digest
 
-# Runs every Monday at 07:00 UTC.
-# Queries operational_events for the last 7 days via Supabase REST API.
-# Creates a GitHub Issue with uptime/SLO/latency summary — no manual work required.
-
 on:
   schedule:
     - cron: "0 7 * * 1"
@@ -20,15 +16,13 @@ jobs:
     name: Generate Weekly Digest
     runs-on: ubuntu-latest
     steps:
-      - name: Ensure weekly-digest label exists
+      - name: Ensure weekly-digest label
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh label create "weekly-digest" --color "5319e7" \
-            --description "Weekly executive digest" \
-            --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create weekly-digest --color 5319e7 --description "Weekly executive digest" --repo "${{ github.repository }}" 2>/dev/null || true
 
-      - name: Query operational metrics (last 7 days)
+      - name: Collect operational metrics (7d)
         id: metrics
         env:
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -37,233 +31,70 @@ jobs:
           WEEK_START=$(date -u -d "7 days ago" +"%Y-%m-%dT00:00:00Z")
           WEEK_LABEL_FROM=$(date -u -d "7 days ago" +"%b %d")
           WEEK_LABEL_TO=$(date -u +"%b %d, %Y")
-          echo "week_label=$WEEK_LABEL_FROM – $WEEK_LABEL_TO" >> $GITHUB_OUTPUT
 
-          fetch_flow() {
-            local FLOW="$1"
-            curl -sf \
-              -H "apikey: $SUPABASE_KEY" \
-              -H "Authorization: Bearer $SUPABASE_KEY" \
-              "$SUPABASE_URL/rest/v1/operational_events?select=outcome,latency_ms&flow=eq.${FLOW}&created_at=gte.${WEEK_START}" \
-              2>/dev/null || echo "[]"
-          }
+          Q_START=$(echo "$WEEK_START" | sed -e 's/:/%3A/g')
 
-          BOOKING_DATA=$(fetch_flow "booking")
-          AUTH_DATA=$(fetch_flow "auth")
-          API_DATA=$(fetch_flow "api")
-          SYNTHETIC_DATA=$(curl -sf \
-            -H "apikey: $SUPABASE_KEY" \
-            -H "Authorization: Bearer $SUPABASE_KEY" \
-            "$SUPABASE_URL/rest/v1/operational_events?select=outcome,latency_ms,event_type&event_type=like.synthetic_*&created_at=gte.${WEEK_START}" \
-            2>/dev/null || echo "[]")
+          ROWS=$(curl -sf -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" "$SUPABASE_URL/rest/v1/operational_events?select=flow,outcome,latency_ms,event_type,created_at&created_at=gte.$Q_START" || echo "[]")
 
-          # All latencies for p95
-          ALL_LAT=$(curl -sf \
-            -H "apikey: $SUPABASE_KEY" \
-            -H "Authorization: Bearer $SUPABASE_KEY" \
-            "$SUPABASE_URL/rest/v1/operational_events?select=latency_ms&created_at=gte.${WEEK_START}&latency_ms=not.is.null" \
-            2>/dev/null || echo "[]")
+          B_TOTAL=$(echo "$ROWS" | jq '[.[] | select(.flow=="booking")] | length')
+          B_OK=$(echo "$ROWS" | jq '[.[] | select(.flow=="booking" and .outcome=="success")] | length')
+          A_TOTAL=$(echo "$ROWS" | jq '[.[] | select(.flow=="auth")] | length')
+          A_OK=$(echo "$ROWS" | jq '[.[] | select(.flow=="auth" and .outcome=="success")] | length')
+          API_TOTAL=$(echo "$ROWS" | jq '[.[] | select(.flow=="api")] | length')
+          API_OK=$(echo "$ROWS" | jq '[.[] | select(.flow=="api" and .outcome=="success")] | length')
 
-          compute() {
-            python3 << PYEOF
-import json, sys
-data = json.loads('''$1''')
-total = len(data)
-success = sum(1 for x in data if x.get('outcome') == 'success')
-rate = f"{success/total*100:.1f}" if total > 0 else "N/A"
-print(f"{total},{success},{rate}")
-PYEOF
-          }
+          B_RATE=$(awk -v ok="$B_OK" -v tot="$B_TOTAL" 'BEGIN{if(tot==0) print "N/A"; else printf "%.1f", (ok*100)/tot}')
+          A_RATE=$(awk -v ok="$A_OK" -v tot="$A_TOTAL" 'BEGIN{if(tot==0) print "N/A"; else printf "%.1f", (ok*100)/tot}')
+          API_RATE=$(awk -v ok="$API_OK" -v tot="$API_TOTAL" 'BEGIN{if(tot==0) print "N/A"; else printf "%.1f", (ok*100)/tot}')
 
-          BOOKING_CSV=$(compute "$BOOKING_DATA")
-          AUTH_CSV=$(compute "$AUTH_DATA")
-          API_CSV=$(compute "$API_DATA")
+          P95=$(echo "$ROWS" | jq -r '[.[].latency_ms | select(type=="number")] | sort | if length==0 then "N/A" else .[((length*0.95)|floor)] end')
+          SYNTH_FAIL=$(echo "$ROWS" | jq '[.[] | select((.event_type|tostring|startswith("synthetic_")) and .outcome=="failure")] | length')
 
-          B_TOTAL=$(echo "$BOOKING_CSV" | cut -d, -f1)
-          B_SUCCESS=$(echo "$BOOKING_CSV" | cut -d, -f2)
-          B_RATE=$(echo "$BOOKING_CSV" | cut -d, -f3)
+          RISK1="No critical risks detected"
+          RISK2="Maintain synthetic monitoring cadence"
+          RISK3="Review open incidents weekly"
 
-          A_TOTAL=$(echo "$AUTH_CSV" | cut -d, -f1)
-          A_SUCCESS=$(echo "$AUTH_CSV" | cut -d, -f2)
-          A_RATE=$(echo "$AUTH_CSV" | cut -d, -f3)
+          if [ "$B_RATE" != "N/A" ] && awk -v v="$B_RATE" 'BEGIN{exit (v<97)?0:1}'; then RISK1="Booking success below warning threshold"; fi
+          if [ "$A_RATE" != "N/A" ] && awk -v v="$A_RATE" 'BEGIN{exit (v<97)?0:1}'; then RISK2="Login success below warning threshold"; fi
+          if [ "$P95" != "N/A" ] && [ "$P95" -gt 1500 ]; then RISK3="p95 latency above critical threshold"; fi
 
-          API_TOTAL=$(echo "$API_CSV" | cut -d, -f1)
-          API_SUCCESS=$(echo "$API_CSV" | cut -d, -f2)
-          API_RATE=$(echo "$API_CSV" | cut -d, -f3)
+          if [ "$SYNTH_FAIL" -gt 0 ]; then NEXT_ACTION="Investigate synthetic failures first"; else NEXT_ACTION="Maintain current automation cadence"; fi
 
-          SYNTH_FAILURES=$(echo "$SYNTHETIC_DATA" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-print(sum(1 for x in d if x.get('outcome') == 'failure'))
-" 2>/dev/null || echo "0")
+          {
+            echo "week_label=$WEEK_LABEL_FROM - $WEEK_LABEL_TO"
+            echo "booking_rate=$B_RATE"
+            echo "booking_total=$B_TOTAL"
+            echo "login_rate=$A_RATE"
+            echo "login_total=$A_TOTAL"
+            echo "api_rate=$API_RATE"
+            echo "api_total=$API_TOTAL"
+            echo "p95=$P95"
+            echo "synth_failures=$SYNTH_FAIL"
+            echo "risk1=$RISK1"
+            echo "risk2=$RISK2"
+            echo "risk3=$RISK3"
+            echo "next_action=$NEXT_ACTION"
+          } >> "$GITHUB_OUTPUT"
 
-          P95=$(echo "$ALL_LAT" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-vals = sorted([x['latency_ms'] for x in d if x.get('latency_ms') is not None])
-if vals:
-    idx = min(int(len(vals) * 0.95), len(vals) - 1)
-    print(vals[idx])
-else:
-    print('N/A')
-" 2>/dev/null || echo "N/A")
-
-          status_icon() {
-            python3 -c "
-t, s, good, warn = $1, $2, $3, $4
-if t == 0: print('⚪ No data')
-elif s/t*100 >= good: print('✅ Good')
-elif s/t*100 >= warn: print('⚠️ Warning')
-else: print('🔴 Critical')
-" 2>/dev/null || echo "⚪"
-          }
-
-          B_STATUS=$(status_icon "$B_TOTAL" "$B_SUCCESS" "99" "97")
-          A_STATUS=$(status_icon "$A_TOTAL" "$A_SUCCESS" "99" "97")
-
-          P95_STATUS=$(python3 -c "
-p = '$P95'
-try:
-    v = int(p)
-    if v <= 800: print('✅ Good (≤800ms)')
-    elif v <= 1500: print('⚠️ Warning (≤1500ms)')
-    else: print('🔴 Critical (>1500ms)')
-except: print('⚪ No data')
-" 2>/dev/null || echo "⚪")
-
-          SYNTH_STATUS=$([ "$SYNTH_FAILURES" = "0" ] && echo "✅ Clean" || echo "⚠️ $SYNTH_FAILURES failure(s)")
-
-          echo "b_rate=$B_RATE" >> $GITHUB_OUTPUT
-          echo "b_total=$B_TOTAL" >> $GITHUB_OUTPUT
-          echo "b_status=$B_STATUS" >> $GITHUB_OUTPUT
-          echo "a_rate=$A_RATE" >> $GITHUB_OUTPUT
-          echo "a_total=$A_TOTAL" >> $GITHUB_OUTPUT
-          echo "a_status=$A_STATUS" >> $GITHUB_OUTPUT
-          echo "api_rate=$API_RATE" >> $GITHUB_OUTPUT
-          echo "api_total=$API_TOTAL" >> $GITHUB_OUTPUT
-          echo "p95=$P95" >> $GITHUB_OUTPUT
-          echo "p95_status=$P95_STATUS" >> $GITHUB_OUTPUT
-          echo "synth_failures=$SYNTH_FAILURES" >> $GITHUB_OUTPUT
-          echo "synth_status=$SYNTH_STATUS" >> $GITHUB_OUTPUT
-
-      - name: Open/close incident count
+      - name: Count incidents opened this week
         id: incidents
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           SINCE=$(date -u -d "7 days ago" +"%Y-%m-%dT%H:%M:%SZ")
-
-          TOTAL=$(gh issue list \
-            --repo "${{ github.repository }}" \
-            --state all \
-            --label "incident" \
-            --json createdAt \
-            --jq "[.[] | select(.createdAt > \"$SINCE\")] | length" \
-            2>/dev/null || echo "0")
-
-          OPEN=$(gh issue list \
-            --repo "${{ github.repository }}" \
-            --state open \
-            --label "incident" \
-            --json createdAt \
-            --jq "[.[] | select(.createdAt > \"$SINCE\")] | length" \
-            2>/dev/null || echo "0")
-
-          echo "total=$TOTAL" >> $GITHUB_OUTPUT
-          echo "open=$OPEN" >> $GITHUB_OUTPUT
-          echo "Incidents this week: total=$TOTAL open=$OPEN"
+          TOTAL=$(gh issue list --repo "${{ github.repository }}" --state all --label incident --json createdAt --jq "[.[] | select(.createdAt > \"$SINCE\")] | length" 2>/dev/null || echo 0)
+          OPEN=$(gh issue list --repo "${{ github.repository }}" --state open --label incident --json createdAt --jq "[.[] | select(.createdAt > \"$SINCE\")] | length" 2>/dev/null || echo 0)
+          echo "total=$TOTAL" >> "$GITHUB_OUTPUT"
+          echo "open=$OPEN" >> "$GITHUB_OUTPUT"
 
       - name: Create digest issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          WEEK="${{ steps.metrics.outputs.week_label }}"
-          B_RATE="${{ steps.metrics.outputs.b_rate }}"
-          B_TOTAL="${{ steps.metrics.outputs.b_total }}"
-          B_STATUS="${{ steps.metrics.outputs.b_status }}"
-          A_RATE="${{ steps.metrics.outputs.a_rate }}"
-          A_TOTAL="${{ steps.metrics.outputs.a_total }}"
-          A_STATUS="${{ steps.metrics.outputs.a_status }}"
-          API_RATE="${{ steps.metrics.outputs.api_rate }}"
-          API_TOTAL="${{ steps.metrics.outputs.api_total }}"
-          P95="${{ steps.metrics.outputs.p95 }}"
-          P95_STATUS="${{ steps.metrics.outputs.p95_status }}"
-          SYNTH_FAILURES="${{ steps.metrics.outputs.synth_failures }}"
-          SYNTH_STATUS="${{ steps.metrics.outputs.synth_status }}"
-          INC_TOTAL="${{ steps.incidents.outputs.total }}"
-          INC_OPEN="${{ steps.incidents.outputs.open }}"
-
-          # Determine overall health
-          if echo "$B_STATUS$A_STATUS$P95_STATUS" | grep -q "🔴"; then
-            OVERALL="🔴 DEGRADED — review critical metrics"
-          elif echo "$B_STATUS$A_STATUS$P95_STATUS" | grep -q "⚠️"; then
-            OVERALL="⚠️ WARNING — some metrics need attention"
-          elif echo "$B_STATUS$A_STATUS" | grep -q "⚪"; then
-            OVERALL="⚪ INSUFFICIENT DATA — monitoring pipeline may need attention"
-          else
-            OVERALL="✅ HEALTHY — all SLOs within targets"
-          fi
-
-          BODY="## 📊 Weekly Executive Digest — ${WEEK}
-
-> Auto-generated every Monday · Review and close when read.
-
-### Overall Status: ${OVERALL}
-
----
-
-### SLO Dashboard
-
-| Metric | Rate | Samples | Status |
-|--------|------|---------|--------|
-| 📦 Booking success | **${B_RATE}%** | ${B_TOTAL} | ${B_STATUS} |
-| 🔐 Login success | **${A_RATE}%** | ${A_TOTAL} | ${A_STATUS} |
-| ⚡ p95 API latency | **${P95}ms** | — | ${P95_STATUS} |
-| 🔭 Synthetic failures | **${SYNTH_FAILURES}** | — | ${SYNTH_STATUS} |
-
-### Incidents (last 7 days)
-
-| Total | Open | Resolved |
-|-------|------|----------|
-| ${INC_TOTAL} | ${INC_OPEN} | $((INC_TOTAL - INC_OPEN)) |
-
-[View all incidents](https://github.com/${{ github.repository }}/issues?q=label%3Aincident+sort%3Acreated-desc)
-
----
-
-### SLO Targets Reference
-
-| Signal | Good | Warning | Critical |
-|--------|------|---------|----------|
-| Booking success | ≥99% | ≥97% | <97% |
-| Login success | ≥99% | ≥97% | <97% |
-| p95 latency | ≤800ms | ≤1500ms | >1500ms |
-
-### Next Best Action
-$(
-  if [ "${INC_OPEN}" != "0" ]; then
-    echo "⚠️ **${INC_OPEN} open incident(s)** need resolution — check [incident list](https://github.com/${{ github.repository }}/issues?q=is%3Aopen+label%3Aincident)."
-  elif echo "${B_STATUS}${A_STATUS}" | grep -q "🔴\|⚠️"; then
-    echo "📈 Investigate SLO degradation — check [operational_events](https://supabase.com/dashboard/project/tffwoljimpdckvlogyqu/editor) for failure patterns."
-  elif echo "${B_TOTAL}${A_TOTAL}" | grep -q "^0"; then
-    echo "🔧 Monitoring pipeline has no data — verify \`operational_events\` inserts are working via \`/api/jobs/synthetic-monitor\`."
-  else
-    echo "✅ No action required — maintain current monitoring cadence."
-  fi
-)
-
----
-
-### Quick Links
-- [Vercel Deployments](https://vercel.com/anadailyana4-progs-projects/ocupaloc)
-- [Supabase Dashboard](https://supabase.com/dashboard/project/tffwoljimpdckvlogyqu)
-- [GitHub Actions](https://github.com/${{ github.repository }}/actions)
-
----
-*Generated by [weekly-digest workflow](${{ github.server_url }}/${{ github.repository }}/actions/workflows/weekly-digest.yml) · Every Monday 07:00 UTC*"
+          BODY=$(printf "Weekly digest period: %s\n\nUptime/incidents:\n- incidents opened: %s\n- incidents open: %s\n- synthetic failures: %s\n\nTrends:\n- booking success: %s%% (samples %s)\n- login success: %s%% (samples %s)\n- API success: %s%% (samples %s)\n- p95 latency: %s ms\n\nTop 3 risks:\n1) %s\n2) %s\n3) %s\n\nNext best action:\n%s\n" "${{ steps.metrics.outputs.week_label }}" "${{ steps.incidents.outputs.total }}" "${{ steps.incidents.outputs.open }}" "${{ steps.metrics.outputs.synth_failures }}" "${{ steps.metrics.outputs.booking_rate }}" "${{ steps.metrics.outputs.booking_total }}" "${{ steps.metrics.outputs.login_rate }}" "${{ steps.metrics.outputs.login_total }}" "${{ steps.metrics.outputs.api_rate }}" "${{ steps.metrics.outputs.api_total }}" "${{ steps.metrics.outputs.p95 }}" "${{ steps.metrics.outputs.risk1 }}" "${{ steps.metrics.outputs.risk2 }}" "${{ steps.metrics.outputs.risk3 }}" "${{ steps.metrics.outputs.next_action }}")
 
           gh issue create \
             --repo "${{ github.repository }}" \
-            --title "📊 Weekly Digest — ${WEEK}" \
+            --title "Weekly Digest - ${{ steps.metrics.outputs.week_label }}" \
             --body "$BODY" \
-            --label "weekly-digest"
+            --label weekly-digest

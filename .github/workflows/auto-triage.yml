@@ -1,9 +1,5 @@
 name: Auto-Triage Incidents
 
-# Triggered whenever Synthetic Monitor or Release Guard workflow fails.
-# Creates a GitHub Issue with severity classification (P0–P3),
-# impact description, runbook, and deduplication (one issue per workflow per day).
-
 on:
   workflow_run:
     workflows: ["Synthetic Monitor", "Release Guard"]
@@ -11,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       test_severity:
-        description: "Simulate severity (P0/P1/P2/P3) — test mode only"
+        description: "Optional: force severity P0/P1/P2/P3"
         required: false
         default: ""
 
@@ -24,203 +20,99 @@ env:
 
 jobs:
   triage:
-    name: Classify & Create Incident Issue
+    name: Classify and Open Incident
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'failure'
     steps:
-      - name: Ensure incident labels exist
+      - name: Ensure incident labels
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          declare -A LABELS=(
-            ["incident"]="e11d48:Operational incident"
-            ["auto-triage"]="0075ca:Created by auto-triage"
-            ["P0"]="b60205:CRITICAL — site down"
-            ["P1"]="d93f0b:HIGH — revenue impact"
-            ["P2"]="e4e669:MEDIUM — auth degraded"
-            ["P3"]="0e8a16:LOW — non-critical"
-          )
-          for name in "${!LABELS[@]}"; do
-            color=$(echo "${LABELS[$name]}" | cut -d: -f1)
-            desc=$(echo "${LABELS[$name]}" | cut -d: -f2)
-            gh label create "$name" --color "$color" --description "$desc" \
-              --repo "${{ github.repository }}" 2>/dev/null || true
-          done
-          echo "Labels ensured."
+          gh label create incident --color e11d48 --description "Operational incident" --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create auto-triage --color 0075ca --description "Created by automation" --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create P0 --color b60205 --description "Critical" --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create P1 --color d93f0b --description "High" --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create P2 --color e4e669 --description "Medium" --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create P3 --color 0e8a16 --description "Low" --repo "${{ github.repository }}" 2>/dev/null || true
 
-      - name: Collect failure context
+      - name: Build incident context
         id: ctx
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
-          if [ -z "$WORKFLOW_NAME" ]; then
-            WORKFLOW_NAME="Manual Triage Test"
-          fi
+          if [ -z "$WORKFLOW_NAME" ]; then WORKFLOW_NAME="Manual Triage"; fi
+
           RUN_ID="${{ github.event.workflow_run.id }}"
-          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "0" ]; then
-            RUN_ID="${{ github.run_id }}"
-          fi
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "0" ]; then RUN_ID="${{ github.run_id }}"; fi
+
           RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/$RUN_ID"
-          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
-          DATE_TODAY=$(date -u +"%Y-%m-%d")
+          TS_UTC=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          DATE_UTC=$(date -u +"%Y-%m-%d")
 
-          echo "workflow_name=$WORKFLOW_NAME" >> $GITHUB_OUTPUT
-          echo "run_url=$RUN_URL" >> $GITHUB_OUTPUT
-          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
-          echo "date_today=$DATE_TODAY" >> $GITHUB_OUTPUT
+          FAILED_JOBS=$(gh api "/repos/${{ github.repository }}/actions/runs/$RUN_ID/jobs" --jq '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")' 2>/dev/null || true)
+          if [ -z "$FAILED_JOBS" ]; then FAILED_JOBS="unknown"; fi
 
-          FAILED_JOBS=$(gh api \
-            "/repos/${{ github.repository }}/actions/runs/${RUN_ID}/jobs" \
-            --jq '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")' \
-            2>/dev/null || echo "unknown")
-          echo "failed_jobs=$FAILED_JOBS" >> $GITHUB_OUTPUT
-          echo "Failed jobs: $FAILED_JOBS"
-
-      - name: Classify severity
-        id: sev
-        run: |
-          JOBS_LOWER=$(echo "${{ steps.ctx.outputs.failed_jobs }}" | tr '[:upper:]' '[:lower:]')
-          WORKFLOW_LOWER=$(echo "${{ steps.ctx.outputs.workflow_name }}" | tr '[:upper:]' '[:lower:]')
-          TEST="${{ github.event.inputs.test_severity }}"
-
-          if [ -n "$TEST" ]; then
-            SEVERITY="$TEST"
-          elif echo "$JOBS_LOWER" | grep -qE "health|availability|site"; then
-            SEVERITY="P0"
-          elif echo "$JOBS_LOWER$WORKFLOW_LOWER" | grep -qE "booking|canary|release.guard"; then
-            SEVERITY="P1"
-          elif echo "$JOBS_LOWER" | grep -qE "login|auth|dashboard|guard|redirect"; then
-            SEVERITY="P2"
+          TEST_SEV="${{ github.event.inputs.test_severity }}"
+          if [ -n "$TEST_SEV" ]; then
+            SEVERITY="$TEST_SEV"
           else
-            SEVERITY="P3"
+            TEXT=$(printf "%s %s" "$WORKFLOW_NAME" "$FAILED_JOBS" | tr '[:upper:]' '[:lower:]')
+            if echo "$TEXT" | grep -Eq 'health|availability|site down'; then
+              SEVERITY="P0"
+            elif echo "$TEXT" | grep -Eq 'booking|release guard|canary'; then
+              SEVERITY="P1"
+            elif echo "$TEXT" | grep -Eq 'login|auth|dashboard|redirect'; then
+              SEVERITY="P2"
+            else
+              SEVERITY="P3"
+            fi
           fi
 
           case "$SEVERITY" in
-            P0) IMPACT="🔴 Site DOWN — all users affected. Immediate action required."
-                SLA="Response: 15 min | Resolve: 1h" ;;
-            P1) IMPACT="🟠 Booking flow or release gate FAILED — revenue impact possible."
-                SLA="Response: 30 min | Resolve: 4h" ;;
-            P2) IMPACT="🟡 Auth/login degraded — users may not access dashboard."
-                SLA="Response: 2h | Resolve: 8h" ;;
-            P3) IMPACT="🟢 Non-critical check failed — UX or monitoring degraded."
-                SLA="Response: next business day" ;;
+            P0) IMPACT="Site availability degraded for all users."; RECOMMEND="Run health check, inspect Vercel deploy, rollback if needed." ;;
+            P1) IMPACT="Booking/release path degraded and may impact revenue."; RECOMMEND="Run synthetic booking and SLO checks, rollback if regression confirmed." ;;
+            P2) IMPACT="Authentication flow degraded for some users."; RECOMMEND="Check login, dashboard guard, and Supabase auth status." ;;
+            *) IMPACT="Non-critical operational check failed."; RECOMMEND="Observe next cycles and escalate if repeated." ;;
           esac
 
-          echo "severity=$SEVERITY" >> $GITHUB_OUTPUT
-          echo "impact=$IMPACT" >> $GITHUB_OUTPUT
-          echo "sla=$SLA" >> $GITHUB_OUTPUT
+          {
+            echo "workflow_name=$WORKFLOW_NAME"
+            echo "run_url=$RUN_URL"
+            echo "timestamp=$TS_UTC"
+            echo "date=$DATE_UTC"
+            echo "failed_jobs=$FAILED_JOBS"
+            echo "severity=$SEVERITY"
+            echo "impact=$IMPACT"
+            echo "recommend=$RECOMMEND"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Check for open duplicate (deduplication)
+      - name: Deduplicate daily incidents
         id: dedupe
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TODAY="${{ steps.ctx.outputs.date_today }}"
-          WORKFLOW="${{ steps.ctx.outputs.workflow_name }}"
-          SEVERITY="${{ steps.sev.outputs.severity }}"
-          PREFIX="[$SEVERITY] $WORKFLOW"
-
-          # Count open issues with this prefix created today
-          EXISTING=$(gh issue list \
-            --repo "${{ github.repository }}" \
-            --state open \
-            --label "incident,auto-triage" \
-            --json title,createdAt \
-            --jq "[.[] | select(.title | startswith(\"$PREFIX\")) | select(.createdAt | startswith(\"$TODAY\"))] | length" \
-            2>/dev/null || echo "0")
-
-          echo "count=$EXISTING" >> $GITHUB_OUTPUT
-          echo "Existing open issues today for '$PREFIX': $EXISTING"
+          PREFIX="[${{ steps.ctx.outputs.severity }}] ${{ steps.ctx.outputs.workflow_name }}"
+          TODAY="${{ steps.ctx.outputs.date }}"
+          COUNT=$(gh issue list --repo "${{ github.repository }}" --state open --label incident --json title,createdAt --jq "[.[] | select(.title | startswith(\"$PREFIX\")) | select(.createdAt | startswith(\"$TODAY\"))] | length" 2>/dev/null || echo 0)
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
 
       - name: Create incident issue
         if: steps.dedupe.outputs.count == '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          SEV="${{ steps.sev.outputs.severity }}"
-          WORKFLOW="${{ steps.ctx.outputs.workflow_name }}"
-          RUN_URL="${{ steps.ctx.outputs.run_url }}"
-          IMPACT="${{ steps.sev.outputs.impact }}"
-          SLA="${{ steps.sev.outputs.sla }}"
-          FAILED="${{ steps.ctx.outputs.failed_jobs }}"
-          TS="${{ steps.ctx.outputs.timestamp }}"
-
-          case "$SEV" in
-            P0) ACTIONS="**Immediate steps:**
-1. Verify production: \`curl -s https://ocupaloc.ro/api/health | python3 -m json.tool\`
-2. Check Vercel status: https://vercel.com/anadailyana4-progs-projects/ocupaloc
-3. Check Cloudflare DNS: https://dash.cloudflare.com
-4. Rollback if needed:
-   \`\`\`bash
-   npx vercel ls --prod
-   npx vercel alias set <last-healthy-url> ocupaloc.ro
-   curl -s https://ocupaloc.ro/api/health | python3 -m json.tool
-   \`\`\`" ;;
-            P1) ACTIONS="**Investigation steps:**
-1. Test booking flow: https://ocupaloc.ro/ana-nails
-2. Check SLO snapshot: \`curl -s -H 'Authorization: Bearer \$SLO_READ_SECRET' https://ocupaloc.ro/api/ops/slo\`
-3. Check Supabase DB: https://supabase.com/dashboard/project/tffwoljimpdckvlogyqu
-4. If deploy caused regression: \`npx vercel alias set <prev-url> ocupaloc.ro\`" ;;
-            P2) ACTIONS="**Investigation steps:**
-1. Test login page: https://ocupaloc.ro/login
-2. Verify redirect: \`curl -s -o /dev/null -w '%{redirect_url}' https://ocupaloc.ro/dashboard\`
-3. Check Supabase Auth: https://supabase.com/dashboard/project/tffwoljimpdckvlogyqu/auth/users
-4. Check middleware logs in Vercel: https://vercel.com/anadailyana4-progs-projects/ocupaloc/logs" ;;
-            P3) ACTIONS="1. Review workflow logs: $RUN_URL
-2. Monitor next 2 cycles for recurrence before escalating." ;;
-          esac
-
-          BODY="## 🚨 Incident — ${SEV}
-
-| Field | Value |
-|-------|-------|
-| **Severity** | \`${SEV}\` |
-| **Detected** | ${TS} |
-| **SLA** | ${SLA} |
-| **Source** | [${WORKFLOW}](${RUN_URL}) |
-
-### Impact
-${IMPACT}
-
-### Failed Checks
-\`\`\`
-${FAILED}
-\`\`\`
-
-### Recommended Actions
-${ACTIONS}
-
-### Runbook (copy-paste validated commands)
-\`\`\`bash
-# 1. Health check
-curl -s https://ocupaloc.ro/api/health | python3 -m json.tool
-
-# 2. SLO snapshot (last 60 min)
-curl -s -H 'Authorization: Bearer \$SLO_READ_SECRET' \\
-  'https://ocupaloc.ro/api/ops/slo?windowMinutes=60'
-
-# 3. Manual synthetic monitor run
-curl -s -H 'Authorization: Bearer \$SYNTHETIC_MONITOR_SECRET' \\
-  'https://ocupaloc.ro/api/jobs/synthetic-monitor'
-
-# 4. Last 10 events in Supabase SQL Editor:
-# SELECT event_type, flow, outcome, status_code, latency_ms, created_at
-# FROM operational_events ORDER BY created_at DESC LIMIT 10;
-\`\`\`
-
----
-*Auto-generated by [auto-triage workflow](${{ github.server_url }}/${{ github.repository }}/actions/workflows/auto-triage.yml) · Close when resolved.*"
+          BODY=$(printf "Incident severity: %s\n\nImpact business:\n%s\n\nReproduction:\n1. Open run: %s\n2. Re-run failed checks.\n3. Validate user-facing behavior.\n\nLogs/context:\nFailed jobs: %s\n\nSuspect root cause:\nAutomated classification from failed workflow/jobs.\n\nFix recommendation:\n%s\n\nRunbook:\ncurl -s https://ocupaloc.ro/api/health | python3 -m json.tool\ncurl -s -H 'Authorization: Bearer $SLO_READ_SECRET' 'https://ocupaloc.ro/api/ops/slo?windowMinutes=60'\ncurl -s -H 'Authorization: Bearer $SYNTHETIC_MONITOR_SECRET' 'https://ocupaloc.ro/api/jobs/synthetic-monitor'\n" "${{ steps.ctx.outputs.severity }}" "${{ steps.ctx.outputs.impact }}" "${{ steps.ctx.outputs.run_url }}" "${{ steps.ctx.outputs.failed_jobs }}" "${{ steps.ctx.outputs.recommend }}")
 
           gh issue create \
             --repo "${{ github.repository }}" \
-            --title "[${SEV}] ${WORKFLOW} failure — ${TS}" \
+            --title "[${{ steps.ctx.outputs.severity }}] ${{ steps.ctx.outputs.workflow_name }} failure - ${{ steps.ctx.outputs.timestamp }}" \
             --body "$BODY" \
-            --label "incident,auto-triage,${SEV}"
+            --label "incident,auto-triage,${{ steps.ctx.outputs.severity }}"
 
       - name: Duplicate suppressed
         if: steps.dedupe.outputs.count != '0'
         run: |
-          echo "✓ Duplicate suppressed — open issue for [${{ steps.sev.outputs.severity }}] ${{ steps.ctx.outputs.workflow_name }} already exists today. No new issue created."
+          echo "Existing open incident found for today. Skipping duplicate creation."
