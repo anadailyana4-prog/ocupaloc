@@ -1,0 +1,83 @@
+name: Release Guard
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  canary:
+    name: Post-deploy Canary & SLO Gate
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Canary checkpoint 1/3
+        env:
+          BASE_URL: https://ocupaloc.ro
+          RELEASE_GUARD_SECRET: ${{ secrets.RELEASE_GUARD_SECRET }}
+          REMINDERS_CRON_SECRET: ${{ secrets.REMINDERS_CRON_SECRET }}
+        run: |
+          SECRET="$RELEASE_GUARD_SECRET"
+          if [ -z "$SECRET" ]; then
+            SECRET="$REMINDERS_CRON_SECRET"
+          fi
+          if [ -z "$SECRET" ]; then
+            echo "::warning::RELEASE_GUARD_SECRET/REMINDERS_CRON_SECRET missing. Skipping canary gate."
+            exit 0
+          fi
+          HTTP_STATUS=$(curl -s -o checkpoint1.json -w "%{http_code}" \
+            -H "Authorization: Bearer $SECRET" \
+            "$BASE_URL/api/jobs/release-guard?windowMinutes=60")
+          cat checkpoint1.json
+          if [ "$HTTP_STATUS" -ge 500 ]; then
+            echo "::error::Release guard blocked deploy (checkpoint 1)."
+            echo "Rollback command set:"
+            echo "npx vercel ls --prod"
+            echo "npx vercel alias set <previous-healthy-deployment-url> ocupaloc.ro"
+            echo "curl -s https://ocupaloc.ro/api/health | python3 -m json.tool"
+            exit 1
+          fi
+
+      - name: Canary checkpoint 2/3
+        run: |
+          sleep 120
+          SECRET="${{ secrets.RELEASE_GUARD_SECRET }}"
+          if [ -z "$SECRET" ]; then
+            SECRET="${{ secrets.REMINDERS_CRON_SECRET }}"
+          fi
+          if [ -z "$SECRET" ]; then
+            exit 0
+          fi
+          HTTP_STATUS=$(curl -s -o checkpoint2.json -w "%{http_code}" \
+            -H "Authorization: Bearer $SECRET" \
+            "https://ocupaloc.ro/api/jobs/release-guard?windowMinutes=60")
+          cat checkpoint2.json
+          if [ "$HTTP_STATUS" -ge 500 ]; then
+            echo "::error::Release guard blocked deploy (checkpoint 2)."
+            exit 1
+          fi
+
+      - name: Canary checkpoint 3/3
+        run: |
+          sleep 120
+          SECRET="${{ secrets.RELEASE_GUARD_SECRET }}"
+          if [ -z "$SECRET" ]; then
+            SECRET="${{ secrets.REMINDERS_CRON_SECRET }}"
+          fi
+          if [ -z "$SECRET" ]; then
+            exit 0
+          fi
+          HTTP_STATUS=$(curl -s -o checkpoint3.json -w "%{http_code}" \
+            -H "Authorization: Bearer $SECRET" \
+            "https://ocupaloc.ro/api/jobs/release-guard?windowMinutes=60")
+          cat checkpoint3.json
+          if [ "$HTTP_STATUS" -ge 500 ]; then
+            echo "::error::Release guard blocked deploy (checkpoint 3)."
+            exit 1
+          fi

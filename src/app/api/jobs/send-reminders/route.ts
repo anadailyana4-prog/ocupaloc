@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { notifyClientReminder } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
 import { validateCronSecret } from "@/lib/cron-auth";
+import { getRequestId, recordOperationalEvent } from "@/lib/ops-events";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 type ReminderType = "24h" | "2h";
@@ -109,8 +110,20 @@ async function sendType(admin: ReturnType<typeof createSupabaseServiceClient>, t
 }
 
 export async function GET(req: NextRequest) {
+  const startedAt = Date.now();
+  const requestId = getRequestId(req.headers);
+
   if (!validateCronSecret(req.headers, process.env.REMINDERS_CRON_SECRET?.trim())) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    await recordOperationalEvent({
+      eventType: "cron_reminders_failed",
+      flow: "cron",
+      outcome: "failure",
+      requestId,
+      statusCode: 401,
+      latencyMs: Date.now() - startedAt,
+      metadata: { reason: "unauthorized" }
+    });
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401, headers: { "x-request-id": requestId } });
   }
 
   const admin = createSupabaseServiceClient();
@@ -124,7 +137,7 @@ export async function GET(req: NextRequest) {
     sent2h = await sendType(admin, "2h");
   } catch (err) {
     cronError = err;
-    reportError("cron", "send_reminders_fatal", err, { phase: "sendType" });
+    reportError("cron", "send_reminders_fatal", err, { phase: "sendType", requestId });
   }
 
   const result = {
@@ -136,8 +149,18 @@ export async function GET(req: NextRequest) {
     ...(cronError ? { error: String(cronError) } : {})
   };
 
-  // Machine-parseable single-line summary for log scraping / uptime monitors.
-  console.log(`[cron:send-reminders] ${JSON.stringify(result)}`);
+  await recordOperationalEvent({
+    eventType: cronError ? "cron_reminders_failed" : "cron_reminders_sent",
+    flow: "cron",
+    outcome: cronError ? "failure" : "success",
+    requestId,
+    statusCode: cronError ? 500 : 200,
+    latencyMs: Date.now() - startedAt,
+    metadata: { sent24h, sent2h, total: sent24h + sent2h }
+  });
 
-  return NextResponse.json(result, { status: cronError ? 500 : 200 });
+  // Machine-parseable single-line summary for log scraping / uptime monitors.
+  console.log(`[cron:send-reminders] ${JSON.stringify({ ...result, requestId })}`);
+
+  return NextResponse.json(result, { status: cronError ? 500 : 200, headers: { "x-request-id": requestId } });
 }

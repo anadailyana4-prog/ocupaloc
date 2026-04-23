@@ -15,6 +15,17 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { loginSchema } from "@/lib/validators/auth";
 import { toast } from "sonner";
 
+async function reportAuthOutcome(outcome: "success" | "failure", reason?: string) {
+  await fetch("/api/ops/auth-event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ outcome, reason }),
+    keepalive: true
+  }).catch(() => {
+    // Telemetry is best-effort and must never block login UX.
+  });
+}
+
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -47,6 +58,7 @@ export default function LoginPage() {
     if (error) {
       setBusy(false);
       setSubmitError(error.message);
+      void reportAuthOutcome("failure", error.message);
       return;
     }
 
@@ -71,6 +83,7 @@ export default function LoginPage() {
     setBusy(false);
     toast.success("Autentificare reușită.");
     trackAuthEvent("login_success", "password");
+    void reportAuthOutcome("success");
     window.location.replace("/dashboard");
   }
 

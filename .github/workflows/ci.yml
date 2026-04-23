@@ -151,3 +151,30 @@ jobs:
             echo "✅ Production health check OK."
           fi
 
+      - name: "🛰️ Run external synthetic monitor"
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          SYNTHETIC_BASE_URL: https://ocupaloc.ro
+          SYNTHETIC_MONITOR_SECRET: ${{ secrets.SYNTHETIC_MONITOR_SECRET }}
+          REMINDERS_CRON_SECRET: ${{ secrets.REMINDERS_CRON_SECRET }}
+        run: |
+          if [ -z "$SYNTHETIC_MONITOR_SECRET" ] && [ -z "$REMINDERS_CRON_SECRET" ]; then
+            echo "::warning::SYNTHETIC_MONITOR_SECRET/REMINDERS_CRON_SECRET missing. Skipping synthetic trigger."
+            exit 0
+          fi
+          pnpm run ops:synthetic
+
+      - name: "📉 Enforce SLO release gate"
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          SLO_BASE_URL: https://ocupaloc.ro
+          SLO_READ_SECRET: ${{ secrets.SLO_READ_SECRET }}
+          REMINDERS_CRON_SECRET: ${{ secrets.REMINDERS_CRON_SECRET }}
+          SLO_WINDOW_MINUTES: "60"
+        run: |
+          if [ -z "$SLO_READ_SECRET" ] && [ -z "$REMINDERS_CRON_SECRET" ]; then
+            echo "::warning::SLO_READ_SECRET/REMINDERS_CRON_SECRET missing. Skipping SLO gate."
+            exit 0
+          fi
+          pnpm run ops:slo
+

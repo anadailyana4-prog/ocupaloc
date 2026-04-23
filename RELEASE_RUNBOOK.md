@@ -69,6 +69,32 @@ To activate Stripe later:
 2. Uncomment/enable Stripe routes and checkout flows.
 3. Update RELEASE_RUNBOOK.md with Stripe-specific pre-release steps.
 
+## SLO & Error Budget Policy
+
+Production release gate is controlled by `/api/ops/slo` and `/api/jobs/release-guard`.
+
+SLO indicators (window default: 60 min):
+- Booking success rate:
+  - good: >= 99%
+  - warn: >= 97%
+  - critical: < 97%
+- Login success rate:
+  - good: >= 99%
+  - warn: >= 97%
+  - critical: < 97%
+- API availability (non-5xx on critical probes):
+  - good: >= 99.9%
+  - warn: >= 99%
+  - critical: < 99%
+- p95 latency (critical probes):
+  - good: <= 800ms
+  - warn: <= 1500ms
+  - critical: > 1500ms
+
+Release decision:
+- Any `critical` SLO => release gate `NO-GO`
+- Otherwise => `GO`
+
 ## Pre-release Checklist
 1. `pnpm install --frozen-lockfile`
 2. `pnpm run test:ci`
@@ -79,8 +105,10 @@ To activate Stripe later:
 7. `npx supabase db push`
 8. `node --import tsx scripts/check-secrets.ts`
 9. `node --import tsx scripts/verify-production-readiness.ts`
-10. Confirm branch protection on `main` includes mandatory checks: `Typecheck, Lint & Build` and `Secret Scan (gitleaks)`
-11. Confirm branch protection enforcement:
+10. `pnpm run ops:synthetic`
+11. `pnpm run ops:slo`
+12. Confirm branch protection on `main` includes mandatory checks: `Typecheck, Lint & Build` and `Secret Scan (gitleaks)`
+13. Confirm branch protection enforcement:
    - "Require status checks to pass before merging" is enabled
    - both checks are in required list: `Typecheck, Lint & Build`, `Secret Scan (gitleaks)`
    - "Require branches to be up to date before merging" is enabled
@@ -118,7 +146,21 @@ Failures trigger a `critical` alert to `ALERT_WEBHOOK_URL` (if configured). Moni
 - https://github.com/anadailyana4-prog/ocupaloc/actions/workflows/synthetic-monitor.yml
 
 
+## Recovery Targets
+- RTO target (major incident): 30 minutes
+- RPO target (booking data): 15 minutes
+
 ## Incident Response
+
+### 15-minute Incident Checklist (P1/P2)
+1. Acknowledge incident in ops channel and assign incident commander.
+2. Run health triage:
+   - `curl -s https://ocupaloc.ro/api/health | python3 -m json.tool`
+   - `curl -s -H "Authorization: Bearer <secret>" https://ocupaloc.ro/api/ops/slo?windowMinutes=60 | python3 -m json.tool`
+3. Trigger synthetic validation:
+   - `curl -s -H "Authorization: Bearer <secret>" https://ocupaloc.ro/api/jobs/synthetic-monitor | python3 -m json.tool`
+4. If gate is NO-GO, run rollback command set.
+5. Post incident update with ETA and next checkpoint.
 
 ### Supabase degraded/down
 1. Confirm incident via `/api/health` (`db: false`) and Supabase status page.
@@ -211,8 +253,15 @@ echo "Public page: HTTP $HTTP"
    - create throwaway project/environment
    - `supabase db reset --db-url <target_db_url>`
    - `psql <target_db_url> -f backups/<date>.sql`
-4. Current status: restore drill attempted, blocked locally by missing Docker daemon. Repeat immediately after Docker is available.
-5. Owner and checkpoint:
+4. Validate restore with practical queries:
+   - `select count(*) from public.programari;`
+   - `select count(*) from public.programari_status_events;`
+   - `select count(*) from public.operational_events;`
+5. Success criteria:
+   - restore completes under RTO target (30 min)
+   - max acceptable data loss within RPO target (15 min)
+6. Current status: restore drill attempted, blocked locally by missing Docker daemon. Repeat immediately after Docker is available.
+7. Owner and checkpoint:
    - owner: tech lead / DBA rota
    - checkpoint: attach dump file name, target env, and restore validation query output in release notes
 
