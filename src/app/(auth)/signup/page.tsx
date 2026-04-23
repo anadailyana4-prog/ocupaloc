@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { trackAuthEvent, trackSignup } from "@/lib/analytics";
+import { trackAuthEvent, trackOnboardingEvent, trackSignup } from "@/lib/analytics";
 import { parseClientsCSV } from "@/lib/csv-import";
 import { slugifyBusinessName } from "@/lib/slug";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -122,6 +122,10 @@ export default function SignupPage() {
 
   useEffect(() => {
     trackSignup(step);
+    trackOnboardingEvent("onboarding_signup_view", {
+      step,
+      page: "/signup"
+    });
   }, [step]);
 
   useEffect(() => {
@@ -177,6 +181,10 @@ export default function SignupPage() {
       toast.error("Completează numele business-ului, telefonul și emailul.");
       return;
     }
+    trackOnboardingEvent("onboarding_step_completed", {
+      step,
+      page: "/signup"
+    });
     setStep((prev) => Math.min(3, prev + 1));
   };
 
@@ -301,6 +309,12 @@ export default function SignupPage() {
     localStorage.setItem("ocupaloc:lastImportedClients", String(importedCount));
     localStorage.setItem("ocupaloc:onboardingServices", JSON.stringify(services));
     localStorage.setItem("ocupaloc:onboardingSchedule", JSON.stringify(workDays));
+    trackOnboardingEvent("onboarding_activation", {
+      step: 3,
+      page: "/signup",
+      imported_clients: importedCount,
+      activity
+    });
     trackAuthEvent("signup_success", "email_password");
     toast.success("Cont creat cu succes.");
     router.push("/onboarding/bun-venit");
