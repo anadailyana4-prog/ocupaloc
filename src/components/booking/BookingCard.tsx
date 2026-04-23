@@ -791,9 +791,14 @@ function BookingCardLive(props: LiveProps) {
               {step === 1 && (
                 <div className="space-y-3">
                   <p className="text-sm text-zinc-300">Serviciu: {selectedService ? serviceTitle(selectedService) : "—"}</p>
-                  <Button data-testid="booking-step-1-continue" className="w-full bg-[#1d4ed8] hover:bg-[#1e40af]" onClick={() => setStep(2)}>
-                    Continuă
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>
+                      Înapoi
+                    </Button>
+                    <Button data-testid="booking-step-1-continue" className="flex-1 bg-[#1d4ed8] hover:bg-[#1e40af]" onClick={() => setStep(2)}>
+                      Continuă
+                    </Button>
+                  </div>
                 </div>
               )}
               {step === 2 && (
@@ -802,9 +807,14 @@ function BookingCardLive(props: LiveProps) {
                     {selectedDay ? format(selectedDay, "EEEE, d MMMM yyyy", { locale: ro }) : ""} —{" "}
                     {selectedPick ? formatSlotLabel(selectedPick.start) : ""}
                   </p>
-                  <Button data-testid="booking-step-2-continue" className="w-full bg-[#1d4ed8] hover:bg-[#1e40af]" onClick={() => setStep(3)}>
-                    Continuă
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="secondary" type="button" onClick={() => setStep(1)}>
+                      Înapoi
+                    </Button>
+                    <Button data-testid="booking-step-2-continue" className="flex-1 bg-[#1d4ed8] hover:bg-[#1e40af]" onClick={() => setStep(3)}>
+                      Continuă
+                    </Button>
+                  </div>
                 </div>
               )}
               {step === 3 && (
