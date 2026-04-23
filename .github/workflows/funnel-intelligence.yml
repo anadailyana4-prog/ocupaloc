@@ -1,0 +1,146 @@
+name: Funnel Intelligence
+
+on:
+  schedule:
+    - cron: "20 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  funnel:
+    name: Booking + Onboarding Funnel Intelligence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create funnel-alert --color dc2626 --description "Funnel drop alert" --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create growth-intel --color 6366f1 --description "Growth intelligence" --repo "${{ github.repository }}" 2>/dev/null || true
+
+      - name: Collect funnel events (48h)
+        id: metrics
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          SINCE_24=$(date -u -d "24 hours ago" +"%Y-%m-%dT%H:%M:%SZ")
+          SINCE_48=$(date -u -d "48 hours ago" +"%Y-%m-%dT%H:%M:%SZ")
+          TODAY=$(date -u +"%Y-%m-%d")
+
+          CUR=$(curl -sf -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/operational_events?select=event_type,metadata,created_at&created_at=gte.${SINCE_24}&limit=20000" || echo "[]")
+
+          PREV=$(curl -sf -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/operational_events?select=event_type,metadata,created_at&created_at=gte.${SINCE_48}&created_at=lt.${SINCE_24}&limit=20000" || echo "[]")
+
+          VIEW=$(echo "$CUR" | jq '[.[] | select(.event_type=="booking_public_page_view")] | length')
+          SVC=$(echo "$CUR" | jq '[.[] | select(.event_type=="booking_service_selected")] | length')
+          SLOT=$(echo "$CUR" | jq '[.[] | select(.event_type=="booking_slot_selected")] | length')
+          FORM=$(echo "$CUR" | jq '[.[] | select(.event_type=="booking_form_started")] | length')
+          SUBMIT_OK=$(echo "$CUR" | jq '[.[] | select(.event_type=="booking_submit_success")] | length')
+          SUBMIT_FAIL=$(echo "$CUR" | jq '[.[] | select(.event_type=="booking_submit_failed")] | length')
+
+          PREV_SVC=$(echo "$PREV" | jq '[.[] | select(.event_type=="booking_service_selected")] | length')
+          PREV_OK=$(echo "$PREV" | jq '[.[] | select(.event_type=="booking_submit_success")] | length')
+
+          C1=$(awk -v a="$SVC" -v b="$VIEW" 'BEGIN{if(b==0) print "0.0"; else printf "%.1f", (a*100)/b}')
+          C2=$(awk -v a="$SLOT" -v b="$SVC" 'BEGIN{if(b==0) print "0.0"; else printf "%.1f", (a*100)/b}')
+          C3=$(awk -v a="$FORM" -v b="$SLOT" 'BEGIN{if(b==0) print "0.0"; else printf "%.1f", (a*100)/b}')
+          C4=$(awk -v a="$SUBMIT_OK" -v b="$FORM" 'BEGIN{if(b==0) print "0.0"; else printf "%.1f", (a*100)/b}')
+          OVERALL=$(awk -v a="$SUBMIT_OK" -v b="$SVC" 'BEGIN{if(b==0) print "0.0"; else printf "%.1f", (a*100)/b}')
+          PREV_OVERALL=$(awk -v a="$PREV_OK" -v b="$PREV_SVC" 'BEGIN{if(b==0) print "0.0"; else printf "%.1f", (a*100)/b}')
+          DELTA=$(awk -v c="$OVERALL" -v p="$PREV_OVERALL" 'BEGIN{printf "%.1f", c-p}')
+
+          OB_VIEW=$(echo "$CUR" | jq '[.[] | select(.event_type=="onboarding_signup_view")] | length')
+          OB_STEP1=$(echo "$CUR" | jq '[.[] | select(.event_type=="onboarding_step_completed" and ((.metadata.step // 0 | tonumber?)==1))] | length')
+          OB_STEP2=$(echo "$CUR" | jq '[.[] | select(.event_type=="onboarding_step_completed" and ((.metadata.step // 0 | tonumber?)==2))] | length')
+          OB_STEP3=$(echo "$CUR" | jq '[.[] | select(.event_type=="onboarding_step_completed" and ((.metadata.step // 0 | tonumber?)==3))] | length')
+          OB_PROFILE=$(echo "$CUR" | jq '[.[] | select(.event_type=="onboarding_profile_completed")] | length')
+          OB_ACTIVATION=$(echo "$CUR" | jq '[.[] | select(.event_type=="onboarding_activation")] | length')
+
+          ONB_CONV=$(awk -v a="$OB_ACTIVATION" -v b="$OB_VIEW" 'BEGIN{if(b==0) print "0.0"; else printf "%.1f", (a*100)/b}')
+
+          ALERT="ok"
+          REASON=""
+          if awk -v d="$DELTA" 'BEGIN{exit (d < -15)?0:1}'; then ALERT="critical"; REASON="Overall booking conversion dropped >15pp vs previous day"; fi
+          if [ "$ALERT" = "ok" ] && awk -v v="$OVERALL" 'BEGIN{exit (v<35)?0:1}'; then ALERT="warn"; REASON="Overall booking conversion under 35%"; fi
+          if [ "$ALERT" = "ok" ] && awk -v v="$ONB_CONV" 'BEGIN{exit (v<25)?0:1}'; then ALERT="warn"; REASON="Onboarding activation conversion under 25%"; fi
+
+          DROP_SVC_SLOT=$(awk -v c="$C2" 'BEGIN{printf "%.1f", 100-c}')
+          DROP_SLOT_FORM=$(awk -v c="$C3" 'BEGIN{printf "%.1f", 100-c}')
+          DROP_FORM_SUBMIT=$(awk -v c="$C4" 'BEGIN{printf "%.1f", 100-c}')
+          TOP_FRICTION="service->slot drop ${DROP_SVC_SLOT}%"
+          if awk -v a="$DROP_SLOT_FORM" -v b="$DROP_SVC_SLOT" 'BEGIN{exit (a>b)?0:1}'; then TOP_FRICTION="slot->form drop ${DROP_SLOT_FORM}%"; fi
+          if awk -v a="$DROP_FORM_SUBMIT" -v b="$DROP_SVC_SLOT" 'BEGIN{exit (a>b)?0:1}'; then TOP_FRICTION="form->submit drop ${DROP_FORM_SUBMIT}%"; fi
+
+          echo "view=$VIEW" >> "$GITHUB_OUTPUT"
+          echo "svc=$SVC" >> "$GITHUB_OUTPUT"
+          echo "slot=$SLOT" >> "$GITHUB_OUTPUT"
+          echo "form=$FORM" >> "$GITHUB_OUTPUT"
+          echo "submit_ok=$SUBMIT_OK" >> "$GITHUB_OUTPUT"
+          echo "submit_fail=$SUBMIT_FAIL" >> "$GITHUB_OUTPUT"
+          echo "c1=$C1" >> "$GITHUB_OUTPUT"
+          echo "c2=$C2" >> "$GITHUB_OUTPUT"
+          echo "c3=$C3" >> "$GITHUB_OUTPUT"
+          echo "c4=$C4" >> "$GITHUB_OUTPUT"
+          echo "overall=$OVERALL" >> "$GITHUB_OUTPUT"
+          echo "prev_overall=$PREV_OVERALL" >> "$GITHUB_OUTPUT"
+          echo "delta=$DELTA" >> "$GITHUB_OUTPUT"
+          echo "ob_view=$OB_VIEW" >> "$GITHUB_OUTPUT"
+          echo "ob_step1=$OB_STEP1" >> "$GITHUB_OUTPUT"
+          echo "ob_step2=$OB_STEP2" >> "$GITHUB_OUTPUT"
+          echo "ob_step3=$OB_STEP3" >> "$GITHUB_OUTPUT"
+          echo "ob_profile=$OB_PROFILE" >> "$GITHUB_OUTPUT"
+          echo "ob_activation=$OB_ACTIVATION" >> "$GITHUB_OUTPUT"
+          echo "onb_conv=$ONB_CONV" >> "$GITHUB_OUTPUT"
+          echo "alert=$ALERT" >> "$GITHUB_OUTPUT"
+          echo "reason=$REASON" >> "$GITHUB_OUTPUT"
+          echo "top_friction=$TOP_FRICTION" >> "$GITHUB_OUTPUT"
+          echo "today=$TODAY" >> "$GITHUB_OUTPUT"
+
+      - name: Write summary
+        if: always()
+        run: |
+          printf "## Funnel Intelligence (%s)\n\n" "${{ steps.metrics.outputs.today }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "**Status:** %s\n\n" "${{ steps.metrics.outputs.alert }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "Booking funnel conversion:\n" >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- public view -> service select: %s%% (%s/%s)\n" "${{ steps.metrics.outputs.c1 }}" "${{ steps.metrics.outputs.svc }}" "${{ steps.metrics.outputs.view }}" >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- service -> slot: %s%% (%s/%s)\n" "${{ steps.metrics.outputs.c2 }}" "${{ steps.metrics.outputs.slot }}" "${{ steps.metrics.outputs.svc }}" >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- slot -> form start: %s%% (%s/%s)\n" "${{ steps.metrics.outputs.c3 }}" "${{ steps.metrics.outputs.form }}" "${{ steps.metrics.outputs.slot }}" >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- form start -> submit success: %s%% (%s/%s)\n" "${{ steps.metrics.outputs.c4 }}" "${{ steps.metrics.outputs.submit_ok }}" "${{ steps.metrics.outputs.form }}" >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- overall submit success / service select: %s%% (delta vs prev day: %spp)\n\n" "${{ steps.metrics.outputs.overall }}" "${{ steps.metrics.outputs.delta }}" >> "$GITHUB_STEP_SUMMARY"
+
+          printf "Onboarding funnel:\n" >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- signup view: %s\n" "${{ steps.metrics.outputs.ob_view }}" >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- step 1 complete: %s\n" "${{ steps.metrics.outputs.ob_step1 }}" >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- step 2 complete: %s\n" "${{ steps.metrics.outputs.ob_step2 }}" >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- step 3 complete: %s\n" "${{ steps.metrics.outputs.ob_step3 }}" >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- profile complete: %s\n" "${{ steps.metrics.outputs.ob_profile }}" >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- activation: %s\n" "${{ steps.metrics.outputs.ob_activation }}" >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- activation conversion: %s%%\n\n" "${{ steps.metrics.outputs.onb_conv }}" >> "$GITHUB_STEP_SUMMARY"
+
+          printf "Top friction point: %s\n" "${{ steps.metrics.outputs.top_friction }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open funnel alert issue
+        if: steps.metrics.outputs.alert != 'ok'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE="[FUNNEL-${{ steps.metrics.outputs.alert }}] Drop detected - ${{ steps.metrics.outputs.today }}"
+          EXISTS=$(gh issue list --repo "${{ github.repository }}" --state open --label funnel-alert --json title -q ".[].title" | grep -F "$TITLE" | head -1)
+          if [ -n "$EXISTS" ]; then exit 0; fi
+
+          BODY=$(printf "Funnel alert level: %s\nReason: %s\n\nBooking conversion:\n- view->service: %s%%\n- service->slot: %s%%\n- slot->form: %s%%\n- form->submit: %s%%\n- overall: %s%% (prev day %s%%, delta %spp)\n\nOnboarding activation conversion: %s%%\nTop friction: %s\n\nAction:\n1. Inspect booking UI for friction at top drop step\n2. Check /api/book errors in Vercel logs\n3. Review replay sessions for abandoned forms\n\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            "${{ steps.metrics.outputs.alert }}" "${{ steps.metrics.outputs.reason }}" \
+            "${{ steps.metrics.outputs.c1 }}" "${{ steps.metrics.outputs.c2 }}" "${{ steps.metrics.outputs.c3 }}" "${{ steps.metrics.outputs.c4 }}" \
+            "${{ steps.metrics.outputs.overall }}" "${{ steps.metrics.outputs.prev_overall }}" "${{ steps.metrics.outputs.delta }}" \
+            "${{ steps.metrics.outputs.onb_conv }}" "${{ steps.metrics.outputs.top_friction }}")
+
+          gh issue create --repo "${{ github.repository }}" --title "$TITLE" --body "$BODY" --label "funnel-alert,growth-intel"

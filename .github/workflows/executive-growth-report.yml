@@ -1,0 +1,130 @@
+name: Executive Growth Report
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  report:
+    name: Weekly Executive Growth Report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create executive-growth --color 2563eb --description "Executive growth report" --repo "${{ github.repository }}" 2>/dev/null || true
+
+      - name: Collect weekly growth metrics
+        id: growth
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          W1=$(date -u -d "7 days ago" +"%Y-%m-%dT%H:%M:%SZ")
+          W2=$(date -u -d "14 days ago" +"%Y-%m-%dT%H:%M:%SZ")
+          LABEL_FROM=$(date -u -d "7 days ago" +"%b %d")
+          LABEL_TO=$(date -u +"%b %d, %Y")
+
+          CUR=$(curl -sf -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/operational_events?select=event_type,metadata,created_at&created_at=gte.${W1}&limit=50000" || echo "[]")
+          PREV=$(curl -sf -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/operational_events?select=event_type,metadata,created_at&created_at=gte.${W2}&created_at=lt.${W1}&limit=50000" || echo "[]")
+
+          PROFS=$(curl -sf -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/profesionisti?select=id,created_at&limit=5000" || echo "[]")
+          BOOKS=$(curl -sf -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/programari?select=profesionist_id,status,created_at&limit=20000" || echo "[]")
+
+          CUR_START=$(echo "$CUR" | jq '[.[] | select(.event_type=="booking_submit_started")] | length')
+          CUR_OK=$(echo "$CUR" | jq '[.[] | select(.event_type=="booking_submit_success")] | length')
+          PREV_START=$(echo "$PREV" | jq '[.[] | select(.event_type=="booking_submit_started")] | length')
+          PREV_OK=$(echo "$PREV" | jq '[.[] | select(.event_type=="booking_submit_success")] | length')
+
+          CUR_CONV=$(awk -v ok="$CUR_OK" -v tot="$CUR_START" 'BEGIN{if(tot==0) print "0.0"; else printf "%.1f", (ok*100)/tot}')
+          PREV_CONV=$(awk -v ok="$PREV_OK" -v tot="$PREV_START" 'BEGIN{if(tot==0) print "0.0"; else printf "%.1f", (ok*100)/tot}')
+          CONV_DELTA=$(awk -v c="$CUR_CONV" -v p="$PREV_CONV" 'BEGIN{printf "%.1f", c-p}')
+
+          TOTAL_PROFS=$(echo "$PROFS" | jq 'length')
+          ACTIVE_CUR=$(echo "$BOOKS" | jq --arg s "$W1" '[.[] | select(.created_at >= $s) | .profesionist_id] | unique | length')
+          ACTIVE_PREV=$(echo "$BOOKS" | jq --arg s1 "$W2" --arg s2 "$W1" '[.[] | select(.created_at >= $s1 and .created_at < $s2) | .profesionist_id] | unique | length')
+          RET_CUR=$(awk -v a="$ACTIVE_CUR" -v t="$TOTAL_PROFS" 'BEGIN{if(t==0) print "0.0"; else printf "%.1f", (a*100)/t}')
+          RET_PREV=$(awk -v a="$ACTIVE_PREV" -v t="$TOTAL_PROFS" 'BEGIN{if(t==0) print "0.0"; else printf "%.1f", (a*100)/t}')
+          RET_DELTA=$(awk -v c="$RET_CUR" -v p="$RET_PREV" 'BEGIN{printf "%.1f", c-p}')
+
+          CHURN_RISK=$(jq -n --argjson profs "$PROFS" --argjson books "$BOOKS" --arg s "$W1" '
+            [
+              $profs[] as $p |
+              ([ $books[] | select(.profesionist_id==$p.id and .created_at >= $s)] | length) as $recent |
+              select($recent == 0)
+            ] | length
+          ')
+
+          # MRR can be reported when billing telemetry exists. For now keep explicit N/A.
+          MRR_TREND="N/A (billing telemetry source not configured)"
+
+          RISK1="Conversion trend under watch"
+          RISK2="Retention trend stable"
+          RISK3="Churn queue requires owner follow-up"
+
+          if awk -v d="$CONV_DELTA" 'BEGIN{exit (d<-5)?0:1}'; then RISK1="Conversion dropped >5pp WoW"; fi
+          if awk -v d="$RET_DELTA" 'BEGIN{exit (d<-5)?0:1}'; then RISK2="Retention dropped >5pp WoW"; fi
+          if [ "$CHURN_RISK" -gt 10 ]; then RISK3="High churn risk accounts >10"; fi
+
+          OPP1="Improve form completion UX at booking step"
+          OPP2="Run retention nudge campaign for inactive professionals"
+          OPP3="Scale winning pricing variant after guardrail validation"
+
+          NBA="Prioritize reducing booking form abandonment this week"
+
+          echo "label_from=$LABEL_FROM" >> "$GITHUB_OUTPUT"
+          echo "label_to=$LABEL_TO" >> "$GITHUB_OUTPUT"
+          echo "mrr_trend=$MRR_TREND" >> "$GITHUB_OUTPUT"
+          echo "cur_conv=$CUR_CONV" >> "$GITHUB_OUTPUT"
+          echo "prev_conv=$PREV_CONV" >> "$GITHUB_OUTPUT"
+          echo "conv_delta=$CONV_DELTA" >> "$GITHUB_OUTPUT"
+          echo "ret_cur=$RET_CUR" >> "$GITHUB_OUTPUT"
+          echo "ret_prev=$RET_PREV" >> "$GITHUB_OUTPUT"
+          echo "ret_delta=$RET_DELTA" >> "$GITHUB_OUTPUT"
+          echo "churn_risk=$CHURN_RISK" >> "$GITHUB_OUTPUT"
+          echo "risk1=$RISK1" >> "$GITHUB_OUTPUT"
+          echo "risk2=$RISK2" >> "$GITHUB_OUTPUT"
+          echo "risk3=$RISK3" >> "$GITHUB_OUTPUT"
+          echo "opp1=$OPP1" >> "$GITHUB_OUTPUT"
+          echo "opp2=$OPP2" >> "$GITHUB_OUTPUT"
+          echo "opp3=$OPP3" >> "$GITHUB_OUTPUT"
+          echo "nba=$NBA" >> "$GITHUB_OUTPUT"
+
+      - name: Create executive report issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE="Executive Growth Report - ${{ steps.growth.outputs.label_from }} to ${{ steps.growth.outputs.label_to }}"
+          EXISTS=$(gh issue list --repo "${{ github.repository }}" --state open --label executive-growth --json title -q ".[].title" | grep -F "$TITLE" | head -1)
+          if [ -n "$EXISTS" ]; then exit 0; fi
+
+          BODY=$(printf "Weekly Executive Growth Report\n\nPeriod: %s - %s\n\nMRR trend: %s\nConversion trend: %s%% (prev %s%%, delta %spp)\nRetention trend: %s%% (prev %s%%, delta %spp)\nChurn risk accounts: %s\n\nTop 3 risks:\n1. %s\n2. %s\n3. %s\n\nTop 3 growth opportunities:\n1. %s\n2. %s\n3. %s\n\nNext best action:\n- %s\n\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            "${{ steps.growth.outputs.label_from }}" "${{ steps.growth.outputs.label_to }}" "${{ steps.growth.outputs.mrr_trend }}" \
+            "${{ steps.growth.outputs.cur_conv }}" "${{ steps.growth.outputs.prev_conv }}" "${{ steps.growth.outputs.conv_delta }}" \
+            "${{ steps.growth.outputs.ret_cur }}" "${{ steps.growth.outputs.ret_prev }}" "${{ steps.growth.outputs.ret_delta }}" "${{ steps.growth.outputs.churn_risk }}" \
+            "${{ steps.growth.outputs.risk1 }}" "${{ steps.growth.outputs.risk2 }}" "${{ steps.growth.outputs.risk3 }}" \
+            "${{ steps.growth.outputs.opp1 }}" "${{ steps.growth.outputs.opp2 }}" "${{ steps.growth.outputs.opp3 }}" "${{ steps.growth.outputs.nba }}")
+
+          gh issue create --repo "${{ github.repository }}" --title "$TITLE" --body "$BODY" --label "executive-growth"
+
+      - name: Write summary
+        if: always()
+        run: |
+          printf "## Executive Growth Snapshot\n\n" >> "$GITHUB_STEP_SUMMARY"
+          printf "MRR trend: %s\n" "${{ steps.growth.outputs.mrr_trend }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "Conversion: %s%% (delta %spp)\n" "${{ steps.growth.outputs.cur_conv }}" "${{ steps.growth.outputs.conv_delta }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "Retention: %s%% (delta %spp)\n" "${{ steps.growth.outputs.ret_cur }}" "${{ steps.growth.outputs.ret_delta }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "Churn risk accounts: %s\n" "${{ steps.growth.outputs.churn_risk }}" >> "$GITHUB_STEP_SUMMARY"
+          printf "Next best action: %s\n" "${{ steps.growth.outputs.nba }}" >> "$GITHUB_STEP_SUMMARY"

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { slugifyBusinessName, uniqueSlug } from "@/lib/slug";
+import { recordOperationalEvent } from "@/lib/ops-events";
 import { writeWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -71,6 +72,18 @@ export async function saveOnboardingProfile(formData: FormData) {
   if (errorMessage) {
     redirect(`/onboarding?error=${encodeURIComponent(errorMessage)}`);
   }
+
+  await recordOperationalEvent({
+    eventType: "onboarding_profile_completed",
+    flow: "onboarding",
+    outcome: "success",
+    entityId: user.id,
+    statusCode: 200,
+    metadata: {
+      source: "onboarding_actions",
+      activity: parsed.data.tip_activitate
+    }
+  });
 
   redirect("/dashboard");
 }

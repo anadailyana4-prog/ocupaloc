@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { createPublicBooking } from "@/actions/public-booking";
-import { trackBookingEvent } from "@/lib/analytics";
+import { assignExperimentVariant, trackBookingEvent } from "@/lib/analytics";
 import { formatSlotLabel } from "@/lib/slots";
 import type { ServiciuRow } from "@/types/db";
 
@@ -140,6 +140,8 @@ type SlotPick = { start: Date; staffId?: string };
 function BookingCardLive(props: LiveProps) {
   const { slug, publicBase, businessName, services, publicPageLayout = false } = props;
   const tenant = isTenantLive(props);
+  const [experimentVariant, setExperimentVariant] = useState<"A" | "B" | null>(null);
+  const experimentId = "pricing_packaging_v1";
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(services[0]?.id ?? null);
   const [selectedDay, setSelectedDay] = useState<Date | null>(() => (publicPageLayout ? startOfDay(new Date()) : null));
@@ -160,6 +162,22 @@ function BookingCardLive(props: LiveProps) {
   }, []);
 
   const selectedService = useMemo(() => services.find((s) => s.id === selectedServiceId) ?? null, [services, selectedServiceId]);
+
+  useEffect(() => {
+    void assignExperimentVariant(experimentId).then((variant) => {
+      if (variant) setExperimentVariant(variant);
+    });
+  }, []);
+
+  useEffect(() => {
+    trackBookingEvent("booking_public_page_view", {
+      mode: tenant ? "tenant" : "public",
+      slug,
+      page: `/${slug}`,
+      experiment_id: experimentId,
+      variant: experimentVariant
+    });
+  }, [slug, tenant, experimentVariant]);
 
   useEffect(() => {
     setSuccessSummary(null);
@@ -255,7 +273,9 @@ function BookingCardLive(props: LiveProps) {
       trackBookingEvent("booking_submit_started", {
         mode: "tenant",
         slug,
-        service_id: selectedService.id
+        service_id: selectedService.id,
+        experiment_id: experimentId,
+        variant: experimentVariant
       });
       setSubmitting(true);
       try {
@@ -279,7 +299,9 @@ function BookingCardLive(props: LiveProps) {
             mode: "tenant",
             slug,
             service_id: selectedService.id,
-            reason: errMsg
+            reason: errMsg,
+            experiment_id: experimentId,
+            variant: experimentVariant
           });
           toast.error(errMsg);
           return;
@@ -287,7 +309,9 @@ function BookingCardLive(props: LiveProps) {
         trackBookingEvent("booking_submit_success", {
           mode: "tenant",
           slug,
-          service_id: selectedService.id
+          service_id: selectedService.id,
+          experiment_id: experimentId,
+          variant: experimentVariant
         });
         setSuccessSummary({
           clientName: cleanName,
@@ -322,7 +346,9 @@ function BookingCardLive(props: LiveProps) {
     trackBookingEvent("booking_submit_started", {
       mode: "public",
       slug,
-      service_id: selectedService.id
+      service_id: selectedService.id,
+      experiment_id: experimentId,
+      variant: experimentVariant
     });
     setSubmitting(true);
     try {
@@ -341,7 +367,9 @@ function BookingCardLive(props: LiveProps) {
           mode: "public",
           slug,
           service_id: selectedService.id,
-          reason
+          reason,
+          experiment_id: experimentId,
+          variant: experimentVariant
         });
         if ("message" in res && typeof res.message === "string") {
           toast.error(res.message);
@@ -353,7 +381,9 @@ function BookingCardLive(props: LiveProps) {
       trackBookingEvent("booking_submit_success", {
         mode: "public",
         slug,
-        service_id: selectedService.id
+        service_id: selectedService.id,
+        experiment_id: experimentId,
+        variant: experimentVariant
       });
       setSuccessSummary({
         clientName: cleanName,
@@ -447,7 +477,9 @@ function BookingCardLive(props: LiveProps) {
                     trackBookingEvent("booking_service_selected", {
                       mode: tenant ? "tenant" : "public",
                       slug,
-                      service_id: s.id
+                      service_id: s.id,
+                      experiment_id: experimentId,
+                      variant: experimentVariant
                     });
                   }}
                   className={`w-full border text-left transition-colors ${
@@ -493,7 +525,9 @@ function BookingCardLive(props: LiveProps) {
                           trackBookingEvent("booking_day_selected", {
                             mode: tenant ? "tenant" : "public",
                             slug,
-                            date: format(day, "yyyy-MM-dd")
+                            date: format(day, "yyyy-MM-dd"),
+                            experiment_id: experimentId,
+                            variant: experimentVariant
                           });
                         }}
                         className={`flex min-w-[4.75rem] shrink-0 flex-col items-center rounded-full border-2 px-4 py-3 transition ${
@@ -543,7 +577,16 @@ function BookingCardLive(props: LiveProps) {
                         key={day.toISOString()}
                         type="button"
                         data-testid="day-option"
-                        onClick={() => setSelectedDay(day)}
+                        onClick={() => {
+                          setSelectedDay(day);
+                          trackBookingEvent("booking_day_selected", {
+                            mode: tenant ? "tenant" : "public",
+                            slug,
+                            date: format(day, "yyyy-MM-dd"),
+                            experiment_id: experimentId,
+                            variant: experimentVariant
+                          });
+                        }}
                         className={`flex aspect-square items-center justify-center rounded ${
                           isSel ? "bg-[#1d4ed8] font-semibold text-white" : "bg-zinc-800 text-zinc-300 hover:bg-zinc-700"
                         }`}
@@ -589,7 +632,9 @@ function BookingCardLive(props: LiveProps) {
                           trackBookingEvent("booking_slot_selected", {
                             mode: tenant ? "tenant" : "public",
                             slug,
-                            slot: pick.start.toISOString()
+                            slot: pick.start.toISOString(),
+                            experiment_id: experimentId,
+                            variant: experimentVariant
                           });
                           if (tenant) {
                             setSuccessSummary(null);
@@ -657,6 +702,15 @@ function BookingCardLive(props: LiveProps) {
         open={modalOpen}
         onOpenChange={(open) => {
           setModalOpen(open);
+          if (open) {
+            trackBookingEvent("booking_form_started", {
+              mode: tenant ? "tenant" : "public",
+              slug,
+              service_id: selectedServiceId ?? null,
+              experiment_id: experimentId,
+              variant: experimentVariant
+            });
+          }
           if (!open) {
             setStep(1);
           }

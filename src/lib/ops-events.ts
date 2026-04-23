@@ -4,7 +4,7 @@ import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 export type OperationalEventInput = {
   eventType: string;
-  flow: "booking" | "auth" | "api" | "cron" | "synthetic";
+  flow: "booking" | "auth" | "api" | "cron" | "synthetic" | "onboarding" | "growth";
   outcome: "success" | "failure";
   requestId?: string;
   entityId?: string;

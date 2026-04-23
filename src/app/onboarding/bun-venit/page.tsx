@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { trackOnboardingEvent } from "@/lib/analytics";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 
@@ -13,6 +14,10 @@ export default function BunVenitPage() {
   useEffect(() => {
     const lastSlug = localStorage.getItem("ocupaloc:lastSlug");
     if (lastSlug) setSlug(lastSlug);
+    trackOnboardingEvent("onboarding_activation", {
+      step: 4,
+      page: "/onboarding/bun-venit"
+    });
   }, []);
 
   const publicUrl = useMemo(() => `https://ocupaloc.ro/${slug}`, [slug]);
