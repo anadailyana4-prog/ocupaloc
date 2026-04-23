@@ -7,6 +7,7 @@ import { z } from "zod";
 import { logBookingStatusEvent } from "@/lib/booking/status-events";
 import { notifyClientBookingCancelledBySalon } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
+import { writeWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type BookingActionResult = { success: true } | { success: false; message: string };
@@ -104,15 +105,15 @@ export async function updatePublicSalonFields(formData: FormData) {
   if (!parsed.success) {
     redirect("/dashboard?error=" + encodeURIComponent("Date invalide."));
   }
-  const { error } = await supabase
-    .from("profesionisti")
-    .update({
+  const { error } = await writeWithTelefonFallback(
+    async (values) => await supabase.from("profesionisti").update(values).eq("user_id", user.id),
+    {
       telefon: parsed.data.telefon,
       description: parsed.data.description
-    })
-    .eq("user_id", user.id);
+    }
+  );
   if (error) {
-    redirect("/dashboard?error=" + encodeURIComponent(error.message));
+    redirect("/dashboard?error=" + encodeURIComponent(error.message ?? "Nu am putut salva datele publice."));
   }
   revalidatePath("/dashboard");
   redirect("/dashboard?saved=1");

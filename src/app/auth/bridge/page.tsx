@@ -1,24 +1,12 @@
 "use client";
 
-import type { EmailOtpType } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 
+import { getAuthBridgeAction, getErrorMessage, getSafeNext } from "@/lib/supabase/auth-bridge";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function getSafeNext(raw: string | null): string {
-  if (!raw) return "/dashboard";
-  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("://")) return "/dashboard";
-  return raw;
-}
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === "string") return error;
-  return "auth_bridge_failed";
 }
 
 export default function AuthBridgePage() {
@@ -35,27 +23,22 @@ export default function AuthBridgePage() {
     async function completeAuth() {
       const supabase = createSupabaseBrowserClient();
       const current = new URL(window.location.href);
-      const hashParams = new URLSearchParams(current.hash.startsWith("#") ? current.hash.slice(1) : current.hash);
-      const code = current.searchParams.get("code");
-      const tokenHash = current.searchParams.get("token_hash") ?? hashParams.get("token_hash");
-      const otpType = (current.searchParams.get("type") ?? hashParams.get("type")) as EmailOtpType | null;
-      const accessToken = hashParams.get("access_token") ?? current.searchParams.get("access_token");
-      const refreshToken = hashParams.get("refresh_token") ?? current.searchParams.get("refresh_token");
+      const action = getAuthBridgeAction(current);
 
       try {
-        if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (action.kind === "code") {
+          const { error } = await supabase.auth.exchangeCodeForSession(action.code);
           if (error) throw error;
-        } else if (tokenHash && otpType) {
+        } else if (action.kind === "otp") {
           const { error } = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: otpType
+            token_hash: action.tokenHash,
+            type: action.otpType
           });
           if (error) throw error;
-        } else if (accessToken && refreshToken) {
+        } else if (action.kind === "session") {
           const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
+            access_token: action.accessToken,
+            refresh_token: action.refreshToken
           });
           if (error) throw error;
         }

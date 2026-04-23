@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
@@ -16,8 +15,11 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { loginSchema } from "@/lib/validators/auth";
 import { toast } from "sonner";
 
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export default function LoginPage() {
-  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -37,19 +39,39 @@ export default function LoginPage() {
     setSubmitError(null);
     setBusy(true);
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: values.email,
       password: values.password
     });
-    setBusy(false);
+
     if (error) {
+      setBusy(false);
       setSubmitError(error.message);
       return;
     }
+
+    // Supabase can persist the session cookies slightly after the auth response.
+    // Give the browser a brief window to flush them before the first protected navigation.
+    if (!data.session) {
+      for (let attempt = 0; attempt < 12; attempt += 1) {
+        const {
+          data: { session }
+        } = await supabase.auth.getSession();
+
+        if (session) {
+          break;
+        }
+
+        await wait(200);
+      }
+    } else {
+      await wait(1200);
+    }
+
+    setBusy(false);
     toast.success("Autentificare reușită.");
     trackAuthEvent("login_success", "password");
-    router.push("/dashboard");
-    router.refresh();
+    window.location.replace("/dashboard");
   }
 
   async function signInWithGoogle() {
@@ -59,7 +81,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${origin}/auth/callback?next=/dashboard`
+        redirectTo: `${origin}/auth/bridge?next=/dashboard`
       }
     });
     setBusy(false);
@@ -95,7 +117,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${siteUrl}/auth/callback?next=/dashboard`
+        emailRedirectTo: `${siteUrl}/auth/bridge?next=/dashboard`
       }
     });
 

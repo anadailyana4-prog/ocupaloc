@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
 
 type PageProps = {
@@ -34,6 +35,21 @@ type ProgRow = {
   servicii: { nume: string } | { nume: string }[] | null;
 };
 
+type DashboardProfile = {
+  id?: string;
+  slug?: string | null;
+  telefon?: string | null;
+  description?: string | null;
+  nume_business?: string | null;
+  onboarding_pas?: number | null;
+  program?: Record<string, unknown> | null;
+  smart_rules_enabled?: boolean | null;
+  smart_max_future_bookings?: number | null;
+  smart_client_cancel_threshold?: number | null;
+  smart_cancel_window_days?: number | null;
+  smart_min_notice_minutes?: number | null;
+};
+
 export default async function DashboardHomePage({ searchParams }: PageProps) {
   const supabase = await createSupabaseServerClient();
   const user = await getUser();
@@ -43,13 +59,11 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   let greetName = user.email?.split("@")[0] ?? "acolo";
 
-  const { data: prof, error: profErr } = await supabase
-    .from("profesionisti")
-    .select(
-      "id, slug, telefon, description, nume_business, onboarding_pas, program, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes"
-    )
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { data: prof, error: profErr, telefonColumnAvailable } = await selectWithTelefonFallback<DashboardProfile>(
+    async (columns) => await supabase.from("profesionisti").select(columns).eq("user_id", user.id).maybeSingle(),
+    "id, slug, telefon, description, nume_business, onboarding_pas, program, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes",
+    "id, slug, description, nume_business, onboarding_pas, program, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes"
+  );
 
   if (profErr || !prof?.id) {
     redirect("/onboarding");
@@ -75,7 +89,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     programRaw &&
       Object.values(programRaw).some((value) => Array.isArray(value) && value.length === 2 && typeof value[0] === "string" && typeof value[1] === "string")
   );
-  const profileDone = Boolean(prof.nume_business?.trim() && prof.telefon?.trim());
+  const profileDone = Boolean(prof.nume_business?.trim() && (!telefonColumnAvailable || prof.telefon?.trim()));
 
   const { data: rawProg, error: progErr } = await supabase
     .from("programari")
@@ -151,17 +165,19 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
           <p className="text-sm text-muted-foreground">Autentificat ca {user.email ?? "—"}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <CopyPublicLinkButton slug={prof.slug} />
+          {prof.slug ? <CopyPublicLinkButton slug={prof.slug} /> : null}
           <form action="/api/billing/portal" method="post">
             <Button type="submit" variant="secondary" className="rounded-full">
               Gestionează abonamentul
             </Button>
           </form>
-          <Button asChild variant="secondary" className="rounded-full">
-            <Link href={`/${prof.slug}`} target="_blank" rel="noreferrer">
-              Deschide pagina publică
-            </Link>
-          </Button>
+          {prof.slug ? (
+            <Button asChild variant="secondary" className="rounded-full">
+              <Link href={`/${prof.slug}`} target="_blank" rel="noreferrer">
+                Deschide pagina publică
+              </Link>
+            </Button>
+          ) : null}
         </div>
       </div>
 

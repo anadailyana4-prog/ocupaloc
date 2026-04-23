@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { slugifyBusinessName, uniqueSlug } from "@/lib/slug";
+import { writeWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const schema = z.object({
@@ -36,15 +37,15 @@ export async function saveOnboardingProfile(formData: FormData) {
 
   let errorMessage: string | null = null;
   if (existingProf?.id) {
-    const result = await supabase
-      .from("profesionisti")
-      .update({
+    const result = await writeWithTelefonFallback(
+      async (values) => await supabase.from("profesionisti").update(values).eq("id", existingProf.id),
+      {
         nume_business: parsed.data.nume_business,
         telefon: parsed.data.telefon,
         tip_activitate: parsed.data.tip_activitate,
         onboarding_pas: 4
-      })
-      .eq("id", existingProf.id);
+      }
+    );
     errorMessage = result.error?.message ?? null;
   } else {
     const base = slugifyBusinessName(parsed.data.nume_business);
@@ -53,14 +54,17 @@ export async function saveOnboardingProfile(formData: FormData) {
       return Boolean(data?.id);
     });
 
-    const result = await supabase.from("profesionisti").insert({
-      user_id: user.id,
-      slug,
-      nume_business: parsed.data.nume_business,
-      telefon: parsed.data.telefon,
-      tip_activitate: parsed.data.tip_activitate,
-      onboarding_pas: 4
-    });
+    const result = await writeWithTelefonFallback(
+      async (values) => await supabase.from("profesionisti").insert(values),
+      {
+        user_id: user.id,
+        slug,
+        nume_business: parsed.data.nume_business,
+        telefon: parsed.data.telefon,
+        tip_activitate: parsed.data.tip_activitate,
+        onboarding_pas: 4
+      }
+    );
     errorMessage = result.error?.message ?? null;
   }
 

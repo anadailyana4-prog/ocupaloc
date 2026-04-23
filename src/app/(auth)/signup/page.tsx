@@ -236,7 +236,7 @@ export default function SignupPage() {
           phone: cleanPhone,
           activity
         },
-        emailRedirectTo: siteUrl ? `${siteUrl}/auth/callback?next=/dashboard` : undefined
+        emailRedirectTo: siteUrl ? `${siteUrl}/auth/bridge?next=/dashboard` : undefined
       }
     });
 
@@ -261,7 +261,7 @@ export default function SignupPage() {
         const { error: magicLinkError } = await supabase.auth.signInWithOtp({
           email: cleanEmail,
           options: {
-            emailRedirectTo: siteUrl ? `${siteUrl}/auth/callback?next=/dashboard` : undefined
+            emailRedirectTo: siteUrl ? `${siteUrl}/auth/bridge?next=/dashboard` : undefined
           }
         });
 

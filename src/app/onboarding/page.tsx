@@ -4,10 +4,18 @@ import { saveOnboardingProfile } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { getUser, createSupabaseServerClient } from "@/lib/supabase/server";
 
 type PageProps = {
   searchParams?: Promise<{ error?: string }>;
+};
+
+type OnboardingProfile = {
+  nume_business?: string | null;
+  telefon?: string | null;
+  tip_activitate?: string | null;
+  onboarding_pas?: number | null;
 };
 
 export const dynamic = "force-dynamic";
@@ -19,16 +27,16 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data: profile } = await supabase
-    .from("profesionisti")
-    .select("nume_business, telefon, tip_activitate, onboarding_pas")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const { data: profile, telefonColumnAvailable } = await selectWithTelefonFallback<OnboardingProfile>(
+    async (columns) => await supabase.from("profesionisti").select(columns).eq("user_id", user.id).maybeSingle(),
+    "nume_business, telefon, tip_activitate, onboarding_pas",
+    "nume_business, tip_activitate, onboarding_pas"
+  );
 
   if (
     profile?.nume_business?.trim() &&
-    profile?.telefon?.trim() &&
     profile?.tip_activitate?.trim() &&
+    (!telefonColumnAvailable || profile?.telefon?.trim()) &&
     (profile?.onboarding_pas ?? 0) >= 4
   ) {
     redirect("/dashboard");
