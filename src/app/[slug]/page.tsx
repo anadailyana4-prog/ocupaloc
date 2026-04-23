@@ -224,6 +224,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
   const whatsapp = ((prof.whatsapp as string | null)?.trim() || telefon).trim();
   const telHref = telefon ? telefon.replace(/\s+/g, "") : "";
   const waHref = whatsapp ? whatsapp.replace(/\D+/g, "") : "";
+  const waText = `Bună! Vreau o programare la ${String(prof.nume_business ?? "").trim() || "salon"}.`;
   const publicDescription = ((prof as { description?: string | null }).description ?? "").trim();
   const tip = tipLabel(prof.tip_activitate as string | undefined);
   const city = ((prof as { oras?: string | null }).oras ?? "").trim();
@@ -289,12 +290,12 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
                 ) : null}
                 {waHref ? (
                   <a
-                    href={`https://wa.me/${waHref}`}
+                    href={`https://wa.me/${waHref}?text=${encodeURIComponent(waText)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center justify-center rounded-full bg-emerald-600/90 px-8 py-3 text-sm font-semibold text-white ring-1 ring-emerald-400/60 transition hover:bg-emerald-500"
                   >
-                    WhatsApp
+                    Scrie pe WhatsApp
                   </a>
                 ) : null}
               </div>
