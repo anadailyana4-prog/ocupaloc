@@ -2,8 +2,15 @@ import { expect, test } from "@playwright/test";
 
 const bookingSlug = process.env.PLAYWRIGHT_BOOKING_SLUG;
 const hasBaseUrl = Boolean(process.env.PLAYWRIGHT_BASE_URL);
+const requireExecution = process.env.PLAYWRIGHT_REQUIRE_EXECUTION === "true";
 
 test.describe("public booking smoke", () => {
+  if (requireExecution && !hasBaseUrl) {
+    throw new Error("PLAYWRIGHT_BASE_URL is required when PLAYWRIGHT_REQUIRE_EXECUTION=true.");
+  }
+  if (requireExecution && !bookingSlug) {
+    throw new Error("PLAYWRIGHT_BOOKING_SLUG is required when PLAYWRIGHT_REQUIRE_EXECUTION=true.");
+  }
   test.skip(!hasBaseUrl, "PLAYWRIGHT_BASE_URL is not configured.");
   test.skip(!bookingSlug, "PLAYWRIGHT_BOOKING_SLUG is not configured.");
 

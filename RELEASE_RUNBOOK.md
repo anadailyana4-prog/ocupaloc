@@ -102,6 +102,22 @@ To activate Stripe later:
    - reminders endpoint returns 401 without secret
    - signout endpoint returns 403 for invalid origin
 
+## Automated Synthetic Monitoring
+
+The `synthetic-monitor.yml` GitHub Actions workflow runs every 6 hours and checks:
+
+| Check | Endpoint | Fail condition |
+|---|---|---|
+| App health | `GET /api/health` | HTTP ≠ 200 or `db: false` |
+| Public booking page | `GET /ana-nails` | HTTP ≠ 200 |
+| Slug redirect | `GET /s/ana-nails` | HTTP ≠ 200 |
+| Booking API | `POST /api/book` (empty body) | HTTP 5xx |
+| Auth guard | `GET /dashboard` | No redirect to /login |
+
+Failures trigger a `critical` alert to `ALERT_WEBHOOK_URL` (if configured). Monitor runs:
+- https://github.com/anadailyana4-prog/ocupaloc/actions/workflows/synthetic-monitor.yml
+
+
 ## Incident Response
 
 ### Supabase degraded/down
@@ -127,9 +143,54 @@ To activate Stripe later:
 4. Keep monitor on `GET /api/health` and webhook alerts for 24h.
 
 ## Rollback
-1. Redeploy previous healthy Vercel deployment.
-2. Re-run smoke checks.
-3. Open incident note with root cause and follow-up tasks.
+
+### Fast Rollback — Vercel (< 2 min)
+```bash
+# 1. List last N deployments
+npx vercel ls --prod
+
+# 2. Instant alias rollback — replace <previous-deployment-url> with the URL from step 1
+npx vercel alias set <previous-deployment-url> ocupaloc.ro
+
+# 3. Verify production is on the old deployment
+curl -s https://ocupaloc.ro/api/health | python3 -m json.tool
+```
+
+### Full Branch Rollback — Git (< 5 min)
+```bash
+# Find the last known-good SHA (e.g. from CI run that was green)
+git log --oneline -10
+
+# Revert the bad commit (creates a new revert commit — preferred for main with branch protection)
+git revert <bad-sha> --no-edit
+git push origin main
+
+# OR: Hard reset to previous SHA (requires force-push — only if branch protection allows)
+# git reset --hard <good-sha>
+# git push --force-with-lease origin main
+```
+
+### Database Rollback — Migration (< 10 min)
+```bash
+# Check active migrations
+npx supabase migration list --linked
+
+# Roll back last migration
+npx supabase db reset --linked   # full reset to migration history (DESTRUCTIVE — dev only)
+
+# Preferred for production: apply a corrective migration
+npx supabase migration new rollback_<description>
+# edit file, then:
+npx supabase db push --linked
+```
+
+### Smoke Check After Rollback
+```bash
+curl -sf https://ocupaloc.ro/api/health && echo "✅ health ok"
+HTTP=$(curl -s -o /dev/null -w "%{http_code}" https://ocupaloc.ro/ana-nails)
+echo "Public page: HTTP $HTTP"
+```
+
 
 ## Monthly Alerting Drill
 1. Trigger one controlled `reportError` event in staging (`flow=booking`, `event=drill_alert`).

@@ -17,6 +17,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify clean git tree (no uncommitted generated files)
+        run: |
+          STATUS=$(git status --porcelain)
+          if [ -n "$STATUS" ]; then
+            echo "::error::Dirty working tree detected after checkout:"
+            echo "$STATUS"
+            echo "Ensure no generated files are committed without being tracked."
+            exit 1
+          fi
+          echo "✓ Git tree is clean."
+
       - uses: pnpm/action-setup@v4
         with:
           version: 9
@@ -69,6 +80,19 @@ jobs:
           fi
           echo "Credential scan passed — no hardcoded credentials found."
 
+      - name: Scan for ad-hoc debug/temp test files
+        run: |
+          echo "Checking for debug/temp E2E test files that must not enter CI..."
+          BAD_FILES=$(find tests/e2e -name "*.spec.ts" | grep -E "(debug|temp|capture|inspect|scratch)" || true)
+          if [ -n "$BAD_FILES" ]; then
+            echo "::error::Ad-hoc debug spec files found in tests/e2e/:"
+            echo "$BAD_FILES"
+            echo "Remove them before merging."
+            exit 1
+          fi
+          echo "Ad-hoc file scan passed."
+
+
       - name: Unit tests, types, lint, audit
         run: pnpm run check:all
 
@@ -85,8 +109,9 @@ jobs:
         if: ${{ vars.ENABLE_E2E == 'true' }}
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: "🚀 E2E Release Validation (CRITICAL)"
+      - name: "🚀 E2E Release Validation — Run 1 (CRITICAL)"
         if: ${{ vars.ENABLE_E2E == 'true' }}
+        id: e2e_run1
         env:
           PLAYWRIGHT_REQUIRE_EXECUTION: "true"
           PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL }}
@@ -95,6 +120,34 @@ jobs:
           PLAYWRIGHT_LOGIN_EMAIL: ${{ secrets.PLAYWRIGHT_LOGIN_EMAIL }}
           PLAYWRIGHT_LOGIN_PASSWORD: ${{ secrets.PLAYWRIGHT_LOGIN_PASSWORD }}
         run: |
-          echo "Running E2E release validation with CRITICAL test enforcing required secrets..."
+          echo "▶ E2E Run 1/2 — Release validation (determinism check)..."
           pnpm run test:e2e
+          echo "✅ E2E Run 1 passed."
+
+      - name: "🔁 E2E Release Validation — Run 2 (Determinism)"
+        if: ${{ vars.ENABLE_E2E == 'true' && steps.e2e_run1.outcome == 'success' }}
+        env:
+          PLAYWRIGHT_REQUIRE_EXECUTION: "true"
+          PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL }}
+          PLAYWRIGHT_BOOKING_SLUG: ${{ vars.PLAYWRIGHT_BOOKING_SLUG }}
+          PLAYWRIGHT_ENABLE_DEMO_SMOKE: ${{ vars.PLAYWRIGHT_ENABLE_DEMO_SMOKE }}
+          PLAYWRIGHT_LOGIN_EMAIL: ${{ secrets.PLAYWRIGHT_LOGIN_EMAIL }}
+          PLAYWRIGHT_LOGIN_PASSWORD: ${{ secrets.PLAYWRIGHT_LOGIN_PASSWORD }}
+        run: |
+          echo "▶ E2E Run 2/2 — Determinism confirmation..."
+          pnpm run test:e2e
+          echo "✅ E2E Run 2 passed — determinism confirmed."
+
+      - name: "🌐 Post-build production health check"
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "Waiting 30s for Vercel deployment to propagate..."
+          sleep 30
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "https://ocupaloc.ro/api/health")
+          echo "Health endpoint returned HTTP $HTTP_STATUS"
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "::warning::Production health check returned HTTP $HTTP_STATUS after push to main."
+          else
+            echo "✅ Production health check OK."
+          fi
 

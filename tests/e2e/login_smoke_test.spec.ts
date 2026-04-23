@@ -5,7 +5,15 @@ test("login smoke test", async ({ page, context }) => {
   const loginPassword = process.env.PLAYWRIGHT_LOGIN_PASSWORD;
 
   if (!loginEmail || !loginPassword) {
-    test.skip(true, "PLAYWRIGHT_LOGIN_EMAIL and PLAYWRIGHT_LOGIN_PASSWORD are required for this smoke test.");
+    // In CI (PLAYWRIGHT_REQUIRE_EXECUTION=true), missing credentials is a hard failure.
+    // Locally without credentials, skip gracefully.
+    if (process.env.PLAYWRIGHT_REQUIRE_EXECUTION === "true") {
+      throw new Error(
+        "PLAYWRIGHT_LOGIN_EMAIL and PLAYWRIGHT_LOGIN_PASSWORD are required in CI. " +
+        "Add them as GitHub repository secrets."
+      );
+    }
+    test.skip(true, "PLAYWRIGHT_LOGIN_EMAIL and PLAYWRIGHT_LOGIN_PASSWORD not set — skipping locally.");
   }
 
   const authResponses: Array<{ url: string; status: number }> = [];

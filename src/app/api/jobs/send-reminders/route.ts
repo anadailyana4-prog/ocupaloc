@@ -114,14 +114,30 @@ export async function GET(req: NextRequest) {
   }
 
   const admin = createSupabaseServiceClient();
-  const sent24h = await sendType(admin, "24h");
-  const sent2h = await sendType(admin, "2h");
+  let cronError: unknown = null;
 
-  return NextResponse.json({
-    ok: true,
+  let sent24h = 0;
+  let sent2h = 0;
+
+  try {
+    sent24h = await sendType(admin, "24h");
+    sent2h = await sendType(admin, "2h");
+  } catch (err) {
+    cronError = err;
+    reportError("cron", "send_reminders_fatal", err, { phase: "sendType" });
+  }
+
+  const result = {
+    ok: cronError === null,
     sent24h,
     sent2h,
     total: sent24h + sent2h,
-    ranAt: new Date().toISOString()
-  });
+    ranAt: new Date().toISOString(),
+    ...(cronError ? { error: String(cronError) } : {})
+  };
+
+  // Machine-parseable single-line summary for log scraping / uptime monitors.
+  console.log(`[cron:send-reminders] ${JSON.stringify(result)}`);
+
+  return NextResponse.json(result, { status: cronError ? 500 : 200 });
 }
