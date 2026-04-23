@@ -59,6 +59,7 @@ export function ActivationWidgets({ slug, profileDone, serviciiCount, programSet
   );
 
   const completedCount = checks.filter((check) => check.done).length;
+  const allDone = completedCount === checks.length;
   const activationScore = Math.round((completedCount / checks.length) * 100);
   const nextAction = checks.find((check) => !check.done) ?? null;
 
@@ -135,45 +136,41 @@ export function ActivationWidgets({ slug, profileDone, serviciiCount, programSet
         </div>
       </div>
 
-      <div className="mb-8 rounded-2xl border border-amber-200/15 bg-slate-950/50 p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Scor activare cont</h3>
-          <span className="text-sm text-amber-100/70">{activationScore}%</span>
-        </div>
-
-        <div className="mb-5 h-2 w-full overflow-hidden rounded-full bg-slate-800">
-          <div className="h-full rounded-full bg-gradient-to-r from-amber-300 to-cyan-300" style={{ width: `${activationScore}%` }} />
-        </div>
-
-        {nextAction ? (
-          <div className="mb-5 rounded-xl border border-cyan-300/20 bg-cyan-500/10 p-3 text-sm">
-            <p className="font-medium text-cyan-100">Următorul pas recomandat</p>
-            <p className="mt-1 text-cyan-100/80">{nextAction.label}</p>
+      {!allDone ? (
+        <div className="mb-8 rounded-2xl border border-amber-200/15 bg-slate-950/50 p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Scor activare cont</h3>
+            <span className="text-sm text-amber-100/70">{activationScore}%</span>
           </div>
-        ) : null}
 
-        <div className="space-y-3">
-          {checks.map((check) => (
-            <div key={check.id} className="flex items-center gap-3">
-              <div className={`flex h-5 w-5 items-center justify-center rounded-full ${check.done ? "bg-emerald-500 text-slate-900" : "bg-slate-700"}`}>
-                {check.done ? "✓" : null}
-              </div>
-              <span className={check.done ? "text-slate-400 line-through" : "text-slate-100"}>{check.label}</span>
-              {!check.done && check.href ? (
-                <Link href={check.href} className="ml-auto text-sm text-cyan-300 hover:underline">
-                  Completează →
-                </Link>
-              ) : null}
+          <div className="mb-5 h-2 w-full overflow-hidden rounded-full bg-slate-800">
+            <div className="h-full rounded-full bg-gradient-to-r from-amber-300 to-cyan-300" style={{ width: `${activationScore}%` }} />
+          </div>
+
+          {nextAction ? (
+            <div className="mb-5 rounded-xl border border-cyan-300/20 bg-cyan-500/10 p-3 text-sm">
+              <p className="font-medium text-cyan-100">Următorul pas recomandat</p>
+              <p className="mt-1 text-cyan-100/80">{nextAction.label}</p>
             </div>
-          ))}
-        </div>
+          ) : null}
 
-        {completedCount === 4 ? (
-          <div className="mt-4 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-3 text-center">
-            <p className="font-medium text-emerald-300">Gata! Ești live. Trimite linkul la primii 3 clienți.</p>
+          <div className="space-y-3">
+            {checks.map((check) => (
+              <div key={check.id} className="flex items-center gap-3">
+                <div className={`flex h-5 w-5 items-center justify-center rounded-full ${check.done ? "bg-emerald-500 text-slate-900" : "bg-slate-700"}`}>
+                  {check.done ? "✓" : null}
+                </div>
+                <span className={check.done ? "text-slate-400 line-through" : "text-slate-100"}>{check.label}</span>
+                {!check.done && check.href ? (
+                  <Link href={check.href} className="ml-auto text-sm text-cyan-300 hover:underline">
+                    Completează →
+                  </Link>
+                ) : null}
+              </div>
+            ))}
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </>
   );
 }
