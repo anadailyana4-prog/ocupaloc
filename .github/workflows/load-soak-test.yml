@@ -115,12 +115,12 @@ jobs:
           printf "**Verdict:** %s\n\n"                  "$VERDICT"    >> "$GITHUB_STEP_SUMMARY"
           printf "**Config:** %s requests, %s concurrent\n\n" "$N" "$C" >> "$GITHUB_STEP_SUMMARY"
           printf "### Latency Percentiles\n\n"                         >> "$GITHUB_STEP_SUMMARY"
-          printf "- p50: %s ms\n"                       "$P50"        >> "$GITHUB_STEP_SUMMARY"
-          printf "- p95: %s ms  (threshold: <2000ms)\n" "$P95"        >> "$GITHUB_STEP_SUMMARY"
-          printf "- p99: %s ms  (threshold: <5000ms)\n" "$P99"        >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- p50: %s ms\n"                       "$P50"        >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- p95: %s ms  (threshold: <2000ms)\n" "$P95"        >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- p99: %s ms  (threshold: <5000ms)\n" "$P99"        >> "$GITHUB_STEP_SUMMARY"
           printf "\n### Throughput\n\n"                                >> "$GITHUB_STEP_SUMMARY"
-          printf "- Requests/sec: %s\n"                 "$RPS"        >> "$GITHUB_STEP_SUMMARY"
-          printf "- Failed requests: %s\n"              "$FAILED"     >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- Requests/sec: %s\n"                 "$RPS"        >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- Failed requests: %s\n"              "$FAILED"     >> "$GITHUB_STEP_SUMMARY"
 
   soak-test:
     name: Soak Test (30-60 min sustained)
@@ -190,8 +190,8 @@ jobs:
           printf "\n## Soak Test Results\n\n"                                   >> "$GITHUB_STEP_SUMMARY"
           printf "**Verdict:** %s\n\n"              "$VERDICT"                  >> "$GITHUB_STEP_SUMMARY"
           printf "**Rounds:** %s x 60 req @ 5 concurrent (240s apart)\n\n" "$ROUNDS" >> "$GITHUB_STEP_SUMMARY"
-          printf "- Max p95 latency: %s ms  (threshold: <2500ms)\n" "$MAX_P95" >> "$GITHUB_STEP_SUMMARY"
-          printf "- Total failed requests: %s  (threshold: <10)\n"  "$TOTAL_FAIL" >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- Max p95 latency: %s ms  (threshold: <2500ms)\n" "$MAX_P95" >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- Total failed requests: %s  (threshold: <10)\n"  "$TOTAL_FAIL" >> "$GITHUB_STEP_SUMMARY"
 
   report:
     name: Consolidated Load/Soak Report

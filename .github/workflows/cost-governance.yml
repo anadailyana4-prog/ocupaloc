@@ -158,22 +158,22 @@ jobs:
 
           printf "## Cost Governance Report - %s\n\n" "$DATE"                          >> "$GITHUB_STEP_SUMMARY"
           printf "**Status:** %s\n\n"                  "$LEVEL"                         >> "$GITHUB_STEP_SUMMARY"
-          printf "### Usage Indicators (7d)\n\n"                                        >> "$GITHUB_STEP_SUMMARY"
-          printf "- DB operational events (current 7d): %s\n"  "$COUNT_7D"             >> "$GITHUB_STEP_SUMMARY"
-          printf "- DB operational events (previous 7d): %s\n" "$PREV_7D"              >> "$GITHUB_STEP_SUMMARY"
-          printf "- GitHub Actions runs (7d): %s\n"            "$CI_RUNS"              >> "$GITHUB_STEP_SUMMARY"
-          printf "- CI total execution (secs): %s\n"           "$CI_SECS"              >> "$GITHUB_STEP_SUMMARY"
-          printf "- Avg API health latency: %s ms\n"           "$AVG_MS"               >> "$GITHUB_STEP_SUMMARY"
-          printf "\n### Thresholds\n\n"                                                 >> "$GITHUB_STEP_SUMMARY"
-          printf "- DB volume: warn >150%% WoW, critical >200%% WoW\n"                 >> "$GITHUB_STEP_SUMMARY"
-          printf "- CI runs: warn >50/wk, critical >100/wk\n"                          >> "$GITHUB_STEP_SUMMARY"
+          printf '### Usage Indicators (7d)\n\n'                                        >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- DB operational events (current 7d): %s\n"  "$COUNT_7D"             >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- DB operational events (previous 7d): %s\n" "$PREV_7D"              >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- GitHub Actions runs (7d): %s\n"            "$CI_RUNS"              >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- CI total execution (secs): %s\n"           "$CI_SECS"              >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- Avg API health latency: %s ms\n"           "$AVG_MS"               >> "$GITHUB_STEP_SUMMARY"
+          printf '\n### Thresholds\n\n'                                                    >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- DB volume: warn >150%% WoW, critical >200%% WoW\n"                 >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- CI runs: warn >50/wk, critical >100/wk\n"                          >> "$GITHUB_STEP_SUMMARY"
           if [ -n "$NOTES" ]; then
             printf "\n### Anomalies\n\n%s\n" "$NOTES"                                   >> "$GITHUB_STEP_SUMMARY"
           fi
-          printf "\n### Optimization Recommendations\n\n"                               >> "$GITHUB_STEP_SUMMARY"
-          printf "- Archive operational_events older than 90 days\n"                    >> "$GITHUB_STEP_SUMMARY"
-          printf "- Cache static assets via Cloudflare to reduce Vercel invocations\n"  >> "$GITHUB_STEP_SUMMARY"
-          printf "- Use ISR for booking service pages to reduce SSR cost\n"             >> "$GITHUB_STEP_SUMMARY"
+          printf '\n### Optimization Recommendations\n\n'                               >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- Archive operational_events older than 90 days\n"                    >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- Cache static assets via Cloudflare to reduce Vercel invocations\n"  >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- Use ISR for booking service pages to reduce SSR cost\n"             >> "$GITHUB_STEP_SUMMARY"
 
       - name: Open cost alert issue
         if: steps.eval.outputs.alert_level != 'ok'
