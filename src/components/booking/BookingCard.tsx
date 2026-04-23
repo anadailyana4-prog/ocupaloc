@@ -228,9 +228,7 @@ function BookingCardLive(props: LiveProps) {
     void loadSlots();
   }, [loadSlots]);
 
-  const displayUrl = tenant
-    ? `${publicBase.replace(/\/$/, "")}/${slug}`
-    : `${publicBase.replace(/\/$/, "")}/s/${slug}`;
+  const displayUrl = `${publicBase.replace(/\/$/, "")}/${slug}`;
 
   async function submitBooking() {
     if (!selectedService || !selectedPick || !dateStr) return;
@@ -357,7 +355,10 @@ function BookingCardLive(props: LiveProps) {
         slug,
         service_id: selectedService.id
       });
-      toast.success("Programare trimisă! Vei fi contactat pentru confirmare.");
+      setSuccessSummary({
+        clientName: cleanName,
+        timeLabel: formatSlotLabel(selectedPick.start)
+      });
       setModalOpen(false);
       setStep(1);
       setNume("");
@@ -404,22 +405,26 @@ function BookingCardLive(props: LiveProps) {
         </div>
       ) : null}
 
-      {tenant && publicPageLayout && successSummary ? (
-        <div className="space-y-8 rounded-3xl border border-emerald-500/35 bg-emerald-950/40 px-6 py-12 text-center shadow-lg shadow-emerald-950/30 md:px-10 md:py-14">
-          <p className="text-5xl leading-none text-emerald-400" aria-hidden>
+      {successSummary ? (
+        <div className={`space-y-6 rounded-2xl border border-emerald-500/35 bg-emerald-950/40 text-center shadow-lg shadow-emerald-950/30 ${publicPageLayout ? "px-6 py-12 md:px-10 md:py-14" : "px-5 py-8"}`}>
+          <p className="text-4xl leading-none text-emerald-400" aria-hidden>
             ✓
           </p>
-          <p className="text-xl font-semibold leading-relaxed text-white md:text-2xl">
-            Rezervat pentru {successSummary.clientName} la {successSummary.timeLabel}
+          <p className={`font-semibold leading-relaxed text-white ${publicPageLayout ? "text-xl md:text-2xl" : "text-lg"}`}>
+            Programare confirmată pentru {successSummary.clientName} la {successSummary.timeLabel}
           </p>
-          <p className="text-sm text-zinc-400">Îți trimitem confirmarea pe telefon.</p>
+          <p className="text-sm text-zinc-400">Vei primi un email de confirmare la adresa introdusă.</p>
           <Button
             type="button"
             variant="secondary"
-            className="rounded-full px-8 py-6 text-base"
+            className="rounded-full px-6 py-4 text-base"
             onClick={() => {
               setSuccessSummary(null);
               setSelectedPick(null);
+              setStep(1);
+              setNume("");
+              setTelefon("");
+              setEmail("");
             }}
           >
             Altă programare
@@ -787,7 +792,7 @@ function BookingCardLive(props: LiveProps) {
                       Înapoi
                     </Button>
                     <Button data-testid="booking-submit" className="bg-[#1d4ed8] hover:bg-[#1e40af]" disabled={submitting} type="button" onClick={() => void submitBooking()}>
-                      Trimite
+                      {submitting ? "Se trimite…" : "Trimite"}
                     </Button>
                   </DialogFooter>
                 </div>
