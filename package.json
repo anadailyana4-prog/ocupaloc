@@ -12,6 +12,7 @@
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
     "tsc": "tsc --noEmit",
+    "check:all": "pnpm run test:ci && pnpm exec tsc --noEmit && pnpm exec eslint . --ignore-pattern next-env.d.ts && pnpm audit --audit-level critical",
     "build": "next build",
     "pages:build": "opennextjs-cloudflare build",
     "build:cf": "opennextjs-cloudflare build && node fix-open-next-css.mjs",

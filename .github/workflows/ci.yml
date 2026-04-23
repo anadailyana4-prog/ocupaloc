@@ -32,17 +32,8 @@ jobs:
             exit 1
           fi
 
-      - name: Test
-        run: pnpm run test:ci
-
-      - name: Typecheck
-        run: pnpm exec tsc --noEmit
-
-      - name: Lint
-        run: pnpm exec eslint . --ignore-pattern next-env.d.ts
-
-      - name: Audit dependencies
-        run: pnpm audit --audit-level critical
+      - name: Unit tests, types, lint, audit
+        run: pnpm run check:all
 
       - name: Build
         run: pnpm exec next build
