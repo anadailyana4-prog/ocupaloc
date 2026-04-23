@@ -178,3 +178,23 @@ jobs:
           fi
           pnpm run ops:slo
 
+  # ─────────────────────────────────────────────────────────────────────────
+  # Summary gate — satisfies the "CI" required branch-protection check.
+  # Branch protection requires BOTH "Typecheck, Lint & Build" (job: check)
+  # AND "CI" (this job). This job only passes when `check` passes, so it
+  # acts as a single mergeable signal without duplicating any logic.
+  # ─────────────────────────────────────────────────────────────────────────
+  ci:
+    name: CI
+    needs: check
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check gate result
+        run: |
+          if [ "${{ needs.check.result }}" != "success" ]; then
+            echo "::error::CI gate failed — 'Typecheck, Lint & Build' did not succeed."
+            exit 1
+          fi
+          echo "✓ CI gate passed."
+
