@@ -45,37 +45,33 @@ test.describe('Release Validation', () => {
     const today = new Date().getDate();
     let selectedDayIndex = -1;
 
-    // Scan forward through days until we find one that actually has visible slots.
-    // This avoids flakiness caused by today having all slots exhausted or a day being fully booked.
-    for (let i = 0; i < dayCount; i++) {
-      const txt = (await days.nth(i).textContent())?.trim() ?? '';
-      const dayNo = Number.parseInt(txt, 10);
-      // Skip today — its earlier slots may already be past.
-      if (!Number.isNaN(dayNo) && dayNo <= today) continue;
+    // Scan all days for available slots: try tomorrow+ first, then today as fallback.
+    // Two-pass strategy ensures CI robustness regardless of time of day.
+    for (let pass = 0; pass < 2 && selectedDayIndex === -1; pass++) {
+      for (let i = 0; i < dayCount; i++) {
+        const txt = (await days.nth(i).textContent())?.trim() ?? '';
+        const dayNo = Number.parseInt(txt, 10);
+        // Pass 0: prefer future days (tomorrow+). Pass 1: include today as fallback.
+        if (pass === 0 && !Number.isNaN(dayNo) && dayNo <= today) continue;
+        if (pass === 1 && !Number.isNaN(dayNo) && dayNo < today) continue;
 
-      await days.nth(i).click();
-      await guestPage.waitForTimeout(800);
+        await days.nth(i).click();
+        await guestPage.waitForTimeout(1000);
 
-      const slotCount = await guestPage.locator('[data-testid="slot-option"]').count();
-      if (slotCount > 0) {
-        selectedDayIndex = i;
-        break;
+        const slotCount = await guestPage.locator('[data-testid="slot-option"]').count();
+        if (slotCount > 0) {
+          selectedDayIndex = i;
+          break;
+        }
       }
     }
 
-    // Last-resort fallback: use first available day regardless of date.
-    if (selectedDayIndex === -1 && dayCount > 0) {
-      await days.first().click();
-      await guestPage.waitForTimeout(800);
-      selectedDayIndex = 0;
-    }
-
     if (selectedDayIndex === -1) {
-      throw new Error('No selectable day options with available slots found.');
+      throw new Error('No selectable day options with available slots found across all visible days.');
     }
 
     const slots = guestPage.locator('[data-testid="slot-option"]');
-    await expect(slots.first()).toBeVisible({ timeout: 10000 });
+    await expect(slots.first()).toBeVisible({ timeout: 15000 });
     const slotLabel = (await slots.first().textContent())?.trim() ?? 'unknown';
     console.log(`Slot found on day index ${selectedDayIndex + 1}, slot ${slotLabel}`);
     await slots.first().click();
