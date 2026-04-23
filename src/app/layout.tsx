@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     }
   },
   verification: {
-    google: "codul-tau-aici"
+    google: "x8NMYAcyCLn6mJQQy0e_bV_jG6lb9qqot3vfq6aiHLU"
   }
 };
 
