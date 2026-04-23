@@ -36,12 +36,7 @@ jobs:
           ROWS=$(curl -sf -H "apikey: $SUPABASE_KEY" -H "Authorization: Bearer $SUPABASE_KEY" \
             "$SUPABASE_URL/rest/v1/operational_events?select=event_type,metadata,created_at&created_at=gte.${SINCE_7}&limit=20000" || echo "[]")
 
-          FAIL_REASONS=$(echo "$ROWS" | jq -r '
-            [.[] | select(.event_type=="booking_submit_failed") | (.metadata.reason // "unknown")] \
-            | group_by(.) \
-            | map({reason: .[0], count: length}) \
-            | sort_by(-.count)
-          ')
+          FAIL_REASONS=$(echo "$ROWS" | jq -r '[.[] | select(.event_type=="booking_submit_failed") | (.metadata.reason // "unknown")] | group_by(.) | map({reason: .[0], count: length}) | sort_by(-.count)')
 
           TOP_BLOCKERS=$(echo "$FAIL_REASONS" | jq -r '.[0:5] | map("- " + .reason + " (" + (.count|tostring) + ")") | join("\n")')
           REPEATED=$(echo "$FAIL_REASONS" | jq '[.[] | select(.count >= 5)] | length')
