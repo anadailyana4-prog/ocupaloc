@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
+import { isMissingProfesionistiColumn } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type PageProps = {
@@ -27,17 +27,42 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
     redirect("/onboarding");
   }
 
-  const { data: org, error } = await selectWithTelefonFallback<{
+  type OrgRow = {
     nume_business: string | null;
     telefon?: string | null;
+    whatsapp?: string | null;
     email: string | null;
     description: string | null;
     slug: string | null;
-  }>(
-    async (columns) => await supabase.from("profesionisti").select(columns).eq("id", profMeta.id).maybeSingle(),
+  };
+
+  const attempts = [
+    "nume_business, telefon, whatsapp, email, description, slug",
     "nume_business, telefon, email, description, slug",
+    "nume_business, whatsapp, email, description, slug",
     "nume_business, email, description, slug"
-  );
+  ] as const;
+
+  let org: OrgRow | null = null;
+  let error: { message?: string | null } | null = null;
+  for (const columns of attempts) {
+    const result = await supabase.from("profesionisti").select(columns).eq("id", profMeta.id).maybeSingle<OrgRow>();
+    if (!result.error) {
+      org = result.data;
+      error = null;
+      break;
+    }
+
+    const missingTelefon = isMissingProfesionistiColumn(result.error, "telefon");
+    const missingWhatsapp = isMissingProfesionistiColumn(result.error, "whatsapp");
+    if (missingTelefon || missingWhatsapp) {
+      error = result.error;
+      continue;
+    }
+
+    error = result.error;
+    break;
+  }
 
   if (error || !org) {
     return (
@@ -54,7 +79,7 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
       <div className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight">Pagina publică</h1>
         <p className="text-sm text-muted-foreground">
-          Numele, telefonul și descrierea apar pe{" "}
+          Numele, telefonul, WhatsApp-ul și descrierea apar pe{" "}
           <Link href={`/${org.slug}`} className="font-medium text-indigo-400 underline-offset-4 hover:underline">
             /{org.slug}
           </Link>
@@ -104,6 +129,19 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
             placeholder="07xx xxx xxx"
             className="border-zinc-700 bg-zinc-900"
           />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="whatsapp">WhatsApp</Label>
+          <Input
+            id="whatsapp"
+            name="whatsapp"
+            type="tel"
+            maxLength={50}
+            defaultValue={org.whatsapp ?? ""}
+            placeholder="07xx xxx xxx"
+            className="border-zinc-700 bg-zinc-900"
+          />
+          <p className="text-xs text-muted-foreground">Dacă e completat, apare buton dedicat WhatsApp pe pagina publică.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email notificări rezervări</Label>

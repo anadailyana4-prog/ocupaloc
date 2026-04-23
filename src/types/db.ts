@@ -6,6 +6,7 @@ export type ProfesionistRow = {
   slug: string;
   logo_url: string | null;
   telefon: string | null;
+  whatsapp?: string | null;
   /** Text public pe /[slug] (migrare 016) */
   description?: string | null;
   email_contact: string | null;

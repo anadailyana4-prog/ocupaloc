@@ -6,6 +6,15 @@ import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 const TZ = "Europe/Bucharest";
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 export type ProgramareNotifyInput = {
   /** profesionisti.email_contact */
   to: string | null | undefined;
@@ -19,6 +28,7 @@ async function sendResendEmail(input: {
   to: string[];
   subject: string;
   text: string;
+  html?: string;
   event: string;
   context?: Record<string, unknown>;
 }): Promise<void> {
@@ -43,7 +53,8 @@ async function sendResendEmail(input: {
       from,
       to: input.to,
       subject: input.subject,
-      text: input.text
+      text: input.text,
+      html: input.html
     })
   });
 
@@ -139,6 +150,9 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
 
   const salonName = profesionist?.nume_business?.trim() || "salon";
   const serviceName = serviciu?.nume?.trim() || "serviciu";
+  const safeClientName = escapeHtml(String(row.nume_client));
+  const safeSalonName = escapeHtml(salonName);
+  const safeServiceName = escapeHtml(serviceName);
   const startsAt = new Date(String(row.data_start));
   const dataStr = formatInTimeZone(startsAt, TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(startsAt, TZ, "HH:mm");
@@ -152,16 +166,28 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
     "",
     `Ai o programare la ${salonName} pentru ${serviceName} pe ${dataStr} la ${timeStr}.`,
     "",
-    `Confirmă: ${confirmLink}`,
-    `Anulează: ${cancelLink}`,
+    "Deschide emailul în format HTML pentru butoanele Confirmă / Anulează.",
     "",
     "Dacă nu ai făcut tu această rezervare, poți ignora acest email."
   ].join("\n");
+
+  const html = `
+  <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.5;max-width:560px;margin:0 auto;">
+    <h2 style="margin:0 0 12px;">Confirmă programarea</h2>
+    <p style="margin:0 0 12px;">Salut ${safeClientName},</p>
+    <p style="margin:0 0 16px;">Ai o programare la <strong>${safeSalonName}</strong> pentru <strong>${safeServiceName}</strong> pe <strong>${dataStr}</strong> la <strong>${timeStr}</strong>.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px;">
+      <a href="${confirmLink}" style="background:#16a34a;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:999px;font-weight:700;display:inline-block;">Confirmă</a>
+      <a href="${cancelLink}" style="background:#dc2626;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:999px;font-weight:700;display:inline-block;">Anulează</a>
+    </div>
+    <p style="margin:0;color:#6b7280;font-size:13px;">Dacă nu ai făcut tu această rezervare, poți ignora acest email.</p>
+  </div>`;
 
   await sendResendEmail({
     to: [clientEmail],
     subject,
     text,
+    html,
     event: "notify_client_booking_confirmation_failed",
     context: { clientEmail, bookingId: row.id }
   });

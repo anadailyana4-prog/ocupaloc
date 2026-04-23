@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import Script from "next/script";
 
 import { BookingCard } from "@/components/booking/BookingCard";
+import { isMissingProfesionistiColumn } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type PageProps = { params: Promise<{ slug: string }> };
@@ -149,11 +150,45 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
     );
   }
   const supabase = await createSupabaseServerClient();
-  const { data: prof, error } = await supabase
-    .from("profesionisti_public")
-    .select("id,slug,nume_business,tip_activitate,description,oras,logo_url,telefon,lucreaza_acasa,adresa_publica,program")
-    .eq("slug", slug)
-    .maybeSingle();
+  type PublicProf = {
+    id: string;
+    slug: string;
+    nume_business: string;
+    tip_activitate: string | null;
+    description: string | null;
+    oras: string | null;
+    logo_url: string | null;
+    telefon?: string | null;
+    whatsapp?: string | null;
+    lucreaza_acasa: boolean;
+    adresa_publica: string | null;
+    program: Record<string, unknown> | null;
+  };
+
+  const selectAttempts = [
+    "id,slug,nume_business,tip_activitate,description,oras,logo_url,telefon,whatsapp,lucreaza_acasa,adresa_publica,program",
+    "id,slug,nume_business,tip_activitate,description,oras,logo_url,telefon,lucreaza_acasa,adresa_publica,program"
+  ] as const;
+
+  let prof: PublicProf | null = null;
+  let error: { message?: string | null } | null = null;
+  for (const columns of selectAttempts) {
+    const result = await supabase.from("profesionisti_public").select(columns).eq("slug", slug).maybeSingle<PublicProf>();
+    if (!result.error) {
+      prof = result.data;
+      error = null;
+      break;
+    }
+
+    if (isMissingProfesionistiColumn(result.error, "whatsapp")) {
+      error = result.error;
+      continue;
+    }
+
+    error = result.error;
+    break;
+  }
+
   if (error || !prof) {
     notFound();
   }
@@ -186,7 +221,9 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
 
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const telefon = (prof.telefon as string | null)?.trim() ?? "";
+  const whatsapp = (prof.whatsapp as string | null)?.trim() ?? "";
   const telHref = telefon ? telefon.replace(/\s+/g, "") : "";
+  const waHref = whatsapp ? whatsapp.replace(/\D+/g, "") : "";
   const publicDescription = ((prof as { description?: string | null }).description ?? "").trim();
   const tip = tipLabel(prof.tip_activitate as string | undefined);
   const city = ((prof as { oras?: string | null }).oras ?? "").trim();
@@ -240,14 +277,26 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
             ) : prof.adresa_publica ? (
               <p className="text-sm text-zinc-400">{prof.adresa_publica as string}</p>
             ) : null}
-            {telefon ? (
-              <div className="pt-1">
-                <a
-                  href={`tel:${telHref}`}
-                  className="inline-flex items-center justify-center rounded-full bg-zinc-800/90 px-8 py-3 text-sm font-semibold text-white ring-1 ring-zinc-600/80 transition hover:bg-zinc-800 hover:ring-zinc-500"
-                >
-                  {telefon}
-                </a>
+            {telefon || whatsapp ? (
+              <div className="flex flex-wrap justify-center gap-3 pt-1">
+                {telefon ? (
+                  <a
+                    href={`tel:${telHref}`}
+                    className="inline-flex items-center justify-center rounded-full bg-zinc-800/90 px-8 py-3 text-sm font-semibold text-white ring-1 ring-zinc-600/80 transition hover:bg-zinc-800 hover:ring-zinc-500"
+                  >
+                    {telefon}
+                  </a>
+                ) : null}
+                {waHref ? (
+                  <a
+                    href={`https://wa.me/${waHref}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center rounded-full bg-emerald-600/90 px-8 py-3 text-sm font-semibold text-white ring-1 ring-emerald-400/60 transition hover:bg-emerald-500"
+                  >
+                    WhatsApp
+                  </a>
+                ) : null}
               </div>
             ) : null}
           </div>
