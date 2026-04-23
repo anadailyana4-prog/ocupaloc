@@ -158,3 +158,38 @@ export async function updateSmartRules(formData: FormData) {
   revalidatePath("/dashboard");
   redirect("/dashboard?saved=1");
 }
+
+export type SaveSmartRulesResult = { ok: true } | { ok: false; message: string };
+
+export async function saveSmartRulesFromClient(data: {
+  smart_rules_enabled: boolean;
+  smart_max_future_bookings: number;
+  smart_client_cancel_threshold: number;
+  smart_cancel_window_days: number;
+  smart_min_notice_minutes: number;
+}): Promise<SaveSmartRulesResult> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, message: "Neautentificat." };
+
+  const parsed = smartRulesFields.safeParse(data);
+  if (!parsed.success) return { ok: false, message: "Date invalide." };
+
+  const { error } = await supabase
+    .from("profesionisti")
+    .update({
+      smart_rules_enabled: parsed.data.smart_rules_enabled,
+      smart_max_future_bookings: parsed.data.smart_max_future_bookings,
+      smart_client_cancel_threshold: parsed.data.smart_client_cancel_threshold,
+      smart_cancel_window_days: parsed.data.smart_cancel_window_days,
+      smart_min_notice_minutes: parsed.data.smart_min_notice_minutes
+    })
+    .eq("user_id", user.id);
+
+  if (error) return { ok: false, message: error.message };
+
+  revalidatePath("/dashboard");
+  return { ok: true };
+}
