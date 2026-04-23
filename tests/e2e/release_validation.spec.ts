@@ -25,15 +25,17 @@ test.describe('Release Validation', () => {
     const today = new Date().getDate();
     let selectedDayIndex = -1;
 
+    // Prefer a strictly future day (tomorrow+) to avoid today having no remaining slots.
     for (let i = 0; i < dayCount; i++) {
       const txt = (await days.nth(i).textContent())?.trim() ?? '';
       const dayNo = Number.parseInt(txt, 10);
-      if (!Number.isNaN(dayNo) && dayNo >= today) {
+      if (!Number.isNaN(dayNo) && dayNo > today) {
         selectedDayIndex = i;
         break;
       }
     }
 
+    // Fallback: if no strictly future day found (e.g. last days of month), use first available day.
     if (selectedDayIndex === -1 && dayCount > 0) {
       selectedDayIndex = 0;
     }
