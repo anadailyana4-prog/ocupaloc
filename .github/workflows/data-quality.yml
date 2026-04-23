@@ -200,13 +200,13 @@ jobs:
             printf "> Supabase secrets not configured - checks skipped\n"         >> "$GITHUB_STEP_SUMMARY"
           fi
 
-          printf "### Check Results\n\n"                                           >> "$GITHUB_STEP_SUMMARY"
-          printf "- Incomplete bookings (48h, no outcome): %s  (threshold >5)\n"  "$INC" >> "$GITHUB_STEP_SUMMARY"
-          printf "- Invalid status values (24h): %s  (threshold >0)\n"            "$INV" >> "$GITHUB_STEP_SUMMARY"
-          printf "- Suspected duplicate event groups (24h): %s  (threshold >3)\n" "$DUP" >> "$GITHUB_STEP_SUMMARY"
-          printf "- Funnel anomaly (submit > select_service): %s\n"               "$FUNNEL" >> "$GITHUB_STEP_SUMMARY"
-          printf "  - select_service events: %s\n"                                 "$S_SVC" >> "$GITHUB_STEP_SUMMARY"
-          printf "  - submit events: %s\n"                                         "$S_SUB" >> "$GITHUB_STEP_SUMMARY"
+          printf '### Check Results\n\n'                                                        >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- Incomplete bookings (48h, no outcome): %s  (threshold >5)\n"  "$INC"    >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- Invalid status values (24h): %s  (threshold >0)\n"            "$INV"    >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- Suspected duplicate event groups (24h): %s  (threshold >3)\n" "$DUP"    >> "$GITHUB_STEP_SUMMARY"
+          printf -- "- Funnel anomaly (submit > select_service): %s\n"               "$FUNNEL" >> "$GITHUB_STEP_SUMMARY"
+          printf '  - select_service events: %s\n' "$S_SVC"                                    >> "$GITHUB_STEP_SUMMARY"
+          printf '  - submit events: %s\n'         "$S_SUB"                                    >> "$GITHUB_STEP_SUMMARY"
 
       - name: Open DQ alert issue
         if: steps.eval.outputs.verdict == 'FAIL'
