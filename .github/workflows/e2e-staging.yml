@@ -29,6 +29,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: "🔐 Validate critical secrets for E2E release tests"
+        run: |
+          if [ -z "${{ secrets.PLAYWRIGHT_LOGIN_EMAIL }}" ]; then
+            echo "::error::CRITICAL: PLAYWRIGHT_LOGIN_EMAIL secret is required for E2E release validation."
+            echo "Add it to: Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+          if [ -z "${{ secrets.PLAYWRIGHT_LOGIN_PASSWORD }}" ]; then
+            echo "::error::CRITICAL: PLAYWRIGHT_LOGIN_PASSWORD secret is required for E2E release validation."
+            echo "Add it to: Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+          echo "✓ E2E secrets validated: PLAYWRIGHT_LOGIN_EMAIL and PLAYWRIGHT_LOGIN_PASSWORD are set."
+
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium
 

@@ -19,8 +19,14 @@ const clientName = 'RG-' + Date.now();
 test.describe('Release Validation', () => {
 
   test('1. Guest booking flow and dashboard verification', async ({ browser }) => {
+    // CRITICAL TEST: Fail (not skip) if required secrets are missing.
+    // This ensures CI catches missing credentials at workflow start, not silently.
     if (!loginEmail || !loginPassword) {
-      test.skip(true, 'PLAYWRIGHT_LOGIN_EMAIL and PLAYWRIGHT_LOGIN_PASSWORD required. Set them as env vars.');
+      throw new Error(
+        'CRITICAL: PLAYWRIGHT_LOGIN_EMAIL and PLAYWRIGHT_LOGIN_PASSWORD are required for release validation. ' +
+        'Add them to GitHub repository secrets or .env.test for local runs. ' +
+        'This test cannot be skipped; credentials are mandatory.'
+      );
     }
 
     test.setTimeout(120000);
