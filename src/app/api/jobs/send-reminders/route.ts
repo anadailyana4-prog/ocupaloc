@@ -8,6 +8,11 @@ import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 type ReminderType = "24h" | "2h";
 
+function isMissingProgramariRemindersTable(error: { message?: string; code?: string } | null | undefined): boolean {
+  const message = error?.message?.toLowerCase() ?? "";
+  return message.includes("programari_reminders") && message.includes("does not exist");
+}
+
 function getWindow(type: ReminderType): { from: Date; to: Date } {
   const now = new Date();
   if (type === "24h") {
@@ -60,11 +65,16 @@ async function sendType(admin: ReturnType<typeof createSupabaseServiceClient>, t
   }
 
   const ids = rows.map((r) => r.id);
-  const { data: sentRows } = await admin
+  const { data: sentRows, error: sentRowsError } = await admin
     .from("programari_reminders")
     .select("programare_id")
     .eq("tip", type)
     .in("programare_id", ids);
+
+  const trackingDisabled = isMissingProgramariRemindersTable(sentRowsError);
+  if (sentRowsError && !trackingDisabled) {
+    reportError("cron", "reminder_tracking_query_failed", sentRowsError, { type });
+  }
 
   const sent = new Set((sentRows ?? []).map((r) => r.programare_id));
   let count = 0;
@@ -76,13 +86,22 @@ async function sendType(admin: ReturnType<typeof createSupabaseServiceClient>, t
       continue;
     }
 
+    count += 1;
+
+    if (trackingDisabled) {
+      continue;
+    }
+
     const { error: insErr } = await admin.from("programari_reminders").insert({
       profesionist_id: row.profesionist_id,
       programare_id: row.id,
       tip: type
     });
-    if (!insErr) {
-      count += 1;
+    if (insErr && !isMissingProgramariRemindersTable(insErr)) {
+      reportError("cron", "reminder_tracking_insert_failed", insErr, {
+        type,
+        programareId: row.id
+      });
     }
   }
 
