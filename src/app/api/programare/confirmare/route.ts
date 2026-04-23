@@ -4,9 +4,11 @@ import { logBookingStatusEvent } from "@/lib/booking/status-events";
 import { verifyBookingConfirmationLink } from "@/lib/booking/confirmation-link";
 import { notifyProfesionistClientResponse } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
+import { getRequestId, recordOperationalEvent } from "@/lib/ops-events";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 export async function GET(req: NextRequest) {
+  const requestId = getRequestId(req.headers);
   const search = req.nextUrl.searchParams;
   const booking = search.get("booking") ?? "";
   const action = search.get("action") ?? "";
@@ -48,14 +50,34 @@ export async function GET(req: NextRequest) {
       status: targetStatus,
       source: "client_link"
     });
+    await recordOperationalEvent({
+      eventType: targetStatus === "anulat" ? "booking_cancelled" : "booking_confirmed",
+      flow: "booking",
+      outcome: "success",
+      requestId,
+      entityId: booking,
+      statusCode: 200,
+      metadata: { source: "client_link", action: verified.action }
+    });
     try {
       await notifyProfesionistClientResponse(booking, targetStatus);
     } catch (notifyError) {
       reportError("email", "notify_profesionist_client_response_failed", notifyError, {
         bookingId: booking,
-        status: targetStatus
+        status: targetStatus,
+        requestId
       });
     }
+  } else {
+    await recordOperationalEvent({
+      eventType: "booking_status_update_failed",
+      flow: "booking",
+      outcome: "failure",
+      requestId,
+      entityId: booking,
+      statusCode: 500,
+      metadata: { targetStatus, action: verified.action }
+    });
   }
 
   const rel = current.profesionisti as { slug?: string } | { slug?: string }[] | null;

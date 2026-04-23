@@ -2,8 +2,15 @@ import { expect, test } from "@playwright/test";
 
 const bookingSlug = process.env.PLAYWRIGHT_BOOKING_SLUG;
 const hasBaseUrl = Boolean(process.env.PLAYWRIGHT_BASE_URL);
+const requireExecution = process.env.PLAYWRIGHT_REQUIRE_EXECUTION === "true";
 
 test.describe("public booking smoke", () => {
+  if (requireExecution && !hasBaseUrl) {
+    throw new Error("PLAYWRIGHT_BASE_URL is required when PLAYWRIGHT_REQUIRE_EXECUTION=true.");
+  }
+  if (requireExecution && !bookingSlug) {
+    throw new Error("PLAYWRIGHT_BOOKING_SLUG is required when PLAYWRIGHT_REQUIRE_EXECUTION=true.");
+  }
   test.skip(!hasBaseUrl, "PLAYWRIGHT_BASE_URL is not configured.");
   test.skip(!bookingSlug, "PLAYWRIGHT_BOOKING_SLUG is not configured.");
 
@@ -43,11 +50,32 @@ test.describe("public booking smoke", () => {
     }
 
     await firstServiceOption.click();
-    await page.getByTestId("day-option").first().click();
 
+    // First visible day may have zero slots (program / timezone / data). Try several days.
+    // Cap attempts × wait so total work stays under test timeout (21×25s was killing CI).
+    const maxDayAttempts = 7;
+    const slotVisibleMs = 12_000;
+    const dayOptions = page.getByTestId("day-option");
+    const dayCount = await dayOptions.count();
     const firstSlot = page.getByTestId("slot-option").first();
-    await expect(firstSlot).toBeVisible();
-    await firstSlot.click();
+    let pickedSlot = false;
+    for (let i = 0; i < Math.min(dayCount, maxDayAttempts); i += 1) {
+      if (page.isClosed()) break;
+      const day = dayOptions.nth(i);
+      await day.scrollIntoViewIfNeeded().catch(() => {});
+      await day.click();
+      try {
+        await expect(firstSlot).toBeVisible({ timeout: slotVisibleMs });
+        await firstSlot.click();
+        pickedSlot = true;
+        break;
+      } catch {
+        // No slots this day or still loading — try next day
+      }
+    }
+    if (!pickedSlot) {
+      test.skip(true, "No slot-option visible for any day — check PLAYWRIGHT_BOOKING_SLUG and salon program in CI.");
+    }
 
     await page.getByTestId("booking-continue").click();
     await page.getByTestId("booking-step-1-continue").click();

@@ -44,8 +44,14 @@ const defaultDeps: BookRouteDeps = {
 export async function handleBookRequest(
   payload: unknown,
   ip: string,
-  deps: BookRouteDeps = defaultDeps
+  depsOrRequestId?: BookRouteDeps | string,
+  maybeDeps?: BookRouteDeps
 ): Promise<{ status: number; body: { success: boolean; error: string | Record<string, string[] | undefined> | null } }> {
+  const requestId = typeof depsOrRequestId === "string" ? depsOrRequestId : undefined;
+  const deps: BookRouteDeps =
+    typeof depsOrRequestId === "string"
+      ? maybeDeps ?? defaultDeps
+      : depsOrRequestId ?? defaultDeps;
   const parsed = bodySchema.safeParse(payload);
   if (!parsed.success) {
     return {
@@ -112,10 +118,10 @@ export async function handleBookRequest(
       deps.notifyClient(res.programareId)
     ]);
     if (notifyProfResult.status === "rejected") {
-      reportError("booking", "notify_profesionist_failed", notifyProfResult.reason, { slug: normalizedSlug });
+      reportError("booking", "notify_profesionist_failed", notifyProfResult.reason, { slug: normalizedSlug, requestId });
     }
     if (notifyClientResult.status === "rejected") {
-      reportError("email", "notify_client_failed", notifyClientResult.reason, { slug: normalizedSlug });
+      reportError("email", "notify_client_failed", notifyClientResult.reason, { slug: normalizedSlug, requestId });
     }
 
     return {
@@ -127,7 +133,7 @@ export async function handleBookRequest(
     };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Eroare server.";
-    reportError("booking", "booking_api_failed", e, { slug: normalizedSlug });
+    reportError("booking", "booking_api_failed", e, { slug: normalizedSlug, requestId });
     return {
       status: 500,
       body: {

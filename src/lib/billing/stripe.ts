@@ -14,7 +14,6 @@ export function getStripeClient(): Stripe {
   }
 
   cachedStripe = new Stripe(apiKey, {
-    apiVersion: "2024-09-30.acacia",
     typescript: true
   });
 

@@ -20,6 +20,7 @@ export function Header() {
   const [session, setSession] = useState<Session | null>(null);
   const isHomepage = pathname === "/";
   const isAuthPage = pathname === "/login" || pathname === "/signup";
+  const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/onboarding");
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -62,7 +63,7 @@ export function Header() {
     router.refresh();
   }
 
-  if (isHomepage) {
+  if (isHomepage || isDashboard) {
     return null;
   }
 

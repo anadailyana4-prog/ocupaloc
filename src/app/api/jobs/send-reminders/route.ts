@@ -4,9 +4,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { notifyClientReminder } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
 import { validateCronSecret } from "@/lib/cron-auth";
+import { getRequestId, recordOperationalEvent } from "@/lib/ops-events";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 type ReminderType = "24h" | "2h";
+
+function isMissingProgramariRemindersTable(error: { message?: string; code?: string } | null | undefined): boolean {
+  const message = error?.message?.toLowerCase() ?? "";
+  return message.includes("programari_reminders") && message.includes("does not exist");
+}
 
 function getWindow(type: ReminderType): { from: Date; to: Date } {
   const now = new Date();
@@ -60,11 +66,16 @@ async function sendType(admin: ReturnType<typeof createSupabaseServiceClient>, t
   }
 
   const ids = rows.map((r) => r.id);
-  const { data: sentRows } = await admin
+  const { data: sentRows, error: sentRowsError } = await admin
     .from("programari_reminders")
     .select("programare_id")
     .eq("tip", type)
     .in("programare_id", ids);
+
+  const trackingDisabled = isMissingProgramariRemindersTable(sentRowsError);
+  if (sentRowsError && !trackingDisabled) {
+    reportError("cron", "reminder_tracking_query_failed", sentRowsError, { type });
+  }
 
   const sent = new Set((sentRows ?? []).map((r) => r.programare_id));
   let count = 0;
@@ -76,13 +87,22 @@ async function sendType(admin: ReturnType<typeof createSupabaseServiceClient>, t
       continue;
     }
 
+    count += 1;
+
+    if (trackingDisabled) {
+      continue;
+    }
+
     const { error: insErr } = await admin.from("programari_reminders").insert({
       profesionist_id: row.profesionist_id,
       programare_id: row.id,
       tip: type
     });
-    if (!insErr) {
-      count += 1;
+    if (insErr && !isMissingProgramariRemindersTable(insErr)) {
+      reportError("cron", "reminder_tracking_insert_failed", insErr, {
+        type,
+        programareId: row.id
+      });
     }
   }
 
@@ -90,19 +110,57 @@ async function sendType(admin: ReturnType<typeof createSupabaseServiceClient>, t
 }
 
 export async function GET(req: NextRequest) {
+  const startedAt = Date.now();
+  const requestId = getRequestId(req.headers);
+
   if (!validateCronSecret(req.headers, process.env.REMINDERS_CRON_SECRET?.trim())) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    await recordOperationalEvent({
+      eventType: "cron_reminders_failed",
+      flow: "cron",
+      outcome: "failure",
+      requestId,
+      statusCode: 401,
+      latencyMs: Date.now() - startedAt,
+      metadata: { reason: "unauthorized" }
+    });
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401, headers: { "x-request-id": requestId } });
   }
 
   const admin = createSupabaseServiceClient();
-  const sent24h = await sendType(admin, "24h");
-  const sent2h = await sendType(admin, "2h");
+  let cronError: unknown = null;
 
-  return NextResponse.json({
-    ok: true,
+  let sent24h = 0;
+  let sent2h = 0;
+
+  try {
+    sent24h = await sendType(admin, "24h");
+    sent2h = await sendType(admin, "2h");
+  } catch (err) {
+    cronError = err;
+    reportError("cron", "send_reminders_fatal", err, { phase: "sendType", requestId });
+  }
+
+  const result = {
+    ok: cronError === null,
     sent24h,
     sent2h,
     total: sent24h + sent2h,
-    ranAt: new Date().toISOString()
+    ranAt: new Date().toISOString(),
+    ...(cronError ? { error: String(cronError) } : {})
+  };
+
+  await recordOperationalEvent({
+    eventType: cronError ? "cron_reminders_failed" : "cron_reminders_sent",
+    flow: "cron",
+    outcome: cronError ? "failure" : "success",
+    requestId,
+    statusCode: cronError ? 500 : 200,
+    latencyMs: Date.now() - startedAt,
+    metadata: { sent24h, sent2h, total: sent24h + sent2h }
   });
+
+  // Machine-parseable single-line summary for log scraping / uptime monitors.
+  console.log(`[cron:send-reminders] ${JSON.stringify({ ...result, requestId })}`);
+
+  return NextResponse.json(result, { status: cronError ? 500 : 200, headers: { "x-request-id": requestId } });
 }

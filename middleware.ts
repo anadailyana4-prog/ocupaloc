@@ -1,7 +1,15 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
+
 type CookieToSet = { name: string; value: string; options: CookieOptions };
+type ProfProfile = {
+  nume_business?: string | null;
+  telefon?: string | null;
+  tip_activitate?: string | null;
+  onboarding_pas?: number | null;
+};
 
 function copyAuthCookies(from: NextResponse, to: NextResponse) {
   from.cookies.getAll().forEach(({ name, value }) => {
@@ -13,8 +21,17 @@ async function isProfileComplete(
   supabase: ReturnType<typeof createServerClient>,
   userId: string
 ): Promise<boolean> {
-  const { data: profile } = await supabase.from("profiles").select("full_name, phone, role").eq("id", userId).maybeSingle();
-  return Boolean(profile?.full_name?.trim() && profile?.phone?.trim() && profile?.role?.trim());
+  const { data: profile, telefonColumnAvailable } = await selectWithTelefonFallback<ProfProfile>(
+    async (columns) => await supabase.from("profesionisti").select(columns).eq("user_id", userId).maybeSingle(),
+    "nume_business, telefon, tip_activitate, onboarding_pas",
+    "nume_business, tip_activitate, onboarding_pas"
+  );
+  return Boolean(
+    profile?.nume_business?.trim() &&
+      profile?.tip_activitate?.trim() &&
+      (!telefonColumnAvailable || profile?.telefon?.trim()) &&
+      (profile?.onboarding_pas ?? 0) >= 4
+  );
 }
 
 export async function middleware(request: NextRequest) {

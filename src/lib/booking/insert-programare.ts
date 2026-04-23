@@ -186,6 +186,7 @@ export async function insertProgramareForProfSlug(
     .insert({
       profesionist_id: prof.id,
       serviciu_id: srv.id,
+      tenant_id: prof.id,
       nume_client: name,
       telefon_client: phone,
       email_client: input.emailClient?.trim() || null,

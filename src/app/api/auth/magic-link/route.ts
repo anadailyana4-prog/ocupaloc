@@ -1,6 +1,5 @@
 import { createHash } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { checkApiRateLimit } from "@/lib/rate-limit";
@@ -61,28 +60,6 @@ export async function POST(req: NextRequest) {
       { ok: false, message: "Prea multe încercări. Reîncearcă în câteva minute." },
       { status: 429 }
     );
-  }
-
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anon) {
-    console.error("[auth:magic-link] Missing auth env config for route");
-    return NextResponse.json({ ok: true, message: "Dacă emailul există, am trimis linkul." });
-  }
-
-  const supabase = createClient(url, anon, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-
-  try {
-    await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${req.nextUrl.origin}/auth/callback?next=/dashboard`
-      }
-    });
-  } catch (error) {
-    console.error("[auth:magic-link] Supabase signInWithOtp error:", error);
   }
 
   return NextResponse.json({ ok: true, message: "Dacă emailul există, am trimis linkul." });
