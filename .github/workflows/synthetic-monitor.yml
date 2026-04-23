@@ -91,7 +91,6 @@ jobs:
             echo "✅ Dashboard → Login redirect OK"
           fi
 
-      - name: Report failure via alert webhook
       - name: Alert routing (auto-triage)
         if: failure()
         run: |
