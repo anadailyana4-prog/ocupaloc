@@ -1,0 +1,237 @@
+name: Data Quality Monitoring
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  dq-check:
+    name: Data Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create data-quality --color 10b981 --description "Data quality violation"   --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create dq-anomaly   --color f87171 --description "Data anomaly detected"    --repo "${{ github.repository }}" 2>/dev/null || true
+
+      - name: Check incomplete bookings
+        id: incomplete
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "count=0" >> "$GITHUB_OUTPUT"
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          SINCE=$(date -u -d "48 hours ago" +"%Y-%m-%dT%H:%M:%SZ")
+
+          # Look for booking events where flow started but no success/failure outcome recorded
+          # Proxy: events with flow=booking and no outcome field, or outcome=null
+          INCOMPLETE=$(curl -sf \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/operational_events?select=id,flow,outcome,created_at&flow=eq.booking&outcome=is.null&created_at=gte.${SINCE}&limit=200" \
+            || echo "[]")
+
+          COUNT=$(echo "$INCOMPLETE" | jq 'length')
+          echo "count=$COUNT"       >> "$GITHUB_OUTPUT"
+          echo "skipped=false"      >> "$GITHUB_OUTPUT"
+
+          if [ "$COUNT" -gt 0 ]; then
+            SAMPLE=$(echo "$INCOMPLETE" | jq -r '.[0:3] | .[].id // "unknown"' | tr '\n' ',' | sed 's/,$//')
+            echo "sample_ids=$SAMPLE" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check invalid/inconsistent statuses
+        id: invalid_status
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "count=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          SINCE=$(date -u -d "24 hours ago" +"%Y-%m-%dT%H:%M:%SZ")
+
+          # Look for events with unexpected outcome values
+          ALL_OUTCOMES=$(curl -sf \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/operational_events?select=outcome&created_at=gte.${SINCE}&limit=2000" \
+            || echo "[]")
+
+          # Count outcomes not in expected set
+          INVALID=$(echo "$ALL_OUTCOMES" | jq \
+            '[.[] | select(.outcome != null and .outcome != "success" and .outcome != "failure" and .outcome != "error" and .outcome != "pending" and .outcome != "cancelled")] | length')
+
+          echo "count=$INVALID" >> "$GITHUB_OUTPUT"
+
+      - name: Check duplicate events (last 24h)
+        id: duplicates
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "count=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          SINCE=$(date -u -d "24 hours ago" +"%Y-%m-%dT%H:%M:%SZ")
+
+          # Fetch recent events and look for identical (flow+outcome+latency_ms) within 1 second
+          ROWS=$(curl -sf \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/operational_events?select=flow,outcome,latency_ms,event_type,created_at&created_at=gte.${SINCE}&limit=2000&order=created_at.asc" \
+            || echo "[]")
+
+          # Count duplicate flow+outcome+latency_ms combinations
+          DUP_COUNT=$(echo "$ROWS" | jq \
+            '[group_by(.flow, .outcome, .latency_ms) | .[] | select(length > 3)] | length')
+
+          echo "count=$DUP_COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Check funnel anomalies (submit > service_select)
+        id: funnel_anomaly
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "anomaly=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          SINCE=$(date -u -d "48 hours ago" +"%Y-%m-%dT%H:%M:%SZ")
+
+          ROWS=$(curl -sf \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/operational_events?select=step,event_type,created_at&created_at=gte.${SINCE}&limit=5000" \
+            || echo "[]")
+
+          S_SERVICE=$(echo "$ROWS" | jq '[.[] | select(.step=="select_service" or .event_type=="select_service")] | length')
+          S_SUBMIT=$(echo "$ROWS"  | jq '[.[] | select(.step=="submit" or .event_type=="submit")] | length')
+
+          echo "s_service=$S_SERVICE" >> "$GITHUB_OUTPUT"
+          echo "s_submit=$S_SUBMIT"   >> "$GITHUB_OUTPUT"
+
+          # Anomaly: more submits than service selections (impossible in normal flow)
+          ANOMALY="false"
+          if [ "$S_SERVICE" -gt 0 ] && [ "$S_SUBMIT" -gt "$S_SERVICE" ]; then
+            ANOMALY="true"
+          fi
+          echo "anomaly=$ANOMALY" >> "$GITHUB_OUTPUT"
+
+      - name: Evaluate overall DQ verdict
+        id: eval
+        run: |
+          INC="${{ steps.incomplete.outputs.count }}"
+          INV="${{ steps.invalid_status.outputs.count }}"
+          DUP="${{ steps.duplicates.outputs.count }}"
+          FUNNEL="${{ steps.funnel_anomaly.outputs.anomaly }}"
+          S_SVC="${{ steps.funnel_anomaly.outputs.s_service }}"
+          S_SUB="${{ steps.funnel_anomaly.outputs.s_submit }}"
+
+          if [ -z "$INC" ]; then INC="0"; fi
+          if [ -z "$INV" ]; then INV="0"; fi
+          if [ -z "$DUP" ]; then DUP="0"; fi
+
+          VIOLATIONS=0
+          VIOLATIONS_DESC=""
+
+          if [ "$INC" -gt 5 ]; then
+            VIOLATIONS=$(( VIOLATIONS + 1 ))
+            VIOLATIONS_DESC="${VIOLATIONS_DESC}; Incomplete bookings: ${INC} (no outcome, 48h)"
+          fi
+          if [ "$INV" -gt 0 ]; then
+            VIOLATIONS=$(( VIOLATIONS + 1 ))
+            VIOLATIONS_DESC="${VIOLATIONS_DESC}; Invalid status values: ${INV}"
+          fi
+          if [ "$DUP" -gt 3 ]; then
+            VIOLATIONS=$(( VIOLATIONS + 1 ))
+            VIOLATIONS_DESC="${VIOLATIONS_DESC}; Suspected duplicate event groups: ${DUP}"
+          fi
+          if [ "$FUNNEL" = "true" ]; then
+            VIOLATIONS=$(( VIOLATIONS + 1 ))
+            VIOLATIONS_DESC="${VIOLATIONS_DESC}; Funnel anomaly: submit (${S_SUB}) > select_service (${S_SVC})"
+          fi
+
+          VERDICT="PASS"
+          if [ "$VIOLATIONS" -gt 0 ]; then VERDICT="FAIL"; fi
+
+          echo "verdict=$VERDICT"               >> "$GITHUB_OUTPUT"
+          echo "violations=$VIOLATIONS"         >> "$GITHUB_OUTPUT"
+          echo "violations_desc=$VIOLATIONS_DESC" >> "$GITHUB_OUTPUT"
+
+      - name: Write job summary
+        if: always()
+        run: |
+          DATE=$(date -u +"%Y-%m-%d")
+          INC="${{ steps.incomplete.outputs.count }}"
+          INV="${{ steps.invalid_status.outputs.count }}"
+          DUP="${{ steps.duplicates.outputs.count }}"
+          FUNNEL="${{ steps.funnel_anomaly.outputs.anomaly }}"
+          S_SVC="${{ steps.funnel_anomaly.outputs.s_service }}"
+          S_SUB="${{ steps.funnel_anomaly.outputs.s_submit }}"
+          VERDICT="${{ steps.eval.outputs.verdict }}"
+          VIOLATIONS="${{ steps.eval.outputs.violations }}"
+          SKIPPED="${{ steps.incomplete.outputs.skipped }}"
+
+          printf "## Data Quality Report - %s\n\n" "$DATE"                       >> "$GITHUB_STEP_SUMMARY"
+          printf "**Verdict:** %s  (%s violations)\n\n" "$VERDICT" "$VIOLATIONS"  >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$SKIPPED" = "true" ]; then
+            printf "> Supabase secrets not configured - checks skipped\n"         >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          printf "### Check Results\n\n"                                           >> "$GITHUB_STEP_SUMMARY"
+          printf "- Incomplete bookings (48h, no outcome): %s  (threshold >5)\n"  "$INC" >> "$GITHUB_STEP_SUMMARY"
+          printf "- Invalid status values (24h): %s  (threshold >0)\n"            "$INV" >> "$GITHUB_STEP_SUMMARY"
+          printf "- Suspected duplicate event groups (24h): %s  (threshold >3)\n" "$DUP" >> "$GITHUB_STEP_SUMMARY"
+          printf "- Funnel anomaly (submit > select_service): %s\n"               "$FUNNEL" >> "$GITHUB_STEP_SUMMARY"
+          printf "  - select_service events: %s\n"                                 "$S_SVC" >> "$GITHUB_STEP_SUMMARY"
+          printf "  - submit events: %s\n"                                         "$S_SUB" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open DQ alert issue
+        if: steps.eval.outputs.verdict == 'FAIL'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date -u +"%Y-%m-%d")
+          TITLE="[DATA-QUALITY] Violations detected - $DATE"
+          EXISTS=$(gh issue list --repo "${{ github.repository }}" --state open --label data-quality \
+            --json title -q ".[].title" | grep -F "$TITLE" | head -1)
+          if [ -n "$EXISTS" ]; then echo "Deduplicated."; exit 0; fi
+
+          VIOLATIONS="${{ steps.eval.outputs.violations }}"
+          DESC="${{ steps.eval.outputs.violations_desc }}"
+          INC="${{ steps.incomplete.outputs.count }}"
+          INC_IDS="${{ steps.incomplete.outputs.sample_ids }}"
+          INV="${{ steps.invalid_status.outputs.count }}"
+          DUP="${{ steps.duplicates.outputs.count }}"
+          FUNNEL="${{ steps.funnel_anomaly.outputs.anomaly }}"
+
+          BODY=$(printf "Data quality violations detected on %s.\n\nViolation count: %s\nViolations: %s\n\nDetails:\n- Incomplete bookings (no outcome, 48h): %s\n  Sample IDs: %s\n- Invalid status values: %s\n- Suspected duplicate groups: %s\n- Funnel anomaly (submit > select_service): %s\n\nInvestigation queries (Supabase SQL):\n\n1. Incomplete bookings:\n   SELECT id, flow, outcome, created_at FROM operational_events WHERE flow='booking' AND outcome IS NULL ORDER BY created_at DESC LIMIT 20;\n\n2. Invalid statuses:\n   SELECT DISTINCT outcome, count(*) FROM operational_events WHERE created_at > NOW() - INTERVAL '24 hours' GROUP BY outcome;\n\n3. Duplicate detection:\n   SELECT flow, outcome, latency_ms, count(*) FROM operational_events WHERE created_at > NOW() - INTERVAL '24 hours' GROUP BY flow, outcome, latency_ms HAVING count(*) > 3 ORDER BY count DESC;\n\nRequired actions:\n1. Investigate incomplete bookings for client-side abandonment vs server errors\n2. Verify event emission code for unexpected status values\n3. Check for double-submission in booking form\n\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            "$DATE" "$VIOLATIONS" "$DESC" "$INC" "$INC_IDS" "$INV" "$DUP" "$FUNNEL")
+
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "$TITLE" \
+            --body "$BODY" \
+            --label "data-quality,dq-anomaly"
