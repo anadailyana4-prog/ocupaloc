@@ -67,6 +67,8 @@ export async function savePageSettings(formData: FormData) {
     redirect("/dashboard/pagina?error=" + encodeURIComponent(msg));
   }
 
+  const phoneForFallback = parsed.data.phone ?? parsed.data.whatsapp;
+
   const runUpdate = async (values: Record<string, unknown>) => await supabase.from("profesionisti").update(values).eq("id", profId);
   const baseValues = {
     nume_business: parsed.data.name,
@@ -75,8 +77,8 @@ export async function savePageSettings(formData: FormData) {
   };
 
   const updateAttempts: Array<Record<string, unknown>> = [
-    { ...baseValues, telefon: parsed.data.phone, whatsapp: parsed.data.whatsapp },
-    { ...baseValues, telefon: parsed.data.phone },
+    { ...baseValues, telefon: phoneForFallback, whatsapp: parsed.data.whatsapp },
+    { ...baseValues, telefon: phoneForFallback },
     { ...baseValues, whatsapp: parsed.data.whatsapp },
     { ...baseValues }
   ];

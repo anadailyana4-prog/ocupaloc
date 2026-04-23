@@ -72,6 +72,8 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
     );
   }
 
+  const whatsappValue = org.whatsapp ?? org.telefon ?? "";
+
   const sp = searchParams ? await searchParams : {};
 
   return (
@@ -137,7 +139,7 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
             name="whatsapp"
             type="tel"
             maxLength={50}
-            defaultValue={org.whatsapp ?? ""}
+            defaultValue={whatsappValue}
             placeholder="07xx xxx xxx"
             className="border-zinc-700 bg-zinc-900"
           />
