@@ -47,7 +47,7 @@ jobs:
           FORM_STARTS=$(echo "$ROWS" | jq '[.[] | select(.event_type=="booking_form_started")] | length')
           SUBMIT_FAILS=$(echo "$ROWS" | jq '[.[] | select(.event_type=="booking_submit_failed")] | length')
 
-          HEATMAP_SEGMENTS=$(printf "- booking public page: /[slug]\n- login/dashboard: /login, /dashboard\n- onboarding: /signup, /onboarding")
+          HEATMAP_SEGMENTS=$(printf -- "- booking public page: /[slug]\n- login/dashboard: /login, /dashboard\n- onboarding: /signup, /onboarding")
           REPLAY_STATUS="inactive"
           REPLAY_LINK="Set NEXT_PUBLIC_CLARITY_PROJECT_ID to enable replay dashboard link"
           if [ -n "$CLARITY_PROJECT_ID" ]; then
