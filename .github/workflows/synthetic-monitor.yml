@@ -2,8 +2,10 @@ name: Synthetic Monitor
 
 on:
   schedule:
-    # Every 6 hours: 00:00, 06:00, 12:00, 18:00 UTC
-    - cron: "0 0,6,12,18 * * *"
+    # Every 30 minutes — primary always-on monitor.
+    # Alert routing: auto-triage.yml triggers on this workflow's failure
+    # and creates a GitHub Issue with P0–P3 severity classification.
+    - cron: "*/30 * * * *"
   workflow_dispatch:
     inputs:
       base_url:
@@ -90,26 +92,8 @@ jobs:
           fi
 
       - name: Report failure via alert webhook
-        if: failure() && env.ALERT_WEBHOOK_URL != ''
-        env:
-          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
-          ALERT_WEBHOOK_BEARER_TOKEN: ${{ secrets.ALERT_WEBHOOK_BEARER_TOKEN }}
+      - name: Alert routing (auto-triage)
+        if: failure()
         run: |
-          PAYLOAD=$(cat <<JSON
-          {
-            "level": "critical",
-            "flow": "synthetic-monitor",
-            "event": "health_check_failed",
-            "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          }
-          JSON
-          )
-          AUTH_HEADER=""
-          if [ -n "$ALERT_WEBHOOK_BEARER_TOKEN" ]; then
-            AUTH_HEADER="-H \"Authorization: Bearer $ALERT_WEBHOOK_BEARER_TOKEN\""
-          fi
-          curl -s -X POST -H "Content-Type: application/json" \
-            ${AUTH_HEADER:+"$AUTH_HEADER"} \
-            -d "$PAYLOAD" "$ALERT_WEBHOOK_URL" || true
-          echo "Alert dispatched."
+          echo "::notice::Failure detected — auto-triage.yml will trigger automatically and create a GitHub Issue."
+          echo "Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

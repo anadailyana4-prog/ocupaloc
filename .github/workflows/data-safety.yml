@@ -1,0 +1,175 @@
+name: Data Safety Check
+
+# Runs every Wednesday 08:00 UTC (mid-week).
+# Verifies:
+#   1. operational_events table is accessible and has recent data
+#   2. Production health endpoint reports DB OK
+#   3. Biweekly backup drill reminder (week 1 and 3 of month)
+# Fails CI if DB is completely unreachable (no silent degradation).
+
+on:
+  schedule:
+    - cron: "0 8 * * 3"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  backup-check:
+    name: Data Safety & Backup Readiness
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure data-safety label exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create "data-safety" --color "0075ca" \
+            --description "Data safety and backup checks" \
+            --repo "${{ github.repository }}" 2>/dev/null || true
+
+      - name: Check operational_events table health
+        id: db
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          SINCE=$(date -u -d "24 hours ago" +"%Y-%m-%dT%H:%M:%SZ")
+
+          RESP=$(curl -s -w "\nHTTP:%{http_code}" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/operational_events?select=id&created_at=gte.${SINCE}&limit=5" \
+            2>/dev/null)
+
+          HTTP=$(echo "$RESP" | grep "HTTP:" | cut -d: -f2)
+          BODY=$(echo "$RESP" | grep -v "HTTP:")
+          COUNT=$(echo "$BODY" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))" 2>/dev/null || echo "0")
+
+          echo "table_http=$HTTP" >> $GITHUB_OUTPUT
+          echo "recent_events=$COUNT" >> $GITHUB_OUTPUT
+
+          if [ "$HTTP" = "200" ]; then
+            echo "table_ok=true" >> $GITHUB_OUTPUT
+            echo "✅ operational_events accessible (HTTP 200) — recent events in last 24h: $COUNT"
+            if [ "$COUNT" = "0" ]; then
+              echo "::warning::operational_events has no events in the last 24h — monitoring pipeline may be stalled."
+            fi
+          else
+            echo "table_ok=false" >> $GITHUB_OUTPUT
+            echo "::error::operational_events returned HTTP $HTTP — DB may be down or RLS misconfigured."
+          fi
+
+      - name: Check production health endpoint (DB check)
+        id: health
+        run: |
+          RESP=$(curl -s -w "\nHTTP:%{http_code}" --max-time 15 \
+            "https://ocupaloc.ro/api/health/detailed" 2>/dev/null || echo "ERROR\nHTTP:000")
+
+          HTTP=$(echo "$RESP" | grep "HTTP:" | cut -d: -f2)
+          BODY=$(echo "$RESP" | grep -v "HTTP:")
+          DB_OK=$(echo "$BODY" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    print(d.get('checks', {}).get('db', False))
+except:
+    print('error')
+" 2>/dev/null || echo "error")
+
+          echo "health_http=$HTTP" >> $GITHUB_OUTPUT
+          echo "db_check=$DB_OK" >> $GITHUB_OUTPUT
+          echo "Health: HTTP $HTTP | DB check: $DB_OK"
+
+          if [ "$HTTP" != "200" ]; then
+            echo "::warning::Health endpoint returned HTTP $HTTP"
+          fi
+
+      - name: Decide if backup reminder needed (biweekly)
+        id: backup
+        run: |
+          DAY=$(date -u +%d | sed 's/^0//')
+          WEEK_OF_MONTH=$(( (DAY - 1) / 7 + 1 ))
+          TODAY=$(date -u +"%Y-%m-%d")
+          echo "today=$TODAY" >> $GITHUB_OUTPUT
+
+          if [ "$WEEK_OF_MONTH" = "1" ] || [ "$WEEK_OF_MONTH" = "3" ]; then
+            echo "reminder=true" >> $GITHUB_OUTPUT
+            echo "Biweekly backup reminder week — will check for existing issue."
+          else
+            echo "reminder=false" >> $GITHUB_OUTPUT
+            echo "Not a reminder week (week $WEEK_OF_MONTH) — skipping."
+          fi
+
+      - name: Create backup drill reminder (deduped, biweekly)
+        if: steps.backup.outputs.reminder == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TODAY="${{ steps.backup.outputs.today }}"
+          TABLE_OK="${{ steps.db.outputs.table_ok }}"
+          RECENT="${{ steps.db.outputs.recent_events }}"
+          DB_HEALTH="${{ steps.health.outputs.db_check }}"
+
+          # Check if reminder already exists this week (Mon–Sun)
+          WEEK_START=$(date -u -d "monday" +"%Y-%m-%d" 2>/dev/null || date -u -v-Mon +"%Y-%m-%d")
+          EXISTING=$(gh issue list \
+            --repo "${{ github.repository }}" \
+            --state open \
+            --label "data-safety" \
+            --json title,createdAt \
+            --jq "[.[] | select(.title | startswith(\"🗄️ Backup Drill\")) | select(.createdAt >= \"$WEEK_START\")] | length" \
+            2>/dev/null || echo "0")
+
+          if [ "$EXISTING" != "0" ]; then
+            echo "✓ Backup reminder already exists this week — skipping."
+            exit 0
+          fi
+
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "🗄️ Backup Drill Reminder — $TODAY" \
+            --body "## Biweekly Backup & Restore Drill
+
+**Action required:** Verify Supabase backup is current and restorable.
+
+### Current DB State
+| Check | Result |
+|-------|--------|
+| \`operational_events\` accessible | \`${TABLE_OK}\` |
+| Recent events (last 24h) | ${RECENT} |
+| Health endpoint DB check | \`${DB_HEALTH}\` |
+
+### Drill Steps
+1. Go to: https://supabase.com/dashboard/project/tffwoljimpdckvlogyqu/database/backups
+2. Confirm latest backup timestamp is within last 24h
+3. **(Optional restore drill)**:
+   \`\`\`bash
+   # Dump production DB (requires DB password)
+   npx supabase db dump \\
+     --db-url 'postgresql://postgres.tffwoljimpdckvlogyqu:<password>@aws-0-eu-west-1.pooler.supabase.com:5432/postgres' \\
+     > backup_$(date +%Y%m%d).sql
+   
+   # Verify critical tables exist in dump
+   grep -c 'CREATE TABLE' backup_$(date +%Y%m%d).sql
+   grep 'operational_events' backup_$(date +%Y%m%d).sql
+   \`\`\`
+4. Log result as a comment below and close this issue.
+
+### Recovery Contact
+- Supabase support: https://supabase.com/support
+- Vercel support: https://vercel.com/help
+
+---
+*Auto-generated by [data-safety workflow](${{ github.server_url }}/${{ github.repository }}/actions/workflows/data-safety.yml)*" \
+            --label "data-safety"
+
+      - name: Fail if DB completely unreachable
+        if: steps.db.outputs.table_ok == 'false'
+        run: |
+          echo "::error::CRITICAL: operational_events table is NOT accessible (HTTP ${{ steps.db.outputs.table_http }})."
+          echo "::error::Check Supabase: https://supabase.com/dashboard/project/tffwoljimpdckvlogyqu"
+          exit 1
