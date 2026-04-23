@@ -2,7 +2,8 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
@@ -31,8 +32,20 @@ function wait(ms: number) {
 }
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
+  const searchParams = useSearchParams();
   const [busy, setBusy] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const authReason = searchParams.get("reason");
+  const authError = searchParams.get("error");
+  const decodedAuthReason = authReason ? decodeURIComponent(authReason) : null;
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -45,6 +58,15 @@ export default function LoginPage() {
     }
     return (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
   }
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        window.location.replace("/dashboard");
+      }
+    });
+  }, []);
 
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     setSubmitError(null);
@@ -94,7 +116,8 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${origin}/auth/bridge?next=/dashboard`
+        // Keep callback URL aligned with provider config; /auth/callback forwards to /auth/bridge safely.
+        redirectTo: `${origin}/auth/callback?next=/dashboard`
       }
     });
     setBusy(false);
@@ -219,6 +242,9 @@ export default function LoginPage() {
               <Button data-testid="login-submit" type="submit" className="w-full" disabled={busy}>
                 {busy ? "Se autentifică…" : "Continuă"}
               </Button>
+              {authError === "auth" && decodedAuthReason ? (
+                <p className="text-sm text-amber-300">Autentificarea anterioară a eșuat: {decodedAuthReason}</p>
+              ) : null}
               {submitError ? <p className="text-sm text-red-400">{submitError}</p> : null}
             </form>
           </Form>
