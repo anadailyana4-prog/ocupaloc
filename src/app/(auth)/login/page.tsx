@@ -26,6 +26,13 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "" }
   });
 
+  function getAuthOrigin(): string {
+    if (typeof window !== "undefined" && window.location.origin) {
+      return window.location.origin.replace(/\/$/, "");
+    }
+    return (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+  }
+
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     setSubmitError(null);
     setBusy(true);
@@ -48,7 +55,7 @@ export default function LoginPage() {
   async function signInWithGoogle() {
     setBusy(true);
     const supabase = createSupabaseBrowserClient();
-    const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/$/, "");
+    const origin = getAuthOrigin();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -84,7 +91,7 @@ export default function LoginPage() {
     }
 
     const supabase = createSupabaseBrowserClient();
-    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin).replace(/\/$/, "");
+    const siteUrl = getAuthOrigin();
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
@@ -124,7 +131,7 @@ export default function LoginPage() {
     }
 
     const supabase = createSupabaseBrowserClient();
-    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin).replace(/\/$/, "");
+    const siteUrl = getAuthOrigin();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${siteUrl}/login`
     });

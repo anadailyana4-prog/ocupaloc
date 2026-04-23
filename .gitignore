@@ -16,3 +16,7 @@ dist
 .DS_Store
 .env*.local
 package-lock.json
+
+# Local HOME used for wrangler deploy isolation
+.home
+.config

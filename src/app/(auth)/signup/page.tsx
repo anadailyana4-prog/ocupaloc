@@ -205,7 +205,8 @@ export default function SignupPage() {
 
     const cleanEmail = email.trim().toLowerCase();
     const cleanPhone = telefon.trim().replace(/\s+/g, " ");
-    const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? (typeof window !== "undefined" ? window.location.origin : "")).replace(/\/$/, "");
+    const siteUrl =
+      (typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
 
     setIsSubmitting(true);
     const supabase = createSupabaseBrowserClient();

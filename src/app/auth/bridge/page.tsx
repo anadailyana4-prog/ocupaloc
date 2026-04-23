@@ -15,6 +15,12 @@ function getSafeNext(raw: string | null): string {
   return raw;
 }
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return "auth_bridge_failed";
+}
+
 export default function AuthBridgePage() {
   const [message, setMessage] = useState("Finalizăm autentificarea...");
 
@@ -73,9 +79,11 @@ export default function AuthBridgePage() {
 
         setMessage("Autentificare reușită. Redirecționăm...");
         if (!cancelled) window.location.replace(safeNext);
-      } catch {
+      } catch (error) {
+        const reason = encodeURIComponent(getErrorMessage(error));
+        console.error("[auth/bridge] finalize auth failed:", error);
         setMessage("Nu am putut finaliza autentificarea. Redirecționăm către login...");
-        if (!cancelled) window.location.replace("/login?error=auth");
+        if (!cancelled) window.location.replace(`/login?error=auth&reason=${reason}`);
       }
     }
 

@@ -15,6 +15,12 @@ function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return "auth_callback_failed";
+}
+
 export default function AuthCallbackPage() {
   const [message, setMessage] = useState("Finalizam autentificarea...");
 
@@ -74,9 +80,11 @@ export default function AuthCallbackPage() {
 
         setMessage("Autentificare reusita. Redirectionam...");
         if (!cancelled) window.location.replace(safeNext);
-      } catch {
+      } catch (error) {
+        const reason = encodeURIComponent(getErrorMessage(error));
+        console.error("[auth/callback] finalize auth failed:", error);
         setMessage("Nu am putut finaliza autentificarea. Redirectionam catre login...");
-        if (!cancelled) window.location.replace("/login?error=auth");
+        if (!cancelled) window.location.replace(`/login?error=auth&reason=${reason}`);
       }
     }
 
