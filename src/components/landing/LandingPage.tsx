@@ -277,8 +277,8 @@ export function LandingPage() {
             <p className="mt-3 text-zinc-400">Te loghezi cu Google o singură dată. Programările noi apar instant în calendarul tău.</p>
           </details>
           <details className="rounded-xl border border-zinc-800 bg-zinc-900 px-6 py-4 text-base text-zinc-300">
-            <summary className="cursor-pointer list-none font-semibold text-white">Pot lua avans sau plata integrală?</summary>
-            <p className="mt-3 text-zinc-400">Da. Poți activa plata online pentru rezervări cu avans sau integral.</p>
+            <summary className="cursor-pointer list-none font-semibold text-white">Cum gestionez plățile pentru serviciile mele?</summary>
+            <p className="mt-3 text-zinc-400">Ocupaloc se concentrează acum pe programări, confirmări, remindere și organizarea agendei. Plata online la rezervare nu este integrată în acest moment.</p>
           </details>
           <details className="rounded-xl border border-zinc-800 bg-zinc-900 px-6 py-4 text-base text-zinc-300">
             <summary className="cursor-pointer list-none font-semibold text-white">Se pot anula sau reprograma clienții?</summary>
@@ -415,7 +415,7 @@ export function DemoLandingPreview({ businessName, city, businessType, services,
   return (
     <section className="mx-auto max-w-5xl space-y-8 px-4 py-10 text-white">
       <div className="rounded-2xl border border-yellow-500 bg-yellow-400 p-4 text-center text-sm font-bold text-black">
-        DEMO - Acest salon nu există, e doar exemplu
+        DEMO - Acest business nu există, e doar exemplu
       </div>
       <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-8">
         <h1 className="text-4xl font-extrabold tracking-tight">{businessName} - {city}</h1>
