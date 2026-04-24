@@ -32,6 +32,23 @@ export default async function AdminBusinessesPage() {
     .order("created_at", { ascending: false })
     .limit(500);
 
+  // Batch-fetch auth users to display last login without N+1 queries
+  const lastLoginMap = new Map<string, string | null>(); // email → last_sign_in_at
+  try {
+    let page = 1;
+    while (true) {
+      const { data: authPage } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+      if (!authPage?.users?.length) break;
+      for (const u of authPage.users) {
+        if (u.email) lastLoginMap.set(u.email, u.last_sign_in_at ?? null);
+      }
+      if (authPage.users.length < 1000) break;
+      page++;
+    }
+  } catch {
+    // non-fatal — last login column will just show "—"
+  }
+
   if (error) {
     return (
       <div className="p-8 text-red-400">
@@ -152,6 +169,19 @@ export default async function AdminBusinessesPage() {
       lastBooking: lastBookingMap.has(s.id)
         ? formatInTimeZone(new Date(lastBookingMap.get(s.id)!), TZ, "dd.MM.yyyy")
         : "nicio programare",
+      lastLogin: (() => {
+        const email = s.email_contact ?? null;
+        const lsi = email ? lastLoginMap.get(email) ?? null : null;
+        if (!lsi) return "—";
+        const daysSince = Math.floor((Date.now() - new Date(lsi).getTime()) / (24 * 60 * 60 * 1000));
+        return `${daysSince}z`;
+      })(),
+      lastLoginDays: (() => {
+        const email = s.email_contact ?? null;
+        const lsi = email ? lastLoginMap.get(email) ?? null : null;
+        if (!lsi) return null;
+        return Math.floor((Date.now() - new Date(lsi).getTime()) / (24 * 60 * 60 * 1000));
+      })(),
       bookingsThisWeek: weekCountMap.get(s.id) ?? 0,
       bookingsPrevWeek: prevWeekCountMap.get(s.id) ?? 0,
       totalBookings30d: totalBookings30dMap.get(s.id) ?? 0,
@@ -245,6 +275,7 @@ export default async function AdminBusinessesPage() {
               <th className="px-4 py-3">Abonament</th>
               <th className="px-4 py-3">Expiră</th>
               <th className="px-4 py-3">Ultima prog.</th>
+              <th className="px-4 py-3">Ultim login</th>
               <th className="px-4 py-3">7z</th>
               <th className="px-4 py-3">30z</th>
               <th className="px-4 py-3">Trend 7z</th>
@@ -283,6 +314,11 @@ export default async function AdminBusinessesPage() {
                 </td>
                 <td className="px-4 py-3 text-zinc-400 text-xs">{r.subEnd}</td>
                 <td className="px-4 py-3 text-zinc-400 text-xs">{r.lastBooking}</td>
+                <td className="px-4 py-3 text-xs">
+                  <span className={r.lastLoginDays === null ? "text-zinc-600" : r.lastLoginDays > 30 ? "text-red-400" : r.lastLoginDays > 14 ? "text-amber-400" : "text-emerald-400"}>
+                    {r.lastLogin}
+                  </span>
+                </td>
                 <td className="px-4 py-3">
                   <span className={`font-semibold ${r.bookingsThisWeek === 0 ? "text-red-400" : r.bookingsThisWeek >= 5 ? "text-emerald-400" : "text-amber-300"}`}>
                     {r.bookingsThisWeek}

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { logBookingStatusEvent } from "@/lib/booking/status-events";
-import { notifyClientBookingCancelledBySalon, notifyClientBookingConfirmation, notifyClientPostCompletion } from "@/lib/email/programare-notify";
+import { notifyClientBookingCancelledByProvider, notifyClientBookingConfirmation, notifyClientPostCompletion } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
 import { writeWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -45,7 +45,7 @@ export async function cancelBooking(id: string): Promise<BookingActionResult> {
   }
   await logBookingStatusEvent({ bookingId: parsed.data, status: "anulat", source: "salon_dashboard" });
   try {
-    await notifyClientBookingCancelledBySalon(parsed.data);
+    await notifyClientBookingCancelledByProvider(parsed.data);
   } catch (error) {
     reportError("email", "notify_client_cancellation_failed", error, { bookingId: parsed.data });
   }

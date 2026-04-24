@@ -419,8 +419,55 @@ async function run() {
   }
 
   // ---- Summary ----
-  section("Summary");
-  console.log("Diagnostic complete. Review warnings and failures above.\n");
+  section("Summary — Health Verdict");
+
+  // Determine primary issue category for fast triage
+  const setupIssue = !onboardingDone || activeServices.length === 0 || !programRaw;
+  const billingIssue = sub?.status === "past_due" || sub?.status === "canceled" || (() => {
+    if (!sub) {
+      const createdAt = prof.created_at ? new Date(prof.created_at as string) : null;
+      const trialEnd = createdAt ? new Date(createdAt.getTime() + 30 * 24 * 60 * 60 * 1000) : null;
+      return trialEnd ? trialEnd < now : false;
+    }
+    return false;
+  })();
+  const adoptionIssue = !setupIssue && (totalBookings ?? 0) === 0;
+  const inactivityIssue = !setupIssue && (daysSinceLastConfirmed ?? 0) > 14;
+  const qualityIssue = confirmationRate30d !== null && confirmationRate30d < 60;
+  const loginIssue = (() => {
+    const lastSignIn = authUser?.user?.last_sign_in_at;
+    if (!lastSignIn) return true;
+    return Math.floor((now.getTime() - new Date(lastSignIn).getTime()) / (24 * 60 * 60 * 1000)) > 30;
+  })();
+
+  const issues: string[] = [];
+  if (setupIssue) issues.push("SETUP — onboarding incomplete / no active services / no schedule");
+  if (billingIssue) issues.push("BILLING — subscription expired or past_due");
+  if (adoptionIssue) issues.push("ADOPTION — never had a confirmed booking");
+  if (inactivityIssue) issues.push(`INACTIVITY — no confirmed booking for ${daysSinceLastConfirmed ?? "unknown"} days`);
+  if (qualityIssue) issues.push(`QUALITY — confirmation rate ${confirmationRate30d}% (below 60%)`);
+  if (loginIssue) issues.push("ENGAGEMENT — owner hasn't logged in for 30+ days");
+
+  if (issues.length === 0) {
+    ok("No critical issues found — account appears healthy");
+    info("Upcoming confirmed bookings (7d)", String(upcomingCount ?? 0));
+    if (confirmationRate30d !== null) info("Confirmation rate (30d)", `${confirmationRate30d}%`);
+  } else {
+    process.stdout.write(`\n\x1b[1mPrimary issue category:\x1b[0m\n`);
+    for (const issue of issues) {
+      fail(issue);
+    }
+    process.stdout.write("\n");
+    if (setupIssue) info("Next step", "Guide operator through setup: services → schedule → onboarding step 4");
+    else if (adoptionIssue) info("Next step", "Share booking link via WhatsApp with 5+ existing clients");
+    else if (inactivityIssue) info("Next step", "Check if operator is still running the business; consider quiet-rescue email");
+    else if (billingIssue) info("Next step", "Check Stripe dashboard, send payment link, verify webhook delivery");
+    else if (qualityIssue) info("Next step", "Check if reminder emails are sending correctly; review no-show rate");
+    else if (loginIssue) info("Next step", "Reach out to operator — they may be using a different email or need re-engagement");
+  }
+
+  info("Booking page", publicUrl);
+  console.log("\n" + "═".repeat(50) + "\n");
 }
 
 run().catch((err) => {

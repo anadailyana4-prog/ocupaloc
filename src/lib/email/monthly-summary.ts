@@ -1,5 +1,6 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { reportError } from "@/lib/observability";
+import { ziKeyFromDate } from "@/lib/program";
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://ocupaloc.ro").replace(/\/$/, "");
 
@@ -49,6 +50,7 @@ type MonthlyRow = {
   cancellationCount: number;
   confirmationRate: number | null; // % = confirmed / (confirmed + noShow + clientCancellations)
   isFirstMonth: boolean; // account was created during the reporting month
+  utilizationPct: number | null; // booked minutes / scheduled minutes for reporting month
 };
 
 /** Returns [start, end) ISO strings for a calendar month offset. 0 = current month, -1 = previous. */
@@ -76,7 +78,7 @@ async function buildMonthlySummaries(): Promise<MonthlyRow[]> {
 
   const { data: profs, error: profErr } = await admin
     .from("profesionisti")
-    .select("id, slug, email_contact, nume_business, created_at")
+    .select("id, slug, email_contact, nume_business, created_at, program")
     .not("email_contact", "is", null)
     .neq("email_contact", "")
     .order("id");
@@ -91,7 +93,7 @@ async function buildMonthlySummaries(): Promise<MonthlyRow[]> {
   const [{ data: thisRows }, { data: prevRows }, { data: noShowRows }, { data: cancellationRows }] = await Promise.all([
     admin
       .from("programari")
-      .select("profesionist_id, servicii(nume)")
+      .select("profesionist_id, data_start, data_final, servicii(nume)")
       .in("profesionist_id", profIds)
       .in("status", ["confirmat", "finalizat"])
       .gte("data_start", reportingMonth.start)
@@ -123,10 +125,16 @@ async function buildMonthlySummaries(): Promise<MonthlyRow[]> {
   // Build counts per prof
   const thisCount = new Map<string, number>();
   const serviceFreq = new Map<string, Map<string, number>>();
+  const bookedMinutesMap = new Map<string, number>();
 
   for (const r of thisRows ?? []) {
     const pid = r.profesionist_id as string;
     thisCount.set(pid, (thisCount.get(pid) ?? 0) + 1);
+    // Booked minutes for utilization
+    if (r.data_final && r.data_start) {
+      const diffMs = new Date(r.data_final as string).getTime() - new Date(r.data_start as string).getTime();
+      bookedMinutesMap.set(pid, (bookedMinutesMap.get(pid) ?? 0) + Math.max(0, Math.round(diffMs / 60000)));
+    }
     const relServ = r.servicii as { nume?: string } | { nume?: string }[] | null;
     const svcName = Array.isArray(relServ) ? (relServ[0]?.nume ?? null) : (relServ?.nume ?? null);
     if (svcName) {
@@ -186,6 +194,29 @@ async function buildMonthlySummaries(): Promise<MonthlyRow[]> {
         isFirstMonth: (() => {
           const createdAt = (p.created_at as string | null) ?? null;
           return !!createdAt && createdAt >= reportingMonth.start && createdAt < reportingMonth.end;
+        })(),
+        utilizationPct: (() => {
+          const rawProgram = (p as Record<string, unknown>).program as Record<string, unknown> | null;
+          if (!rawProgram) return null;
+          // Count scheduled working days and minutes in the reporting month
+          const repStart = new Date(reportingMonth.start);
+          const repEnd = new Date(reportingMonth.end);
+          let scheduledMins = 0;
+          const d = new Date(repStart);
+          while (d < repEnd) {
+            const dayKey = ziKeyFromDate(d);
+            const interval = rawProgram[dayKey];
+            if (Array.isArray(interval) && interval.length === 2) {
+              const [sh, sm] = (interval[0] as string).split(":").map(Number);
+              const [eh, em] = (interval[1] as string).split(":").map(Number);
+              const mins = (eh * 60 + em) - (sh * 60 + (sm ?? 0));
+              if (mins > 0) scheduledMins += mins;
+            }
+            d.setUTCDate(d.getUTCDate() + 1);
+          }
+          if (scheduledMins === 0) return null;
+          const booked = bookedMinutesMap.get(pid) ?? 0;
+          return Math.min(100, Math.round((booked / scheduledMins) * 100));
         })()
       };
     })
@@ -210,6 +241,7 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
       row.topService ? `  • Serviciu top: ${row.topService}` : null,
       row.noShowCount > 0 ? `  • Clienți neprezentați: ${row.noShowCount}` : null,
       row.cancellationCount > 0 ? `  • Anulări client: ${row.cancellationCount}` : null,
+      row.utilizationPct !== null ? `  • Utilizare capacitate: ~${row.utilizationPct}%` : null,
       "",
       row.thisMonthCount > 0
         ? `Un start solid. Continuă să trimiți linkul clienților pe WhatsApp și Instagram.`
@@ -230,6 +262,7 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
     ${row.topService ? `<p style="margin:0 0 4px;"><strong>Serviciu top:</strong> ${escapeHtml(row.topService)}</p>` : ""}
     ${row.noShowCount > 0 ? `<p style="margin:0 0 4px;"><strong>Neprezentați:</strong> ${row.noShowCount}</p>` : ""}
     ${row.cancellationCount > 0 ? `<p style="margin:0 0 4px;"><strong>Anulări client:</strong> ${row.cancellationCount}</p>` : ""}
+    ${row.utilizationPct !== null ? `<p style="margin:0 0 4px;"><strong>Utilizare capacitate:</strong> <span style="color:${row.utilizationPct >= 70 ? '#16a34a' : row.utilizationPct >= 40 ? '#d97706' : '#6b7280'}">${row.utilizationPct}%</span></p>` : ""}
   </div>
   <p style="margin:0 0 16px;">${row.thisMonthCount > 0 ? "Un start solid. Continuă să trimiți linkul clienților!" : "Dacă nu ai primit programări online încă, trimite linkul la cel puțin 10 clienți actuali pe WhatsApp."}</p>
   <a href="${dashboardUrl}" style="background:#1c1c2e;color:#fbbf24;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Deschide dashboard-ul →</a>
@@ -250,6 +283,7 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
     row.noShowCount > 0 ? `  • Clienți neprezentați: ${row.noShowCount}` : null,
     row.cancellationCount > 0 ? `  • Anulări client: ${row.cancellationCount}` : null,
     row.confirmationRate !== null ? `  • Rată de confirmare: ${row.confirmationRate}%` : null,
+    row.utilizationPct !== null ? `  • Utilizare capacitate: ~${row.utilizationPct}%` : null,
     "",
     delta > 0
       ? `Progres real — luna aceasta ai avut mai mulți clienți. Continuă să trimiți linkul!`
@@ -287,6 +321,7 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
     ${noShowLine}
     ${cancellationLine}
     ${confirmationRateLine}
+    ${row.utilizationPct !== null ? `<p style="margin:0 0 4px;"><strong>Utilizare capacitate:</strong> <span style="color:${row.utilizationPct >= 70 ? '#16a34a' : row.utilizationPct >= 40 ? '#d97706' : '#6b7280'}">${row.utilizationPct}%</span></p>` : ""}
   </div>
 
   <p style="margin:0 0 16px;">${

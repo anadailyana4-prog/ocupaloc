@@ -193,7 +193,7 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
   });
 }
 
-export async function notifyClientBookingCancelledBySalon(programareId: string): Promise<void> {
+export async function notifyClientBookingCancelledByProvider(programareId: string): Promise<void> {
   const admin = createSupabaseServiceClient();
   const { data: row } = await admin
     .from("programari")
@@ -242,7 +242,7 @@ export async function notifyClientBookingCancelledBySalon(programareId: string):
   });
 }
 
-export async function notifyClientBookingRescheduledBySalon(programareId: string): Promise<void> {
+export async function notifyClientBookingRescheduledByProvider(programareId: string): Promise<void> {
   const admin = createSupabaseServiceClient();
   const { data: row } = await admin
     .from("programari")
@@ -389,7 +389,7 @@ export async function notifyClientPostCompletion(programareId: string): Promise<
   const safeSalonName = escapeHtml(salonName);
   const safeServiceName = escapeHtml(serviceName);
 
-  const subject = `Mulțumim că ai vizitat ${salonName}!`;
+  const subject = `Mulțumim că ai ales ${salonName}!`;
   const text = [
     `Salut ${row.nume_client},`,
     "",
