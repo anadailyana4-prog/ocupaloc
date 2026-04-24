@@ -79,22 +79,47 @@ export default async function AdminSalonsPage() {
     }
   }
 
-  const rows = (salons ?? []).map((s) => ({
-    id: s.id,
-    slug: s.slug ?? "—",
-    email: s.email_contact ?? "—",
-    business: s.nume_business?.trim() || "—",
-    createdAt: s.created_at ? formatInTimeZone(new Date(s.created_at), TZ, "dd.MM.yyyy") : "—",
-    onboardingDone: (s.onboarding_pas ?? 0) >= 4,
-    subStatus: subMap.get(s.id)?.status ?? "trial",
-    subEnd: subMap.get(s.id)?.current_period_end
-      ? formatInTimeZone(new Date(subMap.get(s.id)!.current_period_end!), TZ, "dd.MM.yyyy")
-      : "—",
-    lastBooking: lastBookingMap.has(s.id)
-      ? formatInTimeZone(new Date(lastBookingMap.get(s.id)!), TZ, "dd.MM.yyyy")
-      : "nicio programare",
-    bookingsThisWeek: weekCountMap.get(s.id) ?? 0
-  }));
+  const FOURTEEN_DAYS_AGO = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+  const BILLING_TRIAL_DAYS = 30;
+
+  const rows = (salons ?? []).map((s) => {
+    const createdAt = s.created_at ? new Date(s.created_at) : null;
+    const trialEnd = createdAt ? new Date(createdAt.getTime() + BILLING_TRIAL_DAYS * 24 * 60 * 60 * 1000) : null;
+    const trialDaysLeft = trialEnd ? Math.ceil((trialEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000)) : null;
+    const subStatus = subMap.get(s.id)?.status ?? "trial";
+    const lastBookingIso = lastBookingMap.get(s.id) ?? null;
+    const isQuiet14d = !lastBookingIso || lastBookingIso < FOURTEEN_DAYS_AGO;
+    const isActive = subStatus === "active" || subStatus === "trialing";
+    const isTrialExpiringSoon = subStatus === "trial" && trialDaysLeft !== null && trialDaysLeft <= 5 && trialDaysLeft >= 0;
+    const isPastDue = subStatus === "past_due";
+    // At-risk: quiet for 14d AND not actively paying
+    const atRisk = isQuiet14d && !isActive;
+    return {
+      id: s.id,
+      slug: s.slug ?? "—",
+      email: s.email_contact ?? "—",
+      business: s.nume_business?.trim() || "—",
+      createdAt: s.created_at ? formatInTimeZone(new Date(s.created_at), TZ, "dd.MM.yyyy") : "—",
+      onboardingDone: (s.onboarding_pas ?? 0) >= 4,
+      subStatus,
+      subEnd: subMap.get(s.id)?.current_period_end
+        ? formatInTimeZone(new Date(subMap.get(s.id)!.current_period_end!), TZ, "dd.MM.yyyy")
+        : "—",
+      lastBooking: lastBookingMap.has(s.id)
+        ? formatInTimeZone(new Date(lastBookingMap.get(s.id)!), TZ, "dd.MM.yyyy")
+        : "nicio programare",
+      bookingsThisWeek: weekCountMap.get(s.id) ?? 0,
+      atRisk,
+      isTrialExpiringSoon,
+      isPastDue,
+      trialDaysLeft
+    };
+  }).sort((a, b) => {
+    // Bubble at-risk and past_due salons to top
+    const aUrgent = a.atRisk || a.isPastDue ? 0 : a.isTrialExpiringSoon ? 1 : 2;
+    const bUrgent = b.atRisk || b.isPastDue ? 0 : b.isTrialExpiringSoon ? 1 : 2;
+    return aUrgent - bUrgent;
+  });
 
   const subBadge = (status: string) => {
     const map: Record<string, string> = {
@@ -114,6 +139,11 @@ export default async function AdminSalonsPage() {
       <div>
         <h1 className="text-2xl font-bold text-amber-50">Admin — Saloane ({rows.length})</h1>
         <p className="mt-1 text-sm text-zinc-400">Vizibil numai pentru {adminEmail}</p>
+        <div className="mt-2 flex gap-3 text-xs text-zinc-500">
+          <span><span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>risc / inactiv 14z</span>
+          <span><span className="inline-block w-2 h-2 rounded-full bg-amber-400 mr-1"></span>trial expiră ≤5z</span>
+          <span><span className="inline-block w-2 h-2 rounded-full bg-orange-500 mr-1"></span>plată restantă</span>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-zinc-700">
@@ -128,12 +158,13 @@ export default async function AdminSalonsPage() {
               <th className="px-4 py-3">Expiră</th>
               <th className="px-4 py-3">Ultima prog.</th>
               <th className="px-4 py-3">7 zile</th>
+              <th className="px-4 py-3">Risc</th>
               <th className="px-4 py-3">Acțiuni</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-800">
             {rows.map((r) => (
-              <tr key={r.id} className="bg-zinc-950 hover:bg-zinc-900/60">
+              <tr key={r.id} className={`hover:bg-zinc-900/60 ${r.atRisk || r.isPastDue ? "bg-red-950/20" : r.isTrialExpiringSoon ? "bg-amber-950/20" : "bg-zinc-950"}`}>
                 <td className="px-4 py-3 font-medium text-white">{r.business}</td>
                 <td className="px-4 py-3">
                   <div className="font-mono text-xs text-zinc-300">{r.slug}</div>
@@ -156,6 +187,28 @@ export default async function AdminSalonsPage() {
                   <span className={`font-semibold ${r.bookingsThisWeek === 0 ? "text-red-400" : r.bookingsThisWeek >= 5 ? "text-emerald-400" : "text-amber-300"}`}>
                     {r.bookingsThisWeek}
                   </span>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-col gap-1">
+                    {r.atRisk ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-red-900/60 px-2 py-0.5 text-xs font-semibold text-red-300">
+                        ● inactiv 14z
+                      </span>
+                    ) : null}
+                    {r.isTrialExpiringSoon ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-900/60 px-2 py-0.5 text-xs font-semibold text-amber-300">
+                        ⏳ trial {r.trialDaysLeft}z
+                      </span>
+                    ) : null}
+                    {r.isPastDue ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-orange-900/60 px-2 py-0.5 text-xs font-semibold text-orange-300">
+                        ⚠ restant
+                      </span>
+                    ) : null}
+                    {!r.atRisk && !r.isTrialExpiringSoon && !r.isPastDue ? (
+                      <span className="text-xs text-zinc-600">—</span>
+                    ) : null}
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">

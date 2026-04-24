@@ -240,6 +240,36 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     .gte("data_start", new Date().toISOString())
     .lte("data_start", sevenDaysAheadIso);
 
+  // Fetch confirmed bookings next 7d with dates for planning signals
+  const { data: next7dBookingDates } = await supabase
+    .from("programari")
+    .select("data_start")
+    .eq("profesionist_id", prof.id)
+    .eq("status", "confirmat")
+    .gte("data_start", new Date().toISOString())
+    .lte("data_start", sevenDaysAheadIso);
+
+  // Compute busiest upcoming day and next empty working day
+  const bookingsByDay = new Map<string, number>();
+  for (const b of next7dBookingDates ?? []) {
+    const day = formatInTimeZone(new Date(b.data_start), "Europe/Bucharest", "dd.MM");
+    bookingsByDay.set(day, (bookingsByDay.get(day) ?? 0) + 1);
+  }
+  let busiestDay: { label: string; count: number } | null = null;
+  for (const [day, count] of bookingsByDay) {
+    if (!busiestDay || count > busiestDay.count) busiestDay = { label: day, count };
+  }
+  // Next working day in next 7d with 0 confirmed bookings (and salon is open that day)
+  let nextEmptyDay: string | null = null;
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(Date.now() + i * 24 * 60 * 60 * 1000);
+    const dayKey = ziKeyFromDate(d);
+    const interval = parsedProgram[dayKey];
+    if (!Array.isArray(interval) || interval.length !== 2) continue; // closed
+    const dayLabel = formatInTimeZone(d, "Europe/Bucharest", "dd.MM");
+    if (!bookingsByDay.has(dayLabel)) { nextEmptyDay = dayLabel; break; }
+  }
+
   // Pending-confirmation count (in_asteptare) for next 7 days — no-show risk signal
   const { count: pendingNext7dCount } = await supabase
     .from("programari")
@@ -496,6 +526,26 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
             <p className="mt-2 text-3xl font-bold text-amber-50">{confirmationRate7d === null ? "—" : `${confirmationRate7d}%`}</p>
           </div>
         </div>
+
+        {/* Planning signals strip */}
+        {(busiestDay || nextEmptyDay) ? (
+          <div className="flex flex-wrap gap-3 mt-2">
+            {busiestDay ? (
+              <div className="flex items-center gap-2 rounded-xl border border-zinc-700/60 bg-zinc-900/50 px-4 py-2 text-xs">
+                <span className="text-amber-100/50">Cea mai aglomerată zi:</span>
+                <span className="font-semibold text-amber-100">{busiestDay.label}</span>
+                <span className="text-amber-100/40">({busiestDay.count} prog.)</span>
+              </div>
+            ) : null}
+            {nextEmptyDay ? (
+              <div className="flex items-center gap-2 rounded-xl border border-cyan-700/40 bg-cyan-950/30 px-4 py-2 text-xs">
+                <span className="text-cyan-100/50">Zi liberă următoare:</span>
+                <span className="font-semibold text-cyan-200">{nextEmptyDay}</span>
+                <span className="text-cyan-100/40">— bun moment să trimiți linkul</span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </section>
 
       <section className="lux-card space-y-4 p-6">

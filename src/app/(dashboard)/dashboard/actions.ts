@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { logBookingStatusEvent } from "@/lib/booking/status-events";
-import { notifyClientBookingCancelledBySalon, notifyClientBookingConfirmation } from "@/lib/email/programare-notify";
+import { notifyClientBookingCancelledBySalon, notifyClientBookingConfirmation, notifyClientPostCompletion } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
 import { writeWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -72,6 +72,11 @@ export async function completeBooking(id: string): Promise<BookingActionResult> 
     return { success: false, message: error.message };
   }
   await logBookingStatusEvent({ bookingId: parsed.data, status: "finalizat", source: "salon_dashboard" });
+  try {
+    await notifyClientPostCompletion(parsed.data);
+  } catch (err) {
+    reportError("email", "notify_client_post_completion_failed", err, { bookingId: parsed.data });
+  }
   revalidatePath("/dashboard");
   return { success: true };
 }

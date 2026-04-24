@@ -197,18 +197,20 @@ export async function notifyClientBookingCancelledBySalon(programareId: string):
   const admin = createSupabaseServiceClient();
   const { data: row } = await admin
     .from("programari")
-    .select("nume_client, email_client, data_start, profesionisti(nume_business), servicii(nume)")
+    .select("nume_client, email_client, data_start, profesionisti(nume_business, slug), servicii(nume)")
     .eq("id", programareId)
     .maybeSingle();
 
   if (!row?.email_client) return;
 
-  const relProf = row.profesionisti as { nume_business?: string | null } | { nume_business?: string | null }[] | null;
+  const relProf = row.profesionisti as { nume_business?: string | null; slug?: string | null } | { nume_business?: string | null; slug?: string | null }[] | null;
   const relServ = row.servicii as { nume?: string } | { nume?: string }[] | null;
   const profesionist = Array.isArray(relProf) ? relProf[0] ?? null : relProf;
   const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
 
+  const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://ocupaloc.ro").replace(/\/$/, "");
   const salonName = profesionist?.nume_business?.trim() || "salon";
+  const rebookUrl = profesionist?.slug ? `${SITE_URL}/${profesionist.slug}` : null;
   const dataStr = formatInTimeZone(new Date(String(row.data_start)), TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(new Date(String(row.data_start)), TZ, "HH:mm");
   const subject = `Actualizare programare la ${salonName}`;
@@ -217,12 +219,24 @@ export async function notifyClientBookingCancelledBySalon(programareId: string):
     "",
     `Programarea ta pentru ${serviciu?.nume ?? "serviciu"} din ${dataStr}, ora ${timeStr}, a fost anulată de salon.`,
     "",
-    "Dacă dorești, poți face o nouă rezervare folosind pagina salonului."
+    rebookUrl ? `Poți face o nouă rezervare online: ${rebookUrl}` : "Dacă dorești, poți face o nouă rezervare folosind pagina salonului."
   ].join("\n");
+
+  const html = `
+<div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
+  <h2 style="margin:0 0 8px;">Programare anulată</h2>
+  <p style="margin:0 0 12px;">Salut <strong>${escapeHtml(String(row.nume_client))}</strong>,</p>
+  <p style="margin:0 0 16px;">Programarea ta pentru <strong>${escapeHtml(serviciu?.nume ?? "serviciu")}</strong> din <strong>${escapeHtml(dataStr)}</strong> la ora <strong>${escapeHtml(timeStr)}</strong> a fost anulată de salon.</p>
+  ${rebookUrl ? `<p style="margin:0 0 12px;">Poți face o nouă rezervare oricând:</p>
+  <a href="${rebookUrl}" style="background:#1c1c2e;color:#fbbf24;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Rezervă din nou →</a>` : ""}
+  <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">Ocupaloc · ocupaloc.ro</p>
+</div>`;
+
   await sendResendEmail({
     to: [row.email_client.trim()],
     subject,
     text,
+    html,
     event: "notify_client_booking_cancelled_failed",
     context: { programareId, clientEmail: row.email_client.trim() }
   });
@@ -346,6 +360,65 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
   } catch (e) {
     reportError("email", "notify_client_reminder_failed", e, { programareId, tip });
     return false;
+  }
+}
+
+export async function notifyClientPostCompletion(programareId: string): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) return;
+
+  const admin = createSupabaseServiceClient();
+  const { data: row } = await admin
+    .from("programari")
+    .select("nume_client, email_client, data_start, profesionisti(nume_business, slug), servicii(nume)")
+    .eq("id", programareId)
+    .maybeSingle();
+
+  if (!row?.email_client) return;
+
+  const relProf = row.profesionisti as { nume_business?: string | null; slug?: string | null } | { nume_business?: string | null; slug?: string | null }[] | null;
+  const relServ = row.servicii as { nume?: string } | { nume?: string }[] | null;
+  const profesionist = Array.isArray(relProf) ? relProf[0] ?? null : relProf;
+  const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
+
+  const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://ocupaloc.ro").replace(/\/$/, "");
+  const salonName = profesionist?.nume_business?.trim() || "salon";
+  const rebookUrl = profesionist?.slug ? `${SITE_URL}/${profesionist.slug}` : null;
+  const serviceName = serviciu?.nume?.trim() || "serviciu";
+  const safeClientName = escapeHtml(String(row.nume_client));
+  const safeSalonName = escapeHtml(salonName);
+  const safeServiceName = escapeHtml(serviceName);
+
+  const subject = `Mulțumim că ai vizitat ${salonName}!`;
+  const text = [
+    `Salut ${row.nume_client},`,
+    "",
+    `Mulțumim că ai ales ${salonName} pentru ${serviceName}. A fost o plăcere!`,
+    "",
+    rebookUrl ? `Rezervă din nou oricând: ${rebookUrl}` : ""
+  ].filter(Boolean).join("\n");
+
+  const html = `
+<div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
+  <h2 style="margin:0 0 8px;">Mulțumim! 🙏</h2>
+  <p style="margin:0 0 12px;">Salut <strong>${safeClientName}</strong>,</p>
+  <p style="margin:0 0 16px;">Mulțumim că ai ales <strong>${safeSalonName}</strong> pentru <strong>${safeServiceName}</strong>. A fost o plăcere să te avem!</p>
+  ${rebookUrl ? `<p style="margin:0 0 12px;">Data viitoare ne poți rezerva la fel de simplu:</p>
+  <a href="${rebookUrl}" style="background:#16a34a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Rezervă din nou →</a>` : ""}
+  <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">Ocupaloc · ocupaloc.ro</p>
+</div>`;
+
+  try {
+    await sendResendEmail({
+      to: [row.email_client.trim()],
+      subject,
+      text,
+      html,
+      event: "notify_client_post_completion_failed",
+      context: { programareId, clientEmail: row.email_client.trim() }
+    });
+  } catch (e) {
+    reportError("email", "notify_client_post_completion_failed", e, { programareId });
   }
 }
 

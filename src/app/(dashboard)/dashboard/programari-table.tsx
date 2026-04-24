@@ -62,6 +62,29 @@ export function ProgramariTable({ rows }: Props) {
     });
   }
 
+  async function runNoShow(row: ProgramareRow) {
+    startTransition(async () => {
+      const res = await markNoShow(row.id);
+      if (!res.success) {
+        toast.error(res.message);
+        return;
+      }
+      toast.success("Marcat ca neprezent.");
+      router.refresh();
+      // Recovery prompt: suggest contacting the client via WhatsApp
+      if (row.clientPhone) {
+        const waUrl = `https://wa.me/${row.clientPhone.replace(/\D/g, "")}?text=${encodeURIComponent(`Salut ${row.clientName}, am observat că nu ai ajuns la programarea de azi. Vrei să stabilim o altă dată?`)}`;
+        toast("Contactezi clientul pe WhatsApp?", {
+          duration: 8000,
+          action: {
+            label: "Deschide WhatsApp →",
+            onClick: () => { window.open(waUrl, "_blank", "noopener"); }
+          }
+        });
+      }
+    });
+  }
+
   const emptyState = (
     <div className="px-4 py-12 text-center">
       <p className="text-sm font-medium text-amber-100/70">Nicio programare în intervalul ales.</p>
@@ -134,7 +157,7 @@ export function ProgramariTable({ rows }: Props) {
                       size="sm"
                       className="rounded-full border-orange-500/40 text-orange-300 hover:bg-orange-950/40"
                       disabled={pending}
-                      onClick={() => void run("Marcat: client neprezent.", () => markNoShow(r.id))}
+                      onClick={() => void runNoShow(r)}
                     >
                       Neprezent
                     </Button>
@@ -223,7 +246,7 @@ export function ProgramariTable({ rows }: Props) {
                               size="sm"
                               className="rounded-full border-orange-500/40 text-orange-300 hover:bg-orange-950/40"
                               disabled={pending}
-                              onClick={() => void run("Marcat: client neprezent.", () => markNoShow(r.id))}
+                              onClick={() => void runNoShow(r)}
                             >
                               Neprezent
                             </Button>
