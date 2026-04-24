@@ -145,6 +145,13 @@ async function run() {
     .gte("data_start", now.toISOString())
     .lte("data_start", sevenDaysAhead.toISOString());
 
+  const { count: pendingUpcomingCount } = await supabase
+    .from("programari")
+    .select("id", { count: "exact", head: true })
+    .eq("profesionist_id", prof.id)
+    .eq("status", "in_asteptare")
+    .gte("data_start", now.toISOString());
+
   const { count: totalBookings } = await supabase
     .from("programari")
     .select("id", { count: "exact", head: true })
@@ -166,6 +173,11 @@ async function run() {
 
   info("Total bookings (all time)", String(totalBookings ?? 0));
   info("Upcoming confirmed (7 days)", String(upcomingCount ?? 0));
+  if ((pendingUpcomingCount ?? 0) > 0) {
+    warn(`Pending (in_asteptare) upcoming: ${pendingUpcomingCount}`, "clients awaiting confirmation — check and confirm or contact");
+  } else {
+    info("Pending (in_asteptare) upcoming", "0");
+  }
 
   if (lastConfirmedIso) {
     const label = `last confirmed: ${lastConfirmedIso.slice(0, 10)} (${daysSinceLastConfirmed}d ago)`;

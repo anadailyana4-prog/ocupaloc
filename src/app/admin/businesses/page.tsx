@@ -81,9 +81,11 @@ export default async function AdminBusinessesPage() {
     }
   }
 
+  const now = new Date();
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const sevenDaysAhead = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
   // Booking stats: all bookings in last 30d
   const { data: bookingStats } = await admin
@@ -93,6 +95,15 @@ export default async function AdminBusinessesPage() {
     .gte("data_start", thirtyDaysAgo)
     .order("data_start", { ascending: false })
     .limit(10000);
+
+  // Forward-looking: upcoming confirmed + pending (in_asteptare) next 7 days
+  const { data: upcomingStats } = await admin
+    .from("programari")
+    .select("profesionist_id, status")
+    .in("profesionist_id", profIds)
+    .in("status", ["confirmat", "in_asteptare"])
+    .gte("data_start", now.toISOString())
+    .lte("data_start", sevenDaysAhead);
 
   // Client-initiated cancellations (30d) for confirmation rate
   const { data: clientCancelStats } = await admin
@@ -137,6 +148,18 @@ export default async function AdminBusinessesPage() {
     clientCancelCountMap.set(pid, (clientCancelCountMap.get(pid) ?? 0) + 1);
   }
 
+  // Forward-looking maps
+  const upcomingConfirmedMap = new Map<string, number>();
+  const pendingNextMap = new Map<string, number>();
+  for (const b of upcomingStats ?? []) {
+    const pid = b.profesionist_id as string;
+    if (b.status === "confirmat") {
+      upcomingConfirmedMap.set(pid, (upcomingConfirmedMap.get(pid) ?? 0) + 1);
+    } else if (b.status === "in_asteptare") {
+      pendingNextMap.set(pid, (pendingNextMap.get(pid) ?? 0) + 1);
+    }
+  }
+
   const FOURTEEN_DAYS_AGO = twoWeeksAgo;
   const BILLING_TRIAL_DAYS = 30;
 
@@ -173,12 +196,17 @@ export default async function AdminBusinessesPage() {
       if (!lsi) return null;
       return Math.floor((Date.now() - new Date(lsi).getTime()) / (24 * 60 * 60 * 1000));
     })();
+    const upcomingConfirmed7d = upcomingConfirmedMap.get(s.id) ?? 0;
+    const pendingNext7d = pendingNextMap.get(s.id) ?? 0;
     const healthBand: HealthBand = (() => {
       if (!onboardingDone) return "critical";
       if (subStatus === "past_due" || subStatus === "canceled") return "critical";
       if (isTrialExpired) return "critical";
-      // 14d quiet threshold: accounts older than 14 days with no booking in 14d are at_risk
-      if (isQuiet14d && accountAgeDays > 14) return "at_risk";
+      // 14d quiet threshold with forward-looking refinement:
+      // if upcoming confirmed bookings exist, business is self-recovering — downgrade to watch
+      if (isQuiet14d && accountAgeDays > 14) {
+        return upcomingConfirmed7d > 0 ? "watch" : "at_risk";
+      }
       if (confirmationRate30d !== null && confirmationRate30d < 60) return "at_risk";
       if (isTrialExpiringSoon) return "watch";
       if (confirmationRate30d !== null && confirmationRate30d < 80) return "watch";
@@ -218,6 +246,8 @@ export default async function AdminBusinessesPage() {
       trialDaysLeft,
       isTrialExpired,
       healthBand,
+      upcomingConfirmed7d,
+      pendingNext7d,
     };
   }).sort((a, b) => {
     const bandOrder: Record<string, number> = { critical: 0, at_risk: 1, watch: 2, healthy: 3 };
@@ -328,6 +358,8 @@ export default async function AdminBusinessesPage() {
               <th className="px-4 py-3">30z</th>
               <th className="px-4 py-3">Trend 7z</th>
               <th className="px-4 py-3">Calitate (30z)</th>
+              <th className="px-4 py-3">Viitoare 7z</th>
+              <th className="px-4 py-3">Aşteptare</th>
               <th className="px-4 py-3">Sănătate</th>
               <th className="px-4 py-3">Acțiuni</th>
             </tr>
@@ -400,20 +432,34 @@ export default async function AdminBusinessesPage() {
                     </div>
                   )}
                 </td>
+                {/* Viitoare 7z */}
+                <td className="px-4 py-3 text-center">
+                  <span className={`font-semibold text-sm ${r.upcomingConfirmed7d === 0 ? "text-zinc-600" : r.upcomingConfirmed7d >= 5 ? "text-emerald-400" : "text-emerald-300"}`}>
+                    {r.upcomingConfirmed7d > 0 ? r.upcomingConfirmed7d : "—"}
+                  </span>
+                </td>
+                {/* Aşteptare */}
+                <td className="px-4 py-3 text-center">
+                  <span className={`font-semibold text-sm ${r.pendingNext7d === 0 ? "text-zinc-600" : r.pendingNext7d >= 3 ? "text-orange-400" : "text-amber-300"}`}>
+                    {r.pendingNext7d > 0 ? r.pendingNext7d : "—"}
+                  </span>
+                </td>
+                {/* Sănătate */}
                 <td className="px-4 py-3">
                   <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${HEALTH_BAND_CONFIG[r.healthBand].badgeClasses}`}>
                     {HEALTH_BAND_CONFIG[r.healthBand].label}
                   </span>
                   {(() => {
                     let reason = "";
-                    if (!r.onboardingDone)                                               reason = "setup incomplet";
-                    else if (r.isPastDue)                                                reason = "plată restantă";
-                    else if (r.isTrialExpired)                                           reason = "trial expirat";
-                    else if (r.neverBooked)                                              reason = "fără prog. 30z";
-                    else if (r.isQuiet14d)                                               reason = "inactiv 14z";
-                    else if (r.isTrialExpiringSoon)                                      reason = `trial ${r.trialDaysLeft}z`;
+                    if (!r.onboardingDone)                                                reason = "setup incomplet";
+                    else if (r.isPastDue)                                                 reason = "plată restantă";
+                    else if (r.isTrialExpired)                                            reason = "trial expirat";
+                    else if (r.neverBooked)                                               reason = "fără prog. 30z";
+                    else if (r.isQuiet14d && r.upcomingConfirmed7d > 0)                  reason = `inactiv 14z ↑${r.upcomingConfirmed7d}`;
+                    else if (r.isQuiet14d)                                                reason = "inactiv 14z";
+                    else if (r.isTrialExpiringSoon)                                       reason = `trial ${r.trialDaysLeft}z`;
                     else if (r.confirmationRate30d !== null && r.confirmationRate30d < 80) reason = `conf. ${r.confirmationRate30d}%`;
-                    else if ((r.lastLoginDays ?? 0) > 30)                               reason = "login >30z";
+                    else if ((r.lastLoginDays ?? 0) > 30)                                reason = "login >30z";
                     return reason ? <div className="mt-1 text-xs text-zinc-400">{reason}</div> : null;
                   })()}
                 </td>
@@ -436,6 +482,14 @@ export default async function AdminBusinessesPage() {
                       >
                         Email
                       </a>
+                    ) : null}
+                    {r.slug !== "—" ? (
+                      <div
+                        title="Copiază comanda diagnose"
+                        className="mt-0.5 cursor-text select-all font-mono text-[10px] text-zinc-600 break-all"
+                      >
+                        --slug={r.slug}
+                      </div>
                     ) : null}
                   </div>
                 </td>

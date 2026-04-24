@@ -36,7 +36,7 @@ export async function GET(): Promise<Response> {
     .limit(1000);
 
   if (!businesses?.length) {
-    const header = "Business,Slug,Email,Creat,Setup,Abonament,Expiră,Ultima programare,Prog. 30z,Calitate 30z,Sănătate\n";
+    const header = "Business,Slug,Email,Creat,Setup,Abonament,Expiră,Ultima programare,Prog. 30z,Calitate 30z,Sănătate,Viitoare 7z,Aşteptare 7z\n";
     return new Response(header, {
       status: 200,
       headers: { "Content-Type": "text/csv; charset=utf-8", "Content-Disposition": "attachment; filename=\"ocupaloc-fleet.csv\"" },
@@ -44,10 +44,12 @@ export async function GET(): Promise<Response> {
   }
 
   const profIds = businesses.map((b) => b.id);
+  const now = new Date();
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+  const sevenDaysAhead = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [{ data: subs }, { data: bookingStats }, { data: clientCancelStats }] = await Promise.all([
+  const [{ data: subs }, { data: bookingStats }, { data: clientCancelStats }, { data: upcomingStats }] = await Promise.all([
     admin
       .from("subscriptions")
       .select("profesionist_id, status, current_period_end")
@@ -66,6 +68,13 @@ export async function GET(): Promise<Response> {
       .eq("status", "anulat")
       .eq("source", "client_link")
       .gte("created_at", thirtyDaysAgo),
+    admin
+      .from("programari")
+      .select("profesionist_id, status")
+      .in("profesionist_id", profIds)
+      .in("status", ["confirmat", "in_asteptare"])
+      .gte("data_start", now.toISOString())
+      .lte("data_start", sevenDaysAhead),
   ]);
 
   // Build maps
@@ -92,6 +101,14 @@ export async function GET(): Promise<Response> {
     clientCancelMap.set(pid, (clientCancelMap.get(pid) ?? 0) + 1);
   }
 
+  const upcomingConfirmedMap = new Map<string, number>();
+  const pendingNextMap = new Map<string, number>();
+  for (const b of upcomingStats ?? []) {
+    const pid = b.profesionist_id as string;
+    if (b.status === "confirmat") upcomingConfirmedMap.set(pid, (upcomingConfirmedMap.get(pid) ?? 0) + 1);
+    else if (b.status === "in_asteptare") pendingNextMap.set(pid, (pendingNextMap.get(pid) ?? 0) + 1);
+  }
+
   const rows = businesses.map((b) => {
     const createdAt = b.created_at ? new Date(b.created_at) : null;
     const trialEnd = createdAt ? new Date(createdAt.getTime() + BILLING_TRIAL_DAYS * 24 * 60 * 60 * 1000) : null;
@@ -109,11 +126,13 @@ export async function GET(): Promise<Response> {
     const confirmationRate30d = qualityTotal >= 5 ? Math.round((confirmed30d / qualityTotal) * 100) : null;
     const isTrialExpiringSoon = subStatus === "trial" && trialDaysLeft !== null && trialDaysLeft <= 5 && trialDaysLeft >= 0;
 
+    const upcomingConfirmed7d = upcomingConfirmedMap.get(b.id) ?? 0;
+    const pendingNext7d = pendingNextMap.get(b.id) ?? 0;
     const healthBand = (() => {
       if (!onboardingDone) return "critical";
       if (subStatus === "past_due" || subStatus === "canceled") return "critical";
       if (isTrialExpired) return "critical";
-      if (isQuiet14d && accountAgeDays > 14) return "at_risk";
+      if (isQuiet14d && accountAgeDays > 14) return upcomingConfirmed7d > 0 ? "watch" : "at_risk";
       if (confirmationRate30d !== null && confirmationRate30d < 60) return "at_risk";
       if (isTrialExpiringSoon) return "watch";
       if (confirmationRate30d !== null && confirmationRate30d < 80) return "watch";
@@ -135,10 +154,12 @@ export async function GET(): Promise<Response> {
       confirmed30d,
       confirmationRate30d !== null ? `${confirmationRate30d}%` : "",
       healthBand,
+      upcomingConfirmed7d,
+      pendingNext7d,
     ].map(csvCell).join(",");
   });
 
-  const header = "Business,Slug,Email,Creat,Setup,Abonament,Expiră,Ultima programare,Prog. 30z,Calitate 30z,Sănătate";
+  const header = "Business,Slug,Email,Creat,Setup,Abonament,Expiră,Ultima programare,Prog. 30z,Calitate 30z,Sănătate,Viitoare 7z,Aşteptare 7z";
   const csv = [header, ...rows].join("\n");
   const today = new Date().toISOString().slice(0, 10);
 

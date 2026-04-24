@@ -427,8 +427,8 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     if (pendingNext7dCount > 2) {
       return {
         icon: "📋",
-        message: `Ai ${pendingNext7dCount} programări în așteptare neconfirmate — contactează clienții sau confirmă-le manual.`,
-        href: null,
+        message: `Ai ${pendingNext7dCount} programări în așteptare neconfirmate — confirmă-le sau contactează clienții.`,
+        href: "/dashboard/programari?filter=in_asteptare",
         urgent: true,
       };
     }
@@ -436,7 +436,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
       return {
         icon: "📅",
         message: `Agenda săptămânii e ${utilizationPct}% ocupată. Trimite linkul de rezervare la clienți pentru a umple locurile.`,
-        href: null,
+        href: "/dashboard/setari",
         urgent: false,
       };
     }
