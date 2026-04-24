@@ -47,6 +47,8 @@ function LoginForm() {
   const authError = searchParams.get("error");
   const decodedAuthReason = authReason ? decodeURIComponent(authReason) : null;
 
+  const [alreadyLoggedIn, setAlreadyLoggedIn] = useState(false);
+
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" }
@@ -63,7 +65,7 @@ function LoginForm() {
     const supabase = createSupabaseBrowserClient();
     void supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
-        window.location.replace("/dashboard");
+        setAlreadyLoggedIn(true);
       }
     });
   }, []);
@@ -211,6 +213,14 @@ function LoginForm() {
           <CardDescription>Intră în contul Ocupaloc.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {alreadyLoggedIn && (
+            <div className="rounded-md border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-300">
+              Ești deja autentificat.{" "}
+              <a href="/dashboard" className="font-medium text-white underline underline-offset-2">
+                Du-te la dashboard →
+              </a>
+            </div>
+          )}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
