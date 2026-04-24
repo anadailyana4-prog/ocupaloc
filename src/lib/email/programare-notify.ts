@@ -148,7 +148,7 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
   const profesionist = Array.isArray(relProf) ? relProf[0] ?? null : relProf;
   const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
 
-  const salonName = profesionist?.nume_business?.trim() || "salon";
+  const salonName = profesionist?.nume_business?.trim() || "acest furnizor";
   const serviceName = serviciu?.nume?.trim() || "serviciu";
   const safeClientName = escapeHtml(String(row.nume_client));
   const safeSalonName = escapeHtml(salonName);
@@ -209,7 +209,7 @@ export async function notifyClientBookingCancelledBySalon(programareId: string):
   const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
 
   const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://ocupaloc.ro").replace(/\/$/, "");
-  const salonName = profesionist?.nume_business?.trim() || "salon";
+  const salonName = profesionist?.nume_business?.trim() || "acest furnizor";
   const rebookUrl = profesionist?.slug ? `${SITE_URL}/${profesionist.slug}` : null;
   const dataStr = formatInTimeZone(new Date(String(row.data_start)), TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(new Date(String(row.data_start)), TZ, "HH:mm");
@@ -217,7 +217,7 @@ export async function notifyClientBookingCancelledBySalon(programareId: string):
   const text = [
     `Salut ${row.nume_client},`,
     "",
-    `Programarea ta pentru ${serviciu?.nume ?? "serviciu"} din ${dataStr}, ora ${timeStr}, a fost anulată de salon.`,
+    `Programarea ta pentru ${serviciu?.nume ?? "serviciu"} din ${dataStr}, ora ${timeStr}, a fost anulată de prestator.`,
     "",
     rebookUrl ? `Poți face o nouă rezervare online: ${rebookUrl}` : "Dacă dorești, poți face o nouă rezervare folosind pagina salonului."
   ].join("\n");
@@ -226,7 +226,7 @@ export async function notifyClientBookingCancelledBySalon(programareId: string):
 <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
   <h2 style="margin:0 0 8px;">Programare anulată</h2>
   <p style="margin:0 0 12px;">Salut <strong>${escapeHtml(String(row.nume_client))}</strong>,</p>
-  <p style="margin:0 0 16px;">Programarea ta pentru <strong>${escapeHtml(serviciu?.nume ?? "serviciu")}</strong> din <strong>${escapeHtml(dataStr)}</strong> la ora <strong>${escapeHtml(timeStr)}</strong> a fost anulată de salon.</p>
+  <p style="margin:0 0 16px;">Programarea ta pentru <strong>${escapeHtml(serviciu?.nume ?? "serviciu")}</strong> din <strong>${escapeHtml(dataStr)}</strong> la ora <strong>${escapeHtml(timeStr)}</strong> a fost anulată de prestator.</p>
   ${rebookUrl ? `<p style="margin:0 0 12px;">Poți face o nouă rezervare oricând:</p>
   <a href="${rebookUrl}" style="background:#1c1c2e;color:#fbbf24;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Rezervă din nou →</a>` : ""}
   <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">Ocupaloc · ocupaloc.ro</p>
@@ -257,7 +257,7 @@ export async function notifyClientBookingRescheduledBySalon(programareId: string
   const profesionist = Array.isArray(relProf) ? relProf[0] ?? null : relProf;
   const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
 
-  const salonName = profesionist?.nume_business?.trim() || "salon";
+  const salonName = profesionist?.nume_business?.trim() || "acest furnizor";
   const dataStr = formatInTimeZone(new Date(String(row.data_start)), TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(new Date(String(row.data_start)), TZ, "HH:mm");
   const rebookUrl = `${(process.env.NEXT_PUBLIC_SITE_URL || "https://ocupaloc.ro").replace(/\/$/, "")}/${profesionist?.slug ?? ""}`;
@@ -298,7 +298,7 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
   const profesionist = Array.isArray(relProf) ? relProf[0] ?? null : relProf;
   const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
 
-  const salonName = profesionist?.nume_business?.trim() || "salon";
+  const salonName = profesionist?.nume_business?.trim() || "acest furnizor";
   const startsAt = new Date(String(row.data_start));
   const dataStr = formatInTimeZone(startsAt, TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(startsAt, TZ, "HH:mm");
@@ -382,7 +382,7 @@ export async function notifyClientPostCompletion(programareId: string): Promise<
   const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
 
   const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://ocupaloc.ro").replace(/\/$/, "");
-  const salonName = profesionist?.nume_business?.trim() || "salon";
+  const salonName = profesionist?.nume_business?.trim() || "acest furnizor";
   const rebookUrl = profesionist?.slug ? `${SITE_URL}/${profesionist.slug}` : null;
   const serviceName = serviciu?.nume?.trim() || "serviciu";
   const safeClientName = escapeHtml(String(row.nume_client));

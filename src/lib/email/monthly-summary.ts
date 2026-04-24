@@ -150,7 +150,7 @@ async function buildMonthlySummaries(): Promise<MonthlyRow[]> {
       return {
         profId: pid,
         email: p.email_contact as string,
-        numeBusiness: (p.nume_business as string | null)?.trim() || "Salonul tău",
+        numeBusiness: (p.nume_business as string | null)?.trim() || "Afacerea ta",
         slug: (p.slug as string | null) ?? "",
         thisMonthCount: thisCount.get(pid) ?? 0,
         prevMonthCount: prevCount.get(pid) ?? 0,

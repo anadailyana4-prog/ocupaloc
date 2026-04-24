@@ -124,7 +124,7 @@ export async function sendQuietSalonRescueEmails(): Promise<{ sent: number; skip
         toRescue.push({
           profId: pid,
           email,
-          numeBusiness: (prof.nume_business as string | null)?.trim() || "Salonul tău",
+          numeBusiness: (prof.nume_business as string | null)?.trim() || "Afacerea ta",
           slug: (prof.slug as string | null) ?? "",
           daysSinceLastBooking: daysSince
         });
@@ -136,7 +136,7 @@ export async function sendQuietSalonRescueEmails(): Promise<{ sent: number; skip
         toRescue.push({
           profId: pid,
           email,
-          numeBusiness: (prof.nume_business as string | null)?.trim() || "Salonul tău",
+          numeBusiness: (prof.nume_business as string | null)?.trim() || "Afacerea ta",
           slug: (prof.slug as string | null) ?? "",
           daysSinceLastBooking: null
         });
@@ -185,8 +185,8 @@ function buildRescueEmail(row: RescueRow): { subject: string; text: string; html
     "",
     "Cele mai rapide moduri să primești programări:",
     "  1. Trimite linkul la 10 clienți pe WhatsApp — îi poți întreba direct dacă vor să rezerve online",
-    "  2. Pune linkul în bio-ul de Instagram sau în story",
-    "  3. Tipărește un QR code la salon",
+  "  2. Pune linkul în bio-ul de Instagram sau pe rețelele sociale",
+  "  3. Tipărește un QR code / afișează-l la locația ta",
     "",
     publicUrl ? `Linkul tău: ${publicUrl}` : "",
     "",
@@ -203,7 +203,7 @@ function buildRescueEmail(row: RescueRow): { subject: string; text: string; html
 
   const html = `
 <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
-  <h2 style="margin:0 0 4px;">Ești gata — clientele te așteaptă 📲</h2>
+  <h2 style="margin:0 0 4px;">Ești gata — clienții te așteaptă 📲</h2>
   <p style="margin:0 0 16px;color:#6b7280;">${business}</p>
 
   <p style="margin:0 0 16px;">${escapeHtml(intro)}</p>
@@ -214,8 +214,8 @@ function buildRescueEmail(row: RescueRow): { subject: string; text: string; html
       <strong>WhatsApp</strong> — trimite la 10 clienți existenți
       ${waUrl ? `<br><a href="${waUrl}" style="color:#16a34a;font-weight:600;">Deschide WhatsApp →</a>` : ""}
     </li>
-    <li style="margin-bottom:8px;"><strong>Instagram Story</strong> — bio sau story cu linkul tău</li>
-    <li style="margin-bottom:8px;"><strong>QR la salon</strong> — pe recepție sau pe chitanță</li>
+    <li style="margin-bottom:8px;"><strong>Instagram Story / rețele sociale</strong> — bio sau story cu linkul tău</li>
+    <li style="margin-bottom:8px;"><strong>QR la locație</strong> — la recepție, pe birou sau pe chitanță</li>
   </ol>
 
   ${publicUrl ? `<p style="margin:0 0 12px;font-size:13px;color:#6b7280;">Linkul tău: <a href="${publicUrl}" style="color:#2563eb;">${publicUrl}</a></p>` : ""}

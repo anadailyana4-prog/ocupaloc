@@ -240,6 +240,14 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     .gte("data_start", new Date().toISOString())
     .lte("data_start", sevenDaysAheadIso);
 
+  // Overdue: past confirmed bookings not yet finalized or no-showed — operator should act on these
+  const { count: overdueCount } = await supabase
+    .from("programari")
+    .select("*", { count: "exact", head: true })
+    .eq("profesionist_id", prof.id)
+    .eq("status", "confirmat")
+    .lt("data_start", new Date().toISOString());
+
   // Fetch confirmed bookings next 7d with dates for planning signals
   const { data: next7dBookingDates } = await supabase
     .from("programari")
@@ -269,6 +277,18 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     const dayLabel = formatInTimeZone(d, "Europe/Bucharest", "dd.MM");
     if (!bookingsByDay.has(dayLabel)) { nextEmptyDay = dayLabel; break; }
   }
+
+  // Week-at-a-glance grid: today + next 6 days
+  const DAY_SHORT_RO = ["Du", "Lu", "Ma", "Mi", "Jo", "Vi", "Sâ"];
+  const weekGrid = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(Date.now() + i * 24 * 60 * 60 * 1000);
+    const dayLabel = formatInTimeZone(d, "Europe/Bucharest", "dd.MM");
+    const dayShort = DAY_SHORT_RO[d.getDay()];
+    const dayKey = ziKeyFromDate(d);
+    const isOpen = Array.isArray(parsedProgram[dayKey]) && (parsedProgram[dayKey] as unknown[]).length >= 2;
+    const count = bookingsByDay.get(dayLabel) ?? 0;
+    return { dayLabel, dayShort, count, isOpen, isToday: i === 0 };
+  });
 
   // Pending-confirmation count (in_asteptare) for next 7 days — no-show risk signal
   const { count: pendingNext7dCount } = await supabase
@@ -561,6 +581,13 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
             <p className="text-sm text-amber-100/75">Rată confirmare client (7z)</p>
             <p className="mt-2 text-3xl font-bold text-amber-50">{confirmationRate7d === null ? "—" : `${confirmationRate7d}%`}</p>
           </div>
+          {(overdueCount ?? 0) > 0 ? (
+            <div className="lux-card p-5 border-orange-500/30">
+              <p className="text-sm text-orange-300/80">Neînchise (expirate)</p>
+              <p className="mt-2 text-3xl font-bold text-orange-400">{overdueCount}</p>
+              <p className="mt-1 text-xs text-orange-300/50">confirmate — trebuie finalizate</p>
+            </div>
+          ) : null}
         </div>
 
         {/* Planning signals strip */}
@@ -582,7 +609,75 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
             ) : null}
           </div>
         ) : null}
+
+        {/* Week-at-a-glance grid: today + 6 days */}
+        <div className="mt-3">
+          <p className="mb-2 text-xs font-medium uppercase tracking-widest text-amber-100/30">Săptămâna în curs</p>
+          <div className="grid grid-cols-7 gap-1.5">
+            {weekGrid.map((day) => (
+              <div
+                key={day.dayLabel}
+                className={`flex flex-col items-center rounded-xl border px-1 py-2.5 text-center transition ${
+                  day.isToday
+                    ? "border-amber-500/40 bg-amber-950/40"
+                    : day.count > 0
+                    ? "border-emerald-700/30 bg-emerald-950/20"
+                    : day.isOpen
+                    ? "border-zinc-700/40 bg-zinc-900/30"
+                    : "border-zinc-800/30 bg-zinc-950/20 opacity-40"
+                }`}
+              >
+                <span className={`text-[10px] font-medium uppercase tracking-wide ${day.isToday ? "text-amber-300" : "text-zinc-500"}`}>
+                  {day.dayShort}
+                </span>
+                <span className={`mt-0.5 text-[10px] ${day.isToday ? "text-amber-200/70" : "text-zinc-600"}`}>
+                  {day.dayLabel}
+                </span>
+                <span className={`mt-1.5 text-base font-bold leading-none ${
+                  day.count >= 5 ? "text-emerald-300" :
+                  day.count > 0 ? "text-amber-100" :
+                  day.isOpen ? "text-zinc-600" : "text-zinc-800"
+                }`}>
+                  {day.isOpen ? day.count : "—"}
+                </span>
+                {day.count > 0 ? (
+                  <span className="mt-0.5 text-[9px] text-zinc-600">prog.</span>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
+
+      {/* Pending confirmations action panel */}
+      {programari.filter((p) => p.status === "in_asteptare").length > 0 ? (
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-widest text-orange-300/70">Neconfirmate — necesită atenție</h2>
+          </div>
+          <div className="rounded-xl border border-orange-500/20 bg-orange-950/20 overflow-hidden">
+            <div className="divide-y divide-orange-900/20">
+              {programari.filter((p) => p.status === "in_asteptare").slice(0, 8).map((p) => (
+                <div key={p.id} className="flex items-center justify-between px-4 py-3 text-sm">
+                  <div className="min-w-0">
+                    <span className="font-medium text-orange-100">{p.clientName}</span>
+                    <span className="mx-2 text-zinc-600">·</span>
+                    <span className="text-zinc-400">{p.serviceName}</span>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <span className="font-mono text-xs text-orange-200/70">{p.dataStr} {p.oraStr}</span>
+                  </div>
+                </div>
+              ))}
+              {programari.filter((p) => p.status === "in_asteptare").length > 8 ? (
+                <div className="px-4 py-2 text-xs text-zinc-500">
+                  +{programari.filter((p) => p.status === "in_asteptare").length - 8} mai multe — schimbă filtrul la &quot;Toate&quot;
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="lux-card space-y-4 p-6">
         <h2 className="font-display text-2xl font-semibold tracking-wide text-amber-100">Date publice</h2>

@@ -151,7 +151,7 @@ export default async function AdminSalonsPage() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold text-amber-50">Admin — Saloane ({rows.length})</h1>
+        <h1 className="text-2xl font-bold text-amber-50">Admin — Conturi ({rows.length})</h1>
         <p className="mt-1 text-sm text-zinc-400">Vizibil numai pentru {adminEmail}</p>
         <div className="mt-2 flex gap-3 text-xs text-zinc-500">
           <span><span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>risc / inactiv 14z</span>
@@ -159,6 +159,33 @@ export default async function AdminSalonsPage() {
           <span><span className="inline-block w-2 h-2 rounded-full bg-orange-500 mr-1"></span>plată restantă</span>
         </div>
       </div>
+
+      {/* Fleet health summary strip */}
+      {(() => {
+        const totalBusinesses = rows.length;
+        const onboardedCount = rows.filter((r) => r.onboardingDone).length;
+        const activeSubCount = rows.filter((r) => r.subStatus === "active" || r.subStatus === "trialing").length;
+        const atRiskCount = rows.filter((r) => r.atRisk || r.isPastDue).length;
+        const trialExpiringCount = rows.filter((r) => r.isTrialExpiringSoon).length;
+        const totalBookingsWeek = rows.reduce((sum, r) => sum + r.bookingsThisWeek, 0);
+        return (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {[
+              { label: "Total conturi", value: totalBusinesses, color: "text-amber-50" },
+              { label: "Setup complet", value: onboardedCount, color: "text-emerald-300" },
+              { label: "Abonament activ", value: activeSubCount, color: "text-sky-300" },
+              { label: "La risc", value: atRiskCount, color: atRiskCount > 0 ? "text-red-400" : "text-zinc-500" },
+              { label: "Trial expiră", value: trialExpiringCount, color: trialExpiringCount > 0 ? "text-amber-400" : "text-zinc-500" },
+              { label: "Programări (7z)", value: totalBookingsWeek, color: totalBookingsWeek > 0 ? "text-violet-300" : "text-zinc-500" },
+            ].map((s) => (
+              <div key={s.label} className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-3">
+                <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+                <p className="mt-0.5 text-xs text-zinc-500">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       <div className="overflow-x-auto rounded-xl border border-zinc-700">
         <table className="w-full text-sm">
