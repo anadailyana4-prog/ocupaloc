@@ -16,54 +16,44 @@ export async function checkBookingEntitlement(
     return { allowed: true, reason: "" };
   }
 
-  // 1. Verifică dacă există un abonament activ sau în trial din tabelul subscriptions.
   const { data: sub } = await admin
     .from("subscriptions")
-    .select("status, trial_end, current_period_end, cancel_at_period_end")
+    .select("status, current_period_end, cancel_at_period_end")
     .eq("profesionist_id", profesionistId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
   if (sub) {
+    const { status, current_period_end } = sub;
+    const periodEnd = current_period_end ? new Date(current_period_end) : null;
     const now = Date.now();
 
-    if (sub.status === "active" || sub.status === "trialing") {
-      // Verifică că perioada curentă nu a expirat (safety check).
-      const periodEnd = sub.current_period_end ? new Date(sub.current_period_end).getTime() : Infinity;
-      if (now <= periodEnd) {
+    if (status === "active" || status === "trialing") {
+      if (!periodEnd || now <= periodEnd.getTime()) {
         return { allowed: true, reason: "" };
       }
     }
 
-    if (sub.status === "past_due") {
-      // Permite acces în grace period de 7 zile după ultima scadentă.
-      const periodEnd = sub.current_period_end ? new Date(sub.current_period_end).getTime() : 0;
-      const graceMs = 7 * 24 * 60 * 60 * 1000;
-      if (now <= periodEnd + graceMs) {
+    if (status === "past_due") {
+      if (periodEnd && now <= periodEnd.getTime() + 7 * 24 * 60 * 60 * 1000) {
         return { allowed: true, reason: "grace_period" };
       }
       return { allowed: false, reason: "subscription_past_due" };
     }
 
-    if (sub.status === "canceled" || sub.status === "unpaid" || sub.status === "incomplete_expired") {
-      return { allowed: false, reason: `subscription_${sub.status}` };
-    }
-
-    if (sub.status === "incomplete" || sub.status === "paused") {
-      return { allowed: false, reason: `subscription_${sub.status}` };
-    }
+    if (status === "incomplete") return { allowed: false, reason: "subscription_incomplete" };
+    if (status === "paused") return { allowed: false, reason: "subscription_paused" };
+    if (status === "canceled") return { allowed: false, reason: "subscription_canceled" };
+    return { allowed: false, reason: "subscription_past_due" };
   }
 
-  // 2. Fallback: trial bazat pe data creării contului (pentru conturi înainte de billing persistence).
   const createdAt = new Date(profesionistCreatedAt);
-  if (!Number.isNaN(createdAt.getTime())) {
-    const trialEnd = new Date(createdAt.getTime() + BILLING_TRIAL_DAYS * 24 * 60 * 60 * 1000);
-    if (Date.now() <= trialEnd.getTime()) {
-      return { allowed: true, reason: "legacy_trial" };
-    }
+  if (Number.isNaN(createdAt.getTime())) return { allowed: true, reason: "" };
+  const trialEnd = new Date(createdAt.getTime() + BILLING_TRIAL_DAYS * 24 * 60 * 60 * 1000);
+  if (Date.now() <= trialEnd.getTime()) {
+    return { allowed: true, reason: "legacy_trial" };
   }
-
   return { allowed: false, reason: "no_active_subscription" };
 }
 

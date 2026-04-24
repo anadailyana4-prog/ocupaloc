@@ -33,10 +33,10 @@ export async function POST() {
       return NextResponse.redirect(new URL("/dashboard?error=" + encodeURIComponent("Profilul profesional nu a fost găsit. Completează onboarding-ul."), getSiteUrl()), 303);
     }
 
-    // Guard: reject if the user already has an active or trialing subscription.
+    // Guard: block duplicate active subscription
     const { data: existingSub } = await admin
       .from("subscriptions")
-      .select("status, stripe_subscription_id")
+      .select("id")
       .eq("profesionist_id", String(prof.id))
       .in("status", ["active", "trialing"])
       .limit(1)
@@ -44,7 +44,7 @@ export async function POST() {
 
     if (existingSub) {
       return NextResponse.redirect(
-        new URL("/dashboard?info=" + encodeURIComponent("Ai deja un abonament activ. Folosește butonul «Gestionează abonamentul» pentru a-l administra."), getSiteUrl()),
+        new URL("/dashboard?info=Ai+deja+un+abonament+activ.+%C3%8El+po%C8%9Bi+gestiona+din+panoul+de+billing.", getSiteUrl()),
         303
       );
     }

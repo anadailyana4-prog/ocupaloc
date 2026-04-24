@@ -70,14 +70,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
   }
 
-  // Clear the middleware profile-complete cache cookie so a subsequent login
-  // by a different user doesn't inherit stale onboarding state.
-  response.cookies.set("_prof_ok", "", {
-    maxAge: 0,
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax"
-  });
+  response.cookies.set("_prof_ok", "", { maxAge: 0, path: "/" });
 
   return response;
 }

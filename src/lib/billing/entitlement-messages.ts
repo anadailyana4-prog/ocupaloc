@@ -1,34 +1,19 @@
-/**
- * Maps internal entitlement denial reasons to human-readable Romanian messages.
- * Always use this before surfacing a reason to any end user (salon owner or client).
- */
-const REASON_MESSAGES: Record<string, string> = {
+const MESSAGES: Record<string, string> = {
   subscription_past_due:
-    "Plata abonamentului a eșuat. Actualizează datele de plată pentru a continua.",
-  subscription_canceled:
-    "Abonamentul a fost anulat. Reactivează-l pentru a primi programări.",
-  subscription_unpaid:
-    "Abonamentul este suspendat din cauza plăților restante. Actualizează datele de plată.",
-  subscription_incomplete_expired:
-    "Sesiunea de plată a expirat. Pornește un abonament nou din secțiunea Prețuri.",
+    "Abonamentul tău are o plată restantă. Te rugăm să îl actualizezi pentru a continua să primești programări.",
   subscription_incomplete:
-    "Plata abonamentului este în curs de procesare. Finalizează plata pentru a activa accesul.",
+    "Abonamentul tău nu a fost finalizat. Accesează panoul de billing pentru a finaliza plata.",
   subscription_paused:
-    "Abonamentul este pausat temporar. Reactivează-l din panoul de abonamente.",
+    "Abonamentul tău este în pauză. Reactivează-l pentru a primi programări.",
+  subscription_canceled:
+    "Abonamentul tău a fost anulat. Abonează-te din nou pentru a reactiva serviciul.",
   no_active_subscription:
-    "Nu există un abonament activ. Abonează-te pentru a permite rezervări online.",
-  // These are "allowed" reasons — no message needed, but map them for safety.
-  grace_period: "",
-  legacy_trial: "",
+    "Nu ai un abonament activ. Abonează-te pentru a continua să primești programări.",
+  billing_error:
+    "A apărut o eroare la verificarea abonamentului. Te rugăm să încerci din nou sau să contactezi suportul.",
 };
 
-/**
- * Returns a user-facing Romanian message for a given entitlement reason.
- * Falls back to a generic message if the reason is unknown.
- */
 export function entitlementMessage(reason: string): string {
-  if (reason in REASON_MESSAGES) {
-    return REASON_MESSAGES[reason]!;
-  }
-  return "Accesul la programări este momentan indisponibil. Contactează suportul dacă problema persistă.";
+  if (!reason || reason === "grace_period" || reason === "legacy_trial") return "";
+  return MESSAGES[reason] ?? "Abonamentul tău nu permite momentan programări noi.";
 }

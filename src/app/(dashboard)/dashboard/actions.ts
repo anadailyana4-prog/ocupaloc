@@ -229,6 +229,13 @@ export async function addManualBooking(input: {
     return { success: false, message: parsed.error.errors[0]?.message ?? "Date invalide." };
   }
 
+  // Reject past-date bookings
+  const { toDate } = await import("date-fns-tz");
+  const appointmentDate = toDate(`${parsed.data.dataStr}T${parsed.data.oraStr}:00`, { timeZone: "Europe/Bucharest" });
+  if (appointmentDate < new Date()) {
+    return { success: false, message: "Nu poți adăuga o programare în trecut." };
+  }
+
   const ctx = await getProfIdForUser();
   if (!ctx) {
     return { success: false, message: "Nu ești autentificat sau lipsește profilul." };
