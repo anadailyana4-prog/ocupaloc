@@ -13,6 +13,7 @@ dist
 .env.production
 .env.production.local
 *.log
+*.txt
 .DS_Store
 .env*.local
 package-lock.json
