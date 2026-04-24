@@ -34,6 +34,7 @@ export function AddManualBookingDialog({ servicii, onSuccess }: Props) {
   const [busy, setBusy] = useState(false);
   const [numeClient, setNumeClient] = useState("");
   const [telefonClient, setTelefonClient] = useState("");
+  const [emailClient, setEmailClient] = useState("");
   const [serviciuId, setServiciuId] = useState(servicii[0]?.id ?? "");
   const [dataStr, setDataStr] = useState(todayStr());
   const [oraStr, setOraStr] = useState(nowTimeStr());
@@ -41,6 +42,7 @@ export function AddManualBookingDialog({ servicii, onSuccess }: Props) {
   function openDialog() {
     setNumeClient("");
     setTelefonClient("");
+    setEmailClient("");
     setServiciuId(servicii[0]?.id ?? "");
     setDataStr(todayStr());
     setOraStr(nowTimeStr());
@@ -50,7 +52,7 @@ export function AddManualBookingDialog({ servicii, onSuccess }: Props) {
   async function submit() {
     setBusy(true);
     try {
-      const res = await addManualBooking({ numeClient, telefonClient, serviciuId, dataStr, oraStr });
+      const res = await addManualBooking({ numeClient, telefonClient, emailClient: emailClient.trim() || undefined, serviciuId, dataStr, oraStr });
       if (!res.success) {
         toast.error(res.message);
         return;
@@ -102,6 +104,20 @@ export function AddManualBookingDialog({ servicii, onSuccess }: Props) {
                 value={telefonClient}
                 onChange={(e) => setTelefonClient(e.target.value)}
                 placeholder="ex: 07xx xxx xxx"
+                className="mt-1 border-zinc-700 bg-zinc-900"
+              />
+            </div>
+            <div>
+              <Label htmlFor="mb-email">
+                Email client{" "}
+                <span className="text-xs text-zinc-400">(opțional — se trimite confirmare)</span>
+              </Label>
+              <Input
+                id="mb-email"
+                type="email"
+                value={emailClient}
+                onChange={(e) => setEmailClient(e.target.value)}
+                placeholder="ex: maria@exemplu.ro"
                 className="mt-1 border-zinc-700 bg-zinc-900"
               />
             </div>

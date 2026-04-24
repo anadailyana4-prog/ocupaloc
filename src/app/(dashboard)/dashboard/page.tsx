@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { parseProgramJson, ziKeyFromDate } from "@/lib/program";
+import { computeFreeSlots } from "@/lib/slots";
 import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
 
@@ -51,6 +52,9 @@ type DashboardProfile = {
   smart_client_cancel_threshold?: number | null;
   smart_cancel_window_days?: number | null;
   smart_min_notice_minutes?: number | null;
+  pauza_intre_clienti?: number | null;
+  timp_pregatire?: number | null;
+  lucreaza_acasa?: boolean | null;
 };
 
 export default async function DashboardHomePage({ searchParams }: PageProps) {
@@ -64,8 +68,8 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   const { data: prof, error: profErr, telefonColumnAvailable } = await selectWithTelefonFallback<DashboardProfile>(
     async (columns) => await supabase.from("profesionisti").select(columns).eq("user_id", user.id).maybeSingle(),
-    "id, slug, telefon, description, nume_business, onboarding_pas, program, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes",
-    "id, slug, description, nume_business, onboarding_pas, program, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes"
+    "id, slug, telefon, description, nume_business, onboarding_pas, program, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes, pauza_intre_clienti, timp_pregatire, lucreaza_acasa",
+    "id, slug, description, nume_business, onboarding_pas, program, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes, pauza_intre_clienti, timp_pregatire, lucreaza_acasa"
   );
 
   if (profErr || !prof?.id) {
@@ -143,26 +147,28 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   if (!Array.isArray(todayInterval) || todayInterval.length !== 2) {
     semaforStatus = "closed";
   } else {
-    const [startH, startM] = todayInterval[0].split(":").map(Number);
-    const [endH, endM] = todayInterval[1].split(":").map(Number);
-    const workMinutes = ((endH ?? 0) * 60 + (endM ?? 0)) - ((startH ?? 0) * 60 + (startM ?? 0));
-
     const { data: todayBookings } = await supabase
       .from("programari")
-      .select("servicii(durata_minute)")
+      .select("id, data_start, data_final, servicii(durata_minute)")
       .eq("profesionist_id", prof.id)
       .in("status", ["confirmat", "in_asteptare"])
       .gte("data_start", dayStartIso)
       .lte("data_start", dayEndIso);
 
-    type TodayRow = { servicii: { durata_minute: number } | { durata_minute: number }[] | null };
-    const bookedMinutes = (todayBookings as TodayRow[] | null ?? []).reduce((sum, row) => {
-      const svc = Array.isArray(row.servicii) ? row.servicii[0] : row.servicii;
-      return sum + (svc?.durata_minute ?? 0);
-    }, 0);
-
     semaforBookingsToday = (todayBookings ?? []).length;
-    semaforStatus = bookedMinutes >= workMinutes ? "full" : "free";
+
+    // Calculul corect: verifică dacă mai există vreun slot liber pentru cel mai scurt serviciu activ.
+    const minDuration = (serviciiActve ?? []).reduce<number>((min, s) => Math.min(min, s.durata_minute ?? 60), 60);
+    const pauzaIntre = Number(prof.pauza_intre_clienti ?? 0);
+    const timpPreg = (prof.lucreaza_acasa ?? false) ? Number(prof.timp_pregatire ?? 0) : 0;
+
+    const ocupate = (todayBookings ?? []).map((row) => ({
+      start: new Date(row.data_start),
+      end: new Date(row.data_final)
+    }));
+
+    const freeSlots = computeFreeSlots(todayLocal, parsedProgram, minDuration, pauzaIntre, timpPreg, ocupate);
+    semaforStatus = freeSlots.length === 0 ? "full" : "free";
   }
 
   const semaforConfig = {

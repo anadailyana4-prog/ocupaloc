@@ -30,7 +30,7 @@ export async function POST() {
       .maybeSingle();
 
     if (profError || !prof) {
-      return NextResponse.json({ error: "Nu am găsit profilul profesional." }, { status: 404 });
+      return NextResponse.redirect(new URL("/dashboard?error=" + encodeURIComponent("Profilul profesional nu a fost găsit. Completează onboarding-ul."), getSiteUrl()), 303);
     }
 
     const stripe = getStripeClient();
@@ -66,12 +66,12 @@ export async function POST() {
     });
 
     if (!session.url) {
-      return NextResponse.json({ error: "Nu am putut porni checkout-ul." }, { status: 500 });
+      return NextResponse.redirect(new URL("/dashboard?error=" + encodeURIComponent("Nu am putut porni checkout-ul. Încearcă din nou."), getSiteUrl()), 303);
     }
 
     return NextResponse.redirect(session.url, 303);
   } catch (error) {
     reportError("billing", "create_checkout_failed", error);
-    return NextResponse.json({ error: "Eroare la inițierea plății." }, { status: 500 });
+    return NextResponse.redirect(new URL("/dashboard?error=" + encodeURIComponent("Eroare la inițierea plății. Încearcă din nou."), getSiteUrl()), 303);
   }
 }

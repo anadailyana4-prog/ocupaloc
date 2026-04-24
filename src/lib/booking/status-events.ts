@@ -1,6 +1,6 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
-export type BookingStatusEventSource = "client_link" | "salon_dashboard" | "salon_reschedule";
+export type BookingStatusEventSource = "client_link" | "salon_dashboard" | "salon_reschedule" | "salon_manual";
 
 export async function logBookingStatusEvent(input: {
   bookingId: string;

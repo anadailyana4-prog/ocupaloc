@@ -87,7 +87,16 @@ export async function middleware(request: NextRequest) {
 
   // Onboarding gate: session fără profil complet stă pe /onboarding, altfel merge în /dashboard.
   if (hasSession && userId) {
-    const complete = await isProfileComplete(supabase, userId);
+    // Cache rapid în cookie: evit\u0103m un DB query la fiecare request protejat.
+    // Cookie-ul _prof_ok=1 este valid 5 minute (max-age 300). Cacheaz\u0103 doar starea
+    // "profil complet" — starea "incomplet" nu se cache\u0103z\u0103 niciodat\u0103.
+    const cachedComplete = request.cookies.get("_prof_ok")?.value === "1";
+
+    let complete = cachedComplete;
+    if (!complete) {
+      complete = await isProfileComplete(supabase, userId);
+    }
+
     if (!complete && path !== "/onboarding") {
       const redirect = NextResponse.redirect(new URL("/onboarding", request.url));
       copyAuthCookies(supabaseResponse, redirect);
@@ -97,6 +106,16 @@ export async function middleware(request: NextRequest) {
       const redirect = NextResponse.redirect(new URL("/dashboard", request.url));
       copyAuthCookies(supabaseResponse, redirect);
       return redirect;
+    }
+
+    // Seteaz\u0103 cookie-ul de cache dac\u0103 profilul e complet \u015fi cookie-ul lipse\u015fte sau e pe cale s\u0103 expire.
+    if (complete && !cachedComplete) {
+      supabaseResponse.cookies.set("_prof_ok", "1", {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 300 // 5 minute
+      });
     }
   }
 
