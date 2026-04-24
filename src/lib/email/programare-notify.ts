@@ -289,20 +289,55 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
   const dataStr = formatInTimeZone(startsAt, TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(startsAt, TZ, "HH:mm");
   const subject = tip === "24h" ? `Reminder: ai programare mâine la ${salonName}` : `Reminder: ai programare în curând la ${salonName}`;
+  const serviceName = serviciu?.nume ?? "serviciu";
+
+  const confirmUrl = tip === "24h" ? createBookingConfirmationLink({ bookingId: programareId, action: "confirm" }) : null;
+  const cancelUrl = tip === "24h" ? createBookingConfirmationLink({ bookingId: programareId, action: "cancel" }) : null;
+
+  const confirmBlock =
+    confirmUrl && cancelUrl
+      ? `\n\nConfirmă sau anulează:\n  ✓ Confirmă: ${confirmUrl}\n  ✗ Anulează: ${cancelUrl}`
+      : "";
+
   const text = [
     `Salut ${row.nume_client},`,
     "",
     `Acesta este un reminder pentru programarea ta la ${salonName}.`,
-    `Serviciu: ${serviciu?.nume ?? "serviciu"}`,
+    `Serviciu: ${serviceName}`,
     `Data: ${dataStr}`,
-    `Ora: ${timeStr}`
+    `Ora: ${timeStr}${confirmBlock}`
   ].join("\n");
+
+  let html: string | undefined;
+  if (confirmUrl && cancelUrl) {
+    html = `
+<div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
+  <h2 style="margin:0 0 8px;">Reminder programare 📅</h2>
+  <p style="margin:0 0 16px;">Salut <strong>${escapeHtml(row.nume_client ?? "")}</strong>,</p>
+
+  <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:0 0 20px;">
+    <p style="margin:0 0 4px;"><strong>Salon:</strong> ${escapeHtml(salonName)}</p>
+    <p style="margin:0 0 4px;"><strong>Serviciu:</strong> ${escapeHtml(serviceName)}</p>
+    <p style="margin:0 0 4px;"><strong>Data:</strong> ${escapeHtml(dataStr)}</p>
+    <p style="margin:0;"><strong>Ora:</strong> ${escapeHtml(timeStr)}</p>
+  </div>
+
+  <p style="margin:0 0 12px;font-weight:600;">Confirmi că vii?</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <a href="${confirmUrl}" style="background:#16a34a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;display:inline-block;margin:0 8px 8px 0;">✓ Confirmă prezența</a>
+    <a href="${cancelUrl}" style="background:#f3f4f6;color:#374151;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 8px;">✗ Anulează</a>
+  </div>
+
+  <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">Ocupaloc · ocupaloc.ro</p>
+</div>`;
+  }
 
   try {
     await sendResendEmail({
       to: [row.email_client.trim()],
       subject,
       text,
+      ...(html ? { html } : {}),
       event: "notify_client_reminder_failed",
       context: { programareId, tip, clientEmail: row.email_client.trim() }
     });

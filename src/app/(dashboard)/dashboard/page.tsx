@@ -269,6 +269,13 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   const upcomingConfirmedCount = programari.filter((p) => p.status === "confirmat").length;
   const showNoBookingsNudge = fullySetUp && upcomingConfirmedCount === 0 && filter !== "azi";
 
+  // For the post-activation habit panel: count all-time confirmed bookings (fast count-only query)
+  const { count: allTimeConfirmedCount } = await supabase
+    .from("programari")
+    .select("*", { count: "exact", head: true })
+    .eq("profesionist_id", prof.id)
+    .eq("status", "confirmat");
+
   return (
     <div className="space-y-12 section-reveal">
       {/* Subscription status banner */}
@@ -375,7 +382,14 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
         </div>
       ) : null}
 
-      <ActivationWidgets slug={prof.slug ?? null} profileDone={profileDone} serviciiCount={serviciiCount ?? 0} programSetat={programSetat} />
+      <ActivationWidgets
+        slug={prof.slug ?? null}
+        profileDone={profileDone}
+        serviciiCount={serviciiCount ?? 0}
+        programSetat={programSetat}
+        accountCreatedAt={prof.created_at ?? null}
+        confirmedBookingsCount={allTimeConfirmedCount ?? 0}
+      />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
@@ -552,6 +566,13 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
                 {f === "azi" ? "Azi" : f === "viitoare" ? "Viitoare" : "Toate"}
               </Link>
             ))}
+            <a
+              href="/api/dashboard/export-programari"
+              download
+              className="rounded-full border border-zinc-700 px-4 py-1.5 text-sm font-medium text-zinc-400 transition hover:border-zinc-500 hover:text-zinc-200"
+            >
+              ↓ Export CSV
+            </a>
           </div>
         </div>
         {progErr ? (

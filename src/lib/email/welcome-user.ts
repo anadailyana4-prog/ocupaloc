@@ -13,16 +13,40 @@ export async function sendWelcomeEmail(email: string, nume: string): Promise<voi
   const dashboardUrl = `${siteUrl}/dashboard`;
   const displayName = nume.trim() || "prietene";
 
-  const subject = "Bun venit pe Ocuploc!";
+  const subject = "Bun venit pe Ocupaloc!";
   const text = [
     `Salut ${displayName},`,
     "",
-    "Mulțumim că ți-ai creat cont pe Ocuploc.",
+    "Mulțumim că ți-ai creat cont pe Ocupaloc.",
     `Intră în dashboard ca să-ți configurezi pagina și serviciile: ${dashboardUrl}`,
     "",
+    "Pași următori:",
+    "1. Completează profilul și adaugă serviciile",
+    "2. Setează programul de lucru",
+    "3. Copiază linkul tău și trimite-l clienților",
+    "",
     "Spor la programări!",
-    "Echipa Ocuploc"
+    "Echipa Ocupaloc"
   ].join("\n");
+
+  const html = `
+<div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
+  <h2 style="margin:0 0 8px;">Bun venit pe Ocupaloc, ${displayName}! 👋</h2>
+  <p style="margin:0 0 16px;color:#6b7280;">Contul tău e gata. Urmează 3 pași simpli pentru a primi primele programări online.</p>
+
+  <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:0 0 20px;">
+    <p style="margin:0 0 8px;font-weight:700;">Pași următori:</p>
+    <ol style="margin:0;padding-left:20px;">
+      <li style="margin-bottom:6px;">Completează profilul și adaugă serviciile</li>
+      <li style="margin-bottom:6px;">Setează programul de lucru</li>
+      <li>Copiază linkul tău și trimite-l clienților pe WhatsApp</li>
+    </ol>
+  </div>
+
+  <a href="${dashboardUrl}" style="background:#1c1c2e;color:#fbbf24;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Deschide dashboard-ul →</a>
+
+  <p style="margin:0;color:#9ca3af;font-size:12px;">Ocupaloc · <a href="${siteUrl}" style="color:#9ca3af;">ocupaloc.ro</a></p>
+</div>`;
 
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -35,7 +59,8 @@ export async function sendWelcomeEmail(email: string, nume: string): Promise<voi
         from,
         to: [to],
         subject,
-        text
+        text,
+        html
       })
     });
     if (!res.ok) {
