@@ -190,3 +190,74 @@ test("stripe webhook: returns 200 for unknown event type (no-op)", async () => {
 
   delete process.env.STRIPE_WEBHOOK_SECRET;
 });
+
+test("stripe webhook: fallback resolves profesionist by stripe_customer_id when metadata is missing", async () => {
+  process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
+
+  const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
+  const upsertCalls: Array<Record<string, unknown>> = [];
+
+  const deps: StripeWebhookDeps = {
+    getStripe: () =>
+      ({
+        webhooks: {
+          constructEventAsync: async () => ({
+            id: "evt_checkout_lookup",
+            type: "checkout.session.completed",
+            data: {
+              object: {
+                id: "cs_test_1",
+                subscription: "sub_test_1",
+                customer: "cus_lookup_1",
+                metadata: {}
+              }
+            }
+          })
+        },
+        subscriptions: {
+          retrieve: async () => ({ metadata: {} })
+        }
+      }) as unknown as ReturnType<StripeWebhookDeps["getStripe"]>,
+    getAdmin: () =>
+      ({
+        from: (table: string) => {
+          if (table === "subscriptions") {
+            return {
+              select: () => ({
+                eq: () => ({
+                  limit: () => ({
+                    maybeSingle: async () => ({ data: { profesionist_id: "prof_lookup_1" } })
+                  })
+                })
+              }),
+              upsert: async (payload: Record<string, unknown>) => {
+                upsertCalls.push(payload);
+                return { data: null, error: null };
+              }
+            };
+          }
+          return {
+            select: () => ({
+              eq: () => ({
+                limit: () => ({
+                  maybeSingle: async () => ({ data: null })
+                })
+              })
+            }),
+            upsert: async () => ({ data: null, error: null })
+          };
+        }
+      }) as unknown as ReturnType<StripeWebhookDeps["getAdmin"]>
+  };
+
+  const res = await handleStripeWebhookRequest(req, deps);
+  assert.equal(res.status, 200);
+  assert.equal((await jsonBody(res)).received, true);
+
+  assert.equal(upsertCalls.length, 1);
+  assert.equal(upsertCalls[0].profesionist_id, "prof_lookup_1");
+  assert.equal(upsertCalls[0].stripe_subscription_id, "sub_test_1");
+  assert.equal(upsertCalls[0].stripe_customer_id, "cus_lookup_1");
+
+  delete process.env.STRIPE_WEBHOOK_SECRET;
+});

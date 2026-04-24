@@ -36,20 +36,28 @@ export async function POST() {
     // Guard: block duplicate active subscription
     const { data: existingSub } = await admin
       .from("subscriptions")
-      .select("id")
+      .select("id,status,stripe_customer_id")
       .eq("profesionist_id", String(prof.id))
       .in("status", ["active", "trialing"])
       .limit(1)
       .maybeSingle();
 
+    const stripe = getStripeClient();
+
     if (existingSub) {
+      if (existingSub.stripe_customer_id) {
+        const portal = await stripe.billingPortal.sessions.create({
+          customer: String(existingSub.stripe_customer_id),
+          return_url: `${getSiteUrl()}/dashboard?info=${encodeURIComponent("Ai deja un abonament activ.")}`
+        });
+        return NextResponse.redirect(portal.url, 303);
+      }
+
       return NextResponse.redirect(
         new URL("/dashboard?info=Ai+deja+un+abonament+activ.+%C3%8El+po%C8%9Bi+gestiona+din+panoul+de+billing.", getSiteUrl()),
         303
       );
     }
-
-    const stripe = getStripeClient();
     const customer = await getOrCreateStripeCustomer(stripe, {
       profesionistId: String(prof.id),
       userId: String(user.id),

@@ -1,5 +1,8 @@
 # Post-deploy Verification Guide
 
+> NOTE: This document targets the tenant/RBAC verification flow (`025`/`026`) and is not the billing source of truth.
+> For current production billing validation and migration mapping (`017`/`018`, historically `023`/`024`), use [RELEASE_RUNBOOK.md](../RELEASE_RUNBOOK.md).
+
 **Script:** `scripts/post-deploy-verify.ts`  
 **Covers:** migrations `025_tenant_id_business_alignment.sql` + `026_rls_membership_rbac_alignment.sql`
 

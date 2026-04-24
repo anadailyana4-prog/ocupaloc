@@ -231,6 +231,15 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   const clientDecisions = (clientConfirmations ?? 0) + (cancelledByClient ?? 0);
   const confirmationRate7d = clientDecisions > 0 ? Math.round(((clientConfirmations ?? 0) / clientDecisions) * 100) : null;
 
+  const sevenDaysAheadIso = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const { count: upcomingNext7dCount } = await supabase
+    .from("programari")
+    .select("*", { count: "exact", head: true })
+    .eq("profesionist_id", prof.id)
+    .eq("status", "confirmat")
+    .gte("data_start", new Date().toISOString())
+    .lte("data_start", sevenDaysAheadIso);
+
   const todayFormatted = formatInTimeZone(new Date(), "Europe/Bucharest", "dd.MM.yyyy");
 
   const programari: ProgramareRow[] =
@@ -402,13 +411,18 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
           <h2 className="font-display text-2xl font-semibold tracking-wide text-amber-100">Pulse business</h2>
           <p className="text-sm text-muted-foreground">KPI operaționali pentru ultimele 7 zile.</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lux-card p-5 flex items-start gap-3">
             <span className={`mt-1 h-3 w-3 shrink-0 rounded-full ${semaforConfig[semaforStatus].dot} shadow-[0_0_6px_2px] ${semaforStatus === "free" ? "shadow-emerald-500/40" : semaforStatus === "full" ? "shadow-red-500/40" : "shadow-zinc-500/30"}`} />
             <div>
               <p className="text-sm font-medium text-amber-100/90">{semaforConfig[semaforStatus].label}</p>
               <p className="mt-0.5 text-xs text-amber-100/50">{semaforConfig[semaforStatus].sub}</p>
             </div>
+          </div>
+          <div className="lux-card p-5">
+            <p className="text-sm text-amber-100/75">Programări (7 zile)</p>
+            <p className="mt-2 text-3xl font-bold text-amber-50">{upcomingNext7dCount ?? 0}</p>
+            <p className="mt-1 text-xs text-amber-100/50">confirmate viitoare</p>
           </div>
           <div className="lux-card p-5">
             <p className="text-sm text-amber-100/75">Reminder-e trimise azi</p>

@@ -9,10 +9,10 @@ type CheckResult = {
 type ConstraintRow = { constraint_name: string };
 type RlsRow = { relname: string; relrowsecurity: boolean };
 
-const REQUIRED_TABLES = ["profesionisti", "servicii", "programari", "profiles", "clienti_blocati"] as const;
+const REQUIRED_TABLES = ["profesionisti", "servicii", "programari", "profiles", "clienti_blocati", "subscriptions"] as const;
 const DEPRECATED_TABLES = ["organizations", "appointments", "availability_rules", "blocked_slots"] as const;
 const REQUIRED_PROFILE_COLUMNS = ["id", "full_name", "phone", "role"] as const;
-const REQUIRED_RLS_TABLES = ["profesionisti", "servicii", "programari"] as const;
+const REQUIRED_RLS_TABLES = ["profesionisti", "servicii", "programari", "subscriptions"] as const;
 
 function logResult(result: CheckResult) {
   const icon = result.ok ? "✅" : "❌";
@@ -148,7 +148,7 @@ async function run(): Promise<number> {
       );
       const missingRls = REQUIRED_RLS_TABLES.filter((table) => !rlsMap.get(table));
       results.push({
-        name: "RLS enabled on profesionisti/servicii/programari",
+        name: "RLS enabled on profesionisti/servicii/programari/subscriptions",
         ok: missingRls.length === 0,
         details: missingRls.length ? `Fără RLS: ${missingRls.join(", ")}` : undefined
       });

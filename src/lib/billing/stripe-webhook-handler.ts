@@ -89,7 +89,15 @@ export async function handleStripeWebhookRequest(
         const subId = obj.subscription as string | undefined;
         if (!subId) break;
         const profesionistId = await resolveProfesionistId(stripe, admin, obj);
-        if (!profesionistId) break;
+        if (!profesionistId) {
+          reportError("billing", "stripe_webhook_profesionist_unresolved", "Missing profesionist_id mapping", {
+            eventType: event.type,
+            subId,
+            customerId: obj.customer as string | undefined,
+            eventId: event.id
+          });
+          break;
+        }
         await admin
           .from("subscriptions")
           .upsert(
@@ -109,7 +117,15 @@ export async function handleStripeWebhookRequest(
         const subId = obj.id as string | undefined;
         if (!subId) break;
         const profesionistId = await resolveProfesionistId(stripe, admin, obj);
-        if (!profesionistId) break;
+        if (!profesionistId) {
+          reportError("billing", "stripe_webhook_profesionist_unresolved", "Missing profesionist_id mapping", {
+            eventType: event.type,
+            subId,
+            customerId: obj.customer as string | undefined,
+            eventId: event.id
+          });
+          break;
+        }
         await admin
           .from("subscriptions")
           .upsert(
@@ -140,7 +156,15 @@ export async function handleStripeWebhookRequest(
         const subId = obj.subscription as string | undefined;
         if (!subId) break;
         const profesionistId = await resolveProfesionistId(stripe, admin, obj);
-        if (!profesionistId) break;
+        if (!profesionistId) {
+          reportError("billing", "stripe_webhook_profesionist_unresolved", "Missing profesionist_id mapping", {
+            eventType: event.type,
+            subId,
+            customerId: obj.customer as string | undefined,
+            eventId: event.id
+          });
+          break;
+        }
         await admin
           .from("subscriptions")
           .upsert(

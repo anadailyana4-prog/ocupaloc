@@ -82,8 +82,16 @@ const BASE_SERVICIU = {
   profesionist_id: "prof-uuid-1"
 };
 
-// A future slot: next Monday 10:00 Bucharest (approximate, well in the future)
-const FUTURE_SLOT = new Date(Date.now() + 2 * 24 * 3600 * 1000).toISOString();
+function nextBookableSlotIso(): string {
+  const d = new Date(Date.now() + 30 * 24 * 3600 * 1000);
+  while (d.getDay() !== 1) {
+    d.setDate(d.getDate() + 1);
+  }
+  d.setUTCHours(7, 0, 0, 0);
+  return d.toISOString();
+}
+
+const FUTURE_SLOT = nextBookableSlotIso();
 const FUTURE_DATE = FUTURE_SLOT.slice(0, 10);
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
@@ -311,4 +319,54 @@ test("insertProgramareForProfSlug: slot unavailable returns conflict message", a
 
   assert.equal(result.ok, false);
   assert.match((result as { ok: false; message: string }).message, /disponibil|oră/i);
+});
+
+test("insertProgramareForProfSlug: 23P01 overlap is translated to Romanian conflict message", async () => {
+  const slotIso = nextBookableSlotIso();
+  const dateStr = slotIso.slice(0, 10);
+
+  const admin = makeAdmin({
+    profesionisti: { data: BASE_PROF, error: null },
+    clienti_blocati: { data: null, error: null },
+    servicii: { data: BASE_SERVICIU, error: null },
+    programari: { data: null, error: { code: "23P01", message: "overlap constraint" } }
+  });
+
+  const result = await insertProgramareForProfSlug(admin, {
+    slug: BASE_PROF.slug,
+    serviciuId: BASE_SERVICIU.id,
+    dateStr,
+    slotIso,
+    numeClient: "Client Test",
+    telefonClient: "0712345678"
+  });
+
+  assert.equal(result.ok, false);
+  assert.match((result as { ok: false; message: string }).message, /slotul nu mai e disponibil/i);
+});
+
+test("insertProgramareForProfSlug: unknown insert errors are sanitized for public users", async () => {
+  const slotIso = nextBookableSlotIso();
+  const dateStr = slotIso.slice(0, 10);
+
+  const admin = makeAdmin({
+    profesionisti: { data: BASE_PROF, error: null },
+    clienti_blocati: { data: null, error: null },
+    servicii: { data: BASE_SERVICIU, error: null },
+    programari: { data: null, error: { code: "23505", message: "duplicate key value violates unique constraint public.secret_internal" } }
+  });
+
+  const result = await insertProgramareForProfSlug(admin, {
+    slug: BASE_PROF.slug,
+    serviciuId: BASE_SERVICIU.id,
+    dateStr,
+    slotIso,
+    numeClient: "Client Test",
+    telefonClient: "0712345678"
+  });
+
+  assert.equal(result.ok, false);
+  const msg = (result as { ok: false; message: string }).message;
+  assert.match(msg, /nu am putut crea programarea/i);
+  assert.equal(msg.includes("public.secret_internal"), false);
 });

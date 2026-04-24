@@ -26,7 +26,10 @@ export async function GET(req: NextRequest) {
     db: !error,
     resendConfigured: Boolean(process.env.RESEND_API_KEY?.trim()),
     remindersSecretConfigured: Boolean(process.env.REMINDERS_CRON_SECRET?.trim()),
-    bookingConfirmationSecretConfigured: Boolean(process.env.BOOKING_CONFIRMATION_SECRET?.trim())
+    bookingConfirmationSecretConfigured: Boolean(process.env.BOOKING_CONFIRMATION_SECRET?.trim()),
+    stripeSecretConfigured: Boolean(process.env.STRIPE_SECRET_KEY?.trim()),
+    stripeWebhookSecretConfigured: Boolean(process.env.STRIPE_WEBHOOK_SECRET?.trim()),
+    billingEnabled: process.env.BILLING_ENABLED === "true"
   };
 
   return NextResponse.json(

@@ -208,7 +208,7 @@ export async function insertProgramareForProfSlug(
     if (code === "23P01") {
       return { ok: false, message: "Slotul nu mai e disponibil. Alege altă oră." };
     }
-    return { ok: false, message: ins?.message ?? "Nu am putut crea programarea." };
+    return { ok: false, message: "Nu am putut crea programarea acum. Te rugăm să încerci din nou." };
   }
 
   return { ok: true, programareId: inserted.id };

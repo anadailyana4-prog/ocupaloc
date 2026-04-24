@@ -44,10 +44,10 @@ Currently **NOT** enabled:
 
 To activate source map upload:
 1. Set GitHub Secrets: `SENTRY_ORG`, `SENTRY_PROJECT`, `SENTRY_AUTH_TOKEN`
-2. Update `.github/workflows/ci.yml` build step to pass these env vars
-3. Build will automatically upload source maps to Sentry
+2. Ensure CI build step exposes these env vars to Next build
+3. Build will automatically upload source maps via `withSentryConfig` in `next.config.ts`
 
-Current behavior: App runs with error collection but manual release tracking. Full integration (with source maps) is pending final phase.
+Current behavior: app captures errors with Sentry; source-map upload depends on CI secrets presence.
 
 ### Cloudflare (if used)
 - `SUPABASE_URL`
@@ -55,19 +55,33 @@ Current behavior: App runs with error collection but manual release tracking. Fu
 - `RESEND_API_KEY`
 - `RESEND_FROM`
 
+## Migration Numbering Note (Audit Mapping)
+
+Migration numbering was normalized in-repo. Historical references still found in older notes map as follows:
+- historical `023` -> current `017_profesionisti_whatsapp_public.sql`
+- historical `024` -> current `018_billing_subscriptions.sql`
+
+When validating production state, treat current numbering (`017`, `018`) as source of truth.
+
 ## Stripe Integration Status
 
-⏸️ **Postponed** — Stripe payment integration is NOT enabled in this phase.
+✅ **Active** — Stripe subscription billing is enabled.
 
-- No Stripe secrets are required for current release.
-- No Stripe flows are active (booking remains free).
-- Stripe code and configuration are not activated.
-- Re-enable for final phase: "Stripe final phase" (planned future milestone).
+Required billing env vars:
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRICE_ID`
+- `BILLING_ENABLED=true`
 
-To activate Stripe later:
-1. Set `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` and `STRIPE_SECRET_KEY` in Vercel environment.
-2. Uncomment/enable Stripe routes and checkout flows.
-3. Update RELEASE_RUNBOOK.md with Stripe-specific pre-release steps.
+Billing routes in use:
+- `POST /api/billing/create-checkout`
+- `POST /api/billing/portal`
+- `POST /api/webhooks/stripe`
+
+Safety guards currently enforced:
+- Duplicate checkout guard for `active`/`trialing` subscriptions
+- Webhook fallback resolution by `stripe_customer_id` if metadata is missing
+- Entitlement deny states handled explicitly (`incomplete`, `paused`, `canceled`, `past_due` outside grace)
 
 ## SLO & Error Budget Policy
 
@@ -105,13 +119,46 @@ Release decision:
 7. `npx supabase db push`
 8. `node --import tsx scripts/check-secrets.ts`
 9. `node --import tsx scripts/verify-production-readiness.ts`
-10. `pnpm run ops:synthetic`
-11. `pnpm run ops:slo`
-12. Confirm branch protection on `main` includes mandatory checks: `Typecheck, Lint & Build` and `Secret Scan (gitleaks)`
-13. Confirm branch protection enforcement:
+10. `node --import tsx scripts/verify-billing-readiness.ts`
+11. `pnpm run ops:synthetic`
+12. `pnpm run ops:slo`
+13. Confirm branch protection on `main` includes mandatory checks: `Typecheck, Lint & Build` and `Secret Scan (gitleaks)`
+14. Confirm branch protection enforcement:
    - "Require status checks to pass before merging" is enabled
    - both checks are in required list: `Typecheck, Lint & Build`, `Secret Scan (gitleaks)`
    - "Require branches to be up to date before merging" is enabled
+
+## Billing Validation Checklist (Production)
+1. Checkout flow:
+   - trigger `POST /api/billing/create-checkout` as an authenticated owner
+   - expect redirect to Stripe Checkout (303)
+2. Duplicate checkout guard:
+   - for an account with `active` or `trialing` subscription, re-trigger checkout
+   - expect redirect to billing portal or dashboard info message (no second checkout)
+3. Webhook ingestion:
+   - send Stripe test events for `checkout.session.completed`, `customer.subscription.updated`, `invoice.payment_failed`
+   - expect `200 { received: true }` from `/api/webhooks/stripe`
+4. Subscription row persistence:
+   - verify `public.subscriptions` has/updates row with `profesionist_id`, `stripe_customer_id`, `status`, `current_period_end`
+5. Entitlement behavior:
+   - `active`/`trialing` => booking allowed
+   - `incomplete`/`paused`/`canceled` => booking denied with Romanian user-safe message
+   - `past_due` within grace => allowed; outside grace => denied with Romanian user-safe message
+6. Cancel flow:
+   - cancel from Stripe portal
+   - verify webhook updates status and dashboard banner reflects new state
+7. Past-due grace behavior:
+   - force `past_due` in Stripe test mode
+   - verify booking remains allowed only through grace window, then denied
+
+## Cron Schedule Visibility (Source: vercel.json)
+- `/api/jobs/send-reminders` -> `0 8 * * *`
+- `/api/jobs/synthetic-monitor` -> `0 9 * * *`
+- `/api/jobs/release-guard` -> `0 10 * * *`
+
+Reminder cron authorization:
+- endpoint accepts `Authorization: Bearer <REMINDERS_CRON_SECRET>`
+- rotate `REMINDERS_CRON_SECRET` and update scheduler in lockstep
 
 ## Release Steps
 1. Merge PR to `main` (branch protection requires CI green).
