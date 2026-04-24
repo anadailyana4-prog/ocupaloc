@@ -150,16 +150,85 @@ async function run() {
     .select("id", { count: "exact", head: true })
     .eq("profesionist_id", prof.id);
 
+  // Last confirmed/finalized booking for inactivity signal
+  const { data: lastConfirmedRows } = await supabase
+    .from("programari")
+    .select("data_start")
+    .eq("profesionist_id", prof.id)
+    .in("status", ["confirmat", "finalizat"])
+    .order("data_start", { ascending: false })
+    .limit(1);
+
+  const lastConfirmedIso = lastConfirmedRows?.[0]?.data_start as string | null ?? null;
+  const daysSinceLastConfirmed = lastConfirmedIso
+    ? Math.floor((now.getTime() - new Date(lastConfirmedIso).getTime()) / (24 * 60 * 60 * 1000))
+    : null;
+
   info("Total bookings (all time)", String(totalBookings ?? 0));
   info("Upcoming confirmed (7 days)", String(upcomingCount ?? 0));
 
+  if (lastConfirmedIso) {
+    const label = `last confirmed: ${lastConfirmedIso.slice(0, 10)} (${daysSinceLastConfirmed}d ago)`;
+    if (daysSinceLastConfirmed! > 30) fail("No confirmed bookings in 30+ days", label);
+    else if (daysSinceLastConfirmed! > 14) warn("No confirmed bookings in 14+ days", label);
+    else ok("Recent confirmed booking", label);
+  } else {
+    warn("No confirmed or finalized bookings found (all time)");
+  }
+
   if ((recentBookings ?? []).length > 0) {
-    ok("Recent bookings (last 7 days)");
+    ok("Bookings in last 7 days (any status)");
     for (const b of recentBookings ?? []) {
       info(`  ${String(b.data_start).slice(0, 16)}  ${b.status}  ${b.nume_client}`);
     }
   } else {
     warn("No bookings in the last 7 days");
+  }
+
+  // ---- 4b. Schedule utilization (last 7 days) ----
+  section("4b. Schedule utilization (last 7 days)");
+
+  const { data: bookedRows } = await supabase
+    .from("programari")
+    .select("data_start, data_final")
+    .eq("profesionist_id", prof.id)
+    .in("status", ["confirmat", "finalizat"])
+    .gte("data_start", sevenDaysAgo.toISOString())
+    .lt("data_start", now.toISOString());
+
+  let scheduledMinutes = 0;
+  if (programRaw) {
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sevenDaysAgo.getTime() + i * 24 * 60 * 60 * 1000);
+      const dayMap = ["duminica", "luni", "marti", "miercuri", "joi", "vineri", "sambata"] as const;
+      const dayKey = dayMap[d.getDay()]!;
+      const interval = programRaw[dayKey];
+      if (Array.isArray(interval) && interval.length === 2) {
+        const [sh, sm] = (interval[0] as string).split(":").map(Number);
+        const [eh, em] = (interval[1] as string).split(":").map(Number);
+        const mins = (eh * 60 + (em ?? 0)) - (sh * 60 + (sm ?? 0));
+        if (mins > 0) scheduledMinutes += mins;
+      }
+    }
+  }
+
+  let bookedMinutes = 0;
+  for (const b of bookedRows ?? []) {
+    if (b.data_final && b.data_start) {
+      const diffMs = new Date(b.data_final as string).getTime() - new Date(b.data_start as string).getTime();
+      bookedMinutes += Math.max(0, Math.round(diffMs / 60000));
+    }
+  }
+
+  if (scheduledMinutes === 0) {
+    warn("Cannot compute utilization — no schedule configured or no working days in last 7d");
+  } else {
+    const utilPct = Math.min(100, Math.round((bookedMinutes / scheduledMinutes) * 100));
+    const detail = `${bookedMinutes}min booked / ${scheduledMinutes}min scheduled = ${utilPct}%`;
+    if (utilPct >= 70) ok(`Utilization ${utilPct}% — strong`, detail);
+    else if (utilPct >= 40) warn(`Utilization ${utilPct}% — moderate`, detail);
+    else if (utilPct > 0) warn(`Utilization ${utilPct}% — low`, detail);
+    else fail(`Utilization 0% — no booked time last week`, detail);
   }
 
   // ---- 5. Subscription / billing ----

@@ -29,7 +29,7 @@
       "schedule": "0 8 1 * *"
     },
     {
-      "path": "/api/jobs/quiet-salon-rescue",
+      "path": "/api/jobs/quiet-business-rescue",
       "schedule": "30 9 * * *"
     }
   ]

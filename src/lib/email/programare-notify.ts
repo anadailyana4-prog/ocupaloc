@@ -219,7 +219,7 @@ export async function notifyClientBookingCancelledBySalon(programareId: string):
     "",
     `Programarea ta pentru ${serviciu?.nume ?? "serviciu"} din ${dataStr}, ora ${timeStr}, a fost anulată de prestator.`,
     "",
-    rebookUrl ? `Poți face o nouă rezervare online: ${rebookUrl}` : "Dacă dorești, poți face o nouă rezervare folosind pagina salonului."
+    rebookUrl ? `Poți face o nouă rezervare online: ${rebookUrl}` : "Dacă dorești, poți face o nouă rezervare folosind pagina de rezervare."
   ].join("\n");
 
   const html = `
@@ -266,7 +266,7 @@ export async function notifyClientBookingRescheduledBySalon(programareId: string
   const text = [
     `Salut ${row.nume_client},`,
     "",
-    `Programarea ta pentru ${serviciu?.nume ?? "serviciu"} a fost reprogramată de salon.`,
+    `Programarea ta pentru ${serviciu?.nume ?? "serviciu"} a fost reprogramată de prestator.`,
     `Noua dată: ${dataStr}, ora ${timeStr}.`,
     "",
     `Detalii/Reprogramare: ${rebookUrl}`
@@ -330,7 +330,7 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
   <p style="margin:0 0 16px;">Salut <strong>${escapeHtml(row.nume_client ?? "")}</strong>,</p>
 
   <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:0 0 20px;">
-    <p style="margin:0 0 4px;"><strong>Salon:</strong> ${escapeHtml(salonName)}</p>
+    <p style="margin:0 0 4px;"><strong>Furnizor:</strong> ${escapeHtml(salonName)}</p>
     <p style="margin:0 0 4px;"><strong>Serviciu:</strong> ${escapeHtml(serviceName)}</p>
     <p style="margin:0 0 4px;"><strong>Data:</strong> ${escapeHtml(dataStr)}</p>
     <p style="margin:0;"><strong>Ora:</strong> ${escapeHtml(timeStr)}</p>

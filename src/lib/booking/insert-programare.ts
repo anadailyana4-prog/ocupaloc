@@ -83,7 +83,7 @@ export async function insertProgramareForProfSlug(
   if (blocked) {
     return {
       ok: false,
-      message: `Ne pare rău, sună la ${prof.telefon ?? "salon"} pentru programare.`
+      message: `Ne pare rău, sună la ${prof.telefon ?? "furnizor"} pentru programare.`
     };
   }
 

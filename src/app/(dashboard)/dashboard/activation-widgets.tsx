@@ -276,7 +276,7 @@ export function ActivationWidgets({
                 <div className="rounded-xl border border-violet-400/15 bg-violet-900/30 p-3 text-sm">
                   <p className="font-semibold text-violet-100">3. Semn fizic</p>
                   <p className="mt-1 text-xs text-violet-100/60">
-                    Pune QR-ul la salon sau pe chitanță
+                    Pune QR-ul la recepție sau pe chitanță
                   </p>
                   {publicUrl ? (
                     <Link
