@@ -33,6 +33,22 @@ export async function POST() {
       return NextResponse.redirect(new URL("/dashboard?error=" + encodeURIComponent("Profilul profesional nu a fost găsit. Completează onboarding-ul."), getSiteUrl()), 303);
     }
 
+    // Guard: reject if the user already has an active or trialing subscription.
+    const { data: existingSub } = await admin
+      .from("subscriptions")
+      .select("status, stripe_subscription_id")
+      .eq("profesionist_id", String(prof.id))
+      .in("status", ["active", "trialing"])
+      .limit(1)
+      .maybeSingle();
+
+    if (existingSub) {
+      return NextResponse.redirect(
+        new URL("/dashboard?info=" + encodeURIComponent("Ai deja un abonament activ. Folosește butonul «Gestionează abonamentul» pentru a-l administra."), getSiteUrl()),
+        303
+      );
+    }
+
     const stripe = getStripeClient();
     const customer = await getOrCreateStripeCustomer(stripe, {
       profesionistId: String(prof.id),

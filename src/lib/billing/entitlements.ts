@@ -49,6 +49,10 @@ export async function checkBookingEntitlement(
     if (sub.status === "canceled" || sub.status === "unpaid" || sub.status === "incomplete_expired") {
       return { allowed: false, reason: `subscription_${sub.status}` };
     }
+
+    if (sub.status === "incomplete" || sub.status === "paused") {
+      return { allowed: false, reason: `subscription_${sub.status}` };
+    }
   }
 
   // 2. Fallback: trial bazat pe data creării contului (pentru conturi înainte de billing persistence).

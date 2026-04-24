@@ -6,16 +6,62 @@ import { reportError } from "@/lib/observability";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 // ---------------------------------------------------------------------------
+// Resolve profesionist_id from a Stripe subscription — with two fallbacks:
+// 1. Existing subscriptions row (customer already onboarded via checkout).
+// 2. Stripe customer metadata (set at customer-create time).
+// ---------------------------------------------------------------------------
+async function resolveProfesionistId(
+  customerId: string,
+  admin: ReturnType<typeof createSupabaseServiceClient>,
+  stripe: ReturnType<typeof getStripeClient>
+): Promise<string | null> {
+  // Fallback 1 — check our own subscriptions table first (fastest, no Stripe call).
+  const { data: existingRow } = await admin
+    .from("subscriptions")
+    .select("profesionist_id")
+    .eq("stripe_customer_id", customerId)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingRow?.profesionist_id) {
+    return String(existingRow.profesionist_id);
+  }
+
+  // Fallback 2 — retrieve Stripe customer and read metadata.
+  try {
+    const customer = await stripe.customers.retrieve(customerId);
+    if (!customer.deleted && customer.metadata?.profesionist_id) {
+      return customer.metadata.profesionist_id;
+    }
+  } catch (err) {
+    reportError("billing", "stripe_customer_retrieve_failed", err, { customerId });
+  }
+
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Upsert subscription row in DB from a Stripe Subscription object.
 // Always uses service role — never exposed to public.
 // ---------------------------------------------------------------------------
 async function upsertSubscription(subscription: Stripe.Subscription): Promise<void> {
   const admin = createSupabaseServiceClient();
+  const stripe = getStripeClient();
 
-  const profesionistId = subscription.metadata?.profesionist_id ?? null;
+  const customerId =
+    typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+
+  let profesionistId: string | null = subscription.metadata?.profesionist_id ?? null;
   if (!profesionistId) {
-    // Fallback: look up by customer id in our subscriptions table.
-    console.warn("[stripe-webhook] subscription missing profesionist_id metadata:", subscription.id);
+    profesionistId = await resolveProfesionistId(customerId, admin, stripe);
+  }
+
+  if (!profesionistId) {
+    reportError("billing", "subscription_profesionist_not_resolved", "Cannot resolve profesionist_id for subscription", {
+      subscriptionId: subscription.id,
+      customerId,
+      status: subscription.status
+    });
     return;
   }
 

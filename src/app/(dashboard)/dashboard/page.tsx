@@ -15,11 +15,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { parseProgramJson, ziKeyFromDate } from "@/lib/program";
 import { computeFreeSlots } from "@/lib/slots";
+import { isBillingEnabled, BILLING_TRIAL_DAYS } from "@/lib/billing/config";
 import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 type PageProps = {
-  searchParams?: Promise<{ saved?: string; error?: string; filter?: string }>;
+  searchParams?: Promise<{ saved?: string; error?: string; filter?: string; info?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -85,8 +87,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   }
 
   const sp = searchParams ? await searchParams : {};
-  const filter = sp.filter === "azi" || sp.filter === "toate" ? sp.filter : "viitoare";
-  const { count: serviciiCount } = await supabase
+  const filter = sp.filter === "azi" || sp.filter === "toate" ? sp.filter : "viitoare";  const { count: serviciiCount } = await supabase
     .from("servicii")
     .select("*", { count: "exact", head: true })
     .eq("profesionist_id", prof.id);
@@ -212,6 +213,99 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   const clientDecisions = (clientConfirmations ?? 0) + (cancelledByClient ?? 0);
   const confirmationRate7d = clientDecisions > 0 ? Math.round(((clientConfirmations ?? 0) / clientDecisions) * 100) : null;
 
+  // --- Subscription status for billing banner ---
+  type SubRow = {
+    status: string;
+    current_period_end: string | null;
+    trial_end: string | null;
+    cancel_at_period_end: boolean | null;
+  };
+  let subRow: SubRow | null = null;
+  if (isBillingEnabled()) {
+    const admin = createSupabaseServiceClient();
+    const { data } = await admin
+      .from("subscriptions")
+      .select("status, current_period_end, trial_end, cancel_at_period_end")
+      .eq("profesionist_id", String(prof.id))
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    subRow = data as SubRow | null;
+  }
+
+  // Compute billing banner props from subRow
+  type BillingBanner = { label: string; sub: string; dot: string; cta?: { label: string; href: string } } | null;
+  let billingBanner: BillingBanner = null;
+  if (isBillingEnabled()) {
+    const now = Date.now();
+    if (!subRow) {
+      // No subscription at all — check legacy trial
+      const createdAt = new Date(prof.id ? 0 : 0); // we don't have created_at here, fall through
+      billingBanner = {
+        label: "Fără abonament activ",
+        sub: "Activează un abonament pentru a permite rezervări.",
+        dot: "bg-zinc-500",
+        cta: { label: "Activează abonamentul", href: "/preturi" }
+      };
+    } else if (subRow.status === "trialing") {
+      const trialEndMs = subRow.trial_end ? new Date(subRow.trial_end).getTime() : 0;
+      const daysLeft = Math.max(0, Math.ceil((trialEndMs - now) / (24 * 60 * 60 * 1000)));
+      billingBanner = {
+        label: daysLeft > 0 ? `Trial — ${daysLeft} zi${daysLeft === 1 ? "" : "le"} rămase` : "Trial expirat",
+        sub: daysLeft > 0 ? "Abonează-te înainte să expire." : "Abonează-te acum pentru a continua.",
+        dot: daysLeft > 3 ? "bg-blue-400" : "bg-amber-400",
+        cta: { label: "Activează abonamentul", href: "/preturi" }
+      };
+    } else if (subRow.status === "active") {
+      const endMs = subRow.current_period_end ? new Date(subRow.current_period_end).getTime() : Infinity;
+      const endLabel = subRow.current_period_end
+        ? new Date(subRow.current_period_end).toLocaleDateString("ro-RO", { day: "2-digit", month: "2-digit", year: "numeric" })
+        : "—";
+      billingBanner = {
+        label: subRow.cancel_at_period_end ? `Activ — se anulează pe ${endLabel}` : `Activ până pe ${endLabel}`,
+        sub: subRow.cancel_at_period_end ? "Reactivează pentru a nu pierde accesul." : "Totul funcționează normal.",
+        dot: subRow.cancel_at_period_end ? "bg-amber-400" : "bg-emerald-500",
+        cta: subRow.cancel_at_period_end ? { label: "Reactivează", href: "/api/billing/portal" } : undefined
+      };
+    } else if (subRow.status === "past_due") {
+      billingBanner = {
+        label: "Problemă cu plata",
+        sub: "Actualizează datele de plată — grace period activ.",
+        dot: "bg-amber-500",
+        cta: { label: "Actualizează plata", href: "/api/billing/portal" }
+      };
+    } else if (subRow.status === "canceled") {
+      billingBanner = {
+        label: "Abonament anulat",
+        sub: "Reabonează-te pentru a primi programări online.",
+        dot: "bg-red-500",
+        cta: { label: "Abonează-te din nou", href: "/preturi" }
+      };
+    } else if (subRow.status === "incomplete") {
+      billingBanner = {
+        label: "Plată nefinalizată",
+        sub: "Finalizează plata pentru a activa accesul.",
+        dot: "bg-amber-500",
+        cta: { label: "Finalizează plata", href: "/preturi" }
+      };
+    } else if (subRow.status === "paused") {
+      billingBanner = {
+        label: "Abonament pausat",
+        sub: "Reactivează din panoul de abonamente.",
+        dot: "bg-zinc-400",
+        cta: { label: "Administrează abonamentul", href: "/api/billing/portal" }
+      };
+    } else if (subRow.status === "unpaid" || subRow.status === "incomplete_expired") {
+      billingBanner = {
+        label: "Acces suspendat",
+        sub: "Plăți restante. Actualizează sau pornește un abonament nou.",
+        dot: "bg-red-500",
+        cta: { label: "Actualizează plata", href: "/api/billing/portal" }
+      };
+    }
+  }
+  // ---
+
   const programari: ProgramareRow[] =
     !progErr && rawProg
       ? (rawProg as ProgRow[]).map((p) => {
@@ -258,8 +352,37 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
       {sp.saved === "1" ? (
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">Datele publice au fost salvate.</div>
       ) : null}
+      {sp.info ? (
+        <div className="rounded-2xl border border-blue-500/30 bg-blue-950/40 px-4 py-3 text-sm text-blue-200">{decodeURIComponent(sp.info)}</div>
+      ) : null}
       {sp.error ? (
         <div className="rounded-2xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-200">{decodeURIComponent(sp.error)}</div>
+      ) : null}
+
+      {billingBanner ? (
+        <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${
+          billingBanner.dot === "bg-emerald-500"
+            ? "border-emerald-500/30 bg-emerald-950/40 text-emerald-200"
+            : billingBanner.dot === "bg-red-500"
+            ? "border-red-500/30 bg-red-950/40 text-red-200"
+            : billingBanner.dot === "bg-amber-400" || billingBanner.dot === "bg-amber-500"
+            ? "border-amber-500/30 bg-amber-950/40 text-amber-200"
+            : "border-zinc-700/50 bg-zinc-900/60 text-zinc-300"
+        }`}>
+          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${billingBanner.dot}`} />
+          <div className="flex-1">
+            <span className="font-medium">{billingBanner.label}</span>
+            {billingBanner.sub ? <span className="ml-2 opacity-70">{billingBanner.sub}</span> : null}
+          </div>
+          {billingBanner.cta ? (
+            <a
+              href={billingBanner.cta.href}
+              className="shrink-0 rounded-full border border-current/30 px-3 py-1 text-xs font-medium opacity-90 hover:opacity-100"
+            >
+              {billingBanner.cta.label}
+            </a>
+          ) : null}
+        </div>
       ) : null}
 
       <section className="space-y-4">

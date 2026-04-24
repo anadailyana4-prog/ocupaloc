@@ -250,6 +250,10 @@ export async function addManualBooking(input: {
     return { success: false, message: "Data sau ora sunt invalide." };
   }
 
+  if (dataStart.getTime() <= Date.now()) {
+    return { success: false, message: "Nu poți adăuga o programare în trecut." };
+  }
+
   const dataFinal = new Date(dataStart.getTime() + (srv.durata_minute ?? 60) * 60_000);
 
   const { data: inserted, error: insErr } = await ctx.supabase
