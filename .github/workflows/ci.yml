@@ -96,6 +96,9 @@ jobs:
       - name: Unit tests, types, lint, audit
         run: pnpm run check:all
 
+      - name: "✅ Enforce test coverage (70% minimum)"
+        run: pnpm run test:coverage:check
+
       - name: Build
         run: pnpm exec next build
         env:

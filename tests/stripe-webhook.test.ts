@@ -12,21 +12,43 @@ import test from "node:test";
 import {
   handleStripeWebhookRequest,
   type StripeWebhookDeps
-} from "../src/app/api/webhooks/stripe/route";
+} from "../src/lib/billing/stripe-webhook-handler";
 
 // ─── Stubs ───────────────────────────────────────────────────────────────────
 
-function makeStripeDep(
-  constructEventFn: (payload: string, sig: string, secret: string) => { type: string; id: string }
+type StubEvent = { type: string; id: string; data: { object: Record<string, unknown> } };
+
+/** Build full deps with a stubbed Stripe client and a no-op Supabase admin. */
+function makeDeps(
+  constructEventFn: (payload: string, sig: string, secret: string) => StubEvent
 ): StripeWebhookDeps {
   return {
     getStripe: () =>
       ({
         webhooks: {
-          constructEvent: constructEventFn
+          constructEventAsync: async (payload: string, sig: string, secret: string) =>
+            constructEventFn(payload, sig, secret)
         }
-      }) as unknown as ReturnType<StripeWebhookDeps["getStripe"]>
+      }) as unknown as ReturnType<StripeWebhookDeps["getStripe"]>,
+    getAdmin: () =>
+      ({
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              limit: () => ({
+                maybeSingle: async () => ({ data: null })
+              })
+            })
+          }),
+          upsert: async () => ({ data: null, error: null })
+        })
+      }) as unknown as ReturnType<StripeWebhookDeps["getAdmin"]>
   };
+}
+
+/** Helper: returns a minimal valid event shape for a given type. */
+function makeEvent(type: string, id: string): StubEvent {
+  return { type, id, data: { object: {} } };
 }
 
 function makeRequest(
@@ -52,7 +74,7 @@ async function jsonBody(res: Response): Promise<Record<string, unknown>> {
 test("stripe webhook: returns 400 when STRIPE_WEBHOOK_SECRET is not set", async () => {
   delete process.env.STRIPE_WEBHOOK_SECRET;
   const req = makeRequest("{}", { "stripe-signature": "t=123,v1=abc" });
-  const deps = makeStripeDep(() => { throw new Error("should not be called"); });
+  const deps = makeDeps(() => { throw new Error("should not be called"); });
 
   const res = await handleStripeWebhookRequest(req, deps);
   assert.equal(res.status, 400);
@@ -63,7 +85,7 @@ test("stripe webhook: returns 400 when STRIPE_WEBHOOK_SECRET is not set", async 
 test("stripe webhook: returns 400 when stripe-signature header is missing", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
   const req = makeRequest("{}"); // no stripe-signature header
-  const deps = makeStripeDep(() => { throw new Error("should not be called"); });
+  const deps = makeDeps(() => { throw new Error("should not be called"); });
 
   const res = await handleStripeWebhookRequest(req, deps);
   assert.equal(res.status, 400);
@@ -76,7 +98,7 @@ test("stripe webhook: returns 400 when stripe-signature header is missing", asyn
 test("stripe webhook: returns 400 when constructEvent throws (invalid signature)", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
   const req = makeRequest("{}", { "stripe-signature": "t=0,v1=bad" });
-  const deps = makeStripeDep(() => {
+  const deps = makeDeps(() => {
     throw new Error("No signatures found matching the expected signature for payload.");
   });
 
@@ -91,10 +113,7 @@ test("stripe webhook: returns 400 when constructEvent throws (invalid signature)
 test("stripe webhook: returns 200 for checkout.session.completed", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
   const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const deps = makeStripeDep(() => ({
-    type: "checkout.session.completed",
-    id: "evt_checkout_1"
-  }));
+  const deps = makeDeps(() => makeEvent("checkout.session.completed", "evt_checkout_1"));
 
   const res = await handleStripeWebhookRequest(req, deps);
   assert.equal(res.status, 200);
@@ -107,10 +126,7 @@ test("stripe webhook: returns 200 for checkout.session.completed", async () => {
 test("stripe webhook: returns 200 for customer.subscription.created", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
   const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const deps = makeStripeDep(() => ({
-    type: "customer.subscription.created",
-    id: "evt_sub_created"
-  }));
+  const deps = makeDeps(() => makeEvent("customer.subscription.created", "evt_sub_created"));
 
   const res = await handleStripeWebhookRequest(req, deps);
   assert.equal(res.status, 200);
@@ -122,10 +138,7 @@ test("stripe webhook: returns 200 for customer.subscription.created", async () =
 test("stripe webhook: returns 200 for customer.subscription.updated", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
   const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const deps = makeStripeDep(() => ({
-    type: "customer.subscription.updated",
-    id: "evt_sub_updated"
-  }));
+  const deps = makeDeps(() => makeEvent("customer.subscription.updated", "evt_sub_updated"));
 
   const res = await handleStripeWebhookRequest(req, deps);
   assert.equal(res.status, 200);
@@ -136,10 +149,7 @@ test("stripe webhook: returns 200 for customer.subscription.updated", async () =
 test("stripe webhook: returns 200 for customer.subscription.deleted", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
   const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const deps = makeStripeDep(() => ({
-    type: "customer.subscription.deleted",
-    id: "evt_sub_deleted"
-  }));
+  const deps = makeDeps(() => makeEvent("customer.subscription.deleted", "evt_sub_deleted"));
 
   const res = await handleStripeWebhookRequest(req, deps);
   assert.equal(res.status, 200);
@@ -150,10 +160,7 @@ test("stripe webhook: returns 200 for customer.subscription.deleted", async () =
 test("stripe webhook: returns 200 for invoice.payment_succeeded", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
   const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const deps = makeStripeDep(() => ({
-    type: "invoice.payment_succeeded",
-    id: "evt_inv_ok"
-  }));
+  const deps = makeDeps(() => makeEvent("invoice.payment_succeeded", "evt_inv_ok"));
 
   const res = await handleStripeWebhookRequest(req, deps);
   assert.equal(res.status, 200);
@@ -164,10 +171,7 @@ test("stripe webhook: returns 200 for invoice.payment_succeeded", async () => {
 test("stripe webhook: returns 200 for invoice.payment_failed", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
   const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const deps = makeStripeDep(() => ({
-    type: "invoice.payment_failed",
-    id: "evt_inv_fail"
-  }));
+  const deps = makeDeps(() => makeEvent("invoice.payment_failed", "evt_inv_fail"));
 
   const res = await handleStripeWebhookRequest(req, deps);
   assert.equal(res.status, 200);
@@ -178,10 +182,7 @@ test("stripe webhook: returns 200 for invoice.payment_failed", async () => {
 test("stripe webhook: returns 200 for unknown event type (no-op)", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
   const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const deps = makeStripeDep(() => ({
-    type: "payment_intent.created",
-    id: "evt_unknown"
-  }));
+  const deps = makeDeps(() => makeEvent("payment_intent.created", "evt_unknown"));
 
   const res = await handleStripeWebhookRequest(req, deps);
   assert.equal(res.status, 200);

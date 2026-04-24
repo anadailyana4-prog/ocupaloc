@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { logBookingStatusEvent } from "@/lib/booking/status-events";
-import { notifyClientBookingCancelledBySalon } from "@/lib/email/programare-notify";
+import { notifyClientBookingCancelledBySalon, notifyClientBookingConfirmation } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
 import { writeWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -201,6 +201,14 @@ export async function saveSmartRulesFromClient(data: {
 const manualBookingSchema = z.object({
   numeClient: z.string().trim().min(1, "Numele clientului este obligatoriu.").max(120),
   telefonClient: z.string().trim().min(4, "Telefonul este obligatoriu.").max(50),
+  emailClient: z
+    .string()
+    .trim()
+    .max(254)
+    .email("Email invalid.")
+    .optional()
+    .or(z.literal(""))
+    .transform((v) => (v === "" ? null : v ?? null)),
   serviciuId: z.string().uuid("Serviciu invalid."),
   dataStr: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data invalidă."),
   oraStr: z.string().regex(/^\d{2}:\d{2}$/, "Ora invalidă.")
@@ -211,6 +219,7 @@ export type ManualBookingResult = { success: true } | { success: false; message:
 export async function addManualBooking(input: {
   numeClient: string;
   telefonClient: string;
+  emailClient?: string;
   serviciuId: string;
   dataStr: string;
   oraStr: string;
@@ -218,6 +227,13 @@ export async function addManualBooking(input: {
   const parsed = manualBookingSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, message: parsed.error.errors[0]?.message ?? "Date invalide." };
+  }
+
+  // Reject past-date bookings
+  const { toDate } = await import("date-fns-tz");
+  const appointmentDate = toDate(`${parsed.data.dataStr}T${parsed.data.oraStr}:00`, { timeZone: "Europe/Bucharest" });
+  if (appointmentDate < new Date()) {
+    return { success: false, message: "Nu poți adăuga o programare în trecut." };
   }
 
   const ctx = await getProfIdForUser();
@@ -241,21 +257,43 @@ export async function addManualBooking(input: {
     return { success: false, message: "Data sau ora sunt invalide." };
   }
 
+  if (dataStart.getTime() <= Date.now()) {
+    return { success: false, message: "Nu poți adăuga o programare în trecut." };
+  }
+
   const dataFinal = new Date(dataStart.getTime() + (srv.durata_minute ?? 60) * 60_000);
 
-  const { error: insErr } = await ctx.supabase.from("programari").insert({
-    profesionist_id: ctx.profId,
-    serviciu_id: parsed.data.serviciuId,
-    nume_client: parsed.data.numeClient,
-    telefon_client: parsed.data.telefonClient,
-    data_start: dataStart.toISOString(),
-    data_final: dataFinal.toISOString(),
-    status: "confirmat"
-  });
+  const { data: inserted, error: insErr } = await ctx.supabase
+    .from("programari")
+    .insert({
+      profesionist_id: ctx.profId,
+      serviciu_id: parsed.data.serviciuId,
+      nume_client: parsed.data.numeClient,
+      telefon_client: parsed.data.telefonClient,
+      email_client: parsed.data.emailClient ?? null,
+      data_start: dataStart.toISOString(),
+      data_final: dataFinal.toISOString(),
+      status: "confirmat",
+      creat_de: "salon_manual"
+    })
+    .select("id")
+    .single();
 
   if (insErr) {
+    if (insErr.code === "23P01") {
+      return { success: false, message: "Intervalul se suprapune cu o programare existentă. Alege altă oră." };
+    }
     return { success: false, message: insErr.message };
   }
+
+  // Notifică clientul dacă a furnizat email (fire-and-forget).
+  if (inserted?.id && parsed.data.emailClient) {
+    notifyClientBookingConfirmation(inserted.id).catch((err) =>
+      reportError("email", "manual_booking_notify_client_failed", err, { bookingId: inserted.id })
+    );
+  }
+
+  await logBookingStatusEvent({ bookingId: inserted.id, status: "confirmat", source: "salon_manual" });
 
   revalidatePath("/dashboard");
   return { success: true };

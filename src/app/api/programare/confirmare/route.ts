@@ -41,8 +41,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Refuză schimbarea dacă programarea e deja finalizată sau anulată anterior.
+  if (current.status === "finalizat" || current.status === "anulat") {
+    const url = new URL("/programare/confirmare", req.url);
+    url.searchParams.set("state", current.status === "anulat" ? "already_cancelled" : "already_finished");
+    const rel = current.profesionisti as { slug?: string } | { slug?: string }[] | null;
+    const p = Array.isArray(rel) ? rel[0] ?? null : rel;
+    if (p?.slug) url.searchParams.set("slug", p.slug);
+    return NextResponse.redirect(url);
+  }
+
   const targetStatus = verified.action === "cancel" ? "anulat" : "confirmat";
-  const { error } = await admin.from("programari").update({ status: targetStatus }).eq("id", booking);
+  const { error } = await admin
+    .from("programari")
+    .update({ status: targetStatus })
+    .eq("id", booking)
+    .in("status", ["in_asteptare", "confirmat"]);
 
   if (!error) {
     await logBookingStatusEvent({

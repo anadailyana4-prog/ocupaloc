@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { checkBookingEntitlement } from "@/lib/billing/entitlements";
+import { entitlementMessage } from "@/lib/billing/entitlement-messages";
 import { parseProgramJson } from "@/lib/program";
 import { calcDataFinalProgramare, computeFreeSlots } from "@/lib/slots";
 
@@ -70,7 +71,7 @@ export async function insertProgramareForProfSlug(
     prof.created_at as string
   );
   if (!entitlement.allowed) {
-    return { ok: false, message: entitlement.reason };
+    return { ok: false, message: entitlementMessage(entitlement.reason) };
   }
 
   const { data: blocked } = await admin

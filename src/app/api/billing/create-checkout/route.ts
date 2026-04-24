@@ -30,7 +30,23 @@ export async function POST() {
       .maybeSingle();
 
     if (profError || !prof) {
-      return NextResponse.json({ error: "Nu am găsit profilul profesional." }, { status: 404 });
+      return NextResponse.redirect(new URL("/dashboard?error=" + encodeURIComponent("Profilul profesional nu a fost găsit. Completează onboarding-ul."), getSiteUrl()), 303);
+    }
+
+    // Guard: block duplicate active subscription
+    const { data: existingSub } = await admin
+      .from("subscriptions")
+      .select("id")
+      .eq("profesionist_id", String(prof.id))
+      .in("status", ["active", "trialing"])
+      .limit(1)
+      .maybeSingle();
+
+    if (existingSub) {
+      return NextResponse.redirect(
+        new URL("/dashboard?info=Ai+deja+un+abonament+activ.+%C3%8El+po%C8%9Bi+gestiona+din+panoul+de+billing.", getSiteUrl()),
+        303
+      );
     }
 
     const stripe = getStripeClient();
@@ -66,12 +82,12 @@ export async function POST() {
     });
 
     if (!session.url) {
-      return NextResponse.json({ error: "Nu am putut porni checkout-ul." }, { status: 500 });
+      return NextResponse.redirect(new URL("/dashboard?error=" + encodeURIComponent("Nu am putut porni checkout-ul. Încearcă din nou."), getSiteUrl()), 303);
     }
 
     return NextResponse.redirect(session.url, 303);
   } catch (error) {
     reportError("billing", "create_checkout_failed", error);
-    return NextResponse.json({ error: "Eroare la inițierea plății." }, { status: 500 });
+    return NextResponse.redirect(new URL("/dashboard?error=" + encodeURIComponent("Eroare la inițierea plății. Încearcă din nou."), getSiteUrl()), 303);
   }
 }

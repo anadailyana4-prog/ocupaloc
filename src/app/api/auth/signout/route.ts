@@ -70,5 +70,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
   }
 
+  response.cookies.set("_prof_ok", "", { maxAge: 0, path: "/" });
+
   return response;
 }

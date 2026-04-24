@@ -13,12 +13,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { parseProgramJson, ziKeyFromDate } from "@/lib/program";
+import { computeFreeSlots } from "@/lib/slots";
 import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
 
 type PageProps = {
-  searchParams?: Promise<{ saved?: string; error?: string; filter?: string }>;
+  searchParams?: Promise<{ saved?: string; error?: string; filter?: string; info?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -40,6 +42,7 @@ type ProgRow = {
 
 type DashboardProfile = {
   id?: string;
+  created_at?: string | null;
   slug?: string | null;
   telefon?: string | null;
   description?: string | null;
@@ -51,6 +54,9 @@ type DashboardProfile = {
   smart_client_cancel_threshold?: number | null;
   smart_cancel_window_days?: number | null;
   smart_min_notice_minutes?: number | null;
+  pauza_intre_clienti?: number | null;
+  timp_pregatire?: number | null;
+  lucreaza_acasa?: boolean | null;
 };
 
 export default async function DashboardHomePage({ searchParams }: PageProps) {
@@ -64,8 +70,8 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   const { data: prof, error: profErr, telefonColumnAvailable } = await selectWithTelefonFallback<DashboardProfile>(
     async (columns) => await supabase.from("profesionisti").select(columns).eq("user_id", user.id).maybeSingle(),
-    "id, slug, telefon, description, nume_business, onboarding_pas, program, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes",
-    "id, slug, description, nume_business, onboarding_pas, program, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes"
+    "id, created_at, slug, telefon, description, nume_business, onboarding_pas, program, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes, pauza_intre_clienti, timp_pregatire, lucreaza_acasa",
+    "id, created_at, slug, description, nume_business, onboarding_pas, program, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes, pauza_intre_clienti, timp_pregatire, lucreaza_acasa"
   );
 
   if (profErr || !prof?.id) {
@@ -82,6 +88,23 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   const sp = searchParams ? await searchParams : {};
   const filter = sp.filter === "azi" || sp.filter === "toate" ? sp.filter : "viitoare";
+
+  // Fetch subscription status for banner
+  let subStatus: string | null = null;
+  let subPeriodEnd: Date | null = null;
+  if (prof?.id) {
+    const adminClient = createSupabaseServiceClient();
+    const { data: subRow } = await adminClient
+      .from("subscriptions")
+      .select("status, current_period_end")
+      .eq("profesionist_id", String(prof.id))
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    subStatus = subRow?.status ?? null;
+    subPeriodEnd = subRow?.current_period_end ? new Date(subRow.current_period_end) : null;
+  }
+
   const { count: serviciiCount } = await supabase
     .from("servicii")
     .select("*", { count: "exact", head: true })
@@ -143,26 +166,28 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   if (!Array.isArray(todayInterval) || todayInterval.length !== 2) {
     semaforStatus = "closed";
   } else {
-    const [startH, startM] = todayInterval[0].split(":").map(Number);
-    const [endH, endM] = todayInterval[1].split(":").map(Number);
-    const workMinutes = ((endH ?? 0) * 60 + (endM ?? 0)) - ((startH ?? 0) * 60 + (startM ?? 0));
-
     const { data: todayBookings } = await supabase
       .from("programari")
-      .select("servicii(durata_minute)")
+      .select("id, data_start, data_final, servicii(durata_minute)")
       .eq("profesionist_id", prof.id)
       .in("status", ["confirmat", "in_asteptare"])
       .gte("data_start", dayStartIso)
       .lte("data_start", dayEndIso);
 
-    type TodayRow = { servicii: { durata_minute: number } | { durata_minute: number }[] | null };
-    const bookedMinutes = (todayBookings as TodayRow[] | null ?? []).reduce((sum, row) => {
-      const svc = Array.isArray(row.servicii) ? row.servicii[0] : row.servicii;
-      return sum + (svc?.durata_minute ?? 0);
-    }, 0);
-
     semaforBookingsToday = (todayBookings ?? []).length;
-    semaforStatus = bookedMinutes >= workMinutes ? "full" : "free";
+
+    // Calculul corect: verifică dacă mai există vreun slot liber pentru cel mai scurt serviciu activ.
+    const minDuration = (serviciiActve ?? []).reduce<number>((min, s) => Math.min(min, s.durata_minute ?? 60), 60);
+    const pauzaIntre = Number(prof.pauza_intre_clienti ?? 0);
+    const timpPreg = (prof.lucreaza_acasa ?? false) ? Number(prof.timp_pregatire ?? 0) : 0;
+
+    const ocupate = (todayBookings ?? []).map((row) => ({
+      start: new Date(row.data_start),
+      end: new Date(row.data_final)
+    }));
+
+    const freeSlots = computeFreeSlots(todayLocal, parsedProgram, minDuration, pauzaIntre, timpPreg, ocupate);
+    semaforStatus = freeSlots.length === 0 ? "full" : "free";
   }
 
   const semaforConfig = {
@@ -225,6 +250,84 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-12 section-reveal">
+      {/* Subscription status banner */}
+      {(() => {
+        const BILLING_TRIAL_DAYS_LOCAL = 30;
+        const createdAt = prof?.created_at ? new Date(prof.created_at as string) : null;
+        const trialEnd = createdAt
+          ? new Date(createdAt.getTime() + BILLING_TRIAL_DAYS_LOCAL * 24 * 60 * 60 * 1000)
+          : null;
+        const trialDaysLeft = trialEnd
+          ? Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
+          : 0;
+
+        if (!subStatus && trialEnd && Date.now() <= trialEnd.getTime()) {
+          return (
+            <div className="mx-4 mt-4 rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+              🕐 Trial gratuit activ - <strong>{trialDaysLeft} zile rămase</strong>.{" "}
+              <Link href="/billing/checkout" className="font-medium underline">Activează abonamentul -&gt;</Link>
+            </div>
+          );
+        }
+        if (!subStatus && trialEnd && Date.now() > trialEnd.getTime()) {
+          return (
+            <div className="mx-4 mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+              ⚠️ Perioada de trial a expirat.{" "}
+              <Link href="/billing/checkout" className="font-medium underline">Abonează-te -&gt;</Link>
+            </div>
+          );
+        }
+        if (subStatus === "trialing") {
+          return (
+            <div className="mx-4 mt-4 rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+              🕐 Trial activ - <strong>{trialDaysLeft} zile rămase</strong>.{" "}
+              <Link href="/billing/checkout" className="font-medium underline">Activează abonamentul -&gt;</Link>
+            </div>
+          );
+        }
+        if (subStatus === "active") {
+          return (
+            <div className="mx-4 mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+              ✅ Abonament activ
+              {subPeriodEnd ? ` până pe ${subPeriodEnd.toLocaleDateString("ro-RO")}` : ""}.
+            </div>
+          );
+        }
+        if (subStatus === "past_due") {
+          return (
+            <div className="mx-4 mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+              ❌ Plată restantă! Abonamentul va fi suspendat în curând.{" "}
+              <Link href="/billing/portal" className="font-medium underline">Gestionează -&gt;</Link>
+            </div>
+          );
+        }
+        if (subStatus === "canceled") {
+          return (
+            <div className="mx-4 mt-4 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+              Abonament anulat.{" "}
+              <Link href="/billing/checkout" className="font-medium underline">Abonează-te din nou -&gt;</Link>
+            </div>
+          );
+        }
+        if (subStatus === "incomplete" || subStatus === "paused") {
+          return (
+            <div className="mx-4 mt-4 rounded-md border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
+              ⚠️ {subStatus === "incomplete" ? "Plata nu a fost finalizată." : "Abonament în pauză."}{" "}
+              <Link href="/billing/portal" className="font-medium underline">
+                {subStatus === "incomplete" ? "Finalizează -&gt;" : "Reactivează -&gt;"}
+              </Link>
+            </div>
+          );
+        }
+        return null;
+      })()}
+
+      {sp.info ? (
+        <div className="mx-4 mt-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          ℹ️ {decodeURIComponent(sp.info)}
+        </div>
+      ) : null}
+
       <ActivationWidgets slug={prof.slug ?? null} profileDone={profileDone} serviciiCount={serviciiCount ?? 0} programSetat={programSetat} />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

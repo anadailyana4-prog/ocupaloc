@@ -74,8 +74,11 @@ export function ProgramariTable({ rows }: Props) {
         <tbody>
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={7} className="px-4 py-10 text-center text-muted-foreground">
-                Nicio programare în intervalul afișat.
+              <td colSpan={7} className="px-4 py-12 text-center">
+                <p className="text-sm font-medium text-amber-100/70">Nicio programare în intervalul ales.</p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Copiază link-ul paginii tale publice și trimite-l clienților pentru a primi primele rezervări.
+                </p>
               </td>
             </tr>
           ) : (
