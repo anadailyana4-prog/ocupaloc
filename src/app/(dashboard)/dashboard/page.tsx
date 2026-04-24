@@ -240,7 +240,31 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     .gte("data_start", new Date().toISOString())
     .lte("data_start", sevenDaysAheadIso);
 
+  // Pending-confirmation count (in_asteptare) for next 7 days — no-show risk signal
+  const { count: pendingNext7dCount } = await supabase
+    .from("programari")
+    .select("*", { count: "exact", head: true })
+    .eq("profesionist_id", prof.id)
+    .eq("status", "in_asteptare")
+    .gte("data_start", new Date().toISOString())
+    .lte("data_start", sevenDaysAheadIso);
+
   const todayFormatted = formatInTimeZone(new Date(), "Europe/Bucharest", "dd.MM.yyyy");
+
+  // Build repeat-client visit counts: phone → # of prior finalized bookings (not counting current)
+  // We query all finalized bookings for this salon (phone + count) to badge repeat visitors
+  const { data: finalisedPhones } = await supabase
+    .from("programari")
+    .select("telefon_client")
+    .eq("profesionist_id", prof.id)
+    .eq("status", "finalizat");
+
+  const phoneVisitCount = new Map<string, number>();
+  for (const row of finalisedPhones ?? []) {
+    if (row.telefon_client) {
+      phoneVisitCount.set(row.telefon_client, (phoneVisitCount.get(row.telefon_client) ?? 0) + 1);
+    }
+  }
 
   const programari: ProgramareRow[] =
     !progErr && rawProg
@@ -254,7 +278,8 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
             clientName: p.nume_client ?? "—",
             clientPhone: p.telefon_client ?? "",
             serviceName: svc?.nume ?? "—",
-            status: p.status
+            status: p.status,
+            priorVisits: p.telefon_client ? (phoneVisitCount.get(p.telefon_client) ?? 0) : 0
           };
         })
       : [];
@@ -340,11 +365,23 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
           return renderTrialBanner("Trial Stripe activ");
         }
         if (subStatus === "active") {
+          const renewalDaysLeft = subPeriodEnd
+            ? Math.ceil((subPeriodEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000))
+            : null;
+          const showRenewalChip = renewalDaysLeft !== null && renewalDaysLeft <= 14 && renewalDaysLeft > 0;
           return (
-            <div className="mx-4 mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-              ✅ Abonament activ
-              {subPeriodEnd ? ` până pe ${subPeriodEnd.toLocaleDateString("ro-RO")}` : ""}.
-            </div>
+            <>
+              <div className="mx-4 mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                ✅ Abonament activ
+                {subPeriodEnd ? ` până pe ${subPeriodEnd.toLocaleDateString("ro-RO")}` : ""}.
+              </div>
+              {showRenewalChip ? (
+                <div className="mx-4 mt-2 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  🔄 Abonamentul se reînnoiește în <strong>{renewalDaysLeft} {renewalDaysLeft === 1 ? "zi" : "zile"}</strong>.{" "}
+                  <Link href="/billing/portal" className="font-medium underline">Gestionează →</Link>
+                </div>
+              ) : null}
+            </>
           );
         }
         if (subStatus === "past_due") {
@@ -389,6 +426,11 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
         programSetat={programSetat}
         accountCreatedAt={prof.created_at ?? null}
         confirmedBookingsCount={allTimeConfirmedCount ?? 0}
+        showFirstBookingCelebration={
+          (allTimeConfirmedCount ?? 0) === 1 &&
+          Boolean(prof.created_at) &&
+          (Date.now() - new Date(prof.created_at as string).getTime()) < 30 * 24 * 60 * 60 * 1000
+        }
       />
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -439,15 +481,15 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
             <p className="mt-1 text-xs text-amber-100/50">confirmate viitoare</p>
           </div>
           <div className="lux-card p-5">
-            <p className="text-sm text-amber-100/75">Reminder-e trimise azi</p>
-            <p className="mt-2 text-3xl font-bold text-amber-50">{remindersSentToday ?? 0}</p>
+            <p className="text-sm text-amber-100/75">În așteptare (7z)</p>
+            <p className={`mt-2 text-3xl font-bold ${(pendingNext7dCount ?? 0) > 0 ? "text-orange-400" : "text-amber-50"}`}>
+              {pendingNext7dCount ?? 0}
+            </p>
+            <p className="mt-1 text-xs text-amber-100/50">neconfirmate — risc no-show</p>
           </div>
           <div className="lux-card p-5">
-            <p className="text-sm text-amber-100/75">Anulări client vs salon (7z)</p>
-            <p className="mt-2 text-3xl font-bold text-amber-50">
-              {cancelledByClient ?? 0} <span className="text-amber-200/40">/</span> {cancelledBySalon ?? 0}
-            </p>
-            <p className="mt-1 text-xs text-amber-100/50">client / salon</p>
+            <p className="text-sm text-amber-100/75">Reminder-e trimise azi</p>
+            <p className="mt-2 text-3xl font-bold text-amber-50">{remindersSentToday ?? 0}</p>
           </div>
           <div className="lux-card p-5">
             <p className="text-sm text-amber-100/75">Rată confirmare client (7z)</p>

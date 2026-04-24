@@ -76,6 +76,29 @@ export async function completeBooking(id: string): Promise<BookingActionResult> 
   return { success: true };
 }
 
+export async function markNoShow(id: string): Promise<BookingActionResult> {
+  const parsed = idSchema.safeParse(id);
+  if (!parsed.success) {
+    return { success: false, message: "ID invalid." };
+  }
+  const ctx = await getProfIdForUser();
+  if (!ctx) {
+    return { success: false, message: "Nu ești autentificat sau lipsește profilul." };
+  }
+  const { error } = await ctx.supabase
+    .from("programari")
+    .update({ status: "noaparit" })
+    .eq("id", parsed.data)
+    .eq("profesionist_id", ctx.profId)
+    .eq("status", "confirmat");
+  if (error) {
+    return { success: false, message: error.message };
+  }
+  await logBookingStatusEvent({ bookingId: parsed.data, status: "noaparit", source: "salon_dashboard" });
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
 const publicFields = z.object({
   telefon: z.string().trim().max(50).optional().transform((s) => (s === "" ? null : s)),
   description: z.string().trim().max(2000).optional().transform((s) => (s === "" ? null : s))

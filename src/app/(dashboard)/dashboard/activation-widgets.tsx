@@ -12,6 +12,8 @@ type Props = {
   accountCreatedAt?: string | null;
   /** Total confirmed bookings ever – used to decide if habit panel shows */
   confirmedBookingsCount?: number;
+  /** Show a one-time first-booking celebration banner */
+  showFirstBookingCelebration?: boolean;
 };
 
 const SHARED_KEY = "link_shared";
@@ -29,7 +31,8 @@ export function ActivationWidgets({
   serviciiCount,
   programSetat,
   accountCreatedAt,
-  confirmedBookingsCount = 0
+  confirmedBookingsCount = 0,
+  showFirstBookingCelebration = false
 }: Props) {
   const [copied, setCopied] = useState(false);
   const [linkShared, setLinkShared] = useState<boolean>(() => {
@@ -198,6 +201,20 @@ export function ActivationWidgets({
                 ) : null}
               </div>
             ))}
+          </div>
+        </div>
+      ) : null}
+
+      {showFirstBookingCelebration ? (
+        <div className="mb-8 rounded-2xl border border-emerald-400/30 bg-emerald-950/30 p-6">
+          <div className="flex items-start gap-3">
+            <span className="text-3xl">🎉</span>
+            <div>
+              <h3 className="text-lg font-semibold text-emerald-100">Prima programare confirmată!</h3>
+              <p className="mt-1 text-sm text-emerald-100/70">
+                Felicitări — produsul funcționează. Primul client te-a ales. Continuă să trimiți linkul și urmărește agenda cum se umple.
+              </p>
+            </div>
           </div>
         </div>
       ) : null}

@@ -4,7 +4,7 @@ export type BookingStatusEventSource = "client_link" | "salon_dashboard" | "salo
 
 export async function logBookingStatusEvent(input: {
   bookingId: string;
-  status: "confirmat" | "anulat" | "finalizat";
+  status: "confirmat" | "anulat" | "finalizat" | "noaparit";
   source: BookingStatusEventSource;
 }): Promise<void> {
   try {

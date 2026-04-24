@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
-import { type BookingActionResult, cancelBooking, completeBooking } from "./actions";
+import { type BookingActionResult, cancelBooking, completeBooking, markNoShow } from "./actions";
 import { Button } from "@/components/ui/button";
 
 export type ProgramareRow = {
@@ -15,13 +15,16 @@ export type ProgramareRow = {
   clientPhone: string;
   serviceName: string;
   status: string;
+  /** Number of prior completed bookings for the same phone number */
+  priorVisits?: number;
 };
 
 const STATUS_LABEL: Record<string, string> = {
   confirmat: "Confirmat",
   anulat: "Anulat",
   finalizat: "Finalizat",
-  in_asteptare: "În așteptare"
+  in_asteptare: "În așteptare",
+  noaparit: "Neprezent"
 };
 
 function statusBadgeClass(s: string) {
@@ -32,6 +35,8 @@ function statusBadgeClass(s: string) {
       return "border-red-500/40 bg-red-950/40 text-red-300";
     case "finalizat":
       return "border-zinc-600 bg-zinc-800/80 text-zinc-300";
+    case "noaparit":
+      return "border-orange-500/40 bg-orange-950/40 text-orange-300";
     default:
       return "border-zinc-700 bg-zinc-900 text-zinc-400";
   }
@@ -79,7 +84,14 @@ export function ProgramariTable({ rows }: Props) {
               <div key={r.id} className="flex flex-col gap-2 px-4 py-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="truncate font-medium leading-snug">{r.clientName}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="truncate font-medium leading-snug">{r.clientName}</p>
+                      {r.priorVisits && r.priorVisits > 0 ? (
+                        <span className="shrink-0 rounded-full bg-violet-900/60 px-2 py-0.5 text-xs font-medium text-violet-300">
+                          {r.priorVisits + 1}. vizită
+                        </span>
+                      ) : null}
+                    </div>
                     <p className="mt-0.5 text-xs text-zinc-400">{r.serviceName}</p>
                   </div>
                   <span className={`shrink-0 inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(r.status)}`}>
@@ -115,6 +127,16 @@ export function ProgramariTable({ rows }: Props) {
                       onClick={() => void run("Finalizat.", () => completeBooking(r.id))}
                     >
                       Finalizat
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full border-orange-500/40 text-orange-300 hover:bg-orange-950/40"
+                      disabled={pending}
+                      onClick={() => void run("Marcat: client neprezent.", () => markNoShow(r.id))}
+                    >
+                      Neprezent
                     </Button>
                   </div>
                 ) : null}
@@ -155,7 +177,16 @@ export function ProgramariTable({ rows }: Props) {
                   <tr key={r.id} className="border-b border-zinc-900 last:border-0">
                     <td className="px-4 py-3 font-mono text-xs text-zinc-300">{r.dataStr}</td>
                     <td className="px-4 py-3 font-mono text-xs text-zinc-300">{r.oraStr}</td>
-                    <td className="px-4 py-3 font-medium">{r.clientName}</td>
+                    <td className="px-4 py-3 font-medium">
+                      <div className="flex items-center gap-2">
+                        <span>{r.clientName}</span>
+                        {r.priorVisits && r.priorVisits > 0 ? (
+                          <span className="rounded-full bg-violet-900/60 px-2 py-0.5 text-xs font-medium text-violet-300">
+                            {r.priorVisits + 1}. vizită
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 font-mono text-xs">{r.clientPhone || "—"}</td>
                     <td className="px-4 py-3">{r.serviceName}</td>
                     <td className="px-4 py-3">
@@ -185,6 +216,16 @@ export function ProgramariTable({ rows }: Props) {
                               onClick={() => void run("Marcată ca finalizată.", () => completeBooking(r.id))}
                             >
                               Marchează finalizat
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="rounded-full border-orange-500/40 text-orange-300 hover:bg-orange-950/40"
+                              disabled={pending}
+                              onClick={() => void run("Marcat: client neprezent.", () => markNoShow(r.id))}
+                            >
+                              Neprezent
                             </Button>
                           </>
                         ) : (
