@@ -47,6 +47,8 @@ type WeeklySummaryRow = {
   topService: string | null;
   upcomingNext7: number;
   noShowCount: number;
+  cancellationCount: number;
+  daysSinceLastBooking: number | null; // null = never had a booking
 };
 
 async function buildWeeklySummaries(): Promise<WeeklySummaryRow[]> {
@@ -108,11 +110,33 @@ async function buildWeeklySummaries(): Promise<WeeklySummaryRow[]> {
     .gte("data_start", weekStart.toISOString())
     .lt("data_start", now.toISOString());
 
+  // Fetch client cancellations this week
+  const { data: cancellationRows } = await admin
+    .from("programari_status_events")
+    .select("profesionist_id")
+    .in("profesionist_id", profIds)
+    .eq("status", "anulat")
+    .eq("source", "client_link")
+    .gte("created_at", weekStart.toISOString())
+    .lt("created_at", now.toISOString());
+
+  // Fetch last confirmed/finalized booking per prof (for daysSinceLastBooking)
+  const { data: lastBookingRows } = await admin
+    .from("programari")
+    .select("profesionist_id, data_start")
+    .in("profesionist_id", profIds)
+    .in("status", ["confirmat", "finalizat"])
+    .lt("data_start", now.toISOString())
+    .order("data_start", { ascending: false })
+    .limit(profIds.length * 2);
+
   // Build per-prof counters
   const thisWeekCount: Record<string, number> = {};
   const prevWeekCount: Record<string, number> = {};
   const upcomingCount: Record<string, number> = {};
   const noShowWeekCount: Record<string, number> = {};
+  const cancellationWeekCount: Record<string, number> = {};
+  const lastBookingDateMap: Record<string, string> = {};
   const serviceFreq: Record<string, Record<string, number>> = {};
 
   for (const row of thisWeekRows ?? []) {
@@ -141,6 +165,19 @@ async function buildWeeklySummaries(): Promise<WeeklySummaryRow[]> {
     noShowWeekCount[pid] = (noShowWeekCount[pid] ?? 0) + 1;
   }
 
+  for (const row of cancellationRows ?? []) {
+    const pid = row.profesionist_id as string;
+    cancellationWeekCount[pid] = (cancellationWeekCount[pid] ?? 0) + 1;
+  }
+
+  // Last booking per prof (first occurrence per prof since sorted desc)
+  for (const row of lastBookingRows ?? []) {
+    const pid = row.profesionist_id as string;
+    if (!lastBookingDateMap[pid]) {
+      lastBookingDateMap[pid] = row.data_start as string;
+    }
+  }
+
   return profs.map((p) => {
     const pid = p.id as string;
     const freq = serviceFreq[pid] ?? {};
@@ -158,6 +195,10 @@ async function buildWeeklySummaries(): Promise<WeeklySummaryRow[]> {
       topService,
       upcomingNext7: upcomingCount[pid] ?? 0,
       noShowCount: noShowWeekCount[pid] ?? 0,
+      cancellationCount: cancellationWeekCount[pid] ?? 0,
+      daysSinceLastBooking: lastBookingDateMap[pid]
+        ? Math.floor((now.getTime() - new Date(lastBookingDateMap[pid]).getTime()) / (24 * 60 * 60 * 1000))
+        : null,
     };
   });
 }
@@ -175,10 +216,15 @@ function buildEmailContent(row: WeeklySummaryRow): { subject: string; text: stri
 
   if (row.bookingsThisWeek === 0) {
     const subject = `${row.numeBusiness} — nicio programare săptămâna aceasta`;
+    const inactivityNote = row.daysSinceLastBooking === null
+      ? `Nu ai primit încă nicio programare online.`
+      : row.daysSinceLastBooking <= 7
+      ? `Nu ai primit programare online săptămâna aceasta.`
+      : `Ultima programare a fost acum ${row.daysSinceLastBooking} de zile.`;
     const text = [
       `Salut,`,
       ``,
-      `Nu ai primit nicio programare online săptămâna aceasta.`,
+      inactivityNote,
       ``,
       `Cel mai rapid mod de a obține programări: trimite linkul tău clienților pe WhatsApp.`,
       ``,
@@ -194,6 +240,7 @@ function buildEmailContent(row: WeeklySummaryRow): { subject: string; text: stri
 <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
   <h2 style="margin:0 0 8px;color:#111827">Raport săptămânal — ${safeBusinessName}</h2>
   <p style="margin:0 0 16px;color:#6b7280;font-size:14px;">Săptămâna aceasta nu ai primit nicio programare online.</p>
+  ${row.daysSinceLastBooking !== null && row.daysSinceLastBooking > 7 ? `<p style="margin:0 0 12px;color:#dc2626;font-size:14px;font-weight:600">Ultima programare: acum ${row.daysSinceLastBooking} de zile</p>` : ``}
   <div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:16px;margin:0 0 20px;">
     <p style="margin:0 0 8px;font-weight:700;color:#854d0e">Cum obții primele programări:</p>
     <ol style="margin:0;padding-left:20px;color:#854d0e">
@@ -212,6 +259,7 @@ function buildEmailContent(row: WeeklySummaryRow): { subject: string; text: stri
   const subject = `${row.numeBusiness} — ${row.bookingsThisWeek} programări săptămâna aceasta`;
   const topServiceNote = row.topService ? `Cel mai popular serviciu: **${row.topService}**.` : "";
   const noShowNote = row.noShowCount > 0 ? `\u2022 Neprezentați: ${row.noShowCount}` : "";
+  const cancellationNote = row.cancellationCount > 0 ? `\u2022 Anulări de către client: ${row.cancellationCount}` : "";
   const text = [
     `Salut,`,
     ``,
@@ -221,6 +269,7 @@ function buildEmailContent(row: WeeklySummaryRow): { subject: string; text: stri
     row.topService ? `\u2022 Serviciu top: ${row.topService}` : "",
     `\u2022 Programări confirmate în următoarele 7 zile: ${row.upcomingNext7}`,
     noShowNote,
+    cancellationNote,
     ``,
     topServiceNote,
     ``,
@@ -251,7 +300,8 @@ function buildEmailContent(row: WeeklySummaryRow): { subject: string; text: stri
   </div>
 
   ${safeTopService ? `<p style="margin:0 0 12px;"><strong>Serviciu top:</strong> ${safeTopService}</p>` : ""}
-  ${row.noShowCount > 0 ? `<p style="margin:0 0 20px;color:#dc2626;font-size:14px;"><strong>Neprezentați săptămâna aceasta:</strong> ${row.noShowCount}</p>` : ""}
+  ${row.noShowCount > 0 ? `<p style="margin:0 0 8px;color:#dc2626;font-size:14px;"><strong>Neprezentați săptămâna aceasta:</strong> ${row.noShowCount}</p>` : ""}
+  ${row.cancellationCount > 0 ? `<p style="margin:0 0 20px;color:#d97706;font-size:14px;"><strong>Anulări de către client:</strong> ${row.cancellationCount}</p>` : ""}
 
   <a href="${dashboardUrl}" style="background:#1c1c2e;color:#fbbf24;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Deschide dashboard-ul →</a>
 

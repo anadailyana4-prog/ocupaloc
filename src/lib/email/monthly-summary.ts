@@ -47,6 +47,7 @@ type MonthlyRow = {
   topService: string | null;
   noShowCount: number;
   cancellationCount: number;
+  confirmationRate: number | null; // % = confirmed / (confirmed + noShow + clientCancellations)
 };
 
 /** Returns [start, end) ISO strings for a calendar month offset. 0 = current month, -1 = previous. */
@@ -171,7 +172,14 @@ async function buildMonthlySummaries(): Promise<MonthlyRow[]> {
         prevMonthCount: prevCount.get(pid) ?? 0,
         topService,
         noShowCount: noShowCount.get(pid) ?? 0,
-        cancellationCount: cancellationCount.get(pid) ?? 0
+        cancellationCount: cancellationCount.get(pid) ?? 0,
+        confirmationRate: (() => {
+          const confirmed = thisCount.get(pid) ?? 0;
+          const ns = noShowCount.get(pid) ?? 0;
+          const ca = cancellationCount.get(pid) ?? 0;
+          const total = confirmed + ns + ca;
+          return total >= 5 ? Math.round((confirmed / total) * 100) : null;
+        })()
       };
     })
     .filter((r) => r.thisMonthCount > 0 || r.prevMonthCount > 0); // skip accounts with no activity
@@ -194,6 +202,7 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
     row.topService ? `  • Serviciu top: ${row.topService}` : null,
     row.noShowCount > 0 ? `  • Clienți neprezentați: ${row.noShowCount}` : null,
     row.cancellationCount > 0 ? `  • Anulări client: ${row.cancellationCount}` : null,
+    row.confirmationRate !== null ? `  • Rată de confirmare: ${row.confirmationRate}%` : null,
     "",
     delta > 0
       ? `Progres real — luna aceasta ai avut mai mulți clienți. Continuă să trimiți linkul!`
@@ -212,6 +221,9 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
   const cancellationLine = row.cancellationCount > 0
     ? `<p style="margin:0 0 4px;"><strong>Anulări client:</strong> ${row.cancellationCount}</p>`
     : "";
+  const confirmationRateLine = row.confirmationRate !== null
+    ? `<p style="margin:0 0 4px;"><strong>Rată de confirmare:</strong> <span style="color:${row.confirmationRate >= 80 ? "#16a34a" : row.confirmationRate >= 60 ? "#d97706" : "#dc2626"}">${row.confirmationRate}%</span></p>`
+    : "";
 
   const html = `
 <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
@@ -227,6 +239,7 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
     ${row.topService ? `<p style="margin:0 0 4px;"><strong>Serviciu top:</strong> ${escapeHtml(row.topService)}</p>` : ""}
     ${noShowLine}
     ${cancellationLine}
+    ${confirmationRateLine}
   </div>
 
   <p style="margin:0 0 16px;">${

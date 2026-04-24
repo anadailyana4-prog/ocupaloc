@@ -148,46 +148,6 @@ export async function updatePublicBusinessFields(formData: FormData) {
   redirect("/dashboard/setari?saved=1");
 }
 
-export async function updateSmartRules(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/login");
-  }
-
-  const parsed = smartRulesFields.safeParse({
-    smart_rules_enabled: String(formData.get("smart_rules_enabled") ?? "") === "on",
-    smart_max_future_bookings: Number(formData.get("smart_max_future_bookings") ?? 0),
-    smart_client_cancel_threshold: Number(formData.get("smart_client_cancel_threshold") ?? 0),
-    smart_cancel_window_days: Number(formData.get("smart_cancel_window_days") ?? 60),
-    smart_min_notice_minutes: Number(formData.get("smart_min_notice_minutes") ?? 0)
-  });
-
-  if (!parsed.success) {
-    redirect("/dashboard?error=" + encodeURIComponent("Setări reguli smart invalide."));
-  }
-
-  const { error } = await supabase
-    .from("profesionisti")
-    .update({
-      smart_rules_enabled: parsed.data.smart_rules_enabled,
-      smart_max_future_bookings: parsed.data.smart_max_future_bookings,
-      smart_client_cancel_threshold: parsed.data.smart_client_cancel_threshold,
-      smart_cancel_window_days: parsed.data.smart_cancel_window_days,
-      smart_min_notice_minutes: parsed.data.smart_min_notice_minutes
-    })
-    .eq("user_id", user.id);
-
-  if (error) {
-    redirect("/dashboard?error=" + encodeURIComponent(error.message));
-  }
-
-  revalidatePath("/dashboard");
-  redirect("/dashboard?saved=1");
-}
-
 export type SaveSmartRulesResult = { ok: true } | { ok: false; message: string };
 
 export async function saveSmartRulesFromClient(data: {

@@ -116,6 +116,7 @@ export default async function AdminSalonsPage() {
     const isPastDue = subStatus === "past_due";
     // At-risk: quiet for 14d AND not actively paying
     const atRisk = isQuiet14d && !isActive;
+    const neverBooked = !lastBookingMap.has(s.id);
     return {
       id: s.id,
       slug: s.slug ?? "—",
@@ -136,6 +137,7 @@ export default async function AdminSalonsPage() {
       noShows30d: noShowCountMap.get(s.id) ?? 0,
       completed30d: completedCountMap.get(s.id) ?? 0,
       atRisk,
+      neverBooked,
       isTrialExpiringSoon,
       isPastDue,
       trialDaysLeft
@@ -169,6 +171,7 @@ export default async function AdminSalonsPage() {
           <span><span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>risc / inactiv 14z</span>
           <span><span className="inline-block w-2 h-2 rounded-full bg-amber-400 mr-1"></span>trial expiră ≤5z</span>
           <span><span className="inline-block w-2 h-2 rounded-full bg-orange-500 mr-1"></span>plată restantă</span>
+          <span><span className="inline-block w-2 h-2 rounded-full bg-violet-500 mr-1"></span>fără nicio programare</span>
         </div>
       </div>
 
@@ -178,16 +181,17 @@ export default async function AdminSalonsPage() {
         const onboardedCount = rows.filter((r) => r.onboardingDone).length;
         const activeSubCount = rows.filter((r) => r.subStatus === "active" || r.subStatus === "trialing").length;
         const atRiskCount = rows.filter((r) => r.atRisk || r.isPastDue).length;
+        const neverBookedCount = rows.filter((r) => r.neverBooked).length;
         const trialExpiringCount = rows.filter((r) => r.isTrialExpiringSoon).length;
-        const totalBookingsWeek = rows.reduce((sum, r) => sum + r.bookingsThisWeek, 0);
         const totalBookings30d = rows.reduce((sum, r) => sum + r.totalBookings30d, 0);
         return (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
             {[
               { label: "Total conturi", value: totalBusinesses, color: "text-amber-50" },
               { label: "Setup complet", value: onboardedCount, color: "text-emerald-300" },
               { label: "Abonament activ", value: activeSubCount, color: "text-sky-300" },
               { label: "La risc", value: atRiskCount, color: atRiskCount > 0 ? "text-red-400" : "text-zinc-500" },
+              { label: "Nicio programare", value: neverBookedCount, color: neverBookedCount > 0 ? "text-violet-400" : "text-zinc-500" },
               { label: "Trial expiră", value: trialExpiringCount, color: trialExpiringCount > 0 ? "text-amber-400" : "text-zinc-500" },
               { label: "Programări (30z)", value: totalBookings30d, color: totalBookings30d > 0 ? "text-violet-300" : "text-zinc-500" },
             ].map((s) => (
@@ -276,6 +280,11 @@ export default async function AdminSalonsPage() {
                     {r.atRisk ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-red-900/60 px-2 py-0.5 text-xs font-semibold text-red-300">
                         ● inactiv 14z
+                      </span>
+                    ) : null}
+                    {r.neverBooked ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-violet-900/60 px-2 py-0.5 text-xs font-semibold text-violet-300">
+                        ○ fără prog.
                       </span>
                     ) : null}
                     {r.isTrialExpiringSoon ? (

@@ -29,13 +29,13 @@ function textForState(state: string) {
     case "invalid":
       return {
         title: "Link invalid sau expirat",
-        desc: "Cere salonului un nou link de confirmare.",
+        desc: "Cere un nou link de confirmare.",
         ok: false
       };
     default:
       return {
         title: "Nu am putut procesa cererea",
-        desc: "Încearcă din nou sau contactează salonul.",
+        desc: "Încearcă din nou sau contactează furnizorul.",
         ok: false
       };
   }
@@ -56,7 +56,7 @@ export default async function BookingConfirmationPage({ searchParams }: PageProp
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           {slug ? (
             <Link href={`/${slug}`} className="rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500">
-              Înapoi la pagina salonului
+              Înapoi la pagina de rezervare
             </Link>
           ) : null}
           <Link href="/" className="rounded-full border border-zinc-700 px-5 py-2.5 text-sm font-semibold hover:bg-zinc-800">

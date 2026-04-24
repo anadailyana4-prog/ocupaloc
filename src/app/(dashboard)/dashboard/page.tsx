@@ -44,11 +44,6 @@ type DashboardProfile = {
   nume_business?: string | null;
   onboarding_pas?: number | null;
   program?: Record<string, unknown> | null;
-  smart_rules_enabled?: boolean | null;
-  smart_max_future_bookings?: number | null;
-  smart_client_cancel_threshold?: number | null;
-  smart_cancel_window_days?: number | null;
-  smart_min_notice_minutes?: number | null;
   pauza_intre_clienti?: number | null;
   timp_pregatire?: number | null;
   lucreaza_acasa?: boolean | null;
@@ -65,8 +60,8 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   const { data: prof, error: profErr, telefonColumnAvailable } = await selectWithTelefonFallback<DashboardProfile>(
     async (columns) => await supabase.from("profesionisti").select(columns).eq("user_id", user.id).maybeSingle(),
-    "id, created_at, slug, telefon, description, nume_business, onboarding_pas, program, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes, pauza_intre_clienti, timp_pregatire, lucreaza_acasa",
-    "id, created_at, slug, description, nume_business, onboarding_pas, program, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes, pauza_intre_clienti, timp_pregatire, lucreaza_acasa"
+    "id, created_at, slug, telefon, description, nume_business, onboarding_pas, program, pauza_intre_clienti, timp_pregatire, lucreaza_acasa",
+    "id, created_at, slug, description, nume_business, onboarding_pas, program, pauza_intre_clienti, timp_pregatire, lucreaza_acasa"
   );
 
   if (profErr || !prof?.id) {

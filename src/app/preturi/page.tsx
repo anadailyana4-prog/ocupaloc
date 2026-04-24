@@ -41,7 +41,7 @@ export default async function PreturiPage() {
           <ul className="mt-6 space-y-2 text-left text-sm text-zinc-300">
             <li>✓ Programări nelimitate</li>
             <li>✓ Zero comision per programare</li>
-            <li>✓ Link personalizat pentru salon</li>
+            <li>✓ Link personalizat de rezervare</li>
             <li>✓ Import clienți gratuit</li>
             <li>✓ Suport rapid în limba română</li>
           </ul>

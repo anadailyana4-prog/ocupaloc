@@ -186,7 +186,7 @@ async function run() {
         fail("Trial expired", `expired ${trialEnd.toISOString().slice(0, 10)} (${Math.abs(daysLeft)} days ago)`);
       }
     } else {
-      warn("No subscription record found — salon is on trial or has never subscribed");
+      warn("No subscription record found — account is on trial or has never subscribed");
     }
   } else {
     info("Subscription status", sub.status);
@@ -273,12 +273,49 @@ async function run() {
     info("No-show rate: n/a (no finalized or no-show bookings in last 30d)");
   }
 
+  // ---- 6c. Cancellation & booking quality (last 30 days) ----
+  section("6c. Cancellation & booking quality (last 30 days)");
+
+  const { count: clientCancelCount30d } = await supabase
+    .from("programari_status_events")
+    .select("id", { count: "exact", head: true })
+    .eq("profesionist_id", prof.id)
+    .eq("status", "anulat")
+    .eq("source", "client_link")
+    .gte("created_at", thirtyDaysAgo.toISOString());
+
+  const { count: confirmedCount30d } = await supabase
+    .from("programari")
+    .select("id", { count: "exact", head: true })
+    .eq("profesionist_id", prof.id)
+    .in("status", ["confirmat", "finalizat"])
+    .gte("data_start", thirtyDaysAgo.toISOString());
+
+  const totalQuality30d = (confirmedCount30d ?? 0) + (noShowCount30d ?? 0) + (clientCancelCount30d ?? 0);
+  const confirmationRate30d = totalQuality30d >= 5
+    ? Math.round(((confirmedCount30d ?? 0) / totalQuality30d) * 100)
+    : null;
+
+  info("Client cancellations (30d)", String(clientCancelCount30d ?? 0));
+  info("Confirmed/finalized (30d)", String(confirmedCount30d ?? 0));
+  if (confirmationRate30d !== null) {
+    if (confirmationRate30d >= 80) ok(`Confirmation rate ${confirmationRate30d}%`);
+    else if (confirmationRate30d >= 60) warn(`Confirmation rate ${confirmationRate30d}% — elevated drop-off`, "check reminders and cancellation flow");
+    else fail(`Confirmation rate ${confirmationRate30d}% — high drop-off`, "many bookings are not being honored");
+  } else {
+    info("Confirmation rate: n/a (fewer than 5 total bookings in window)");
+  }
+  if ((clientCancelCount30d ?? 0) >= 3) {
+    const cancelRate = totalQuality30d > 0 ? Math.round(((clientCancelCount30d ?? 0) / totalQuality30d) * 100) : 0;
+    warn(`${clientCancelCount30d} client cancellations (${cancelRate}% of activity)`, "consider adjusting reminder or policy");
+  }
+
   // ---- 7. Auth user ----
   section("7. Auth user");
 
   const { data: authUser } = await supabase.auth.admin.getUserById(prof.user_id as string);
   if (!authUser.user) {
-    fail("Auth user not found for this salon");
+    fail("Auth user not found for this account");
   } else {
     ok("Auth user exists", authUser.user.email ?? "no email");
     const lastSignIn = authUser.user.last_sign_in_at;
