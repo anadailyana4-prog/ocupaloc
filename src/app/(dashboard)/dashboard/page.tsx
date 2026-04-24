@@ -251,9 +251,18 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   // Fetch confirmed bookings next 7d with dates for planning signals
   const { data: next7dBookingDates } = await supabase
     .from("programari")
-    .select("data_start")
+    .select("data_start, data_final")
     .eq("profesionist_id", prof.id)
     .eq("status", "confirmat")
+    .gte("data_start", new Date().toISOString())
+    .lte("data_start", sevenDaysAheadIso);
+
+  // Fetch pending (in_asteptare) bookings next 7d for week grid indicator
+  const { data: next7dPendingDates } = await supabase
+    .from("programari")
+    .select("data_start")
+    .eq("profesionist_id", prof.id)
+    .eq("status", "in_asteptare")
     .gte("data_start", new Date().toISOString())
     .lte("data_start", sevenDaysAheadIso);
 
@@ -267,7 +276,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   for (const [day, count] of bookingsByDay) {
     if (!busiestDay || count > busiestDay.count) busiestDay = { label: day, count };
   }
-  // Next working day in next 7d with 0 confirmed bookings (and salon is open that day)
+  // Next working day in next 7d with 0 confirmed bookings (and business is open that day)
   let nextEmptyDay: string | null = null;
   for (let i = 1; i <= 7; i++) {
     const d = new Date(Date.now() + i * 24 * 60 * 60 * 1000);
@@ -278,7 +287,36 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     if (!bookingsByDay.has(dayLabel)) { nextEmptyDay = dayLabel; break; }
   }
 
-  // Week-at-a-glance grid: today + next 6 days
+  // Pending bookings by day for week grid amber indicator
+  const pendingByDay = new Map<string, number>();
+  for (const b of next7dPendingDates ?? []) {
+    const day = formatInTimeZone(new Date(b.data_start), "Europe/Bucharest", "dd.MM");
+    pendingByDay.set(day, (pendingByDay.get(day) ?? 0) + 1);
+  }
+
+  // Utilization % for the next 7 days
+  // Scheduled minutes: sum of open hours for each day in weekGrid
+  // Booked minutes: sum of (data_final - data_start) for confirmed bookings in next 7d
+  let scheduledMinutes = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(Date.now() + i * 24 * 60 * 60 * 1000);
+    const dayKey = ziKeyFromDate(d);
+    const interval = parsedProgram[dayKey];
+    if (!Array.isArray(interval) || interval.length !== 2) continue;
+    const [startStr, endStr] = interval as [string, string];
+    const [sh, sm] = startStr.split(":").map(Number);
+    const [eh, em] = endStr.split(":").map(Number);
+    const dayMinutes = (eh * 60 + em) - (sh * 60 + (sm ?? 0));
+    if (dayMinutes > 0) scheduledMinutes += dayMinutes;
+  }
+  let bookedMinutes = 0;
+  for (const b of next7dBookingDates ?? []) {
+    if (b.data_final) {
+      const diffMs = new Date(b.data_final).getTime() - new Date(b.data_start).getTime();
+      bookedMinutes += Math.max(0, Math.round(diffMs / 60000));
+    }
+  }
+  const utilizationPct = scheduledMinutes > 0 ? Math.min(100, Math.round((bookedMinutes / scheduledMinutes) * 100)) : null;
   const DAY_SHORT_RO = ["Du", "Lu", "Ma", "Mi", "Jo", "Vi", "Sâ"];
   const weekGrid = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(Date.now() + i * 24 * 60 * 60 * 1000);
@@ -287,17 +325,12 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     const dayKey = ziKeyFromDate(d);
     const isOpen = Array.isArray(parsedProgram[dayKey]) && (parsedProgram[dayKey] as unknown[]).length >= 2;
     const count = bookingsByDay.get(dayLabel) ?? 0;
-    return { dayLabel, dayShort, count, isOpen, isToday: i === 0 };
+    const pendingCount = pendingByDay.get(dayLabel) ?? 0;
+    return { dayLabel, dayShort, count, pendingCount, isOpen, isToday: i === 0 };
   });
 
   // Pending-confirmation count (in_asteptare) for next 7 days — no-show risk signal
-  const { count: pendingNext7dCount } = await supabase
-    .from("programari")
-    .select("*", { count: "exact", head: true })
-    .eq("profesionist_id", prof.id)
-    .eq("status", "in_asteptare")
-    .gte("data_start", new Date().toISOString())
-    .lte("data_start", sevenDaysAheadIso);
+  const pendingNext7dCount = (next7dPendingDates ?? []).length;
 
   const todayFormatted = formatInTimeZone(new Date(), "Europe/Bucharest", "dd.MM.yyyy");
 
@@ -380,12 +413,23 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   const upcomingConfirmedCount = programari.filter((p) => p.status === "confirmat").length;
   const showNoBookingsNudge = fullySetUp && upcomingConfirmedCount === 0 && filter !== "azi";
 
-  // For the post-activation habit panel: count all-time confirmed bookings (fast count-only query)
+  // Dedicated query for pending confirmations panel (independent of main filter/pagination)
+  const { data: pendingBookings } = await supabase
+    .from("programari")
+    .select("id, data_start, nume_client, telefon_client, servicii(nume)")
+    .eq("profesionist_id", prof.id)
+    .eq("status", "in_asteptare")
+    .gte("data_start", new Date().toISOString())
+    .order("data_start", { ascending: true })
+    .limit(20);
+
+  // For the post-activation habit panel: count future confirmed bookings only (avoids stale past bookings)
   const { count: allTimeConfirmedCount } = await supabase
     .from("programari")
     .select("*", { count: "exact", head: true })
     .eq("profesionist_id", prof.id)
-    .eq("status", "confirmat");
+    .eq("status", "confirmat")
+    .gte("data_start", new Date().toISOString());
 
   return (
     <div className="space-y-12 section-reveal">
@@ -581,12 +625,28 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
             <p className="text-sm text-amber-100/75">Rată confirmare client (7z)</p>
             <p className="mt-2 text-3xl font-bold text-amber-50">{confirmationRate7d === null ? "—" : `${confirmationRate7d}%`}</p>
           </div>
+          <div className="lux-card p-5">
+            <p className="text-sm text-amber-100/75">Anulări client (7z)</p>
+            <p className={`mt-2 text-3xl font-bold ${(cancelledByClient ?? 0) > 2 ? "text-red-400" : "text-amber-50"}`}>
+              {cancelledByClient ?? 0}
+            </p>
+            <p className="mt-1 text-xs text-amber-100/50">anulate de clienți</p>
+          </div>
+          {utilizationPct !== null ? (
+            <div className="lux-card p-5">
+              <p className="text-sm text-amber-100/75">Utilizare săptămână</p>
+              <p className={`mt-2 text-3xl font-bold ${utilizationPct >= 80 ? "text-emerald-400" : utilizationPct >= 40 ? "text-amber-50" : "text-zinc-500"}`}>
+                {utilizationPct}%
+              </p>
+              <p className="mt-1 text-xs text-amber-100/50">din capacitate ocupat (7z)</p>
+            </div>
+          ) : null}
           {(overdueCount ?? 0) > 0 ? (
-            <div className="lux-card p-5 border-orange-500/30">
+            <a href="?filter=toate" className="lux-card p-5 border-orange-500/30 block hover:border-orange-400/50 transition">
               <p className="text-sm text-orange-300/80">Neînchise (expirate)</p>
               <p className="mt-2 text-3xl font-bold text-orange-400">{overdueCount}</p>
-              <p className="mt-1 text-xs text-orange-300/50">confirmate — trebuie finalizate</p>
-            </div>
+              <p className="mt-1 text-xs text-orange-300/50">confirmate expirate — apasă pentru a le vedea</p>
+            </a>
           ) : null}
         </div>
 
@@ -643,35 +703,44 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
                 {day.count > 0 ? (
                   <span className="mt-0.5 text-[9px] text-zinc-600">prog.</span>
                 ) : null}
+                {day.pendingCount > 0 ? (
+                  <span className="mt-0.5 text-[9px] font-semibold text-orange-400">{day.pendingCount} aș.</span>
+                ) : null}
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Pending confirmations action panel */}
-      {programari.filter((p) => p.status === "in_asteptare").length > 0 ? (
+      {/* Pending confirmations action panel — dedicated query, independent of main filter/pagination */}
+      {(pendingBookings ?? []).length > 0 ? (
         <section className="space-y-3">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-widest text-orange-300/70">Neconfirmate — necesită atenție</h2>
           </div>
           <div className="rounded-xl border border-orange-500/20 bg-orange-950/20 overflow-hidden">
             <div className="divide-y divide-orange-900/20">
-              {programari.filter((p) => p.status === "in_asteptare").slice(0, 8).map((p) => (
-                <div key={p.id} className="flex items-center justify-between px-4 py-3 text-sm">
-                  <div className="min-w-0">
-                    <span className="font-medium text-orange-100">{p.clientName}</span>
-                    <span className="mx-2 text-zinc-600">·</span>
-                    <span className="text-zinc-400">{p.serviceName}</span>
+              {(pendingBookings ?? []).map((p) => {
+                const start = new Date(p.data_start);
+                const svc = Array.isArray(p.servicii) ? p.servicii[0] : p.servicii;
+                return (
+                  <div key={p.id} className="flex items-center justify-between px-4 py-3 text-sm">
+                    <div className="min-w-0">
+                      <span className="font-medium text-orange-100">{p.nume_client ?? "—"}</span>
+                      <span className="mx-2 text-zinc-600">·</span>
+                      <span className="text-zinc-400">{(svc as { nume?: string } | null)?.nume ?? "—"}</span>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <span className="font-mono text-xs text-orange-200/70">
+                        {formatInTimeZone(start, "Europe/Bucharest", "dd.MM.yyyy")} {formatInTimeZone(start, "Europe/Bucharest", "HH:mm")}
+                      </span>
+                    </div>
                   </div>
-                  <div className="shrink-0 text-right">
-                    <span className="font-mono text-xs text-orange-200/70">{p.dataStr} {p.oraStr}</span>
-                  </div>
-                </div>
-              ))}
-              {programari.filter((p) => p.status === "in_asteptare").length > 8 ? (
+                );
+              })}
+              {(pendingBookings ?? []).length >= 20 ? (
                 <div className="px-4 py-2 text-xs text-zinc-500">
-                  +{programari.filter((p) => p.status === "in_asteptare").length - 8} mai multe — schimbă filtrul la &quot;Toate&quot;
+                  Se afișează primele 20 — schimbă filtrul la &quot;Toate&quot; pentru a le vedea pe toate
                 </div>
               ) : null}
             </div>

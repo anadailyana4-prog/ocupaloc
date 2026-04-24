@@ -46,6 +46,7 @@ type WeeklySummaryRow = {
   bookingsPrevWeek: number;
   topService: string | null;
   upcomingNext7: number;
+  noShowCount: number;
 };
 
 async function buildWeeklySummaries(): Promise<WeeklySummaryRow[]> {
@@ -98,10 +99,20 @@ async function buildWeeklySummaries(): Promise<WeeklySummaryRow[]> {
     .gte("data_start", now.toISOString())
     .lte("data_start", next7End.toISOString());
 
+  // Fetch no-shows this week
+  const { data: noShowRows } = await admin
+    .from("programari")
+    .select("profesionist_id")
+    .in("profesionist_id", profIds)
+    .eq("status", "noaparit")
+    .gte("data_start", weekStart.toISOString())
+    .lt("data_start", now.toISOString());
+
   // Build per-prof counters
   const thisWeekCount: Record<string, number> = {};
   const prevWeekCount: Record<string, number> = {};
   const upcomingCount: Record<string, number> = {};
+  const noShowWeekCount: Record<string, number> = {};
   const serviceFreq: Record<string, Record<string, number>> = {};
 
   for (const row of thisWeekRows ?? []) {
@@ -125,6 +136,11 @@ async function buildWeeklySummaries(): Promise<WeeklySummaryRow[]> {
     upcomingCount[pid] = (upcomingCount[pid] ?? 0) + 1;
   }
 
+  for (const row of noShowRows ?? []) {
+    const pid = row.profesionist_id as string;
+    noShowWeekCount[pid] = (noShowWeekCount[pid] ?? 0) + 1;
+  }
+
   return profs.map((p) => {
     const pid = p.id as string;
     const freq = serviceFreq[pid] ?? {};
@@ -141,6 +157,7 @@ async function buildWeeklySummaries(): Promise<WeeklySummaryRow[]> {
       bookingsPrevWeek: prevWeekCount[pid] ?? 0,
       topService,
       upcomingNext7: upcomingCount[pid] ?? 0,
+      noShowCount: noShowWeekCount[pid] ?? 0,
     };
   });
 }
@@ -194,14 +211,16 @@ function buildEmailContent(row: WeeklySummaryRow): { subject: string; text: stri
 
   const subject = `${row.numeBusiness} — ${row.bookingsThisWeek} programări săptămâna aceasta`;
   const topServiceNote = row.topService ? `Cel mai popular serviciu: **${row.topService}**.` : "";
+  const noShowNote = row.noShowCount > 0 ? `\u2022 Neprezentați: ${row.noShowCount}` : "";
   const text = [
     `Salut,`,
     ``,
     `Rezumatul săptămânii pentru ${row.numeBusiness}:`,
     ``,
-    `• Programări această săptămână: ${row.bookingsThisWeek} (${trend})`,
-    row.topService ? `• Serviciu top: ${row.topService}` : "",
-    `• Programări confirmate în următoarele 7 zile: ${row.upcomingNext7}`,
+    `\u2022 Programări această săptămână: ${row.bookingsThisWeek} (${trend})`,
+    row.topService ? `\u2022 Serviciu top: ${row.topService}` : "",
+    `\u2022 Programări confirmate în următoarele 7 zile: ${row.upcomingNext7}`,
+    noShowNote,
     ``,
     topServiceNote,
     ``,
@@ -231,7 +250,8 @@ function buildEmailContent(row: WeeklySummaryRow): { subject: string; text: stri
     </div>
   </div>
 
-  ${safeTopService ? `<p style="margin:0 0 20px;"><strong>Serviciu top:</strong> ${safeTopService}</p>` : ""}
+  ${safeTopService ? `<p style="margin:0 0 12px;"><strong>Serviciu top:</strong> ${safeTopService}</p>` : ""}
+  ${row.noShowCount > 0 ? `<p style="margin:0 0 20px;color:#dc2626;font-size:14px;"><strong>Neprezentați săptămâna aceasta:</strong> ${row.noShowCount}</p>` : ""}
 
   <a href="${dashboardUrl}" style="background:#1c1c2e;color:#fbbf24;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Deschide dashboard-ul →</a>
 
