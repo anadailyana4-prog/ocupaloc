@@ -231,6 +231,8 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   const clientDecisions = (clientConfirmations ?? 0) + (cancelledByClient ?? 0);
   const confirmationRate7d = clientDecisions > 0 ? Math.round(((clientConfirmations ?? 0) / clientDecisions) * 100) : null;
 
+  const todayFormatted = formatInTimeZone(new Date(), "Europe/Bucharest", "dd.MM.yyyy");
+
   const programari: ProgramareRow[] =
     !progErr && rawProg
       ? (rawProg as ProgRow[]).map((p) => {
@@ -248,6 +250,16 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
         })
       : [];
 
+  // Derive today's upcoming confirmed bookings from already-fetched data
+  const todayUpcomingRows = programari.filter(
+    (p) => p.dataStr === todayFormatted && p.status === "confirmat" && new Date(`${todayFormatted.split(".").reverse().join("-")}T${p.oraStr}`) >= new Date()
+  );
+
+  // Retention signal: fully-set-up salon with zero upcoming confirmed bookings
+  const fullySetUp = programSetat && (serviciiCount ?? 0) > 0 && Boolean(prof.slug);
+  const upcomingConfirmedCount = programari.filter((p) => p.status === "confirmat").length;
+  const showNoBookingsNudge = fullySetUp && upcomingConfirmedCount === 0 && filter !== "azi";
+
   return (
     <div className="space-y-12 section-reveal">
       {/* Subscription status banner */}
@@ -261,29 +273,55 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
           ? Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
           : 0;
 
-        if (!subStatus && trialEnd && Date.now() <= trialEnd.getTime()) {
+        // Render trial banner with urgency tiers
+        const renderTrialBanner = (label: string) => {
+          if (!trialEnd) return null;
+          const isExpired = Date.now() > trialEnd.getTime();
+          if (isExpired) {
+            return (
+              <div className="mx-4 mt-4 rounded-md border border-red-400 bg-red-50 px-4 py-3 text-sm text-red-900">
+                <span className="font-bold">⛔ Perioada de trial a expirat.</span> Accesul la programări va fi restricționat.{" "}
+                <Link href="/billing/checkout" className="font-bold underline">Abonează-te acum →</Link>
+              </div>
+            );
+          }
+          if (trialDaysLeft <= 1) {
+            return (
+              <div className="mx-4 mt-4 rounded-md border-2 border-red-400 bg-red-50 px-4 py-3 text-sm text-red-900">
+                <span className="font-bold">⛔ Azi expiră trial-ul!</span> Activează abonamentul pentru a nu pierde accesul.{" "}
+                <Link href="/billing/checkout" className="font-bold underline">Activează acum →</Link>
+              </div>
+            );
+          }
+          if (trialDaysLeft <= 3) {
+            return (
+              <div className="mx-4 mt-4 rounded-md border border-orange-300 bg-orange-50 px-4 py-3 text-sm text-orange-900">
+                ⚠️ {label} - <strong>mai ai doar {trialDaysLeft} zile</strong>. Nu lăsa să expire.{" "}
+                <Link href="/billing/checkout" className="font-semibold underline">Activează abonamentul →</Link>
+              </div>
+            );
+          }
+          if (trialDaysLeft <= 7) {
+            return (
+              <div className="mx-4 mt-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                🕐 {label} - <strong>{trialDaysLeft} zile rămase</strong>.{" "}
+                <Link href="/billing/checkout" className="font-medium underline">Activează abonamentul →</Link>
+              </div>
+            );
+          }
           return (
             <div className="mx-4 mt-4 rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
-              🕐 Trial gratuit activ - <strong>{trialDaysLeft} zile rămase</strong>.{" "}
-              <Link href="/billing/checkout" className="font-medium underline">Activează abonamentul -&gt;</Link>
+              🕐 {label} - <strong>{trialDaysLeft} zile rămase</strong>.{" "}
+              <Link href="/billing/checkout" className="font-medium underline">Activează abonamentul →</Link>
             </div>
           );
-        }
-        if (!subStatus && trialEnd && Date.now() > trialEnd.getTime()) {
-          return (
-            <div className="mx-4 mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-              ⚠️ Perioada de trial a expirat.{" "}
-              <Link href="/billing/checkout" className="font-medium underline">Abonează-te -&gt;</Link>
-            </div>
-          );
+        };
+
+        if (!subStatus && trialEnd) {
+          return renderTrialBanner("Trial gratuit activ");
         }
         if (subStatus === "trialing") {
-          return (
-            <div className="mx-4 mt-4 rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
-              🕐 Trial activ - <strong>{trialDaysLeft} zile rămase</strong>.{" "}
-              <Link href="/billing/checkout" className="font-medium underline">Activează abonamentul -&gt;</Link>
-            </div>
-          );
+          return renderTrialBanner("Trial Stripe activ");
         }
         if (subStatus === "active") {
           return (
@@ -429,6 +467,53 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
         clientCancelThreshold={prof.smart_client_cancel_threshold ?? 0}
         cancelWindowDays={prof.smart_cancel_window_days ?? 60}
       />
+
+      {/* Today's upcoming appointments quick strip */}
+      {filter !== "azi" && todayUpcomingRows.length > 0 ? (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-amber-100/50">Astăzi</h2>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            {todayUpcomingRows.slice(0, 5).map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-950/30 px-4 py-3 text-sm"
+              >
+                <span className="font-mono font-semibold text-emerald-300">{r.oraStr}</span>
+                <span className="font-medium text-white">{r.clientName}</span>
+                <span className="text-zinc-400">{r.serviceName}</span>
+              </div>
+            ))}
+            {todayUpcomingRows.length > 5 ? (
+              <div className="flex items-center rounded-xl border border-zinc-700 bg-zinc-900/40 px-4 py-3 text-sm text-zinc-400">
+                +{todayUpcomingRows.length - 5} mai multe azi
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {/* No upcoming bookings retention nudge */}
+      {showNoBookingsNudge ? (
+        <div className="rounded-2xl border border-cyan-500/20 bg-cyan-950/30 px-5 py-4">
+          <p className="text-sm font-semibold text-cyan-100">Nicio programare viitoare confirmată</p>
+          <p className="mt-1 text-xs text-cyan-100/70">
+            Pagina ta e activă, dar nu ai programări viitoare. Trimite linkul clienților și reamintește-le că pot rezerva online.
+          </p>
+          {prof.slug ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`Programează-te online la ${prof.nume_business ?? "noi"}: https://ocupaloc.ro/${prof.slug}`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center rounded-full bg-emerald-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-emerald-500"
+              >
+                Trimite pe WhatsApp
+              </a>
+              <CopyPublicLinkButton slug={prof.slug} />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <section className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

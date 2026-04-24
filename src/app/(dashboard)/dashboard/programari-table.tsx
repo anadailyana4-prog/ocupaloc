@@ -57,80 +57,148 @@ export function ProgramariTable({ rows }: Props) {
     });
   }
 
+  const emptyState = (
+    <div className="px-4 py-12 text-center">
+      <p className="text-sm font-medium text-amber-100/70">Nicio programare în intervalul ales.</p>
+      <p className="mt-1 text-xs text-zinc-500">
+        Copiază link-ul paginii tale publice și trimite-l clienților pentru a primi primele rezervări.
+      </p>
+    </div>
+  );
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-zinc-800">
-      <table className="w-full min-w-[880px] text-sm">
-        <thead className="border-b border-zinc-800 bg-zinc-950/80">
-          <tr>
-            <th className="px-4 py-3 text-left font-medium">Data</th>
-            <th className="px-4 py-3 text-left font-medium">Ora</th>
-            <th className="px-4 py-3 text-left font-medium">Client</th>
-            <th className="px-4 py-3 text-left font-medium">Telefon</th>
-            <th className="px-4 py-3 text-left font-medium">Serviciu</th>
-            <th className="px-4 py-3 text-left font-medium">Status</th>
-            <th className="px-4 py-3 text-right font-medium">Acțiuni</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 ? (
+    <div className="space-y-0">
+      {/* Mobile card list — visible only on small screens */}
+      <div className="flex flex-col divide-y divide-zinc-900 rounded-xl border border-zinc-800 md:hidden">
+        {rows.length === 0 ? (
+          emptyState
+        ) : (
+          rows.map((r) => {
+            const canAct = r.status === "confirmat";
+            return (
+              <div key={r.id} className="flex flex-col gap-2 px-4 py-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium leading-snug">{r.clientName}</p>
+                    <p className="mt-0.5 text-xs text-zinc-400">{r.serviceName}</p>
+                  </div>
+                  <span className={`shrink-0 inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(r.status)}`}>
+                    {STATUS_LABEL[r.status] ?? r.status}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-zinc-400">
+                  <span className="font-mono">{r.dataStr}</span>
+                  <span className="font-mono font-semibold text-amber-100/80">{r.oraStr}</span>
+                  {r.clientPhone ? (
+                    <a href={`tel:${r.clientPhone}`} className="ml-auto font-mono text-cyan-400 hover:underline">
+                      {r.clientPhone}
+                    </a>
+                  ) : null}
+                </div>
+                {canAct ? (
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 rounded-full border-red-500/40 text-red-300 hover:bg-red-950/40"
+                      disabled={pending}
+                      onClick={() => void run("Programare anulată.", () => cancelBooking(r.id))}
+                    >
+                      Anulează
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="flex-1 rounded-full bg-emerald-700 text-white hover:bg-emerald-600"
+                      disabled={pending}
+                      onClick={() => void run("Finalizat.", () => completeBooking(r.id))}
+                    >
+                      Finalizat
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop table — hidden on small screens */}
+      <div className="hidden overflow-x-auto rounded-xl border border-zinc-800 md:block">
+        <table className="w-full text-sm">
+          <thead className="border-b border-zinc-800 bg-zinc-950/80">
             <tr>
-              <td colSpan={7} className="px-4 py-12 text-center">
-                <p className="text-sm font-medium text-amber-100/70">Nicio programare în intervalul ales.</p>
-                <p className="mt-1 text-xs text-zinc-500">
-                  Copiază link-ul paginii tale publice și trimite-l clienților pentru a primi primele rezervări.
-                </p>
-              </td>
+              <th className="px-4 py-3 text-left font-medium">Data</th>
+              <th className="px-4 py-3 text-left font-medium">Ora</th>
+              <th className="px-4 py-3 text-left font-medium">Client</th>
+              <th className="px-4 py-3 text-left font-medium">Telefon</th>
+              <th className="px-4 py-3 text-left font-medium">Serviciu</th>
+              <th className="px-4 py-3 text-left font-medium">Status</th>
+              <th className="px-4 py-3 text-right font-medium">Acțiuni</th>
             </tr>
-          ) : (
-            rows.map((r) => {
-              const canAct = r.status === "confirmat";
-              return (
-                <tr key={r.id} className="border-b border-zinc-900 last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs text-zinc-300">{r.dataStr}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-zinc-300">{r.oraStr}</td>
-                  <td className="px-4 py-3 font-medium">{r.clientName}</td>
-                  <td className="px-4 py-3 font-mono text-xs">{r.clientPhone || "—"}</td>
-                  <td className="px-4 py-3">{r.serviceName}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(r.status)}`}>
-                      {STATUS_LABEL[r.status] ?? r.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex flex-wrap justify-end gap-2">
-                      {canAct ? (
-                        <>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="rounded-full border-red-500/40 text-red-300 hover:bg-red-950/40"
-                            disabled={pending}
-                            onClick={() => void run("Programare anulată.", () => cancelBooking(r.id))}
-                          >
-                            Anulează
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            className="rounded-full bg-emerald-700 text-white hover:bg-emerald-600"
-                            disabled={pending}
-                            onClick={() => void run("Marcată ca finalizată.", () => completeBooking(r.id))}
-                          >
-                            Marchează finalizat
-                          </Button>
-                        </>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-12 text-center">
+                  <p className="text-sm font-medium text-amber-100/70">Nicio programare în intervalul ales.</p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Copiază link-ul paginii tale publice și trimite-l clienților pentru a primi primele rezervări.
+                  </p>
+                </td>
+              </tr>
+            ) : (
+              rows.map((r) => {
+                const canAct = r.status === "confirmat";
+                return (
+                  <tr key={r.id} className="border-b border-zinc-900 last:border-0">
+                    <td className="px-4 py-3 font-mono text-xs text-zinc-300">{r.dataStr}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-zinc-300">{r.oraStr}</td>
+                    <td className="px-4 py-3 font-medium">{r.clientName}</td>
+                    <td className="px-4 py-3 font-mono text-xs">{r.clientPhone || "—"}</td>
+                    <td className="px-4 py-3">{r.serviceName}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(r.status)}`}>
+                        {STATUS_LABEL[r.status] ?? r.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        {canAct ? (
+                          <>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="rounded-full border-red-500/40 text-red-300 hover:bg-red-950/40"
+                              disabled={pending}
+                              onClick={() => void run("Programare anulată.", () => cancelBooking(r.id))}
+                            >
+                              Anulează
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="rounded-full bg-emerald-700 text-white hover:bg-emerald-600"
+                              disabled={pending}
+                              onClick={() => void run("Marcată ca finalizată.", () => completeBooking(r.id))}
+                            >
+                              Marchează finalizat
+                            </Button>
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
