@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { validateCronSecret } from "@/lib/cron-auth";
 import { reportError } from "@/lib/observability";
-import { sendQuietSalonRescueEmails } from "@/lib/email/quiet-salon-rescue";
+import { sendQuietBusinessRescueEmails } from "@/lib/email/quiet-salon-rescue";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const result = await sendQuietSalonRescueEmails();
+    const result = await sendQuietBusinessRescueEmails();
     return NextResponse.json({ ok: true, ...result, ranAt: new Date().toISOString() });
   } catch (err) {
     reportError("cron", "quiet_rescue_cron_failed", err instanceof Error ? err : new Error(String(err)));

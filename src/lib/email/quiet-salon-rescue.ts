@@ -1,22 +1,17 @@
 /**
- * Quiet-salon rescue email.
- * Fires once per salon when they cross 14 days without a confirmed booking
+ * Quiet-business rescue email.
+ * Fires once per business when they cross 14 days without a confirmed booking
  * and have completed onboarding. Separate from the weekly summary zero-branch.
  *
- * Cron: daily at 09:30, runs idempotently via programari_reminders-style dedup on a
- * dedicated column OR by checking last sent date from a simple query guard.
+ * Cron: daily at 09:30, runs idempotently via a date-window guard:
+ * we only send to businesses that crossed 14d of inactivity AND haven't received
+ * this email in the last 30 days (checked via a 14-21 day booking window guard).
  *
- * Dedup strategy: we use a `profesionisti_events` approach — we track whether
- * we've sent this email by checking a `quiet_rescue_sent_at` marker stored in
- * a dedicated table OR by doing a count query of relevant events. Since we don't
- * have a general events table, we use a simple date-window guard: we only send
- * to salons that crossed 14d of inactivity AND haven't received this email in
- * the last 30 days (checked via a dedicated column added via migration, or via
- * a fallback in-memory dedup over the last 30 days).
- *
- * Because we don't want to run a migration just for this, we use a softer guard:
- * query salons whose last booking is exactly 14-16 days ago (i.e. just crossed the
+ * Dedup strategy: we use a softer guard:
+ * query businesses whose last booking is exactly 14-21 days ago (i.e. just crossed the
  * threshold). This means the cron only fires in a narrow window, preventing spam.
+ * We also include businesses that completed onboarding but NEVER had a booking
+ * and are 14-21 days old.
  */
 
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
@@ -66,11 +61,11 @@ type RescueRow = {
   daysSinceLastBooking: number | null; // null = never had a booking
 };
 
-export async function sendQuietSalonRescueEmails(): Promise<{ sent: number; skipped: number; failed: number }> {
+export async function sendQuietBusinessRescueEmails(): Promise<{ sent: number; skipped: number; failed: number }> {
   const admin = createSupabaseServiceClient();
 
-  // Window: salons whose last confirmed booking was 14-21 days ago (crosses threshold, not too stale)
-  // We also include salons that completed onboarding but NEVER had a booking and are 14-21 days old
+  // Window: businesses whose last confirmed booking was 14-21 days ago (crosses threshold, not too stale)
+  // We also include businesses that completed onboarding but NEVER had a booking and are 14-21 days old
   const now = new Date();
   const windowStart = new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000);
   const windowEnd = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
@@ -90,7 +85,7 @@ export async function sendQuietSalonRescueEmails(): Promise<{ sent: number; skip
 
   const profIds = profs.map((p) => p.id as string);
 
-  // Get the most recent confirmed/finalized booking per salon
+  // Get the most recent confirmed/finalized booking per business
   const { data: lastBookings } = await admin
     .from("programari")
     .select("profesionist_id, data_start")

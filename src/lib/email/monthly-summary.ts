@@ -46,6 +46,7 @@ type MonthlyRow = {
   prevMonthCount: number;
   topService: string | null;
   noShowCount: number;
+  cancellationCount: number;
 };
 
 /** Returns [start, end) ISO strings for a calendar month offset. 0 = current month, -1 = previous. */
@@ -83,7 +84,7 @@ async function buildMonthlySummaries(): Promise<MonthlyRow[]> {
 
   const profIds = profs.map((p) => p.id as string);
 
-  const [{ data: thisRows }, { data: prevRows }, { data: noShowRows }] = await Promise.all([
+  const [{ data: thisRows }, { data: prevRows }, { data: noShowRows }, { data: cancellationRows }] = await Promise.all([
     admin
       .from("programari")
       .select("profesionist_id, servicii(nume)")
@@ -104,7 +105,15 @@ async function buildMonthlySummaries(): Promise<MonthlyRow[]> {
       .in("profesionist_id", profIds)
       .eq("status", "noaparit")
       .gte("data_start", thisMonth.start)
-      .lt("data_start", thisMonth.end)
+      .lt("data_start", thisMonth.end),
+    admin
+      .from("programari_status_events")
+      .select("profesionist_id")
+      .in("profesionist_id", profIds)
+      .eq("status", "anulat")
+      .eq("source", "client_link")
+      .gte("created_at", thisMonth.start)
+      .lt("created_at", thisMonth.end)
   ]);
 
   // Build counts per prof
@@ -135,6 +144,12 @@ async function buildMonthlySummaries(): Promise<MonthlyRow[]> {
     noShowCount.set(pid, (noShowCount.get(pid) ?? 0) + 1);
   }
 
+  const cancellationCount = new Map<string, number>();
+  for (const r of cancellationRows ?? []) {
+    const pid = r.profesionist_id as string;
+    cancellationCount.set(pid, (cancellationCount.get(pid) ?? 0) + 1);
+  }
+
   return profs
     .filter((p) => p.email_contact)
     .map((p) => {
@@ -155,10 +170,11 @@ async function buildMonthlySummaries(): Promise<MonthlyRow[]> {
         thisMonthCount: thisCount.get(pid) ?? 0,
         prevMonthCount: prevCount.get(pid) ?? 0,
         topService,
-        noShowCount: noShowCount.get(pid) ?? 0
+        noShowCount: noShowCount.get(pid) ?? 0,
+        cancellationCount: cancellationCount.get(pid) ?? 0
       };
     })
-    .filter((r) => r.thisMonthCount > 0 || r.prevMonthCount > 0); // skip never-used salons
+    .filter((r) => r.thisMonthCount > 0 || r.prevMonthCount > 0); // skip accounts with no activity
 }
 
 function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject: string; text: string; html: string } {
@@ -177,6 +193,7 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
     `  • Luna trecută: ${row.prevMonthCount}  (${trend})`,
     row.topService ? `  • Serviciu top: ${row.topService}` : null,
     row.noShowCount > 0 ? `  • Clienți neprezentați: ${row.noShowCount}` : null,
+    row.cancellationCount > 0 ? `  • Anulări client: ${row.cancellationCount}` : null,
     "",
     delta > 0
       ? `Progres real — luna aceasta ai avut mai mulți clienți. Continuă să trimiți linkul!`
@@ -192,6 +209,9 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
   const noShowLine = row.noShowCount > 0
     ? `<p style="margin:0 0 4px;"><strong>Neprezentați:</strong> ${row.noShowCount}</p>`
     : "";
+  const cancellationLine = row.cancellationCount > 0
+    ? `<p style="margin:0 0 4px;"><strong>Anulări client:</strong> ${row.cancellationCount}</p>`
+    : "";
 
   const html = `
 <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
@@ -206,6 +226,7 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
     </p>
     ${row.topService ? `<p style="margin:0 0 4px;"><strong>Serviciu top:</strong> ${escapeHtml(row.topService)}</p>` : ""}
     ${noShowLine}
+    ${cancellationLine}
   </div>
 
   <p style="margin:0 0 16px;">${

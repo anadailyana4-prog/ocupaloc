@@ -72,16 +72,26 @@ export default async function AdminSalonsPage() {
 
   const lastBookingMap = new Map<string, string>();
   const weekCountMap = new Map<string, number>();
+  const prevWeekCountMap = new Map<string, number>();
+  const totalBookings30dMap = new Map<string, number>();
   const noShowCountMap = new Map<string, number>();
   const completedCountMap = new Map<string, number>();
+
+  const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
 
   for (const b of bookingStats ?? []) {
     // Last booking (any status for recency check)
     if (!lastBookingMap.has(b.profesionist_id)) {
       lastBookingMap.set(b.profesionist_id, b.data_start);
     }
+    if (b.status === "confirmat" || b.status === "finalizat") {
+      totalBookings30dMap.set(b.profesionist_id, (totalBookings30dMap.get(b.profesionist_id) ?? 0) + 1);
+    }
     if (b.data_start >= weekAgo && (b.status === "confirmat" || b.status === "finalizat")) {
       weekCountMap.set(b.profesionist_id, (weekCountMap.get(b.profesionist_id) ?? 0) + 1);
+    }
+    if (b.data_start >= twoWeeksAgo && b.data_start < weekAgo && (b.status === "confirmat" || b.status === "finalizat")) {
+      prevWeekCountMap.set(b.profesionist_id, (prevWeekCountMap.get(b.profesionist_id) ?? 0) + 1);
     }
     if (b.status === "noaparit") {
       noShowCountMap.set(b.profesionist_id, (noShowCountMap.get(b.profesionist_id) ?? 0) + 1);
@@ -121,6 +131,8 @@ export default async function AdminSalonsPage() {
         ? formatInTimeZone(new Date(lastBookingMap.get(s.id)!), TZ, "dd.MM.yyyy")
         : "nicio programare",
       bookingsThisWeek: weekCountMap.get(s.id) ?? 0,
+      bookingsPrevWeek: prevWeekCountMap.get(s.id) ?? 0,
+      totalBookings30d: totalBookings30dMap.get(s.id) ?? 0,
       noShows30d: noShowCountMap.get(s.id) ?? 0,
       completed30d: completedCountMap.get(s.id) ?? 0,
       atRisk,
@@ -168,6 +180,7 @@ export default async function AdminSalonsPage() {
         const atRiskCount = rows.filter((r) => r.atRisk || r.isPastDue).length;
         const trialExpiringCount = rows.filter((r) => r.isTrialExpiringSoon).length;
         const totalBookingsWeek = rows.reduce((sum, r) => sum + r.bookingsThisWeek, 0);
+        const totalBookings30d = rows.reduce((sum, r) => sum + r.totalBookings30d, 0);
         return (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {[
@@ -176,7 +189,7 @@ export default async function AdminSalonsPage() {
               { label: "Abonament activ", value: activeSubCount, color: "text-sky-300" },
               { label: "La risc", value: atRiskCount, color: atRiskCount > 0 ? "text-red-400" : "text-zinc-500" },
               { label: "Trial expiră", value: trialExpiringCount, color: trialExpiringCount > 0 ? "text-amber-400" : "text-zinc-500" },
-              { label: "Programări (7z)", value: totalBookingsWeek, color: totalBookingsWeek > 0 ? "text-violet-300" : "text-zinc-500" },
+              { label: "Programări (30z)", value: totalBookings30d, color: totalBookings30d > 0 ? "text-violet-300" : "text-zinc-500" },
             ].map((s) => (
               <div key={s.label} className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-3">
                 <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -198,7 +211,9 @@ export default async function AdminSalonsPage() {
               <th className="px-4 py-3">Abonament</th>
               <th className="px-4 py-3">Expiră</th>
               <th className="px-4 py-3">Ultima prog.</th>
-              <th className="px-4 py-3">7 zile</th>
+              <th className="px-4 py-3">7z</th>
+              <th className="px-4 py-3">30z</th>
+              <th className="px-4 py-3">Trend 7z</th>
               <th className="px-4 py-3">No-show (30z)</th>
               <th className="px-4 py-3">Risc</th>
               <th className="px-4 py-3">Acțiuni</th>
@@ -229,6 +244,20 @@ export default async function AdminSalonsPage() {
                   <span className={`font-semibold ${r.bookingsThisWeek === 0 ? "text-red-400" : r.bookingsThisWeek >= 5 ? "text-emerald-400" : "text-amber-300"}`}>
                     {r.bookingsThisWeek}
                   </span>
+                </td>
+                <td className="px-4 py-3">
+                  <span className={`font-semibold ${r.totalBookings30d === 0 ? "text-red-400" : r.totalBookings30d >= 20 ? "text-emerald-400" : "text-amber-300"}`}>
+                    {r.totalBookings30d}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-xs">
+                  {r.bookingsThisWeek > r.bookingsPrevWeek ? (
+                    <span className="text-emerald-400 font-semibold">▲ +{r.bookingsThisWeek - r.bookingsPrevWeek}</span>
+                  ) : r.bookingsThisWeek < r.bookingsPrevWeek ? (
+                    <span className="text-red-400 font-semibold">▼ -{r.bookingsPrevWeek - r.bookingsThisWeek}</span>
+                  ) : (
+                    <span className="text-zinc-500">= {r.bookingsThisWeek}</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-xs">
                   {r.noShows30d > 0 ? (

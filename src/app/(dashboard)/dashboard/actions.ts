@@ -117,7 +117,7 @@ const smartRulesFields = z.object({
   smart_min_notice_minutes: z.number().int().min(0).max(1440)
 });
 
-export async function updatePublicSalonFields(formData: FormData) {
+export async function updatePublicBusinessFields(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user }
@@ -131,7 +131,7 @@ export async function updatePublicSalonFields(formData: FormData) {
   };
   const parsed = publicFields.safeParse(raw);
   if (!parsed.success) {
-    redirect("/dashboard?error=" + encodeURIComponent("Date invalide."));
+    redirect("/dashboard/setari?error=" + encodeURIComponent("Date invalide."));
   }
   const { error } = await writeWithTelefonFallback(
     async (values) => await supabase.from("profesionisti").update(values).eq("user_id", user.id),
@@ -141,10 +141,11 @@ export async function updatePublicSalonFields(formData: FormData) {
     }
   );
   if (error) {
-    redirect("/dashboard?error=" + encodeURIComponent(error.message ?? "Nu am putut salva datele publice."));
+    redirect("/dashboard/setari?error=" + encodeURIComponent(error.message ?? "Nu am putut salva datele publice."));
   }
   revalidatePath("/dashboard");
-  redirect("/dashboard?saved=1");
+  revalidatePath("/dashboard/setari");
+  redirect("/dashboard/setari?saved=1");
 }
 
 export async function updateSmartRules(formData: FormData) {
@@ -219,6 +220,7 @@ export async function saveSmartRulesFromClient(data: {
   if (error) return { ok: false, message: error.message };
 
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/setari");
   return { ok: true };
 }
 

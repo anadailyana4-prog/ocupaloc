@@ -7,12 +7,7 @@ import { ActivationWidgets } from "./activation-widgets";
 import { AddManualBookingDialog, type ServiciuOption } from "./add-manual-booking-dialog";
 import { CopyPublicLinkButton } from "./copy-public-link";
 import { ProgramariTable, type ProgramareRow } from "./programari-table";
-import { SmartRulesForm } from "./smart-rules-form";
-import { updatePublicSalonFields } from "./actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { parseProgramJson, ziKeyFromDate } from "@/lib/program";
 import { computeFreeSlots } from "@/lib/slots";
@@ -210,14 +205,6 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     .eq("profesionist_id", prof.id)
     .eq("status", "anulat")
     .eq("source", "client_link")
-    .gte("created_at", sevenDaysAgoIso);
-
-  const { count: cancelledBySalon } = await supabase
-    .from("programari_status_events")
-    .select("*", { count: "exact", head: true })
-    .eq("profesionist_id", prof.id)
-    .eq("status", "anulat")
-    .eq("source", "salon_dashboard")
     .gte("created_at", sevenDaysAgoIso);
 
   const { count: clientConfirmations } = await supabase
@@ -748,45 +735,16 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
         </section>
       ) : null}
 
-      <section className="lux-card space-y-4 p-6">
-        <h2 className="font-display text-2xl font-semibold tracking-wide text-amber-100">Date publice</h2>
-        <p className="text-sm text-muted-foreground">Telefonul și descrierea apar pe pagina publică a business-ului tău.</p>
-        <form action={updatePublicSalonFields} className="max-w-xl space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="telefon">Telefon</Label>
-            <Input
-              id="telefon"
-              name="telefon"
-              type="tel"
-              maxLength={50}
-              defaultValue={prof.telefon ?? ""}
-              className="border-zinc-700 bg-zinc-900"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Descriere</Label>
-            <Textarea
-              id="description"
-              name="description"
-              maxLength={2000}
-              rows={4}
-              defaultValue={prof.description ?? ""}
-              className="resize-y border-zinc-700 bg-zinc-900"
-            />
-          </div>
-          <Button type="submit" className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105">
-            Salvează datele publice
-          </Button>
-        </form>
-      </section>
-
-      <SmartRulesForm
-        enabled={Boolean(prof.smart_rules_enabled)}
-        maxFutureBookings={prof.smart_max_future_bookings ?? 0}
-        minNoticeMinutes={prof.smart_min_notice_minutes ?? 0}
-        clientCancelThreshold={prof.smart_client_cancel_threshold ?? 0}
-        cancelWindowDays={prof.smart_cancel_window_days ?? 60}
-      />
+      {/* Settings link chip — Date publice + Smart Rules are in /dashboard/setari */}
+      <div className="flex items-center justify-between rounded-2xl border border-zinc-700/50 bg-zinc-900/40 px-5 py-3">
+        <div>
+          <p className="text-sm font-medium text-amber-100">Setări business</p>
+          <p className="mt-0.5 text-xs text-zinc-500">Date publice (telefon, descriere) și reguli de rezervare</p>
+        </div>
+        <Button asChild variant="secondary" size="sm" className="rounded-full shrink-0">
+          <Link href="/dashboard/setari">Configurează →</Link>
+        </Button>
+      </div>
 
       {/* Today's upcoming appointments quick strip */}
       {filter !== "azi" && todayUpcomingRows.length > 0 ? (
