@@ -3,7 +3,16 @@ import { NextResponse } from "next/server";
 import { getStripeClient } from "@/lib/billing/stripe";
 import { reportError } from "@/lib/observability";
 
-export async function POST(req: Request) {
+export type StripeWebhookDeps = {
+  getStripe: typeof getStripeClient;
+};
+
+const defaultDeps: StripeWebhookDeps = { getStripe: getStripeClient };
+
+export async function handleStripeWebhookRequest(
+  req: Request,
+  deps: StripeWebhookDeps = defaultDeps
+): Promise<NextResponse> {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
   const signature = req.headers.get("stripe-signature");
 
@@ -12,7 +21,7 @@ export async function POST(req: Request) {
   }
 
   const payload = await req.text();
-  const stripe = getStripeClient();
+  const stripe = deps.getStripe();
 
   try {
     const event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
@@ -36,4 +45,8 @@ export async function POST(req: Request) {
     reportError("billing", "stripe_webhook_verification_failed", error);
     return NextResponse.json({ error: "Invalid webhook signature." }, { status: 400 });
   }
+}
+
+export async function POST(req: Request) {
+  return handleStripeWebhookRequest(req);
 }

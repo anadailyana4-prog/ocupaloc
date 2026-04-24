@@ -13,6 +13,8 @@
     "typecheck": "tsc --noEmit",
     "tsc": "tsc --noEmit",
     "check:all": "pnpm run test:ci && pnpm exec tsc --noEmit && pnpm exec eslint . --ignore-pattern next-env.d.ts && pnpm audit --audit-level critical",
+    "check:local": "pnpm run test:ci && pnpm exec tsc --noEmit && pnpm exec eslint . --ignore-pattern next-env.d.ts",
+    "check:full": "pnpm run check:local && pnpm run test:e2e",
     "build": "next build",
     "pages:build": "opennextjs-cloudflare build",
     "build:cf": "opennextjs-cloudflare build && node fix-open-next-css.mjs",
@@ -24,7 +26,8 @@
     "verify:db": "tsx scripts/verify-production-readiness.ts",
     "verify:secrets": "tsx scripts/check-secrets.ts",
     "ops:synthetic": "tsx scripts/run-synthetic-monitor.ts",
-    "ops:slo": "tsx scripts/check-slo-release-gate.ts"
+    "ops:slo": "tsx scripts/check-slo-release-gate.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -71,11 +74,19 @@
     "c8": "^11.0.0",
     "eslint": "^9.12.0",
     "eslint-config-next": "^15.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.21.0",
     "typescript": "^5.6.2",
     "wrangler": "^4.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --ignore-pattern next-env.d.ts",
+      "bash -c 'tsc --noEmit'"
+    ]
   }
 }
