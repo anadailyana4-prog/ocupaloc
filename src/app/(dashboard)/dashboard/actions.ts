@@ -193,3 +193,70 @@ export async function saveSmartRulesFromClient(data: {
   revalidatePath("/dashboard");
   return { ok: true };
 }
+
+// -----------------------------------------------
+// Programare manuală adăugată de owner
+// -----------------------------------------------
+
+const manualBookingSchema = z.object({
+  numeClient: z.string().trim().min(1, "Numele clientului este obligatoriu.").max(120),
+  telefonClient: z.string().trim().min(4, "Telefonul este obligatoriu.").max(50),
+  serviciuId: z.string().uuid("Serviciu invalid."),
+  dataStr: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data invalidă."),
+  oraStr: z.string().regex(/^\d{2}:\d{2}$/, "Ora invalidă.")
+});
+
+export type ManualBookingResult = { success: true } | { success: false; message: string };
+
+export async function addManualBooking(input: {
+  numeClient: string;
+  telefonClient: string;
+  serviciuId: string;
+  dataStr: string;
+  oraStr: string;
+}): Promise<ManualBookingResult> {
+  const parsed = manualBookingSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, message: parsed.error.errors[0]?.message ?? "Date invalide." };
+  }
+
+  const ctx = await getProfIdForUser();
+  if (!ctx) {
+    return { success: false, message: "Nu ești autentificat sau lipsește profilul." };
+  }
+
+  const { data: srv, error: srvErr } = await ctx.supabase
+    .from("servicii")
+    .select("id, durata_minute")
+    .eq("id", parsed.data.serviciuId)
+    .eq("profesionist_id", ctx.profId)
+    .maybeSingle();
+
+  if (srvErr || !srv) {
+    return { success: false, message: "Serviciu invalid sau nu îți aparține." };
+  }
+
+  const dataStart = new Date(`${parsed.data.dataStr}T${parsed.data.oraStr}:00`);
+  if (Number.isNaN(dataStart.getTime())) {
+    return { success: false, message: "Data sau ora sunt invalide." };
+  }
+
+  const dataFinal = new Date(dataStart.getTime() + (srv.durata_minute ?? 60) * 60_000);
+
+  const { error: insErr } = await ctx.supabase.from("programari").insert({
+    profesionist_id: ctx.profId,
+    serviciu_id: parsed.data.serviciuId,
+    nume_client: parsed.data.numeClient,
+    telefon_client: parsed.data.telefonClient,
+    data_start: dataStart.toISOString(),
+    data_final: dataFinal.toISOString(),
+    status: "confirmat"
+  });
+
+  if (insErr) {
+    return { success: false, message: insErr.message };
+  }
+
+  revalidatePath("/dashboard");
+  return { success: true };
+}

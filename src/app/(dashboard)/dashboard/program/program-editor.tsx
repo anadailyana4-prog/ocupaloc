@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -56,6 +57,9 @@ export function ProgramEditor({ initialRows }: Props) {
 
   return (
     <div className="space-y-6">
+      <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-200 transition">
+        ← Înapoi la dashboard
+      </Link>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Program</h1>
         <p className="text-sm text-muted-foreground">Orele tale de lucru (vizibile pe pagina publică de rezervare).</p>

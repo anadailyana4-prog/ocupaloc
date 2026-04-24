@@ -31,7 +31,7 @@ export function DashboardHeader() {
         <Link href="/dashboard" className="text-sm font-semibold tracking-tight">
           Ocupaloc
         </Link>
-        <nav className="hidden items-center gap-4 text-sm text-zinc-400 md:flex">
+        <nav className="flex items-center gap-3 text-sm text-zinc-400 flex-wrap">
           <Link href="/dashboard" className="transition hover:text-zinc-100">
             Acasă
           </Link>
@@ -41,7 +41,7 @@ export function DashboardHeader() {
           <Link href="/dashboard/program" className="transition hover:text-zinc-100">
             Program
           </Link>
-          <Link href="/dashboard/pagina" className="transition hover:text-zinc-100">
+          <Link href="/dashboard/pagina" className="transition hover:text-zinc-100 hidden sm:inline">
             Pagină publică
           </Link>
         </nav>

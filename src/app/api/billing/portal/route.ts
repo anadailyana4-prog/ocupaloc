@@ -8,8 +8,15 @@ import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function POST() {
+  let siteUrl: string;
+  try {
+    siteUrl = getSiteUrl();
+  } catch {
+    return NextResponse.redirect("https://ocupaloc.ro/preturi", 303);
+  }
+
   if (!isBillingEnabled()) {
-    return NextResponse.redirect(new URL("/preturi", getSiteUrl()), 303);
+    return NextResponse.redirect(new URL("/preturi", siteUrl), 303);
   }
 
   try {
@@ -19,7 +26,7 @@ export async function POST() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.redirect(new URL("/auth/login", getSiteUrl()), 303);
+      return NextResponse.redirect(new URL("/login", siteUrl), 303);
     }
 
     const admin = createSupabaseServiceClient();
@@ -30,7 +37,7 @@ export async function POST() {
       .maybeSingle();
 
     if (profError || !prof) {
-      return NextResponse.json({ error: "Nu am găsit profilul profesional." }, { status: 404 });
+      return NextResponse.redirect(new URL("/dashboard?error=" + encodeURIComponent("Nu am găsit profilul profesional."), siteUrl), 303);
     }
 
     const stripe = getStripeClient();
@@ -44,12 +51,12 @@ export async function POST() {
 
     const portal = await stripe.billingPortal.sessions.create({
       customer: customer.id,
-      return_url: `${getSiteUrl()}/dashboard`
+      return_url: `${siteUrl}/dashboard`
     });
 
     return NextResponse.redirect(portal.url, 303);
   } catch (error) {
     reportError("billing", "create_portal_failed", error);
-    return NextResponse.json({ error: "Eroare la deschiderea portalului de facturare." }, { status: 500 });
+    return NextResponse.redirect(new URL("/dashboard?error=" + encodeURIComponent("Portalul de facturare nu este disponibil momentan. Contactează-ne la contact@ocupaloc.ro"), siteUrl), 303);
   }
 }

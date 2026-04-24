@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { ActivationWidgets } from "./activation-widgets";
+import { AddManualBookingDialog, type ServiciuOption } from "./add-manual-booking-dialog";
 import { CopyPublicLinkButton } from "./copy-public-link";
 import { ProgramariTable, type ProgramareRow } from "./programari-table";
 import { SmartRulesForm } from "./smart-rules-form";
@@ -12,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { parseProgramJson, ziKeyFromDate } from "@/lib/program";
 import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
 
@@ -85,6 +87,19 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     .select("*", { count: "exact", head: true })
     .eq("profesionist_id", prof.id);
 
+  const { data: serviciiActve } = await supabase
+    .from("servicii")
+    .select("id, nume, durata_minute")
+    .eq("profesionist_id", prof.id)
+    .eq("activ", true)
+    .order("nume", { ascending: true });
+
+  const serviciiOptions: ServiciuOption[] = (serviciiActve ?? []).map((s) => ({
+    id: s.id,
+    name: s.nume,
+    duration_min: s.durata_minute
+  }));
+
   const programRaw = prof.program as Record<string, unknown> | null;
   const programSetat = Boolean(
     programRaw &&
@@ -114,6 +129,48 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   }
 
   const { data: rawProg, error: progErr } = await progQuery;
+
+  // --- Semafor vizual pentru ziua de azi ---
+  type SemaforStatus = "closed" | "free" | "full";
+  let semaforStatus: SemaforStatus = "free";
+  let semaforBookingsToday = 0;
+
+  const todayInBucharest = toDate(`${todayLocal}T12:00:00`, { timeZone: "Europe/Bucharest" });
+  const parsedProgram = parseProgramJson(programRaw);
+  const todayDayKey = ziKeyFromDate(todayInBucharest);
+  const todayInterval = parsedProgram[todayDayKey];
+
+  if (!Array.isArray(todayInterval) || todayInterval.length !== 2) {
+    semaforStatus = "closed";
+  } else {
+    const [startH, startM] = todayInterval[0].split(":").map(Number);
+    const [endH, endM] = todayInterval[1].split(":").map(Number);
+    const workMinutes = ((endH ?? 0) * 60 + (endM ?? 0)) - ((startH ?? 0) * 60 + (startM ?? 0));
+
+    const { data: todayBookings } = await supabase
+      .from("programari")
+      .select("servicii(durata_minute)")
+      .eq("profesionist_id", prof.id)
+      .in("status", ["confirmat", "in_asteptare"])
+      .gte("data_start", dayStartIso)
+      .lte("data_start", dayEndIso);
+
+    type TodayRow = { servicii: { durata_minute: number } | { durata_minute: number }[] | null };
+    const bookedMinutes = (todayBookings as TodayRow[] | null ?? []).reduce((sum, row) => {
+      const svc = Array.isArray(row.servicii) ? row.servicii[0] : row.servicii;
+      return sum + (svc?.durata_minute ?? 0);
+    }, 0);
+
+    semaforBookingsToday = (todayBookings ?? []).length;
+    semaforStatus = bookedMinutes >= workMinutes ? "full" : "free";
+  }
+
+  const semaforConfig = {
+    closed: { dot: "bg-zinc-500", label: "Zi liberă", sub: "Nu lucrezi azi conform programului" },
+    free: { dot: "bg-emerald-500", label: "Locuri disponibile", sub: `${semaforBookingsToday} programări confirmate azi` },
+    full: { dot: "bg-red-500", label: "Zi plină", sub: `${semaforBookingsToday} programări — nu mai sunt locuri` },
+  };
+  // ---
 
   const { count: remindersSentToday } = await supabase
     .from("programari_reminders")
@@ -204,7 +261,14 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
           <h2 className="font-display text-2xl font-semibold tracking-wide text-amber-100">Pulse business</h2>
           <p className="text-sm text-muted-foreground">KPI operaționali pentru ultimele 7 zile.</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
+          <div className="lux-card p-5 flex items-start gap-3">
+            <span className={`mt-1 h-3 w-3 shrink-0 rounded-full ${semaforConfig[semaforStatus].dot} shadow-[0_0_6px_2px] ${semaforStatus === "free" ? "shadow-emerald-500/40" : semaforStatus === "full" ? "shadow-red-500/40" : "shadow-zinc-500/30"}`} />
+            <div>
+              <p className="text-sm font-medium text-amber-100/90">{semaforConfig[semaforStatus].label}</p>
+              <p className="mt-0.5 text-xs text-amber-100/50">{semaforConfig[semaforStatus].sub}</p>
+            </div>
+          </div>
           <div className="lux-card p-5">
             <p className="text-sm text-amber-100/75">Reminder-e trimise azi</p>
             <p className="mt-2 text-3xl font-bold text-amber-50">{remindersSentToday ?? 0}</p>
@@ -271,7 +335,8 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
               {filter === "azi" ? "Programările de azi" : filter === "viitoare" ? "Programări viitoare" : "Ultimele 30 de zile + viitoare"}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <AddManualBookingDialog servicii={serviciiOptions} />
             {(["azi", "viitoare", "toate"] as const).map((f) => (
               <Link
                 key={f}
