@@ -228,8 +228,8 @@ export function ActivationWidgets({
                 Ești gata — trimite linkul azi!
               </h3>
               <p className="mt-1 text-sm text-violet-100/70">
-                Profilul e complet. Acum e momentul să aduci primii clienți. Cele mai multe saloane
-                primesc prima programare în primele 24h după ce trimit linkul.
+                Profilul e complet. Acum e momentul să aduci primii clienți. Cel mai des, prima
+                programare vine în primele 24h după ce trimiți linkul.
               </p>
               {accountAgeDays !== null ? (
                 <p className="mt-2 text-xs text-violet-100/50">

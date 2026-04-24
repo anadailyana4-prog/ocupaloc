@@ -1,3 +1,5 @@
+import { reportError } from "@/lib/observability";
+
 export async function sendWelcomeEmail(email: string, nume: string): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
@@ -65,9 +67,9 @@ export async function sendWelcomeEmail(email: string, nume: string): Promise<voi
     });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      console.error("[sendWelcomeEmail] Resend", res.status, body);
+      reportError("email", "welcome_email_resend_error", new Error(`Resend ${res.status}: ${body}`), { email: to });
     }
   } catch (e) {
-    console.error("[sendWelcomeEmail]", e);
+    reportError("email", "welcome_email_failed", e instanceof Error ? e : new Error(String(e)), { email: to });
   }
 }

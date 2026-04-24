@@ -436,7 +436,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
       return {
         icon: "📅",
         message: `Agenda săptămânii e ${utilizationPct}% ocupată. Trimite linkul de rezervare la clienți pentru a umple locurile.`,
-        href: "/dashboard/setari",
+        href: null,
         urgent: false,
       };
     }

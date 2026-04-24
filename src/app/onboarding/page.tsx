@@ -66,7 +66,7 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
             required
             maxLength={120}
             defaultValue={profile?.nume_business ?? ""}
-            placeholder="Salon Ana"
+            placeholder="ex: Cabinet Dr. Ionescu"
             className="border-zinc-700 bg-zinc-900"
           />
         </div>
@@ -91,7 +91,7 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
             required
             maxLength={80}
             defaultValue={profile?.tip_activitate ?? ""}
-            placeholder="Salon înfrumusețare"
+            placeholder="ex: cabinet medical, salon, studio foto, etc."
             className="border-zinc-700 bg-zinc-900"
           />
         </div>
