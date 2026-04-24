@@ -59,23 +59,35 @@ export default async function AdminSalonsPage() {
     }
   }
 
-  // Fetch last booking date and this-week count per salon
+  // Fetch last booking date, this-week count, and no-show stats per salon
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const { data: bookingStats } = await admin
     .from("programari")
-    .select("profesionist_id, data_start")
+    .select("profesionist_id, data_start, status")
     .in("profesionist_id", profIds)
+    .gte("data_start", thirtyDaysAgo)
     .order("data_start", { ascending: false })
-    .limit(5000);
+    .limit(10000);
 
   const lastBookingMap = new Map<string, string>();
   const weekCountMap = new Map<string, number>();
+  const noShowCountMap = new Map<string, number>();
+  const completedCountMap = new Map<string, number>();
+
   for (const b of bookingStats ?? []) {
+    // Last booking (any status for recency check)
     if (!lastBookingMap.has(b.profesionist_id)) {
       lastBookingMap.set(b.profesionist_id, b.data_start);
     }
-    if (b.data_start >= weekAgo) {
+    if (b.data_start >= weekAgo && (b.status === "confirmat" || b.status === "finalizat")) {
       weekCountMap.set(b.profesionist_id, (weekCountMap.get(b.profesionist_id) ?? 0) + 1);
+    }
+    if (b.status === "noaparit") {
+      noShowCountMap.set(b.profesionist_id, (noShowCountMap.get(b.profesionist_id) ?? 0) + 1);
+    }
+    if (b.status === "finalizat") {
+      completedCountMap.set(b.profesionist_id, (completedCountMap.get(b.profesionist_id) ?? 0) + 1);
     }
   }
 
@@ -109,6 +121,8 @@ export default async function AdminSalonsPage() {
         ? formatInTimeZone(new Date(lastBookingMap.get(s.id)!), TZ, "dd.MM.yyyy")
         : "nicio programare",
       bookingsThisWeek: weekCountMap.get(s.id) ?? 0,
+      noShows30d: noShowCountMap.get(s.id) ?? 0,
+      completed30d: completedCountMap.get(s.id) ?? 0,
       atRisk,
       isTrialExpiringSoon,
       isPastDue,
@@ -158,6 +172,7 @@ export default async function AdminSalonsPage() {
               <th className="px-4 py-3">Expiră</th>
               <th className="px-4 py-3">Ultima prog.</th>
               <th className="px-4 py-3">7 zile</th>
+              <th className="px-4 py-3">No-show (30z)</th>
               <th className="px-4 py-3">Risc</th>
               <th className="px-4 py-3">Acțiuni</th>
             </tr>
@@ -187,6 +202,18 @@ export default async function AdminSalonsPage() {
                   <span className={`font-semibold ${r.bookingsThisWeek === 0 ? "text-red-400" : r.bookingsThisWeek >= 5 ? "text-emerald-400" : "text-amber-300"}`}>
                     {r.bookingsThisWeek}
                   </span>
+                </td>
+                <td className="px-4 py-3 text-xs">
+                  {r.noShows30d > 0 ? (
+                    <span className={`font-semibold ${r.noShows30d >= 3 ? "text-red-400" : "text-orange-400"}`}>
+                      {r.noShows30d} neprez.
+                      {r.completed30d > 0 ? (
+                        <span className="ml-1 text-zinc-500">({Math.round((r.noShows30d / (r.noShows30d + r.completed30d)) * 100)}%)</span>
+                      ) : null}
+                    </span>
+                  ) : (
+                    <span className="text-zinc-600">0</span>
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-col gap-1">

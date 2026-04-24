@@ -281,19 +281,54 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   const todayFormatted = formatInTimeZone(new Date(), "Europe/Bucharest", "dd.MM.yyyy");
 
-  // Build repeat-client visit counts: phone → # of prior finalized bookings (not counting current)
-  // We query all finalized bookings for this salon (phone + count) to badge repeat visitors
+  // Build repeat-client visit counts + top-clients panel data
+  // Query finalized bookings with name + date for rich client intelligence
   const { data: finalisedPhones } = await supabase
+    .from("programari")
+    .select("telefon_client, nume_client, data_start")
+    .eq("profesionist_id", prof.id)
+    .eq("status", "finalizat")
+    .order("data_start", { ascending: false });
+
+  const phoneVisitCount = new Map<string, number>();
+  // For top-clients: phone → {name, count, lastVisit}
+  type ClientStat = { name: string; phone: string; count: number; lastVisit: string };
+  const clientMap = new Map<string, ClientStat>();
+
+  for (const row of finalisedPhones ?? []) {
+    const phone = row.telefon_client as string | null;
+    const name = (row.nume_client as string | null) ?? "—";
+    const visitDate = (row.data_start as string | null) ?? "";
+    if (phone) {
+      phoneVisitCount.set(phone, (phoneVisitCount.get(phone) ?? 0) + 1);
+      if (!clientMap.has(phone)) {
+        clientMap.set(phone, { name, phone, count: 1, lastVisit: visitDate });
+      } else {
+        const existing = clientMap.get(phone)!;
+        existing.count++;
+        // data_start is ordered desc so first entry = most recent
+        if (!existing.lastVisit || visitDate > existing.lastVisit) existing.lastVisit = visitDate;
+      }
+    }
+  }
+
+  // Top 5 repeat clients (≥2 visits), ranked by visit count desc
+  const topClients: ClientStat[] = Array.from(clientMap.values())
+    .filter((c) => c.count >= 2)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  // Build no-show count per phone — for repeat no-show warning badge
+  const { data: noShowRows } = await supabase
     .from("programari")
     .select("telefon_client")
     .eq("profesionist_id", prof.id)
-    .eq("status", "finalizat");
+    .eq("status", "noaparit");
 
-  const phoneVisitCount = new Map<string, number>();
-  for (const row of finalisedPhones ?? []) {
-    if (row.telefon_client) {
-      phoneVisitCount.set(row.telefon_client, (phoneVisitCount.get(row.telefon_client) ?? 0) + 1);
-    }
+  const phoneNoShowCount = new Map<string, number>();
+  for (const row of noShowRows ?? []) {
+    const phone = row.telefon_client as string | null;
+    if (phone) phoneNoShowCount.set(phone, (phoneNoShowCount.get(phone) ?? 0) + 1);
   }
 
   const programari: ProgramareRow[] =
@@ -309,7 +344,8 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
             clientPhone: p.telefon_client ?? "",
             serviceName: svc?.nume ?? "—",
             status: p.status,
-            priorVisits: p.telefon_client ? (phoneVisitCount.get(p.telefon_client) ?? 0) : 0
+            priorVisits: p.telefon_client ? (phoneVisitCount.get(p.telefon_client) ?? 0) : 0,
+            repeatNoShows: p.telefon_client ? (phoneNoShowCount.get(p.telefon_client) ?? 0) : 0
           };
         })
       : [];
@@ -673,6 +709,51 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
           <ProgramariTable rows={programari} />
         )}
       </section>
+
+      {/* Top repeat-clients panel — only shown when there are repeat clients */}
+      {topClients.length > 0 ? (
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight text-amber-100">Clienți fideli</h2>
+            <p className="text-xs text-amber-100/50">Clienți cu cel puțin 2 vizite finalizate</p>
+          </div>
+          <div className="lux-card overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="border-b border-zinc-800 bg-zinc-950/60">
+                <tr>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-400">Client</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-400">Telefon</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-400">Vizite</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-zinc-400">Ultima vizită</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800/60">
+                {topClients.map((c, i) => (
+                  <tr key={c.phone} className="hover:bg-zinc-900/40">
+                    <td className="px-4 py-2.5 font-medium text-white">
+                      <div className="flex items-center gap-2">
+                        {i === 0 ? <span className="text-amber-400">★</span> : null}
+                        {c.name}
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-zinc-300">
+                      <a href={`tel:${c.phone}`} className="hover:underline hover:text-cyan-300">{c.phone}</a>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <span className="inline-flex items-center rounded-full bg-violet-900/50 px-2 py-0.5 text-xs font-semibold text-violet-200">
+                        {c.count}×
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-zinc-400">
+                      {c.lastVisit ? formatInTimeZone(new Date(c.lastVisit), "Europe/Bucharest", "dd.MM.yyyy") : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

@@ -17,6 +17,8 @@ export type ProgramareRow = {
   status: string;
   /** Number of prior completed bookings for the same phone number */
   priorVisits?: number;
+  /** Number of times this phone has been marked noaparit — for repeat no-show warning */
+  repeatNoShows?: number;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -107,11 +109,16 @@ export function ProgramariTable({ rows }: Props) {
               <div key={r.id} className="flex flex-col gap-2 px-4 py-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <p className="truncate font-medium leading-snug">{r.clientName}</p>
                       {r.priorVisits && r.priorVisits > 0 ? (
                         <span className="shrink-0 rounded-full bg-violet-900/60 px-2 py-0.5 text-xs font-medium text-violet-300">
                           {r.priorVisits + 1}. vizită
+                        </span>
+                      ) : null}
+                      {r.repeatNoShows && r.repeatNoShows >= 2 ? (
+                        <span className="shrink-0 rounded-full bg-red-900/60 px-2 py-0.5 text-xs font-medium text-red-300" title="Client cu neprezentări repetate">
+                          ⚠ {r.repeatNoShows}× neprezent
                         </span>
                       ) : null}
                     </div>
@@ -201,11 +208,16 @@ export function ProgramariTable({ rows }: Props) {
                     <td className="px-4 py-3 font-mono text-xs text-zinc-300">{r.dataStr}</td>
                     <td className="px-4 py-3 font-mono text-xs text-zinc-300">{r.oraStr}</td>
                     <td className="px-4 py-3 font-medium">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span>{r.clientName}</span>
                         {r.priorVisits && r.priorVisits > 0 ? (
                           <span className="rounded-full bg-violet-900/60 px-2 py-0.5 text-xs font-medium text-violet-300">
                             {r.priorVisits + 1}. vizită
+                          </span>
+                        ) : null}
+                        {r.repeatNoShows && r.repeatNoShows >= 2 ? (
+                          <span className="rounded-full bg-red-900/60 px-2 py-0.5 text-xs font-medium text-red-300" title="Client cu neprezentări repetate">
+                            ⚠ {r.repeatNoShows}× neprezent
                           </span>
                         ) : null}
                       </div>

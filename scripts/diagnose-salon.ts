@@ -174,10 +174,34 @@ async function run() {
     .maybeSingle();
 
   if (!sub) {
-    warn("No subscription record found — salon is on trial or has never subscribed");
+    // Compute trial status from account age
+    const createdAt = prof.created_at ? new Date(prof.created_at as string) : null;
+    const TRIAL_DAYS = 30;
+    const trialEnd = createdAt ? new Date(createdAt.getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000) : null;
+    if (trialEnd) {
+      const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+      if (daysLeft > 0) {
+        warn("No subscription record — on local trial", `${daysLeft} days left (expires ${trialEnd.toISOString().slice(0, 10)})`);
+      } else {
+        fail("Trial expired", `expired ${trialEnd.toISOString().slice(0, 10)} (${Math.abs(daysLeft)} days ago)`);
+      }
+    } else {
+      warn("No subscription record found — salon is on trial or has never subscribed");
+    }
   } else {
     info("Subscription status", sub.status);
-    info("Period end", String(sub.current_period_end).slice(0, 10));
+    if (sub.current_period_end) {
+      const periodEnd = new Date(sub.current_period_end);
+      const daysUntilRenewal = Math.ceil((periodEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
+      const renewalStr = `${periodEnd.toISOString().slice(0, 10)} (in ${daysUntilRenewal} days)`;
+      if (daysUntilRenewal <= 3) {
+        warn("Renews very soon", renewalStr);
+      } else if (daysUntilRenewal <= 0) {
+        fail("Period end passed", renewalStr);
+      } else {
+        info("Renews / expires", renewalStr);
+      }
+    }
     info("Stripe customer", String(sub.stripe_customer_id));
     if (sub.status === "active" || sub.status === "trialing") {
       ok("Subscription is active");
@@ -218,6 +242,37 @@ async function run() {
     ok("Owner has new-booking email notifications enabled");
   }
 
+  // ---- 6b. No-show stats ----
+  section("6b. No-show stats (last 30 days)");
+
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const { count: noShowCount30d } = await supabase
+    .from("programari")
+    .select("id", { count: "exact", head: true })
+    .eq("profesionist_id", prof.id)
+    .eq("status", "noaparit")
+    .gte("data_start", thirtyDaysAgo.toISOString());
+
+  const { count: finalisedCount30d } = await supabase
+    .from("programari")
+    .select("id", { count: "exact", head: true })
+    .eq("profesionist_id", prof.id)
+    .eq("status", "finalizat")
+    .gte("data_start", thirtyDaysAgo.toISOString());
+
+  const total30d = (noShowCount30d ?? 0) + (finalisedCount30d ?? 0);
+  const noShowRate = total30d > 0 ? Math.round(((noShowCount30d ?? 0) / total30d) * 100) : null;
+
+  info("No-shows (30d)", String(noShowCount30d ?? 0));
+  info("Finalized (30d)", String(finalisedCount30d ?? 0));
+  if (noShowRate !== null) {
+    if (noShowRate >= 20) fail(`No-show rate ${noShowRate}% — high`, "consider reviewing repeat no-show clients");
+    else if (noShowRate >= 10) warn(`No-show rate ${noShowRate}% — elevated`);
+    else ok(`No-show rate ${noShowRate}%`);
+  } else {
+    info("No-show rate: n/a (no finalized or no-show bookings in last 30d)");
+  }
+
   // ---- 7. Auth user ----
   section("7. Auth user");
 
@@ -226,7 +281,20 @@ async function run() {
     fail("Auth user not found for this salon");
   } else {
     ok("Auth user exists", authUser.user.email ?? "no email");
-    info("Last sign in", String(authUser.user.last_sign_in_at ?? "never").slice(0, 16));
+    const lastSignIn = authUser.user.last_sign_in_at;
+    if (lastSignIn) {
+      const lastSignInDate = new Date(lastSignIn);
+      const daysSinceLogin = Math.floor((now.getTime() - lastSignInDate.getTime()) / (24 * 60 * 60 * 1000));
+      if (daysSinceLogin > 30) {
+        warn("Last sign-in was a long time ago", `${daysSinceLogin} days ago (${lastSignIn.slice(0, 10)})`);
+      } else if (daysSinceLogin > 14) {
+        warn("Owner hasn't logged in recently", `${daysSinceLogin} days ago`);
+      } else {
+        ok("Recently active", `last login ${daysSinceLogin} day${daysSinceLogin !== 1 ? "s" : ""} ago`);
+      }
+    } else {
+      warn("Owner has never logged in");
+    }
     const confirmedAt = authUser.user.email_confirmed_at;
     if (confirmedAt) ok("Email confirmed");
     else warn("Email NOT confirmed — cannot log in");
