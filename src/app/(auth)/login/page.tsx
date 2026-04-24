@@ -216,9 +216,9 @@ function LoginForm() {
           {alreadyLoggedIn && (
             <div className="rounded-md border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-300">
               Ești deja autentificat.{" "}
-              <a href="/dashboard" className="font-medium text-white underline underline-offset-2">
+              <Link href="/dashboard" className="font-medium text-white underline underline-offset-2">
                 Du-te la dashboard →
-              </a>
+              </Link>
             </div>
           )}
           <Form {...form}>

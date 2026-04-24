@@ -49,3 +49,11 @@ Building: [@sentry/nextjs - Client] Warning: No auth token provided. Will not cr
 Building: [@sentry/nextjs - Client] Warning: No auth token provided. Will not upload source maps. Please set the `authToken` option. You can find information on how to generate a Sentry auth token here: https://docs.sentry.io/api/auth/
 Building: ✓ Compiled successfully in 24.4s
 Building: Linting and checking validity of types ...
+Building: Failed to compile.
+Building: ./src/app/(auth)/login/page.tsx
+Building: 219:15  Error: Do not use an `<a>` element to navigate to `/dashboard/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+Building: 219:15  Error: Do not use an `<a>` element to navigate to `/dashboard/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+Building: info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+Building: ELIFECYCLE  Command failed with exit code 1.
+Building: Error: Command "pnpm run build" exited with 1
+Error: Command "pnpm run build" exited with 1
