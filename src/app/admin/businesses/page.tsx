@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
 
@@ -272,12 +273,12 @@ export default async function AdminBusinessesPage() {
       <div>
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-amber-50">Admin — Conturi ({rows.length})</h1>
-          <a
+          <Link
             href="/api/admin/businesses-csv"
             className="rounded-full bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-300 hover:bg-zinc-700 hover:text-white"
           >
             ↓ CSV
-          </a>
+          </Link>
         </div>
         <p className="mt-1 text-sm text-zinc-400">Vizibil numai pentru {adminEmail}</p>
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-zinc-500">

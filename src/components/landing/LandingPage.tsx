@@ -277,10 +277,6 @@ export function LandingPage() {
             <p className="mt-3 text-zinc-400">Te loghezi cu Google o singură dată. Programările noi apar instant în calendarul tău.</p>
           </details>
           <details className="rounded-xl border border-zinc-800 bg-zinc-900 px-6 py-4 text-base text-zinc-300">
-            <summary className="cursor-pointer list-none font-semibold text-white">Cum gestionez plățile pentru serviciile mele?</summary>
-            <p className="mt-3 text-zinc-400">Ocupaloc se concentrează acum pe programări, confirmări, remindere și organizarea agendei. Plata online la rezervare nu este integrată în acest moment.</p>
-          </details>
-          <details className="rounded-xl border border-zinc-800 bg-zinc-900 px-6 py-4 text-base text-zinc-300">
             <summary className="cursor-pointer list-none font-semibold text-white">Se pot anula sau reprograma clienții?</summary>
             <p className="mt-3 text-zinc-400">Da. Clientul primește link securizat și poate modifica rezervarea fără apel.</p>
           </details>
