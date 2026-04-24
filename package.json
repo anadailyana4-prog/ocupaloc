@@ -29,7 +29,7 @@
     "verify:secrets": "tsx scripts/check-secrets.ts",
     "ops:synthetic": "tsx scripts/run-synthetic-monitor.ts",
     "ops:slo": "tsx scripts/check-slo-release-gate.ts",
-    "diagnose:salon": "tsx scripts/diagnose-salon.ts",
+    "diagnose:business": "tsx scripts/diagnose-business.ts",
     "prepare": "husky"
   },
   "dependencies": {

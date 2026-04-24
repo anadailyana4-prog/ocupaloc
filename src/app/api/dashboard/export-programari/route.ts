@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     .join("");
 
   const csv = header + body;
-  const slug = prof.slug ?? "salon";
+  const slug = prof.slug ?? "business";
   const filename = `programari-${slug}-${formatInTimeZone(new Date(), TZ, "yyyy-MM-dd")}.csv`;
 
   return new NextResponse(csv, {

@@ -1,5 +1,6 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { reportError } from "@/lib/observability";
+import { ziKeyFromDate } from "@/lib/program";
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://ocupaloc.ro").replace(/\/$/, "");
 
@@ -49,6 +50,7 @@ type WeeklySummaryRow = {
   noShowCount: number;
   cancellationCount: number;
   daysSinceLastBooking: number | null; // null = never had a booking
+  utilizationPct: number | null; // booked minutes / scheduled minutes * 100
 };
 
 async function buildWeeklySummaries(): Promise<WeeklySummaryRow[]> {
@@ -59,10 +61,10 @@ async function buildWeeklySummaries(): Promise<WeeklySummaryRow[]> {
   const prevWeekStart = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
   const next7End = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-  // Fetch all active professionals with email
+  // Fetch all active professionals with email and schedule
   const { data: profs, error: profErr } = await admin
     .from("profesionisti")
-    .select("id, slug, email_contact, nume_business")
+    .select("id, slug, email_contact, nume_business, program")
     .not("email_contact", "is", null)
     .neq("email_contact", "")
     .order("id");
@@ -74,10 +76,10 @@ async function buildWeeklySummaries(): Promise<WeeklySummaryRow[]> {
 
   const profIds = profs.map((p) => p.id as string);
 
-  // Fetch this week's confirmed bookings
+  // Fetch this week's confirmed bookings (with duration for utilization)
   const { data: thisWeekRows } = await admin
     .from("programari")
-    .select("profesionist_id, servicii(nume)")
+    .select("profesionist_id, data_start, data_final, servicii(nume)")
     .in("profesionist_id", profIds)
     .in("status", ["confirmat", "finalizat"])
     .gte("data_start", weekStart.toISOString())
@@ -137,11 +139,17 @@ async function buildWeeklySummaries(): Promise<WeeklySummaryRow[]> {
   const noShowWeekCount: Record<string, number> = {};
   const cancellationWeekCount: Record<string, number> = {};
   const lastBookingDateMap: Record<string, string> = {};
+  const bookedMinutesMap: Record<string, number> = {};
   const serviceFreq: Record<string, Record<string, number>> = {};
 
   for (const row of thisWeekRows ?? []) {
     const pid = row.profesionist_id as string;
     thisWeekCount[pid] = (thisWeekCount[pid] ?? 0) + 1;
+    // Booked minutes for utilization
+    if (row.data_final && row.data_start) {
+      const diffMs = new Date(row.data_final as string).getTime() - new Date(row.data_start as string).getTime();
+      bookedMinutesMap[pid] = (bookedMinutesMap[pid] ?? 0) + Math.max(0, Math.round(diffMs / 60000));
+    }
     const svc = row.servicii as { nume?: string } | { nume?: string }[] | null;
     const name = (Array.isArray(svc) ? svc[0]?.nume : svc?.nume) ?? null;
     if (name) {
@@ -199,6 +207,25 @@ async function buildWeeklySummaries(): Promise<WeeklySummaryRow[]> {
       daysSinceLastBooking: lastBookingDateMap[pid]
         ? Math.floor((now.getTime() - new Date(lastBookingDateMap[pid]).getTime()) / (24 * 60 * 60 * 1000))
         : null,
+      utilizationPct: (() => {
+        const rawProgram = (p as Record<string, unknown>).program as Record<string, unknown> | null;
+        if (!rawProgram) return null;
+        let scheduled = 0;
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(weekStart.getTime() + i * 24 * 60 * 60 * 1000);
+          const dayKey = ziKeyFromDate(d);
+          const interval = rawProgram[dayKey];
+          if (Array.isArray(interval) && interval.length === 2) {
+            const [sh, sm] = (interval[0] as string).split(":").map(Number);
+            const [eh, em] = (interval[1] as string).split(":").map(Number);
+            const mins = (eh * 60 + em) - (sh * 60 + (sm ?? 0));
+            if (mins > 0) scheduled += mins;
+          }
+        }
+        if (scheduled === 0) return null;
+        const booked = bookedMinutesMap[pid] ?? 0;
+        return Math.min(100, Math.round((booked / scheduled) * 100));
+      })()
     };
   });
 }
@@ -260,16 +287,18 @@ function buildEmailContent(row: WeeklySummaryRow): { subject: string; text: stri
   const topServiceNote = row.topService ? `Cel mai popular serviciu: **${row.topService}**.` : "";
   const noShowNote = row.noShowCount > 0 ? `\u2022 Neprezentați: ${row.noShowCount}` : "";
   const cancellationNote = row.cancellationCount > 0 ? `\u2022 Anulări de către client: ${row.cancellationCount}` : "";
+  const utilizationNote = row.utilizationPct !== null ? `• Utilizare capacitate săptămâna aceasta: ~${row.utilizationPct}%` : "";
   const text = [
     `Salut,`,
     ``,
     `Rezumatul săptămânii pentru ${row.numeBusiness}:`,
     ``,
-    `\u2022 Programări această săptămână: ${row.bookingsThisWeek} (${trend})`,
-    row.topService ? `\u2022 Serviciu top: ${row.topService}` : "",
-    `\u2022 Programări confirmate în următoarele 7 zile: ${row.upcomingNext7}`,
+    `• Programări această săptămână: ${row.bookingsThisWeek} (${trend})`,
+    row.topService ? `• Serviciu top: ${row.topService}` : "",
+    `• Programări confirmate în următoarele 7 zile: ${row.upcomingNext7}`,
     noShowNote,
     cancellationNote,
+    utilizationNote,
     ``,
     topServiceNote,
     ``,
@@ -301,7 +330,8 @@ function buildEmailContent(row: WeeklySummaryRow): { subject: string; text: stri
 
   ${safeTopService ? `<p style="margin:0 0 12px;"><strong>Serviciu top:</strong> ${safeTopService}</p>` : ""}
   ${row.noShowCount > 0 ? `<p style="margin:0 0 8px;color:#dc2626;font-size:14px;"><strong>Neprezentați săptămâna aceasta:</strong> ${row.noShowCount}</p>` : ""}
-  ${row.cancellationCount > 0 ? `<p style="margin:0 0 20px;color:#d97706;font-size:14px;"><strong>Anulări de către client:</strong> ${row.cancellationCount}</p>` : ""}
+  ${row.cancellationCount > 0 ? `<p style="margin:0 0 8px;color:#d97706;font-size:14px;"><strong>Anulări de către client:</strong> ${row.cancellationCount}</p>` : ""}
+  ${row.utilizationPct !== null ? `<p style="margin:0 0 20px;font-size:14px;"><strong>Utilizare capacitate:</strong> <span style="color:${row.utilizationPct >= 70 ? '#16a34a' : row.utilizationPct >= 40 ? '#d97706' : '#6b7280'}">${row.utilizationPct}%</span></p>` : ""}
 
   <a href="${dashboardUrl}" style="background:#1c1c2e;color:#fbbf24;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Deschide dashboard-ul →</a>
 

@@ -48,6 +48,7 @@ type MonthlyRow = {
   noShowCount: number;
   cancellationCount: number;
   confirmationRate: number | null; // % = confirmed / (confirmed + noShow + clientCancellations)
+  isFirstMonth: boolean; // account was created during the reporting month
 };
 
 /** Returns [start, end) ISO strings for a calendar month offset. 0 = current month, -1 = previous. */
@@ -68,12 +69,14 @@ const ROMANIAN_MONTHS = [
 async function buildMonthlySummaries(): Promise<MonthlyRow[]> {
   const admin = createSupabaseServiceClient();
 
-  const thisMonth = monthBounds(0);
-  const prevMonth = monthBounds(-1);
+  // reportingMonth = the calendar month just completed (e.g. April when cron runs May 1st)
+  // comparisonMonth = the month before that (e.g. March) — used as the trend baseline
+  const reportingMonth = monthBounds(-1);
+  const comparisonMonth = monthBounds(-2);
 
   const { data: profs, error: profErr } = await admin
     .from("profesionisti")
-    .select("id, slug, email_contact, nume_business")
+    .select("id, slug, email_contact, nume_business, created_at")
     .not("email_contact", "is", null)
     .neq("email_contact", "")
     .order("id");
@@ -91,30 +94,30 @@ async function buildMonthlySummaries(): Promise<MonthlyRow[]> {
       .select("profesionist_id, servicii(nume)")
       .in("profesionist_id", profIds)
       .in("status", ["confirmat", "finalizat"])
-      .gte("data_start", thisMonth.start)
-      .lt("data_start", thisMonth.end),
+      .gte("data_start", reportingMonth.start)
+      .lt("data_start", reportingMonth.end),
     admin
       .from("programari")
       .select("profesionist_id")
       .in("profesionist_id", profIds)
       .in("status", ["confirmat", "finalizat"])
-      .gte("data_start", prevMonth.start)
-      .lt("data_start", prevMonth.end),
+      .gte("data_start", comparisonMonth.start)
+      .lt("data_start", comparisonMonth.end),
     admin
       .from("programari")
       .select("profesionist_id")
       .in("profesionist_id", profIds)
       .eq("status", "noaparit")
-      .gte("data_start", thisMonth.start)
-      .lt("data_start", thisMonth.end),
+      .gte("data_start", reportingMonth.start)
+      .lt("data_start", reportingMonth.end),
     admin
       .from("programari_status_events")
       .select("profesionist_id")
       .in("profesionist_id", profIds)
       .eq("status", "anulat")
       .eq("source", "client_link")
-      .gte("created_at", thisMonth.start)
-      .lt("created_at", thisMonth.end)
+      .gte("created_at", reportingMonth.start)
+      .lt("created_at", reportingMonth.end)
   ]);
 
   // Build counts per prof
@@ -179,6 +182,10 @@ async function buildMonthlySummaries(): Promise<MonthlyRow[]> {
           const ca = cancellationCount.get(pid) ?? 0;
           const total = confirmed + ns + ca;
           return total >= 5 ? Math.round((confirmed / total) * 100) : null;
+        })(),
+        isFirstMonth: (() => {
+          const createdAt = (p.created_at as string | null) ?? null;
+          return !!createdAt && createdAt >= reportingMonth.start && createdAt < reportingMonth.end;
         })()
       };
     })
@@ -190,6 +197,46 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
   const trend = delta > 0 ? `▲ +${delta} față de luna trecută` : delta < 0 ? `▼ ${delta} față de luna trecută` : "= Același număr ca luna trecută";
   const dashboardUrl = `${SITE_URL}/dashboard`;
   const business = escapeHtml(row.numeBusiness);
+
+  // First-month welcome: no trend comparison, celebrate the start
+  if (row.isFirstMonth) {
+    const subject = `Prima ta lună pe Ocupaloc — ${row.thisMonthCount} programări`;
+    const text = [
+      `Salut ${row.numeBusiness},`,
+      "",
+      `Felicitări pentru prima lună pe Ocupaloc!`,
+      "",
+      `  • Programări confirmate în ${monthName}: ${row.thisMonthCount}`,
+      row.topService ? `  • Serviciu top: ${row.topService}` : null,
+      row.noShowCount > 0 ? `  • Clienți neprezentați: ${row.noShowCount}` : null,
+      row.cancellationCount > 0 ? `  • Anulări client: ${row.cancellationCount}` : null,
+      "",
+      row.thisMonthCount > 0
+        ? `Un start solid. Continuă să trimiți linkul clienților pe WhatsApp și Instagram.`
+        : `Dacă nu ai primit programări online încă, trimite linkul tău la cel puțin 10 clienți actuali pe WhatsApp.`,
+      "",
+      `Dashboard: ${dashboardUrl}`,
+      "",
+      "Ocupaloc"
+    ].filter((l) => l !== null).join("\n");
+
+    const html = `
+<div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
+  <h2 style="margin:0 0 4px;">🎉 Prima lună pe Ocupaloc</h2>
+  <p style="margin:0 0 16px;color:#6b7280;">${business}</p>
+  <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:0 0 20px;">
+    <p style="margin:0 0 4px;font-size:36px;font-weight:700;">${row.thisMonthCount}</p>
+    <p style="margin:0 0 12px;color:#6b7280;">programări confirmate în ${escapeHtml(monthName)}</p>
+    ${row.topService ? `<p style="margin:0 0 4px;"><strong>Serviciu top:</strong> ${escapeHtml(row.topService)}</p>` : ""}
+    ${row.noShowCount > 0 ? `<p style="margin:0 0 4px;"><strong>Neprezentați:</strong> ${row.noShowCount}</p>` : ""}
+    ${row.cancellationCount > 0 ? `<p style="margin:0 0 4px;"><strong>Anulări client:</strong> ${row.cancellationCount}</p>` : ""}
+  </div>
+  <p style="margin:0 0 16px;">${row.thisMonthCount > 0 ? "Un start solid. Continuă să trimiți linkul clienților!" : "Dacă nu ai primit programări online încă, trimite linkul la cel puțin 10 clienți actuali pe WhatsApp."}</p>
+  <a href="${dashboardUrl}" style="background:#1c1c2e;color:#fbbf24;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Deschide dashboard-ul →</a>
+  <p style="margin:0;color:#9ca3af;font-size:12px;">Ocupaloc · <a href="${SITE_URL}" style="color:#9ca3af;">ocupaloc.ro</a></p>
+</div>`;
+    return { subject, text, html };
+  }
 
   const subject = `Rezumat ${monthName}: ${row.thisMonthCount} programări la ${row.numeBusiness}`;
 

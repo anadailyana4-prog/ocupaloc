@@ -1,7 +1,7 @@
 /**
- * pnpm run diagnose:salon -- --slug=<slug>
+ * pnpm run diagnose:business -- --slug=<slug>
  *
- * Founder-facing diagnostic tool. Answers in seconds why a given salon
+ * Founder-facing diagnostic tool. Answers in seconds why a given business
  * cannot receive bookings, reminders, or billing.
  *
  * Requires SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY in env (use .env.local).
@@ -18,7 +18,7 @@ const slug = (() => {
 })();
 
 if (!slug) {
-  console.error("Usage: pnpm run diagnose:salon -- --slug=<slug>");
+  console.error("Usage: pnpm run diagnose:business -- --slug=<slug>");
   process.exit(1);
 }
 
@@ -66,7 +66,7 @@ async function run() {
 
   const { data: prof, error: profErr } = await supabase
     .from("profesionisti")
-    .select("id, slug, email_contact, nome_business, onboarding_pas, program, created_at, user_id, notificari_email_nou")
+    .select("id, slug, email_contact, nume_business, onboarding_pas, program, created_at, user_id, notificari_email_nou")
     .eq("slug", slug)
     .maybeSingle();
 
