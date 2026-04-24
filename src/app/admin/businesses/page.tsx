@@ -8,6 +8,15 @@ export const dynamic = "force-dynamic";
 
 const TZ = "Europe/Bucharest";
 
+type HealthBand = "critical" | "at_risk" | "watch" | "healthy";
+
+const HEALTH_BAND_CONFIG: Record<HealthBand, { label: string; badgeClasses: string; rowBg: string }> = {
+  critical: { label: "CRITIC",  badgeClasses: "bg-red-900/80 text-red-100 border border-red-700",    rowBg: "bg-red-950/25" },
+  at_risk:  { label: "LA RISC", badgeClasses: "bg-orange-900/80 text-orange-200 border border-orange-700", rowBg: "bg-orange-950/20" },
+  watch:    { label: "ATENȚIE", badgeClasses: "bg-amber-900/80 text-amber-200 border border-amber-700",  rowBg: "bg-amber-950/10" },
+  healthy:  { label: "OK",      badgeClasses: "bg-emerald-900/80 text-emerald-200 border border-emerald-700", rowBg: "bg-zinc-950" },
+};
+
 export default async function AdminBusinessesPage() {
   const adminEmail = process.env.ADMIN_EMAIL?.trim();
   if (!adminEmail) {
@@ -155,13 +164,36 @@ export default async function AdminBusinessesPage() {
       ? Math.round((confirmed30d / qualityTotal) * 100)
       : null;
 
+    const accountAgeDays = createdAt ? Math.floor((Date.now() - createdAt.getTime()) / (24 * 60 * 60 * 1000)) : 0;
+    const onboardingDone = (s.onboarding_pas ?? 0) >= 4;
+    const isTrialExpired = subStatus === "trial" && trialDaysLeft !== null && trialDaysLeft < 0;
+    const lastLoginDaysVal = (() => {
+      const email = s.email_contact ?? null;
+      const lsi = email ? lastLoginMap.get(email) ?? null : null;
+      if (!lsi) return null;
+      return Math.floor((Date.now() - new Date(lsi).getTime()) / (24 * 60 * 60 * 1000));
+    })();
+    const healthBand: HealthBand = (() => {
+      if (!onboardingDone) return "critical";
+      if (subStatus === "past_due" || subStatus === "canceled") return "critical";
+      if (isTrialExpired) return "critical";
+      // 14d quiet threshold: accounts older than 14 days with no booking in 14d are at_risk
+      if (isQuiet14d && accountAgeDays > 14) return "at_risk";
+      if (confirmationRate30d !== null && confirmationRate30d < 60) return "at_risk";
+      if (isTrialExpiringSoon) return "watch";
+      if (confirmationRate30d !== null && confirmationRate30d < 80) return "watch";
+      if ((lastLoginDaysVal ?? 0) > 30) return "watch";
+      if (isQuiet14d) return "watch"; // new account (≤14d old) still quiet — watch not at_risk
+      return "healthy";
+    })();
+
     return {
       id: s.id,
       slug: s.slug ?? "—",
       email: s.email_contact ?? "—",
       business: s.nume_business?.trim() || "—",
       createdAt: s.created_at ? formatInTimeZone(new Date(s.created_at), TZ, "dd.MM.yyyy") : "—",
-      onboardingDone: (s.onboarding_pas ?? 0) >= 4,
+      onboardingDone,
       subStatus,
       subEnd: subMap.get(s.id)?.current_period_end
         ? formatInTimeZone(new Date(subMap.get(s.id)!.current_period_end!), TZ, "dd.MM.yyyy")
@@ -169,19 +201,8 @@ export default async function AdminBusinessesPage() {
       lastBooking: lastBookingMap.has(s.id)
         ? formatInTimeZone(new Date(lastBookingMap.get(s.id)!), TZ, "dd.MM.yyyy")
         : "nicio programare",
-      lastLogin: (() => {
-        const email = s.email_contact ?? null;
-        const lsi = email ? lastLoginMap.get(email) ?? null : null;
-        if (!lsi) return "—";
-        const daysSince = Math.floor((Date.now() - new Date(lsi).getTime()) / (24 * 60 * 60 * 1000));
-        return `${daysSince}z`;
-      })(),
-      lastLoginDays: (() => {
-        const email = s.email_contact ?? null;
-        const lsi = email ? lastLoginMap.get(email) ?? null : null;
-        if (!lsi) return null;
-        return Math.floor((Date.now() - new Date(lsi).getTime()) / (24 * 60 * 60 * 1000));
-      })(),
+      lastLogin: lastLoginDaysVal !== null ? `${lastLoginDaysVal}z` : "—",
+      lastLoginDays: lastLoginDaysVal,
       bookingsThisWeek: weekCountMap.get(s.id) ?? 0,
       bookingsPrevWeek: prevWeekCountMap.get(s.id) ?? 0,
       totalBookings30d: totalBookings30dMap.get(s.id) ?? 0,
@@ -190,20 +211,17 @@ export default async function AdminBusinessesPage() {
       confirmationRate30d,
       atRisk,
       neverBooked,
+      isQuiet14d,
       isQuietPaying,
       isTrialExpiringSoon,
       isPastDue,
       trialDaysLeft,
+      isTrialExpired,
+      healthBand,
     };
   }).sort((a, b) => {
-    const urgency = (r: typeof a) => {
-      if (r.isPastDue) return 0;
-      if (r.atRisk) return 1;
-      if (r.isQuietPaying) return 2;
-      if (r.isTrialExpiringSoon) return 3;
-      return 4;
-    };
-    return urgency(a) - urgency(b);
+    const bandOrder: Record<string, number> = { critical: 0, at_risk: 1, watch: 2, healthy: 3 };
+    return (bandOrder[a.healthBand] ?? 4) - (bandOrder[b.healthBand] ?? 4);
   });
 
   const subBadge = (status: string) => {
@@ -222,18 +240,48 @@ export default async function AdminBusinessesPage() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold text-amber-50">Admin — Conturi ({rows.length})</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-amber-50">Admin — Conturi ({rows.length})</h1>
+          <a
+            href="/api/admin/businesses-csv"
+            className="rounded-full bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-300 hover:bg-zinc-700 hover:text-white"
+          >
+            ↓ CSV
+          </a>
+        </div>
         <p className="mt-1 text-sm text-zinc-400">Vizibil numai pentru {adminEmail}</p>
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-zinc-500">
-          <span><span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>risc / inactiv 14z</span>
-          <span><span className="inline-block w-2 h-2 rounded-full bg-sky-400 mr-1"></span>plătitor silențios (14z)</span>
-          <span><span className="inline-block w-2 h-2 rounded-full bg-amber-400 mr-1"></span>trial expiră ≤5z</span>
-          <span><span className="inline-block w-2 h-2 rounded-full bg-orange-500 mr-1"></span>plată restantă</span>
-          <span><span className="inline-block w-2 h-2 rounded-full bg-violet-500 mr-1"></span>fără nicio programare</span>
+          <span><span className="inline-block w-2 h-2 rounded-full bg-red-700 mr-1"></span>CRITIC — setup/billing/expirat</span>
+          <span><span className="inline-block w-2 h-2 rounded-full bg-orange-700 mr-1"></span>LA RISC — inactiv 14z / conf. &lt;60%</span>
+          <span><span className="inline-block w-2 h-2 rounded-full bg-amber-700 mr-1"></span>ATENȚIE — conf. &lt;80% / login vechi / trial expiră</span>
+          <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-700 mr-1"></span>OK — fără probleme critice</span>
         </div>
       </div>
 
-      {/* Fleet health summary strip */}
+      {/* Fleet health distribution */}
+      {(() => {
+        const criticalCount = rows.filter((r) => r.healthBand === "critical").length;
+        const atRiskCount   = rows.filter((r) => r.healthBand === "at_risk").length;
+        const watchCount    = rows.filter((r) => r.healthBand === "watch").length;
+        const healthyCount  = rows.filter((r) => r.healthBand === "healthy").length;
+        return (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { label: "Critic",    value: criticalCount, valueColor: criticalCount > 0 ? "text-red-400"     : "text-zinc-600", border: criticalCount > 0 ? "border-red-900/50"    : "border-zinc-800" },
+              { label: "La risc",  value: atRiskCount,   valueColor: atRiskCount   > 0 ? "text-orange-400"  : "text-zinc-600", border: atRiskCount   > 0 ? "border-orange-900/50" : "border-zinc-800" },
+              { label: "Atenţie",  value: watchCount,    valueColor: watchCount    > 0 ? "text-amber-400"   : "text-zinc-600", border: watchCount    > 0 ? "border-amber-900/50"  : "border-zinc-800" },
+              { label: "Sănătos",  value: healthyCount,  valueColor: healthyCount  > 0 ? "text-emerald-400" : "text-zinc-600", border: "border-zinc-800" },
+            ].map((s) => (
+              <div key={s.label} className={`rounded-xl border ${s.border} bg-zinc-900/60 px-4 py-3`}>
+                <p className={`text-3xl font-bold ${s.valueColor}`}>{s.value}</p>
+                <p className="mt-0.5 text-xs text-zinc-500">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
+      {/* Fleet operational stats */}
       {(() => {
         const totalBusinesses = rows.length;
         const onboardedCount = rows.filter((r) => r.onboardingDone).length;
@@ -280,7 +328,7 @@ export default async function AdminBusinessesPage() {
               <th className="px-4 py-3">30z</th>
               <th className="px-4 py-3">Trend 7z</th>
               <th className="px-4 py-3">Calitate (30z)</th>
-              <th className="px-4 py-3">Risc</th>
+              <th className="px-4 py-3">Sănătate</th>
               <th className="px-4 py-3">Acțiuni</th>
             </tr>
           </thead>
@@ -288,13 +336,7 @@ export default async function AdminBusinessesPage() {
             {rows.map((r) => (
               <tr
                 key={r.id}
-                className={`hover:bg-zinc-900/60 ${
-                  r.isPastDue ? "bg-orange-950/20" :
-                  r.atRisk ? "bg-red-950/20" :
-                  r.isQuietPaying ? "bg-sky-950/20" :
-                  r.isTrialExpiringSoon ? "bg-amber-950/20" :
-                  "bg-zinc-950"
-                }`}
+                className={`hover:bg-zinc-900/60 ${HEALTH_BAND_CONFIG[r.healthBand].rowBg}`}
               >
                 <td className="px-4 py-3 font-medium text-white">{r.business}</td>
                 <td className="px-4 py-3">
@@ -359,36 +401,21 @@ export default async function AdminBusinessesPage() {
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex flex-col gap-1">
-                    {r.isPastDue ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-orange-900/60 px-2 py-0.5 text-xs font-semibold text-orange-300">
-                        ⚠ restant
-                      </span>
-                    ) : null}
-                    {r.atRisk ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-red-900/60 px-2 py-0.5 text-xs font-semibold text-red-300">
-                        ● inactiv 14z
-                      </span>
-                    ) : null}
-                    {r.isQuietPaying ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-sky-900/60 px-2 py-0.5 text-xs font-semibold text-sky-300">
-                        ◌ silențios
-                      </span>
-                    ) : null}
-                    {r.neverBooked ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-violet-900/60 px-2 py-0.5 text-xs font-semibold text-violet-300">
-                        ○ fără prog.
-                      </span>
-                    ) : null}
-                    {r.isTrialExpiringSoon ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-900/60 px-2 py-0.5 text-xs font-semibold text-amber-300">
-                        ⏳ trial {r.trialDaysLeft}z
-                      </span>
-                    ) : null}
-                    {!r.atRisk && !r.isQuietPaying && !r.isTrialExpiringSoon && !r.isPastDue && !r.neverBooked ? (
-                      <span className="text-xs text-zinc-600">—</span>
-                    ) : null}
-                  </div>
+                  <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${HEALTH_BAND_CONFIG[r.healthBand].badgeClasses}`}>
+                    {HEALTH_BAND_CONFIG[r.healthBand].label}
+                  </span>
+                  {(() => {
+                    let reason = "";
+                    if (!r.onboardingDone)                                               reason = "setup incomplet";
+                    else if (r.isPastDue)                                                reason = "plată restantă";
+                    else if (r.isTrialExpired)                                           reason = "trial expirat";
+                    else if (r.neverBooked)                                              reason = "fără prog. 30z";
+                    else if (r.isQuiet14d)                                               reason = "inactiv 14z";
+                    else if (r.isTrialExpiringSoon)                                      reason = `trial ${r.trialDaysLeft}z`;
+                    else if (r.confirmationRate30d !== null && r.confirmationRate30d < 80) reason = `conf. ${r.confirmationRate30d}%`;
+                    else if ((r.lastLoginDays ?? 0) > 30)                               reason = "login >30z";
+                    return reason ? <div className="mt-1 text-xs text-zinc-400">{reason}</div> : null;
+                  })()}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex flex-col gap-1.5">

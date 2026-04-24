@@ -413,6 +413,44 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     .eq("status", "confirmat")
     .gte("data_start", new Date().toISOString());
 
+  // Next-best-action: single prioritized hint based on current state
+  const nextBestAction: { icon: string; message: string; href: string | null; urgent: boolean } | null = (() => {
+    if ((overdueCount ?? 0) > 0) {
+      const n = overdueCount ?? 0;
+      return {
+        icon: "⏰",
+        message: `Ai ${n} programări trecute neînchise. Deschide filtrul "Toate" și marchează-le ca finalizate sau neprezentate.`,
+        href: "?filter=toate",
+        urgent: true,
+      };
+    }
+    if (pendingNext7dCount > 2) {
+      return {
+        icon: "📋",
+        message: `Ai ${pendingNext7dCount} programări în așteptare neconfirmate — contactează clienții sau confirmă-le manual.`,
+        href: null,
+        urgent: true,
+      };
+    }
+    if (utilizationPct !== null && utilizationPct < 20 && scheduledMinutes > 0) {
+      return {
+        icon: "📅",
+        message: `Agenda săptămânii e ${utilizationPct}% ocupată. Trimite linkul de rezervare la clienți pentru a umple locurile.`,
+        href: null,
+        urgent: false,
+      };
+    }
+    if (confirmationRate7d !== null && confirmationRate7d < 60 && clientDecisions >= 5) {
+      return {
+        icon: "⚠️",
+        message: `Rata de confirmare ultimele 7 zile: ${confirmationRate7d}%. Verifică dacă reminder-ele de confirmare ajung la clienți.`,
+        href: "/dashboard/setari",
+        urgent: true,
+      };
+    }
+    return null;
+  })();
+
   return (
     <div className="space-y-12 section-reveal">
       {/* Subscription status banner */}
@@ -631,6 +669,26 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
             </a>
           ) : null}
         </div>
+
+        {/* Next-best-action: single prioritized operator hint */}
+        {nextBestAction ? (
+          <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${nextBestAction.urgent ? "border-orange-500/30 bg-orange-950/20" : "border-cyan-700/30 bg-cyan-950/20"}`}>
+            <span className="shrink-0 text-base leading-6">{nextBestAction.icon}</span>
+            <div className="min-w-0">
+              <p className={`text-sm ${nextBestAction.urgent ? "text-orange-100" : "text-cyan-100"}`}>
+                {nextBestAction.message}
+              </p>
+              {nextBestAction.href ? (
+                <a
+                  href={nextBestAction.href}
+                  className={`mt-1 inline-block text-xs font-medium underline ${nextBestAction.urgent ? "text-orange-300" : "text-cyan-300"}`}
+                >
+                  Acționează →
+                </a>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
 
         {/* Planning signals strip */}
         {(busiestDay || nextEmptyDay) ? (

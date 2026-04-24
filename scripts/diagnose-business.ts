@@ -448,22 +448,34 @@ async function run() {
   if (qualityIssue) issues.push(`QUALITY — confirmation rate ${confirmationRate30d}% (below 60%)`);
   if (loginIssue) issues.push("ENGAGEMENT — owner hasn't logged in for 30+ days");
 
+  // Compute overall health band — single top-line verdict
+  const healthBand = (() => {
+    if (setupIssue || billingIssue) return "CRITICAL";
+    if (adoptionIssue || inactivityIssue || qualityIssue) return "AT_RISK";
+    if (loginIssue) return "WATCH";
+    return "HEALTHY";
+  })();
+  const bandColor = { CRITICAL: "\x1b[31m", AT_RISK: "\x1b[33m", WATCH: "\x1b[36m", HEALTHY: "\x1b[32m" } as const;
+  process.stdout.write(
+    `\n\x1b[1mHealth Band:\x1b[0m  ${bandColor[healthBand]}\x1b[1m${healthBand}\x1b[0m\n`
+  );
+
   if (issues.length === 0) {
     ok("No critical issues found — account appears healthy");
     info("Upcoming confirmed bookings (7d)", String(upcomingCount ?? 0));
     if (confirmationRate30d !== null) info("Confirmation rate (30d)", `${confirmationRate30d}%`);
   } else {
-    process.stdout.write(`\n\x1b[1mPrimary issue category:\x1b[0m\n`);
+    process.stdout.write(`\n\x1b[1mIssues detected:\x1b[0m\n`);
     for (const issue of issues) {
       fail(issue);
     }
     process.stdout.write("\n");
-    if (setupIssue) info("Next step", "Guide operator through setup: services → schedule → onboarding step 4");
+    if (setupIssue) info("Next step", "Guide operator through setup: services \u2192 schedule \u2192 onboarding step 4");
     else if (adoptionIssue) info("Next step", "Share booking link via WhatsApp with 5+ existing clients");
     else if (inactivityIssue) info("Next step", "Check if operator is still running the business; consider quiet-rescue email");
     else if (billingIssue) info("Next step", "Check Stripe dashboard, send payment link, verify webhook delivery");
     else if (qualityIssue) info("Next step", "Check if reminder emails are sending correctly; review no-show rate");
-    else if (loginIssue) info("Next step", "Reach out to operator — they may be using a different email or need re-engagement");
+    else if (loginIssue) info("Next step", "Reach out to operator \u2014 they may be using a different email or need re-engagement");
   }
 
   info("Booking page", publicUrl);
