@@ -422,10 +422,11 @@ function BookingCardLive(props: LiveProps) {
         timeLabel: formatSlotLabel(selectedPick.start)
       });
       setModalOpen(false);
-      setStep(1);
+      setStep(3);
       setNume("");
       setTelefon("");
       setEmail("");
+      setSelectedPick(null);
       void loadSlots();
     } finally {
       setSubmitting(false);
@@ -614,7 +615,12 @@ function BookingCardLive(props: LiveProps) {
                 <div className="mb-2 flex items-center justify-between">
                   <div className="text-xs font-medium text-zinc-500 md:text-sm">2. Alege data</div>
                   <div className="flex gap-2">
-                    <button type="button" className="text-xs text-zinc-400 hover:text-white" onClick={() => setMonth((m) => addMonths(m, -1))}>
+                    <button
+                      type="button"
+                      className="text-xs text-zinc-400 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+                      disabled={month <= startOfMonth(new Date())}
+                      onClick={() => setMonth((m) => addMonths(m, -1))}
+                    >
                       ←
                     </button>
                     <button type="button" className="text-xs text-zinc-400 hover:text-white" onClick={() => setMonth((m) => addMonths(m, 1))}>
@@ -626,7 +632,7 @@ function BookingCardLive(props: LiveProps) {
                   {format(month, "LLLL yyyy", { locale: ro })}
                 </div>
                 <div className="grid grid-cols-7 gap-1 text-center text-xs md:gap-2 md:text-sm">
-                  {["L", "M", "M", "J", "V", "S", "D"].map((d) => (
+                  {["L", "Ma", "Mi", "J", "V", "S", "D"].map((d) => (
                     <div key={d} className="py-2 text-zinc-600">
                       {d}
                     </div>
@@ -725,7 +731,7 @@ function BookingCardLive(props: LiveProps) {
                 )}
               </div>
             )}
-            {!publicPageLayout ? <p className="mt-2 text-xs text-zinc-500 md:text-sm">Gri = ocupat</p> : null}
+
           </div>
 
           <div className={publicPageLayout ? "border-t border-zinc-800/80 pt-8" : "border-t border-zinc-800 pt-4"}>
@@ -753,7 +759,7 @@ function BookingCardLive(props: LiveProps) {
                   setStep(3);
                   setModalOpen(true);
                 } else {
-                  setStep(1);
+                  setStep(3);
                   setModalOpen(true);
                 }
               }}
@@ -783,7 +789,7 @@ function BookingCardLive(props: LiveProps) {
             });
           }
           if (!open) {
-            setStep(1);
+            setStep(3);
           }
         }}
       >
@@ -791,7 +797,7 @@ function BookingCardLive(props: LiveProps) {
           <DialogHeader>
             <DialogTitle>Programează-te</DialogTitle>
             <DialogDescription className="text-zinc-400">
-              {tenant ? businessName : `${businessName} — pas ${step} din 3`}
+              {businessName}
             </DialogDescription>
           </DialogHeader>
           {tenant ? (
@@ -852,42 +858,19 @@ function BookingCardLive(props: LiveProps) {
             </div>
           ) : (
             <>
-              {step === 1 && (
-                <div className="space-y-3">
-                  <p className="text-sm text-zinc-300">Serviciu: {selectedService ? serviceTitle(selectedService) : "—"}</p>
-                  <div className="flex gap-2">
-                    <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>
-                      Înapoi
-                    </Button>
-                    <Button data-testid="booking-step-1-continue" className="flex-1 bg-[#1d4ed8] hover:bg-[#1e40af]" onClick={() => setStep(2)}>
-                      Continuă
-                    </Button>
-                  </div>
-                </div>
-              )}
-              {step === 2 && (
-                <div className="space-y-3">
-                  <p className="text-sm text-zinc-300">
-                    {selectedDay ? format(selectedDay, "EEEE, d MMMM yyyy", { locale: ro }) : ""} —{" "}
-                    {selectedPick ? formatSlotLabel(selectedPick.start) : ""}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button variant="secondary" type="button" onClick={() => setStep(1)}>
-                      Înapoi
-                    </Button>
-                    <Button data-testid="booking-step-2-continue" className="flex-1 bg-[#1d4ed8] hover:bg-[#1e40af]" onClick={() => setStep(3)}>
-                      Continuă
-                    </Button>
-                  </div>
-                </div>
-              )}
-              {step === 3 && (
+              {(step === 1 || step === 2 || step === 3) && (
                 <div className="space-y-4">
+                  {selectedService && selectedPick && selectedDay ? (
+                    <p className="rounded-lg border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-sm text-zinc-300">
+                      {serviceTitle(selectedService)} · {format(selectedDay, "EEE, d MMM", { locale: ro })} · {formatSlotLabel(selectedPick.start)}
+                    </p>
+                  ) : null}
                   <div>
                     <Label htmlFor="nume">Nume</Label>
                     <Input
                       id="nume"
                       data-testid="booking-name-input"
+                      placeholder="ex: Maria Ionescu"
                       value={nume}
                       onChange={(e) => setNume(e.target.value)}
                       className="mt-1 border-zinc-700 bg-zinc-900 text-white"
@@ -923,11 +906,11 @@ function BookingCardLive(props: LiveProps) {
                     <p className="mt-1 text-xs text-zinc-500">Fără cont. Emailul e folosit doar pentru confirmare sau anulare.</p>
                   </div>
                   <DialogFooter>
-                    <Button variant="secondary" type="button" onClick={() => setStep(2)}>
+                    <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>
                       Înapoi
                     </Button>
                     <Button data-testid="booking-submit" className="bg-[#1d4ed8] hover:bg-[#1e40af]" disabled={submitting} type="button" onClick={() => void submitBooking()}>
-                      {submitting ? "Se trimite…" : "Trimite"}
+                      {submitting ? "Se trimite…" : "Confirmă programarea"}
                     </Button>
                   </DialogFooter>
                 </div>
