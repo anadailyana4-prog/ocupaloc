@@ -31,7 +31,7 @@ const faqItems = [
 
 const relatedLinks = [
   { href: "/programari-online-salon", label: "Programări online salon" },
-  { href: "/preturi", label: "Prețuri Ocupaloc" },
+  { href: "/preturi", label: "Prețuri OcupaLoc" },
   { href: "/aplicatie-programari-frizerie", label: "Aplicație programări frizerie" },
   { href: "/programari-online-cosmetica", label: "Programări online cosmetică" }
 ];
@@ -54,7 +54,7 @@ export default function SoftwareProgramariManichiuraPage() {
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Programări online pentru manichiură și pedichiură</h1>
           <p className="mt-4 text-lg leading-relaxed text-zinc-300">
-            Dacă lucrezi în nail care, ai nevoie de un software salon care simplifică fiecare zi. Cu Ocupaloc ai programari online fără comision, cost fix 59,99 RON și
+            Dacă lucrezi în nail care, ai nevoie de un software salon care simplifică fiecare zi. Cu OcupaLoc ai programari online fără comision, cost fix 59,99 RON și
             control complet asupra agendei.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">

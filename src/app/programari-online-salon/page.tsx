@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 const faqItems = [
   {
-    question: "Pentru ce tipuri de saloane este potrivit Ocupaloc?",
+    question: "Pentru ce tipuri de saloane este potrivit OcupaLoc?",
     answer:
       "Platforma este construită pentru frizerie, barber shop, manichiură, pedichiură, cosmetică și masaj, cu setări simple pentru program, servicii și prețuri."
   },
@@ -32,7 +32,7 @@ const faqItems = [
 ];
 
 const relatedLinks = [
-  { href: "/preturi", label: "Prețuri Ocupaloc" },
+  { href: "/preturi", label: "Prețuri OcupaLoc" },
   { href: "/software-programari-manichiura", label: "Software programări manichiură" },
   { href: "/aplicatie-programari-frizerie", label: "Aplicație programări frizerie" },
   { href: "/programari-online-cosmetica", label: "Programări online cosmetică" }
@@ -59,7 +59,7 @@ export default function ProgramariOnlineSalonPage() {
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Programari online pentru salonul tău, fără comision</h1>
           <p className="mt-4 max-w-3xl text-lg leading-relaxed text-zinc-300">
-            Dacă ai un software salon care simplifică rezervările, câștigi timp, reduci conversațiile repetitive și păstrezi 100% din încasări. Ocupaloc este
+            Dacă ai un software salon care simplifică rezervările, câștigi timp, reduci conversațiile repetitive și păstrezi 100% din încasări. OcupaLoc este
             soluția de programari online creată pentru saloane beauty din România: frizerie, manichiură, cosmetică și masaj. Preț fix 59,99 RON pe lună, fără comision
             la fiecare client nou.
           </p>
@@ -95,9 +95,9 @@ export default function ProgramariOnlineSalonPage() {
         </section>
 
         <section className="rounded-2xl border border-emerald-700/40 bg-emerald-950/20 p-6">
-          <h2 className="text-2xl font-bold">Cât economisești cu Ocupaloc</h2>
+          <h2 className="text-2xl font-bold">Cât economisești cu OcupaLoc</h2>
           <p className="mt-3 leading-relaxed text-zinc-200">
-            Dacă ai 60 de programari online într-o lună și plătești comision per rezervare, costul poate trece ușor de 600 RON. Cu Ocupaloc plătești 59,99 RON, fără
+            Dacă ai 60 de programari online într-o lună și plătești comision per rezervare, costul poate trece ușor de 600 RON. Cu OcupaLoc plătești 59,99 RON, fără
             comision. Diferența rămâne în business și o poți reinvesti în produse, training sau echipamente. Pe termen lung, un software salon cu preț fix te ajută
             să crești sănătos și să nu fii penalizat tocmai când ai cele mai multe programări.
           </p>

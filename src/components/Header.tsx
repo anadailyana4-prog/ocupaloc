@@ -71,7 +71,7 @@ export function Header() {
     <header className="border-b border-amber-200/15 bg-slate-950/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link href="/" className="font-display text-xl font-semibold tracking-wide text-amber-100">
-          Ocupaloc
+          OcupaLoc
         </Link>
         {isAuthPage ? null : session === null ? (
           <div className="flex items-center gap-2">

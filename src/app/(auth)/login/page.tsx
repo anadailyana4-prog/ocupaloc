@@ -147,7 +147,7 @@ function LoginForm() {
       <Card className="w-full max-w-md border-zinc-800 bg-zinc-950">
         <CardHeader>
           <CardTitle>Autentificare</CardTitle>
-          <CardDescription>Intră în contul Ocupaloc.</CardDescription>
+          <CardDescription>Intră în contul OcupaLoc.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {alreadyLoggedIn && (

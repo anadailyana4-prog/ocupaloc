@@ -29,7 +29,7 @@ export function DashboardHeader() {
     <header className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 backdrop-blur">
       <div className="flex items-center gap-6">
         <Link href="/dashboard" className="text-sm font-semibold tracking-tight">
-          Ocupaloc
+          OcupaLoc
         </Link>
         <nav className="flex items-center gap-3 text-sm text-zinc-400 flex-wrap">
           <Link href="/dashboard" className="transition hover:text-zinc-100">

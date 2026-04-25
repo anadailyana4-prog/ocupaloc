@@ -231,11 +231,11 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
 
   // First-month welcome: no trend comparison, celebrate the start
   if (row.isFirstMonth) {
-    const subject = `Prima ta lună pe Ocupaloc — ${row.thisMonthCount} programări`;
+    const subject = `Prima ta lună pe OcupaLoc — ${row.thisMonthCount} programări`;
     const text = [
       `Salut ${row.numeBusiness},`,
       "",
-      `Felicitări pentru prima lună pe Ocupaloc!`,
+      `Felicitări pentru prima lună pe OcupaLoc!`,
       "",
       `  • Programări confirmate în ${monthName}: ${row.thisMonthCount}`,
       row.topService ? `  • Serviciu top: ${row.topService}` : null,
@@ -249,12 +249,12 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
       "",
       `Dashboard: ${dashboardUrl}`,
       "",
-      "Ocupaloc"
+      "OcupaLoc"
     ].filter((l) => l !== null).join("\n");
 
     const html = `
 <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
-  <h2 style="margin:0 0 4px;">🎉 Prima lună pe Ocupaloc</h2>
+  <h2 style="margin:0 0 4px;">🎉 Prima lună pe OcupaLoc</h2>
   <p style="margin:0 0 16px;color:#6b7280;">${business}</p>
   <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:0 0 20px;">
     <p style="margin:0 0 4px;font-size:36px;font-weight:700;">${row.thisMonthCount}</p>
@@ -266,7 +266,7 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
   </div>
   <p style="margin:0 0 16px;">${row.thisMonthCount > 0 ? "Un start solid. Continuă să trimiți linkul clienților!" : "Dacă nu ai primit programări online încă, trimite linkul la cel puțin 10 clienți actuali pe WhatsApp."}</p>
   <a href="${dashboardUrl}" style="background:#1c1c2e;color:#fbbf24;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Deschide dashboard-ul →</a>
-  <p style="margin:0;color:#9ca3af;font-size:12px;">Ocupaloc · <a href="${SITE_URL}" style="color:#9ca3af;">ocupaloc.ro</a></p>
+  <p style="margin:0;color:#9ca3af;font-size:12px;">OcupaLoc · <a href="${SITE_URL}" style="color:#9ca3af;">ocupaloc.ro</a></p>
 </div>`;
     return { subject, text, html };
   }
@@ -293,7 +293,7 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
     "",
     `Dashboard: ${dashboardUrl}`,
     "",
-    "Ocupaloc"
+    "OcupaLoc"
   ].filter((l) => l !== null).join("\n");
 
   const noShowLine = row.noShowCount > 0
@@ -336,7 +336,7 @@ function buildMonthlyEmailContent(row: MonthlyRow, monthName: string): { subject
     Deschide dashboard-ul →
   </a>
 
-  <p style="margin:0;color:#9ca3af;font-size:12px;">Ocupaloc · <a href="${SITE_URL}" style="color:#9ca3af;">ocupaloc.ro</a></p>
+  <p style="margin:0;color:#9ca3af;font-size:12px;">OcupaLoc · <a href="${SITE_URL}" style="color:#9ca3af;">ocupaloc.ro</a></p>
 </div>`;
 
   return { subject, text, html };

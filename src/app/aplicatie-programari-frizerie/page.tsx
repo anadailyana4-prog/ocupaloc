@@ -33,7 +33,7 @@ const faqItems = [
 
 const relatedLinks = [
   { href: "/programari-online-salon", label: "Programări online salon" },
-  { href: "/preturi", label: "Prețuri Ocupaloc" },
+  { href: "/preturi", label: "Prețuri OcupaLoc" },
   { href: "/software-programari-manichiura", label: "Software programări manichiură" },
   { href: "/programari-online-cosmetica", label: "Programări online cosmetică" }
 ];
@@ -56,7 +56,7 @@ export default function AplicatieProgramariFrizeriePage() {
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Aplicație programări pentru frizeri și barberi</h1>
           <p className="mt-4 text-lg leading-relaxed text-zinc-300">
-            Organizează agenda rapid cu programari online fără comision. Ocupaloc este software salon pentru frizerie, cu preț clar: 59,99 RON pe lună.
+            Organizează agenda rapid cu programari online fără comision. OcupaLoc este software salon pentru frizerie, cu preț clar: 59,99 RON pe lună.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/signup" data-cta-location="seo_frizerie_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
@@ -87,7 +87,7 @@ export default function AplicatieProgramariFrizeriePage() {
           </p>
           <p className="leading-relaxed text-zinc-300">
             Din punct de vedere financiar, modelul fără comision este critic. Dacă plătești taxă per rezervare, cu cât muncești mai mult, cu atât platforma îți ia mai
-            mult din venit. Cu Ocupaloc ai 59,99 RON fix pe lună. Acest cost predictibil îți permite să investești în oameni, în training sau în amenajare, nu în comisioane.
+            mult din venit. Cu OcupaLoc ai 59,99 RON fix pe lună. Acest cost predictibil îți permite să investești în oameni, în training sau în amenajare, nu în comisioane.
             Pentru un software salon destinat creșterii, aceasta este una dintre cele mai importante decizii.
           </p>
           <p className="leading-relaxed text-zinc-300">

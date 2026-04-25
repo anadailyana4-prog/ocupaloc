@@ -32,7 +32,7 @@ const faqItems = [
 
 const relatedLinks = [
   { href: "/programari-online-salon", label: "Programări online salon" },
-  { href: "/preturi", label: "Prețuri Ocupaloc" },
+  { href: "/preturi", label: "Prețuri OcupaLoc" },
   { href: "/software-programari-manichiura", label: "Software programări manichiură" },
   { href: "/aplicatie-programari-frizerie", label: "Aplicație programări frizerie" }
 ];
@@ -55,7 +55,7 @@ export default function ProgramariOnlineCosmeticaPage() {
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Gestionează programările pentru cosmetică</h1>
           <p className="mt-4 text-lg leading-relaxed text-zinc-300">
-            Cu Ocupaloc ai programari online fără comision pentru servicii de cosmetică. Software salon cu preț fix 59,99 RON și control complet pe program.
+            Cu OcupaLoc ai programari online fără comision pentru servicii de cosmetică. Software salon cu preț fix 59,99 RON și control complet pe program.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/signup" data-cta-location="seo_cosmetica_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">

@@ -16,7 +16,7 @@ const POSTS: Post[] = [
     title: "Cât te costă platformele cu comision și ce variantă e mai sănătoasă",
     description: "Analiză de cost, marjă și profit pentru saloane care folosesc programari online.",
     relatedLandingLinks: [
-      { href: "/preturi", label: "Prețuri Ocupaloc" },
+      { href: "/preturi", label: "Prețuri OcupaLoc" },
       { href: "/programari-online-salon", label: "Programări online salon" }
     ],
     content: `

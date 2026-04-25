@@ -87,7 +87,7 @@ export default function DemoInteractivPage() {
     <main className="min-h-screen bg-zinc-950 px-4 py-10 text-zinc-100">
       <Card className="mx-auto w-full max-w-2xl border-zinc-800 bg-zinc-900/60">
         <CardHeader>
-          <CardTitle>Demo interactiv Ocupaloc</CardTitle>
+          <CardTitle>Demo interactiv OcupaLoc</CardTitle>
           <CardDescription>Configurează un demo în 3 pași. Link valabil 24 de ore.</CardDescription>
           <p className="text-xs text-zinc-400">Pasul {step} din 3</p>
         </CardHeader>

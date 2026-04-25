@@ -330,7 +330,7 @@ export default function SignupPage() {
             </div>
             <p className="text-xs text-zinc-400">Pasul {step} din 3</p>
           </div>
-          <CardTitle>Creează cont Ocupaloc</CardTitle>
+          <CardTitle>Creează cont OcupaLoc</CardTitle>
           <CardDescription>
             Setezi contul în 3 pași și poți începe să primești programări imediat.
           </CardDescription>

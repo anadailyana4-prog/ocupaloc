@@ -77,7 +77,7 @@ export function LandingPage() {
               Pierzi timp și programări în telefoane, mesaje și anulări de ultim moment?
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-amber-100/70">
-              Ocupaloc îți organizează programările într-un flux clar: clientul rezervă online, confirmă din email, iar tu vezi totul într-un dashboard simplu.
+              OcupaLoc îți organizează programările într-un flux clar: clientul rezervă online, confirmă din email, iar tu vezi totul într-un dashboard simplu.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -139,7 +139,7 @@ export function LandingPage() {
 
             <div className="relative px-6 pb-6 pt-12 md:px-10 md:pt-10">
               <p className="text-xs uppercase tracking-[0.22em] text-amber-200/70">Walkthrough live</p>
-              <h3 className="mt-2 font-display text-4xl font-semibold leading-tight text-amber-50 md:text-5xl">Așa curge fluxul real în Ocupaloc</h3>
+              <h3 className="mt-2 font-display text-4xl font-semibold leading-tight text-amber-50 md:text-5xl">Așa curge fluxul real în OcupaLoc</h3>
               <p className="mt-3 max-w-2xl text-sm text-amber-50/75 md:text-base">
                 Fără promisiuni false: acesta este exact traseul implementat acum în platformă, de la rezervare până la reminder.
               </p>
@@ -278,7 +278,7 @@ export function LandingPage() {
           </details>
           <details className="rounded-xl border border-zinc-800 bg-zinc-900 px-6 py-4 text-base text-zinc-300">
             <summary className="cursor-pointer list-none font-semibold text-white">Cum gestionez plățile pentru serviciile mele?</summary>
-            <p className="mt-3 text-zinc-400">Ocupaloc se concentrează acum pe programări, confirmări, remindere și organizarea agendei. Plata online la rezervare nu este integrată în acest moment.</p>
+            <p className="mt-3 text-zinc-400">OcupaLoc se concentrează acum pe programări, confirmări, remindere și organizarea agendei. Plata online la rezervare nu este integrată în acest moment.</p>
           </details>
           <details className="rounded-xl border border-zinc-800 bg-zinc-900 px-6 py-4 text-base text-zinc-300">
             <summary className="cursor-pointer list-none font-semibold text-white">Se pot anula sau reprograma clienții?</summary>
@@ -377,7 +377,7 @@ export function LandingPage() {
               <span>Date găzduite în UE. Conform GDPR.</span>
               <a
                 href={CONTACT_MAILTO}
-                aria-label={`Contactează Ocupaloc la ${CONTACT_EMAIL}`}
+                aria-label={`Contactează OcupaLoc la ${CONTACT_EMAIL}`}
                 className="rounded-sm text-zinc-400 underline decoration-zinc-700 underline-offset-4 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
               >
                 {CONTACT_EMAIL}

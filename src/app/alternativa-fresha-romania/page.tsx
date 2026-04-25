@@ -5,12 +5,12 @@ import Script from "next/script";
 export const metadata: Metadata = {
   title: "Comparație Costuri Programări | Fără Comision 59,99 RON",
   description:
-    "Descoperă de ce Ocupaloc este alegerea potrivită pentru saloane din România: software în română, fără comision, la 59,99 RON pe lună."
+    "Descoperă de ce OcupaLoc este alegerea potrivită pentru saloane din România: software în română, fără comision, la 59,99 RON pe lună."
 };
 
 const faqItems = [
   {
-    question: "De ce este Ocupaloc o alternativă la platformele cu comision?",
+    question: "De ce este OcupaLoc o alternativă la platformele cu comision?",
     answer:
       "Pentru că oferă software salon în limba română, cost fix de 59,99 RON și model fără comision per programare."
   },
@@ -62,16 +62,16 @@ export default function ComparatieCosturiProgramariPage() {
       <Script id="faq-schema-alternativa-fresha" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <div className="mx-auto max-w-5xl space-y-10">
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
-          <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Comparație costuri: platforme cu comision vs Ocupaloc</h1>
+          <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Comparație costuri: platforme cu comision vs OcupaLoc</h1>
           <p className="mt-4 text-lg leading-relaxed text-zinc-300">
-            Dacă vrei programari online fără comision, suport local și cost clar de 59,99 RON, Ocupaloc este software salon construit pentru piața din România.
+            Dacă vrei programari online fără comision, suport local și cost clar de 59,99 RON, OcupaLoc este software salon construit pentru piața din România.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link href="/signup" data-cta-location="seo_alternativa_fresha_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
               Încearcă gratuit
             </Link>
             <Link href="/signup" data-cta-location="seo_alternativa_fresha_hero_secondary" className="rounded-lg border border-zinc-700 px-5 py-3 font-semibold text-zinc-200 hover:bg-zinc-800">
-              Mută-te pe Ocupaloc
+              Mută-te pe OcupaLoc
             </Link>
           </div>
         </section>
@@ -81,7 +81,7 @@ export default function ComparatieCosturiProgramariPage() {
             <thead className="bg-zinc-800/70 text-zinc-200">
               <tr>
                 <th className="px-4 py-3">Criteriu</th>
-                <th className="px-4 py-3 text-emerald-300">Ocupaloc</th>
+                <th className="px-4 py-3 text-emerald-300">OcupaLoc</th>
                 <th className="px-4 py-3">Platformă cu comision</th>
               </tr>
             </thead>
@@ -98,14 +98,14 @@ export default function ComparatieCosturiProgramariPage() {
         </section>
 
         <section className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
-          <h2 className="text-3xl font-bold">De ce să treci de la platformele cu comision la Ocupaloc</h2>
+          <h2 className="text-3xl font-bold">De ce să treci de la platformele cu comision la OcupaLoc</h2>
           <p className="leading-relaxed text-zinc-300">
             Când un salon crește, fiecare procent din încasări contează. Multe business-uri pornesc cu platforme internaționale pentru programari online, dar în timp
             observă că modelul bazat pe comision devine tot mai greu de susținut. Cu cât ai mai multe rezervări, cu atât costul total urcă, iar marja ta scade. Aceasta
             este exact situația în care apare nevoia unei alternative locale: o soluție simplă, care îți oferă control financiar.
           </p>
           <p className="leading-relaxed text-zinc-300">
-            Ocupaloc folosește un model transparent: 59,99 RON pe lună, fără comision. Pentru proprietarii de software salon, această predictibilitate este o diferență
+            OcupaLoc folosește un model transparent: 59,99 RON pe lună, fără comision. Pentru proprietarii de software salon, această predictibilitate este o diferență
             majoră. Poți bugeta corect, poți seta campanii și oferte fără să te întrebi cât vei mai plăti la final de lună în taxe ascunse. Practic, performanța ta nu
             mai este penalizată. Dacă faci mai multe programari online, păstrezi beneficiul în business.
           </p>
@@ -116,7 +116,7 @@ export default function ComparatieCosturiProgramariPage() {
           </p>
           <p className="leading-relaxed text-zinc-300">
             Un alt punct important este experiența clientului final. Programari online eficiente înseamnă pași puțini, servicii clare și disponibilitate corectă.
-            Ocupaloc este construit exact pentru acest flux: clientul găsește rapid ce vrea, rezervă și primește confirmare. Pentru tine, asta se traduce în mai puține
+            OcupaLoc este construit exact pentru acest flux: clientul găsește rapid ce vrea, rezervă și primește confirmare. Pentru tine, asta se traduce în mai puține
             apeluri repetitive și o agendă mai ordonată. Pentru client, înseamnă încredere. Iar în piața de beauty, încrederea este baza fidelizării.
           </p>
           <p className="leading-relaxed text-zinc-300">
@@ -136,7 +136,7 @@ export default function ComparatieCosturiProgramariPage() {
           </p>
           <p className="leading-relaxed text-zinc-300">
             Dacă obiectivul tău este creștere sustenabilă, nu doar volum temporar, atunci alternativa corectă trebuie să îți ofere control, claritate și suport local.
-            Ocupaloc bifează exact aceste puncte: programari online fără comision, software salon adaptat pieței românești și preț fix de 59,99 RON. Pentru multe
+            OcupaLoc bifează exact aceste puncte: programari online fără comision, software salon adaptat pieței românești și preț fix de 59,99 RON. Pentru multe
             business-uri, această combinație este suficientă ca să facă schimbarea de pe platformele cu comision și să păstreze mai mult din valoarea pe care o creează în fiecare zi.
           </p>
         </section>

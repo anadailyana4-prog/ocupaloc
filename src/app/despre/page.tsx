@@ -2,18 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Despre Ocupaloc",
+  title: "Despre OcupaLoc",
   description:
-    "Află povestea Ocupaloc și de ce construim un produs de programări online simplu pentru frizeri, coafori și saloane din România."
+    "Află povestea OcupaLoc și de ce construim un produs de programări online simplu pentru frizeri, coafori și saloane din România."
 };
 
 export default function DesprePage() {
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-14 text-zinc-100">
       <article className="mx-auto max-w-3xl space-y-6">
-        <h1 className="text-4xl font-bold tracking-tight">Despre Ocupaloc</h1>
+        <h1 className="text-4xl font-bold tracking-tight">Despre OcupaLoc</h1>
         <p className="leading-relaxed text-zinc-300">
-          Ocupaloc a pornit dintr-o problemă simplă: profesioniștii din beauty pierd ore întregi pe telefon pentru programări care pot fi automate.
+          OcupaLoc a pornit dintr-o problemă simplă: profesioniștii din beauty pierd ore întregi pe telefon pentru programări care pot fi automate.
           Dacă ești frizer sau coafor, nu ai nevoie de încă o platformă complicată. Ai nevoie de un link pe care îl trimiți clientului și care îți
           umple programul fără stres.
         </p>

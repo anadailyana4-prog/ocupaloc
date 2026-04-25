@@ -260,7 +260,7 @@ function buildEmailContent(row: WeeklySummaryRow): { subject: string; text: stri
       `Accesează dashboard-ul: ${dashboardUrl}`,
       ``,
       `Spor la programări,`,
-      `Echipa Ocupaloc`,
+      `Echipa OcupaLoc`,
     ].join("\n");
 
     const html = `
@@ -277,7 +277,7 @@ function buildEmailContent(row: WeeklySummaryRow): { subject: string; text: stri
     </ol>
   </div>
   <a href="${dashboardUrl}" style="background:#1c1c2e;color:#fbbf24;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Deschide dashboard-ul →</a>
-  <p style="margin:0;color:#9ca3af;font-size:12px;">Ocupaloc · <a href="${SITE_URL}" style="color:#9ca3af">ocupaloc.ro</a></p>
+  <p style="margin:0;color:#9ca3af;font-size:12px;">OcupaLoc · <a href="${SITE_URL}" style="color:#9ca3af">ocupaloc.ro</a></p>
 </div>`;
 
     return { subject, text, html };
@@ -305,7 +305,7 @@ function buildEmailContent(row: WeeklySummaryRow): { subject: string; text: stri
     `Accesează dashboard-ul pentru detalii: ${dashboardUrl}`,
     ``,
     `Spor la programări,`,
-    `Echipa Ocupaloc`,
+    `Echipa OcupaLoc`,
   ].filter(Boolean).join("\n");
 
   const trendColor = row.bookingsThisWeek >= row.bookingsPrevWeek ? "#16a34a" : "#dc2626";
@@ -314,7 +314,7 @@ function buildEmailContent(row: WeeklySummaryRow): { subject: string; text: stri
   const html = `
 <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
   <h2 style="margin:0 0 4px;color:#111827">Raport săptămânal — ${safeBusinessName}</h2>
-  <p style="margin:0 0 20px;color:#6b7280;font-size:14px;">Iată cum a decurs săptămâna ta pe Ocupaloc.</p>
+  <p style="margin:0 0 20px;color:#6b7280;font-size:14px;">Iată cum a decurs săptămâna ta pe OcupaLoc.</p>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 0 20px;">
     <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;text-align:center;">
@@ -335,7 +335,7 @@ function buildEmailContent(row: WeeklySummaryRow): { subject: string; text: stri
 
   <a href="${dashboardUrl}" style="background:#1c1c2e;color:#fbbf24;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Deschide dashboard-ul →</a>
 
-  <p style="margin:0;color:#9ca3af;font-size:12px;">Ocupaloc · <a href="${SITE_URL}" style="color:#9ca3af">ocupaloc.ro</a></p>
+  <p style="margin:0;color:#9ca3af;font-size:12px;">OcupaLoc · <a href="${SITE_URL}" style="color:#9ca3af">ocupaloc.ro</a></p>
 </div>`;
 
   return { subject, text, html };

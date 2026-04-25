@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Blog Ocupaloc - Programari Online pentru Saloane",
+  title: "Blog OcupaLoc - Programari Online pentru Saloane",
   description:
     "Articole pentru saloane beauty despre programari online, creștere fără comision, retenție și optimizare operațională cu software salon."
 };

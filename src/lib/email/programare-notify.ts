@@ -229,7 +229,7 @@ export async function notifyClientBookingCancelledByProvider(programareId: strin
   <p style="margin:0 0 16px;">Programarea ta pentru <strong>${escapeHtml(serviciu?.nume ?? "serviciu")}</strong> din <strong>${escapeHtml(dataStr)}</strong> la ora <strong>${escapeHtml(timeStr)}</strong> a fost anulată de prestator.</p>
   ${rebookUrl ? `<p style="margin:0 0 12px;">Poți face o nouă rezervare oricând:</p>
   <a href="${rebookUrl}" style="background:#1c1c2e;color:#fbbf24;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Rezervă din nou →</a>` : ""}
-  <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">Ocupaloc · ocupaloc.ro</p>
+  <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">OcupaLoc · ocupaloc.ro</p>
 </div>`;
 
   await sendResendEmail({
@@ -342,7 +342,7 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
     <a href="${cancelUrl}" style="background:#f3f4f6;color:#374151;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 8px;">✗ Anulează</a>
   </div>
 
-  <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">Ocupaloc · ocupaloc.ro</p>
+  <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">OcupaLoc · ocupaloc.ro</p>
 </div>`;
   }
 
@@ -405,7 +405,7 @@ export async function notifyClientPostCompletion(programareId: string): Promise<
   <p style="margin:0 0 16px;">Mulțumim că ai ales <strong>${safeSalonName}</strong> pentru <strong>${safeServiceName}</strong>. A fost o plăcere să te avem!</p>
   ${rebookUrl ? `<p style="margin:0 0 12px;">Data viitoare ne poți rezerva la fel de simplu:</p>
   <a href="${rebookUrl}" style="background:#16a34a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Rezervă din nou →</a>` : ""}
-  <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">Ocupaloc · ocupaloc.ro</p>
+  <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">OcupaLoc · ocupaloc.ro</p>
 </div>`;
 
   try {

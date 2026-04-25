@@ -6,7 +6,7 @@ export default function Home() {
   const softwareSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "Ocupaloc",
+    name: "OcupaLoc",
     applicationCategory: "BusinessApplication",
     offers: {
       "@type": "Offer",

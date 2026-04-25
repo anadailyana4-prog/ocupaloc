@@ -18,7 +18,7 @@ export default function AppError({ error, reset }: AppErrorProps) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-6 py-16 text-foreground">
       <div className="w-full max-w-2xl rounded-[28px] border border-border bg-card/95 p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.18)] backdrop-blur">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-muted-foreground">Ocupaloc</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-muted-foreground">OcupaLoc</p>
         <h1 className="mt-4 font-serif text-4xl font-semibold text-foreground">Ceva s-a rupt pe traseu</h1>
         <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
           Cererea nu a putut fi finalizată. Reîncearcă aceeași acțiune sau revino la pagina anterioară fără să pierzi tot contextul.

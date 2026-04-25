@@ -19,7 +19,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
     <html lang="ro">
       <body className="flex min-h-screen items-center justify-center bg-background px-6 py-16 text-foreground">
         <main className="w-full max-w-2xl rounded-[28px] border border-border bg-card/95 p-8 text-center shadow-[0_24px_80px_rgba(0,0,0,0.18)] backdrop-blur">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-muted-foreground">Ocupaloc</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-muted-foreground">OcupaLoc</p>
           <h1 className="mt-4 font-serif text-4xl font-semibold text-foreground">Aplicația nu a putut fi încărcată</h1>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-muted-foreground">
             A apărut o eroare la inițializare. Poți reîncărca aplicația sau reveni la homepage până când problema se stabilizează.

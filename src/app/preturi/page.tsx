@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "59,99 RON/lună pentru saloane beauty",
   description:
-    "59,99 RON pe lună, fără comisioane ascunse. Vezi cât economisești față de platformele cu comision și compară Ocupaloc cu alternativele."
+    "59,99 RON pe lună, fără comisioane ascunse. Vezi cât economisești față de platformele cu comision și compară OcupaLoc cu alternativele."
 };
 
 const comparisonRows = [
@@ -34,7 +34,7 @@ export default async function PreturiPage() {
         </header>
 
         <section className="mx-auto max-w-xl rounded-2xl border border-zinc-800 bg-zinc-900 p-8 text-center">
-          <p className="text-sm uppercase tracking-wide text-zinc-400">Plan unic Ocupaloc</p>
+          <p className="text-sm uppercase tracking-wide text-zinc-400">Plan unic OcupaLoc</p>
           <p className="mt-3 text-5xl font-black">
             59,99 <span className="text-xl font-medium text-zinc-400">RON/lună</span>
           </p>
@@ -65,7 +65,7 @@ export default async function PreturiPage() {
             <thead className="bg-zinc-800/70 text-zinc-200">
               <tr>
                 <th className="px-4 py-3">Comparație</th>
-                <th className="px-4 py-3 text-emerald-300">Ocupaloc</th>
+                <th className="px-4 py-3 text-emerald-300">OcupaLoc</th>
                 <th className="px-4 py-3">Platformă standard</th>
                 <th className="px-4 py-3">Platformă premium</th>
               </tr>

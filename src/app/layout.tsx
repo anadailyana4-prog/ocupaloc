@@ -24,26 +24,26 @@ const cormorant = Cormorant_Garamond({
 export const metadata: Metadata = {
   metadataBase: new URL("https://ocupaloc.ro"),
   title: {
-    default: "Ocupaloc - Programări online pentru orice business",
-    template: "%s | Ocupaloc"
+    default: "OcupaLoc - Programări online pentru orice business",
+    template: "%s | OcupaLoc"
   },
   description:
     "Creează linkul tău de programare online în 2 minute. Potrivit pentru saloane, clinici, consultanți, studiouri și orice business bazat pe programări.",
   keywords: ["programare online", "booking", "programari", "rezervari", "software programari", "business"],
-  authors: [{ name: "Ocupaloc" }],
-  creator: "Ocupaloc",
+  authors: [{ name: "OcupaLoc" }],
+  creator: "OcupaLoc",
   openGraph: {
     type: "website",
     locale: "ro_RO",
     url: "https://ocupaloc.ro",
-    siteName: "Ocupaloc",
-    title: "Ocupaloc - Programări online pentru orice business",
+    siteName: "OcupaLoc",
+    title: "OcupaLoc - Programări online pentru orice business",
     description: "Link de programare pentru servicii, clinici, saloane și profesioniști independenți",
     images: [{ url: "/og-image.svg", width: 1200, height: 630 }]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ocupaloc",
+    title: "OcupaLoc",
     description: "Programări online pentru orice business",
     images: ["/og-image.svg"]
   },
@@ -66,7 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Ocupaloc",
+    name: "OcupaLoc",
     url: "https://ocupaloc.ro",
     offers: {
       "@type": "Offer",

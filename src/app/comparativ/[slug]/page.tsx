@@ -20,8 +20,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: "Comparativ" };
   }
   return {
-    title: "Comparativ platforme cu comision | Ocupaloc",
-    description: "Vezi de ce saloanele aleg Ocupaloc: preț fix, zero comision și setup rapid."
+    title: "Comparativ platforme cu comision | OcupaLoc",
+    description: "Vezi de ce saloanele aleg OcupaLoc: preț fix, zero comision și setup rapid."
   };
 }
 
@@ -35,10 +35,10 @@ export default async function ComparativPage({ params }: PageProps) {
   const faqItems = [
     {
       q: "Care este diferența principală față de platformele cu comision?",
-      a: "Ocupaloc are preț fix 59,99 RON/lună, comision 0 și suport în limba română."
+      a: "OcupaLoc are preț fix 59,99 RON/lună, comision 0 și suport în limba română."
     },
     {
-      q: "Există comision pe rezervări la Ocupaloc?",
+      q: "Există comision pe rezervări la OcupaLoc?",
       a: "Nu. Comisionul este 0 indiferent de numărul de programări."
     },
     {
@@ -65,7 +65,7 @@ export default async function ComparativPage({ params }: PageProps) {
       <Script id={`faq-schema-comparativ-${slug}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <div className="mx-auto max-w-5xl space-y-8">
         <header className="space-y-3">
-          <h1 className="text-4xl font-bold tracking-tight">De ce saloanele aleg Ocupaloc</h1>
+          <h1 className="text-4xl font-bold tracking-tight">De ce saloanele aleg OcupaLoc</h1>
           <p className="text-zinc-400">Comparativ simplu pentru saloane care vor cost predictibil și zero comision.</p>
         </header>
 
@@ -74,7 +74,7 @@ export default async function ComparativPage({ params }: PageProps) {
             <thead className="bg-zinc-800/70 text-zinc-200">
               <tr>
                 <th className="px-4 py-3">Caracteristică</th>
-                <th className="px-4 py-3 text-emerald-300">Ocupaloc</th>
+                <th className="px-4 py-3 text-emerald-300">OcupaLoc</th>
               </tr>
             </thead>
             <tbody>
@@ -120,7 +120,7 @@ export default async function ComparativPage({ params }: PageProps) {
         </section>
 
         <Link href="/signup" className="inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
-          Treci la Ocupaloc fără comision
+          Treci la OcupaLoc fără comision
         </Link>
       </div>
     </main>

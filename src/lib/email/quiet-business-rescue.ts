@@ -170,7 +170,7 @@ function buildRescueEmail(row: RescueRow): { subject: string; text: string; html
     : `${row.numeBusiness} — ${row.daysSinceLastBooking} zile fără programări`;
 
   const intro = neverBooked
-    ? `Profilul tău pe Ocupaloc e configurat, dar nu ai primit nicio programare încă.`
+    ? `Profilul tău pe OcupaLoc e configurat, dar nu ai primit nicio programare încă.`
     : `Nu ai primit programări noi în ultimele ${row.daysSinceLastBooking} zile.`;
 
   const text = [
@@ -188,7 +188,7 @@ function buildRescueEmail(row: RescueRow): { subject: string; text: string; html
     `Dashboard: ${dashboardUrl}`,
     "",
     "Suntem aici dacă ai nevoie de ajutor.",
-    "Echipa Ocupaloc"
+    "Echipa OcupaLoc"
   ].filter((l) => l !== "").join("\n");
 
   const waText = publicUrl
@@ -219,7 +219,7 @@ function buildRescueEmail(row: RescueRow): { subject: string; text: string; html
     Deschide dashboard-ul →
   </a>
 
-  <p style="margin:0;color:#9ca3af;font-size:12px;">Ocupaloc · <a href="${SITE_URL}" style="color:#9ca3af;">ocupaloc.ro</a></p>
+  <p style="margin:0;color:#9ca3af;font-size:12px;">OcupaLoc · <a href="${SITE_URL}" style="color:#9ca3af;">ocupaloc.ro</a></p>
 </div>`;
 
   return { subject, text, html };

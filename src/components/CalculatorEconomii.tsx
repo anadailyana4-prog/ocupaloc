@@ -49,7 +49,7 @@ export function CalculatorEconomii() {
           <p className="text-xs text-zinc-500">Comision mediu / programare</p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-          <p className="text-sm text-zinc-400">Ocupaloc</p>
+          <p className="text-sm text-zinc-400">OcupaLoc</p>
           <p className="mt-1 text-2xl font-bold">59,99 RON/lună</p>
           <p className="text-xs text-zinc-500">Preț fix, fără comisioane</p>
         </div>
@@ -74,7 +74,7 @@ export function CalculatorEconomii() {
         </div>
         <div>
           <div className="mb-1 flex items-center justify-between text-xs text-zinc-400">
-            <span>Ocupaloc</span>
+            <span>OcupaLoc</span>
             <span>59,99 RON</span>
           </div>
           <div className="h-3 w-full rounded-full bg-zinc-800">
