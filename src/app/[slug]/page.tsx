@@ -261,7 +261,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
 
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const telefon = (prof.telefon as string | null)?.trim() ?? "";
-  const whatsapp = ((prof.whatsapp as string | null)?.trim() || telefon).trim();
+  const whatsapp = (prof.whatsapp as string | null)?.trim() ?? "";
   const telHref = telefon ? telefon.replace(/\s+/g, "") : "";
   const waHref = whatsapp ? whatsapp.replace(/\D+/g, "") : "";
   const waText = `Bună! Vreau o programare la ${String(prof.nume_business ?? "").trim() || "salon"}.`;
