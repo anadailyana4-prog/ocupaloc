@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
 
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
-import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -20,18 +20,10 @@ const HEALTH_BAND_CONFIG: Record<HealthBand, { label: string; badgeClasses: stri
 
 export default async function AdminBusinessesPage() {
   const adminEmail = process.env.ADMIN_EMAIL?.trim();
-  if (!adminEmail) {
-    return (
-      <div className="p-8 text-red-400">
-        <p className="font-mono text-sm">ADMIN_EMAIL env var not set. Set it to enable the admin panel.</p>
-      </div>
-    );
-  }
 
-  const supabase = await createSupabaseServerClient();
   const user = await getUser();
-  if (!user || user.email !== adminEmail) {
-    redirect("/dashboard");
+  if (!adminEmail || !user || user.email !== adminEmail) {
+    notFound();
   }
 
   const admin = createSupabaseServiceClient();
