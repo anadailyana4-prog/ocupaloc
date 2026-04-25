@@ -4,7 +4,7 @@ import { isBefore, parseISO } from "date-fns";
 import { formatInTimeZone, toDate } from "date-fns-tz";
 
 import { logBookingStatusEvent } from "@/lib/booking/status-events";
-import { notifyClientBookingRescheduledByProvider } from "@/lib/email/programare-notify";
+import { notifyClientBookingRescheduledByProvider, notifyProfesionistDespreProgramare } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
 import { calcDataFinalProgramare } from "@/lib/slots";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
@@ -75,7 +75,7 @@ export async function createStaffProgramare(input: {
   const clash = ocupate.some((o) => rangesOverlap(dataStart, dataFinal, o.start, o.end));
   if (clash) return { ok: false as const, message: "Interval ocupat. Alege altă oră." };
 
-  const { error: ins } = await admin.from("programari").insert({
+  const { data: inserted, error: ins } = await admin.from("programari").insert({
     profesionist_id: profId,
     serviciu_id: srv.id,
     nume_client: input.numeClient.trim(),
@@ -85,8 +85,12 @@ export async function createStaffProgramare(input: {
     data_final: dataFinal.toISOString(),
     status: "confirmat",
     creat_de: "profesionist"
-  });
+  }).select("id").single();
   if (ins) return { ok: false as const, message: ins.message };
+  if (inserted?.id) {
+    await logBookingStatusEvent({ bookingId: inserted.id, status: "confirmat", source: "salon_manual" });
+    notifyProfesionistDespreProgramare(inserted.id).catch(() => {});
+  }
   return { ok: true as const };
 }
 

@@ -260,21 +260,38 @@ export async function notifyClientBookingRescheduledByProvider(programareId: str
   const salonName = profesionist?.nume_business?.trim() || "acest furnizor";
   const dataStr = formatInTimeZone(new Date(String(row.data_start)), TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(new Date(String(row.data_start)), TZ, "HH:mm");
-  const rebookUrl = `${(process.env.NEXT_PUBLIC_SITE_URL || "https://ocupaloc.ro").replace(/\/$/, "")}/${profesionist?.slug ?? ""}`;
+  const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://ocupaloc.ro").replace(/\/$/, "");
+  const rebookUrl = profesionist?.slug ? `${SITE_URL}/${profesionist.slug}` : null;
+  const serviceName = serviciu?.nume?.trim() || "serviciu";
 
   const subject = `Programare reprogramată la ${salonName}`;
   const text = [
     `Salut ${row.nume_client},`,
     "",
-    `Programarea ta pentru ${serviciu?.nume ?? "serviciu"} a fost reprogramată de prestator.`,
+    `Programarea ta pentru ${serviceName} a fost reprogramată de prestator.`,
     `Noua dată: ${dataStr}, ora ${timeStr}.`,
     "",
-    `Detalii/Reprogramare: ${rebookUrl}`
-  ].join("\n");
+    rebookUrl ? `Detalii/Reprogramare: ${rebookUrl}` : ""
+  ].filter(Boolean).join("\n");
+
+  const html = `
+<div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
+  <h2 style="margin:0 0 8px;">Programare reprogramată</h2>
+  <p style="margin:0 0 12px;">Salut <strong>${escapeHtml(String(row.nume_client))}</strong>,</p>
+  <p style="margin:0 0 16px;">Programarea ta pentru <strong>${escapeHtml(serviceName)}</strong> la <strong>${escapeHtml(salonName)}</strong> a fost reprogramată de prestator.</p>
+  <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:0 0 20px;">
+    <p style="margin:0 0 4px;"><strong>Noua dată:</strong> ${escapeHtml(dataStr)}</p>
+    <p style="margin:0;"><strong>Ora:</strong> ${escapeHtml(timeStr)}</p>
+  </div>
+  ${rebookUrl ? `<a href="${rebookUrl}" style="background:#1c1c2e;color:#fbbf24;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Vezi detalii →</a>` : ""}
+  <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">OcupaLoc · ocupaloc.ro</p>
+</div>`;
+
   await sendResendEmail({
     to: [row.email_client.trim()],
     subject,
     text,
+    html,
     event: "notify_client_booking_rescheduled_failed",
     context: { programareId, clientEmail: row.email_client.trim() }
   });

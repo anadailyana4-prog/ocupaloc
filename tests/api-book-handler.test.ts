@@ -99,3 +99,35 @@ test("handleBookRequest returns 409 when slot is unavailable", async () => {
   assert.equal(result.status, 409);
   assert.equal(result.body.success, false);
 });
+
+test("handleBookRequest succeeds when clientEmail is absent", async () => {
+  const { clientEmail: _omitted, ...payloadWithoutEmail } = validPayload;
+  let capturedEmailClient: string | null | undefined = "SENTINEL";
+  const deps = makeDeps({
+    insertBooking: async (_admin, input) => {
+      capturedEmailClient = input.emailClient;
+      return { ok: true, programareId: "p-no-email" };
+    }
+  });
+
+  const result = await handleBookRequest(payloadWithoutEmail, "127.0.0.1", deps);
+  assert.equal(result.status, 200);
+  assert.equal(result.body.success, true);
+  assert.equal(capturedEmailClient, null);
+});
+
+test("handleBookRequest succeeds when clientEmail is empty string and treats it as null", async () => {
+  let capturedEmailClient: string | null | undefined = "SENTINEL";
+  const deps = makeDeps({
+    insertBooking: async (_admin, input) => {
+      capturedEmailClient = input.emailClient;
+      return { ok: true, programareId: "p-empty-email" };
+    }
+  });
+
+  const result = await handleBookRequest({ ...validPayload, clientEmail: "" }, "127.0.0.1", deps);
+  assert.equal(result.status, 400);
+  // empty string fails the email() refinement — treated as invalid, not silently dropped
+  assert.equal(result.body.success, false);
+  assert.equal(capturedEmailClient, "SENTINEL"); // insertBooking not reached
+});

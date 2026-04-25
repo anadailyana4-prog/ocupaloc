@@ -20,7 +20,13 @@ const bodySchema = z.object({
     .string()
     .transform((value) => value.trim())
     .refine((value) => value.replace(/\D/g, "").length >= 10, "Introdu un număr de telefon valid."),
-  clientEmail: z.string().trim().email("Email invalid.")
+  clientEmail: z
+    .string()
+    .trim()
+    .email("Email invalid.")
+    .optional()
+    .nullable()
+    .transform((v) => v ?? null)
 });
 
 type BookRequestPayload = z.infer<typeof bodySchema>;
@@ -99,7 +105,7 @@ export async function handleBookRequest(
       slotIso: start.toISOString(),
       numeClient: requestData.clientName.trim(),
       telefonClient: requestData.clientPhone.trim(),
-      emailClient: requestData.clientEmail.trim()
+      emailClient: requestData.clientEmail ?? null
     });
 
     if (!res.ok) {

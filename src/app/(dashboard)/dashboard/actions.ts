@@ -39,7 +39,7 @@ export async function cancelBooking(id: string): Promise<BookingActionResult> {
     .update({ status: "anulat" })
     .eq("id", parsed.data)
     .eq("profesionist_id", ctx.profId)
-    .eq("status", "confirmat");
+    .in("status", ["confirmat", "in_asteptare"]);
   if (error) {
     return { success: false, message: error.message };
   }
