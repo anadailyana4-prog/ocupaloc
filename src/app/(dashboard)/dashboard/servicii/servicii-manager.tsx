@@ -39,12 +39,15 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
   const [price, setPrice] = useState(0);
   const [active, setActive] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [featuredIds, setFeaturedIds] = useState<Set<string>>(
+    () => new Set(initialServices.filter((s) => s.is_featured).map((s) => s.id))
+  );
 
   const refresh = () => {
     router.refresh();
   };
 
-  const featuredCount = initialServices.filter((service) => service.is_featured).length;
+  const featuredCount = featuredIds.size;
 
   function openAdd() {
     setName("");
@@ -112,15 +115,31 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
   }
 
   async function onToggleFeatured(row: ServiciuListRow, checked: boolean) {
-    if (checked && !row.is_featured && featuredCount >= MAX_FEATURED_SERVICES) {
+    const currentlyFeatured = featuredIds.has(row.id);
+    if (checked && !currentlyFeatured && featuredCount >= MAX_FEATURED_SERVICES) {
       toast.error("Poți selecta maxim 6 servicii afișate primele.");
       return;
     }
+
+    // Optimistic update
+    setFeaturedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(row.id);
+      else next.delete(row.id);
+      return next;
+    });
 
     setBusy(true);
     try {
       const res = await setServiceFeatured(row.id, checked);
       if (!res.success) {
+        // Revert on failure
+        setFeaturedIds((prev) => {
+          const next = new Set(prev);
+          if (checked) next.delete(row.id);
+          else next.add(row.id);
+          return next;
+        });
         toast.error(res.message);
         return;
       }
@@ -183,11 +202,11 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Switch
-                          checked={s.is_featured}
+                          checked={featuredIds.has(s.id)}
                           onCheckedChange={(checked) => void onToggleFeatured(s, checked)}
-                          disabled={busy || (!s.is_featured && featuredCount >= MAX_FEATURED_SERVICES)}
+                          disabled={busy || (!featuredIds.has(s.id) && featuredCount >= MAX_FEATURED_SERVICES)}
                         />
-                        <span className="text-xs text-zinc-400">{s.is_featured ? "Da" : "Nu"}</span>
+                        <span className="text-xs text-zinc-400">{featuredIds.has(s.id) ? "Da" : "Nu"}</span>
                       </div>
                     </td>
                   ) : null}
