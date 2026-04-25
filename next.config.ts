@@ -64,16 +64,6 @@ const nextConfig: NextConfig = {
         source: "/intrare/:path*",
         destination: "/login",
         permanent: true
-      },
-      {
-        source: "/admin",
-        destination: "/dashboard",
-        permanent: true
-      },
-      {
-        source: "/admin/:path*",
-        destination: "/dashboard/:path*",
-        permanent: true
       }
     ];
   }
