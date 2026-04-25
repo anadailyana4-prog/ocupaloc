@@ -39,6 +39,7 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
   const [price, setPrice] = useState(0);
   const [active, setActive] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [pendingFeaturedId, setPendingFeaturedId] = useState<string | null>(null);
   const [featuredIds, setFeaturedIds] = useState<Set<string>>(
     () => new Set(initialServices.filter((s) => s.is_featured).map((s) => s.id))
   );
@@ -129,7 +130,7 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
       return next;
     });
 
-    setBusy(true);
+    setPendingFeaturedId(row.id);
     try {
       const res = await setServiceFeatured(row.id, checked);
       if (!res.success) {
@@ -146,7 +147,7 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
       toast.success(checked ? "Serviciul a fost marcat ca prioritar." : "Serviciul a fost scos din lista prioritară.");
       refresh();
     } finally {
-      setBusy(false);
+      setPendingFeaturedId(null);
     }
   }
 
@@ -204,7 +205,7 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
                         <Switch
                           checked={featuredIds.has(s.id)}
                           onCheckedChange={(checked) => void onToggleFeatured(s, checked)}
-                          disabled={busy || (!featuredIds.has(s.id) && featuredCount >= MAX_FEATURED_SERVICES)}
+                          disabled={pendingFeaturedId === s.id || (!featuredIds.has(s.id) && featuredCount >= MAX_FEATURED_SERVICES)}
                           className="data-[state=checked]:!bg-green-500"
                         />
                         <span className="text-xs text-zinc-400">{featuredIds.has(s.id) ? "Da" : "Nu"}</span>
