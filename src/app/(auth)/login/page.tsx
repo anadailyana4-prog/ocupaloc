@@ -127,17 +127,7 @@ function LoginForm() {
       return;
     }
 
-    const supabase = createSupabaseBrowserClient();
-    const origin = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL ?? "");
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${origin}/auth/callback`
-    });
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
+    // The API route sends the email server-side (no PKCE), so nothing more to do here.
     trackAuthEvent("password_reset_sent", "email_reset");
     toast.success(payload?.message ?? "Dacă emailul există, am trimis instrucțiunile.");
   }

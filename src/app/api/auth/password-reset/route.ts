@@ -62,5 +62,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Send the reset email server-side (no PKCE code verifier generated).
+  // This ensures Supabase sends token_hash in the email link, not a PKCE code.
+  // A PKCE code can only be redeemed on the same device+browser where the
+  // request originated, which breaks cross-device and incognito reset flows.
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+  const redirectTo = siteUrl ? `${siteUrl}/auth/callback` : undefined;
+  if (redirectTo) {
+    try {
+      const admin = createSupabaseServiceClient();
+      await admin.auth.resetPasswordForEmail(email, { redirectTo });
+    } catch {
+      // Non-fatal: log but don't leak internal error to caller.
+      console.error("[auth:password-reset] supabase resetPasswordForEmail failed");
+    }
+  }
+
   return NextResponse.json({ ok: true, message: "Dacă emailul există, am trimis instrucțiunile." });
 }
