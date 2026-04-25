@@ -160,25 +160,26 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
   const confirmLink = createBookingConfirmationLink({ bookingId: row.id, action: "confirm" });
   const cancelLink = createBookingConfirmationLink({ bookingId: row.id, action: "cancel" });
 
-  const subject = `Confirmă programarea la ${salonName}`;
+  const subject = `Rezervare confirmată la ${salonName}`;
   const text = [
     `Salut ${row.nume_client},`,
     "",
-    `Ai o programare la ${salonName} pentru ${serviceName} pe ${dataStr} la ${timeStr}.`,
+    `Rezervarea ta la ${salonName} pentru ${serviceName} pe ${dataStr} la ${timeStr} a fost înregistrată.`,
     "",
-    "Deschide emailul în format HTML pentru butoanele Confirmă / Anulează.",
+    "Confirmă că vii sau anulează accesând linkurile din email.",
     "",
     "Dacă nu ai făcut tu această rezervare, poți ignora acest email."
   ].join("\n");
 
   const html = `
   <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.5;max-width:560px;margin:0 auto;">
-    <h2 style="margin:0 0 12px;">Confirmă programarea</h2>
+    <h2 style="margin:0 0 12px;">Rezervare confirmată ✓</h2>
     <p style="margin:0 0 12px;">Salut ${safeClientName},</p>
-    <p style="margin:0 0 16px;">Ai o programare la <strong>${safeSalonName}</strong> pentru <strong>${safeServiceName}</strong> pe <strong>${dataStr}</strong> la <strong>${timeStr}</strong>.</p>
+    <p style="margin:0 0 16px;">Rezervarea ta la <strong>${safeSalonName}</strong> pentru <strong>${safeServiceName}</strong> pe <strong>${dataStr}</strong> la <strong>${timeStr}</strong> a fost înregistrată.</p>
+    <p style="margin:0 0 12px;color:#374151;">Confirmi că vii?</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px;">
-      <a href="${confirmLink}" style="background:#16a34a;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:999px;font-weight:700;display:inline-block;">Confirmă</a>
-      <a href="${cancelLink}" style="background:#dc2626;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:999px;font-weight:700;display:inline-block;">Anulează</a>
+      <a href="${confirmLink}" style="background:#16a34a;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:999px;font-weight:700;display:inline-block;">Confirmă prezența</a>
+      <a href="${cancelLink}" style="background:#f3f4f6;color:#374151;text-decoration:none;padding:10px 16px;border-radius:999px;font-weight:700;display:inline-block;">Anulează</a>
     </div>
     <p style="margin:0;color:#6b7280;font-size:13px;">Dacă nu ai făcut tu această rezervare, poți ignora acest email.</p>
   </div>`;
