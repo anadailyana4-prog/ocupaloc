@@ -111,63 +111,6 @@ function LoginForm() {
     window.location.replace("/dashboard");
   }
 
-  async function signInWithGoogle() {
-    setBusy(true);
-    const supabase = createSupabaseBrowserClient();
-    const origin = getAuthOrigin();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        // Keep callback URL aligned with provider config; /auth/callback forwards to /auth/bridge safely.
-        redirectTo: `${origin}/auth/callback?next=/dashboard`
-      }
-    });
-    setBusy(false);
-    if (error) {
-      toast.error(error.message);
-    }
-  }
-
-  async function signInWithMagicLink() {
-    const email = form.getValues("email").trim();
-    if (!email) {
-      toast.error("Introdu emailul pentru link-ul magic.");
-      return;
-    }
-
-    setBusy(true);
-    const response = await fetch("/api/auth/magic-link", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email })
-    });
-
-    const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-    setBusy(false);
-
-    if (!response.ok) {
-      toast.error(payload?.message ?? "Nu am putut trimite linkul acum.");
-      return;
-    }
-
-    const supabase = createSupabaseBrowserClient();
-    const siteUrl = getAuthOrigin();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: `${siteUrl}/auth/bridge?next=/dashboard`
-      }
-    });
-
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-
-    trackAuthEvent("magic_link_sent", "email_link");
-    toast.success(payload?.message ?? "Dacă emailul există, am trimis linkul.");
-  }
-
   async function sendPasswordReset() {
     const email = form.getValues("email").trim();
     if (!email) {
@@ -258,20 +201,6 @@ function LoginForm() {
               {submitError ? <p className="text-sm text-red-400">{submitError}</p> : null}
             </form>
           </Form>
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-zinc-800" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-zinc-950 px-2 text-muted-foreground">sau</span>
-            </div>
-          </div>
-          <Button type="button" variant="outline" className="w-full" onClick={() => void signInWithGoogle()} disabled={busy}>
-            Continuă cu Google
-          </Button>
-          <Button type="button" variant="secondary" className="w-full" onClick={() => void signInWithMagicLink()} disabled={busy}>
-            Intră cu link pe email
-          </Button>
           <button
             type="button"
             className="w-full text-center text-sm text-primary underline-offset-4 hover:underline"
