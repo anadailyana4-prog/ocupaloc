@@ -17,9 +17,12 @@ function isMissingProgramariRemindersTable(error: { message?: string; code?: str
 function getWindow(type: ReminderType): { from: Date; to: Date } {
   const now = new Date();
   if (type === "24h") {
+    // Window covers the full next-day slice so a once-daily cron catches all booking
+    // times regardless of the hour they are scheduled. The programari_reminders
+    // dedup table prevents a booking from receiving the same reminder twice.
     return {
       from: addHours(now, 23),
-      to: addHours(now, 25)
+      to: addHours(now, 47)
     };
   }
   return {
