@@ -72,7 +72,7 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
     );
   }
 
-  const whatsappValue = org.whatsapp ?? org.telefon ?? "";
+  const whatsappValue = org.whatsapp ?? "";
 
   const sp = searchParams ? await searchParams : {};
 
@@ -81,11 +81,12 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
       <div className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight">Pagina publică</h1>
         <p className="text-sm text-muted-foreground">
-          Numele, telefonul, WhatsApp-ul și descrierea apar pe{" "}
+          Numele, telefonul și descrierea apar pe{" "}
           <Link href={`/${org.slug}`} className="font-medium text-indigo-400 underline-offset-4 hover:underline">
             /{org.slug}
           </Link>
-          . Emailul e opțional și e folosit doar pentru alerte la rezervări noi.
+          . WhatsApp este opțional: dacă îl completezi, apare buton dedicat; dacă îl lași gol, folosim telefonul doar ca fallback pentru contact.
+          Emailul e opțional și e folosit doar pentru alerte la rezervări noi.
         </p>
         <div className="flex flex-wrap gap-2 pt-2">
           <Button asChild variant="outline" className="rounded-full">
@@ -143,7 +144,7 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
             placeholder="07xx xxx xxx"
             className="border-zinc-700 bg-zinc-900"
           />
-          <p className="text-xs text-muted-foreground">Dacă e completat, apare buton dedicat WhatsApp pe pagina publică.</p>
+          <p className="text-xs text-muted-foreground">Opțional. Dacă e completat, apare butonul „Scrie pe WhatsApp” pe pagina publică.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email notificări rezervări</Label>

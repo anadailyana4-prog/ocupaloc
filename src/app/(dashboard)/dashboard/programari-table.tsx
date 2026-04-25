@@ -73,17 +73,6 @@ export function ProgramariTable({ rows }: Props) {
       }
       toast.success("Marcat ca neprezent.");
       router.refresh();
-      // Recovery prompt: suggest contacting the client via WhatsApp
-      if (row.clientPhone) {
-        const waUrl = `https://wa.me/${row.clientPhone.replace(/\D/g, "")}?text=${encodeURIComponent(`Salut ${row.clientName}, am observat că nu ai ajuns la programarea de azi. Vrei să stabilim o altă dată?`)}`;
-        toast("Contactezi clientul pe WhatsApp?", {
-          duration: 8000,
-          action: {
-            label: "Deschide WhatsApp →",
-            onClick: () => { window.open(waUrl, "_blank", "noopener"); }
-          }
-        });
-      }
     });
   }
 

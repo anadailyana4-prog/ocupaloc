@@ -314,7 +314,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
               <p className="max-w-lg text-base leading-relaxed text-zinc-400">{publicDescription}</p>
             ) : null}
             {prof.lucreaza_acasa ? (
-              <p className="text-sm text-zinc-500">Locația exactă o primești pe WhatsApp după confirmare.</p>
+              <p className="text-sm text-zinc-500">Locația exactă o primești după confirmare.</p>
             ) : prof.adresa_publica ? (
               <p className="text-sm text-zinc-400">{prof.adresa_publica as string}</p>
             ) : null}
