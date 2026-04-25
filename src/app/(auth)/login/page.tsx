@@ -128,7 +128,10 @@ function LoginForm() {
     }
 
     const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const origin = typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL ?? "");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${origin}/auth/callback`
+    });
 
     if (error) {
       toast.error(error.message);
