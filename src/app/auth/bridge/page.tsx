@@ -30,6 +30,15 @@ export default function AuthBridgePage() {
           const { error } = await supabase.auth.exchangeCodeForSession(action.code);
           if (error) throw error;
         } else if (action.kind === "otp") {
+          // Recovery tokens are handled in reset-password page, not here
+          if (action.otpType === "recovery") {
+            const resetUrl = new URL("/reset-password", window.location.origin);
+            resetUrl.searchParams.set("token_hash", action.tokenHash);
+            resetUrl.searchParams.set("type", "recovery");
+            if (!cancelled) window.location.replace(resetUrl.toString());
+            return;
+          }
+
           const { error } = await supabase.auth.verifyOtp({
             token_hash: action.tokenHash,
             type: action.otpType

@@ -135,10 +135,7 @@ function LoginForm() {
     }
 
     const supabase = createSupabaseBrowserClient();
-    const siteUrl = getAuthOrigin();
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${siteUrl}/reset-password`
-    });
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
 
     if (error) {
       toast.error(error.message);
