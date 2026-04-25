@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
 export function DashboardHeader() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   async function logout() {
@@ -46,6 +48,9 @@ export function DashboardHeader() {
           </Link>
         </nav>
       </div>
+      <Button type="button" variant="ghost" size="sm" onClick={() => router.back()} className="text-zinc-400 hover:text-zinc-100">
+        ← Înapoi
+      </Button>
       <Button type="button" variant="outline" size="sm" onClick={() => void logout()} disabled={loading}>
         {loading ? "Se iese…" : "Ieși din cont"}
       </Button>
