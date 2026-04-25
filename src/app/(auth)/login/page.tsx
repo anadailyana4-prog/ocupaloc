@@ -55,13 +55,6 @@ function LoginForm() {
     defaultValues: { email: "", password: "" }
   });
 
-  function getAuthOrigin(): string {
-    if (typeof window !== "undefined" && window.location.origin) {
-      return window.location.origin.replace(/\/$/, "");
-    }
-    return (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
-  }
-
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     void supabase.auth.getSession().then(({ data }) => {

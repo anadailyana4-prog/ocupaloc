@@ -43,7 +43,7 @@ export default function ResetPasswordForm() {
 
           // Give session a moment to persist
           await new Promise((resolve) => setTimeout(resolve, 500));
-        } catch (err) {
+        } catch (_err) {
           setError("A apărut o eroare la verificarea linkului.");
           setSessionChecked(true);
           return;
