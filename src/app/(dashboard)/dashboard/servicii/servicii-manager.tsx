@@ -205,6 +205,7 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
                           checked={featuredIds.has(s.id)}
                           onCheckedChange={(checked) => void onToggleFeatured(s, checked)}
                           disabled={busy || (!featuredIds.has(s.id) && featuredCount >= MAX_FEATURED_SERVICES)}
+                          className="data-[state=checked]:bg-green-500"
                         />
                         <span className="text-xs text-zinc-400">{featuredIds.has(s.id) ? "Da" : "Nu"}</span>
                       </div>
