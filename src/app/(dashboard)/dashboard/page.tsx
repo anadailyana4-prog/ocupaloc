@@ -8,7 +8,6 @@ import { AddManualBookingDialog, type ServiciuOption } from "./add-manual-bookin
 import { CopyPublicLinkButton } from "./copy-public-link";
 import { ProgramariTable, type ProgramareRow } from "./programari-table";
 import { Button } from "@/components/ui/button";
-import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { parseProgramJson, ziKeyFromDate } from "@/lib/program";
 import { computeFreeSlots } from "@/lib/slots";
 import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
@@ -78,22 +77,6 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   const sp = searchParams ? await searchParams : {};
   const filter = sp.filter === "azi" || sp.filter === "toate" ? sp.filter : "viitoare";
-
-  // Fetch subscription status for banner
-  let subStatus: string | null = null;
-  let subPeriodEnd: Date | null = null;
-  if (prof?.id) {
-    const adminClient = createSupabaseServiceClient();
-    const { data: subRow } = await adminClient
-      .from("subscriptions")
-      .select("status, current_period_end")
-      .eq("profesionist_id", String(prof.id))
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    subStatus = subRow?.status ?? null;
-    subPeriodEnd = subRow?.current_period_end ? new Date(subRow.current_period_end) : null;
-  }
 
   const { count: serviciiCount } = await supabase
     .from("servicii")
@@ -453,116 +436,6 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-12 section-reveal">
-      {/* Subscription status banner */}
-      {(() => {
-        const BILLING_TRIAL_DAYS_LOCAL = 30;
-        const createdAt = prof?.created_at ? new Date(prof.created_at as string) : null;
-        const trialEnd = createdAt
-          ? new Date(createdAt.getTime() + BILLING_TRIAL_DAYS_LOCAL * 24 * 60 * 60 * 1000)
-          : null;
-        const trialDaysLeft = trialEnd
-          ? Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000)))
-          : 0;
-
-        // Render trial banner with urgency tiers
-        const renderTrialBanner = (label: string) => {
-          if (!trialEnd) return null;
-          const isExpired = Date.now() > trialEnd.getTime();
-          if (isExpired) {
-            return (
-              <div className="mx-4 mt-4 rounded-md border border-red-400 bg-red-50 px-4 py-3 text-sm text-red-900">
-                <span className="font-bold">⛔ Perioada de trial a expirat.</span> Accesul la programări va fi restricționat.{" "}
-                <Link href="/billing/checkout" className="font-bold underline">Abonează-te acum →</Link>
-              </div>
-            );
-          }
-          if (trialDaysLeft <= 1) {
-            return (
-              <div className="mx-4 mt-4 rounded-md border-2 border-red-400 bg-red-50 px-4 py-3 text-sm text-red-900">
-                <span className="font-bold">⛔ Azi expiră trial-ul!</span> Activează abonamentul pentru a nu pierde accesul.{" "}
-                <Link href="/billing/checkout" className="font-bold underline">Activează acum →</Link>
-              </div>
-            );
-          }
-          if (trialDaysLeft <= 3) {
-            return (
-              <div className="mx-4 mt-4 rounded-md border border-orange-300 bg-orange-50 px-4 py-3 text-sm text-orange-900">
-                ⚠️ {label} - <strong>mai ai doar {trialDaysLeft} zile</strong>. Nu lăsa să expire.{" "}
-                <Link href="/billing/checkout" className="font-semibold underline">Activează abonamentul →</Link>
-              </div>
-            );
-          }
-          if (trialDaysLeft <= 7) {
-            return (
-              <div className="mx-4 mt-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                🕐 {label} - <strong>{trialDaysLeft} zile rămase</strong>.{" "}
-                <Link href="/billing/checkout" className="font-medium underline">Activează abonamentul →</Link>
-              </div>
-            );
-          }
-          return (
-            <div className="mx-4 mt-4 rounded-md border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
-              🕐 {label} - <strong>{trialDaysLeft} zile rămase</strong>.{" "}
-              <Link href="/billing/checkout" className="font-medium underline">Activează abonamentul →</Link>
-            </div>
-          );
-        };
-
-        if (!subStatus && trialEnd) {
-          return renderTrialBanner("Trial gratuit activ");
-        }
-        if (subStatus === "trialing") {
-          return renderTrialBanner("Trial Stripe activ");
-        }
-        if (subStatus === "active") {
-          const renewalDaysLeft = subPeriodEnd
-            ? Math.ceil((subPeriodEnd.getTime() - Date.now()) / (24 * 60 * 60 * 1000))
-            : null;
-          const showRenewalChip = renewalDaysLeft !== null && renewalDaysLeft <= 14 && renewalDaysLeft > 0;
-          return (
-            <>
-              <div className="mx-4 mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-                ✅ Abonament activ
-                {subPeriodEnd ? ` până pe ${subPeriodEnd.toLocaleDateString("ro-RO")}` : ""}.
-              </div>
-              {showRenewalChip ? (
-                <div className="mx-4 mt-2 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                  🔄 Abonamentul se reînnoiește în <strong>{renewalDaysLeft} {renewalDaysLeft === 1 ? "zi" : "zile"}</strong>.{" "}
-                  <Link href="/billing/portal" className="font-medium underline">Gestionează →</Link>
-                </div>
-              ) : null}
-            </>
-          );
-        }
-        if (subStatus === "past_due") {
-          return (
-            <div className="mx-4 mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-              ❌ Plată restantă! Abonamentul va fi suspendat în curând.{" "}
-              <Link href="/billing/portal" className="font-medium underline">Gestionează -&gt;</Link>
-            </div>
-          );
-        }
-        if (subStatus === "canceled") {
-          return (
-            <div className="mx-4 mt-4 rounded-md border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
-              Abonament anulat.{" "}
-              <Link href="/billing/checkout" className="font-medium underline">Abonează-te din nou -&gt;</Link>
-            </div>
-          );
-        }
-        if (subStatus === "incomplete" || subStatus === "paused") {
-          return (
-            <div className="mx-4 mt-4 rounded-md border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800">
-              ⚠️ {subStatus === "incomplete" ? "Plata nu a fost finalizată." : "Abonament în pauză."}{" "}
-              <Link href="/billing/portal" className="font-medium underline">
-                {subStatus === "incomplete" ? "Finalizează -&gt;" : "Reactivează -&gt;"}
-              </Link>
-            </div>
-          );
-        }
-        return null;
-      })()}
-
       {sp.info ? (
         <div className="mx-4 mt-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
           ℹ️ {decodeURIComponent(sp.info)}
@@ -590,11 +463,6 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
         </div>
         <div className="flex flex-wrap gap-2">
           {prof.slug ? <CopyPublicLinkButton slug={prof.slug} /> : null}
-          <form action="/api/billing/portal" method="post">
-            <Button type="submit" variant="secondary" className="rounded-full">
-              Gestionează abonamentul
-            </Button>
-          </form>
           {prof.slug?.trim() ? (
             <Button asChild variant="secondary" className="rounded-full">
               <a href={`/${prof.slug.trim()}`} target="_blank" rel="noreferrer">
