@@ -47,7 +47,7 @@ export function DashboardHeader() {
         </nav>
       </div>
       <Button type="button" variant="outline" size="sm" onClick={() => void logout()} disabled={loading}>
-        {loading ? "Se iese…" : "Logout"}
+        {loading ? "Se iese…" : "Ieși din cont"}
       </Button>
     </header>
   );
