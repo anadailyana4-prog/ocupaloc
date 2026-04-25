@@ -18,8 +18,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 type DemoProps = { variant: "demo" };
 
-type LegacyService = Pick<ServiciuRow, "id" | "nume" | "durata_minute" | "pret">;
-export type TenantService = { id: string; name: string; duration_min: number; price: number };
+type LegacyService = Pick<ServiciuRow, "id" | "nume" | "durata_minute" | "pret"> & { is_featured?: boolean };
+export type TenantService = { id: string; name: string; duration_min: number; price: number; is_featured?: boolean };
 
 type LiveProps = {
   variant: "live";
@@ -126,6 +126,18 @@ function isTenantLive(props: LiveProps): props is LiveProps & { tenantBooking: t
   return props.tenantBooking === true;
 }
 
+function normalizeSearch(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function isFeaturedService(service: LegacyService | TenantService): boolean {
+  return service.is_featured === true;
+}
+
 function normalizePhone(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
@@ -140,10 +152,20 @@ type SlotPick = { start: Date; staffId?: string };
 function BookingCardLive(props: LiveProps) {
   const { slug, publicBase, businessName, services, publicPageLayout = false } = props;
   const tenant = isTenantLive(props);
+  const featuredServices = useMemo(() => services.filter((service) => isFeaturedService(service)).slice(0, 6), [services]);
+  const hasFeaturedServices = featuredServices.length > 0;
+  const [showAllServices, setShowAllServices] = useState(false);
+  const [serviceSearch, setServiceSearch] = useState("");
+
+  const initialServiceId = useMemo(() => {
+    if (featuredServices[0]?.id) return featuredServices[0].id;
+    return services[0]?.id ?? null;
+  }, [featuredServices, services]);
+
   const [experimentVariant, setExperimentVariant] = useState<"A" | "B" | null>(null);
   const experimentId = "pricing_packaging_v1";
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
-  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(services[0]?.id ?? null);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(initialServiceId);
   const [selectedDay, setSelectedDay] = useState<Date | null>(() => (publicPageLayout ? startOfDay(new Date()) : null));
   const [slotPicks, setSlotPicks] = useState<SlotPick[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -162,6 +184,16 @@ function BookingCardLive(props: LiveProps) {
   }, []);
 
   const selectedService = useMemo(() => services.find((s) => s.id === selectedServiceId) ?? null, [services, selectedServiceId]);
+
+  useEffect(() => {
+    if (!selectedServiceId && initialServiceId) {
+      setSelectedServiceId(initialServiceId);
+      return;
+    }
+    if (selectedServiceId && !services.some((service) => service.id === selectedServiceId)) {
+      setSelectedServiceId(initialServiceId);
+    }
+  }, [initialServiceId, selectedServiceId, services]);
 
   useEffect(() => {
     void assignExperimentVariant(experimentId).then((variant) => {
@@ -466,8 +498,28 @@ function BookingCardLive(props: LiveProps) {
             <div className={`mb-3 font-medium text-zinc-500 ${publicPageLayout ? "text-xs uppercase tracking-wider" : "text-xs md:text-sm"}`}>
               {publicPageLayout ? "Servicii" : "1. Serviciu ales"}
             </div>
+            {hasFeaturedServices && !showAllServices ? (
+              <p className="mb-3 text-xs text-zinc-400">Servicii recomandate</p>
+            ) : null}
+            {((hasFeaturedServices && showAllServices) || (!hasFeaturedServices && services.length > 8)) ? (
+              <div className="mb-3">
+                <Input
+                  type="search"
+                  value={serviceSearch}
+                  onChange={(event) => setServiceSearch(event.target.value)}
+                  placeholder="Caută serviciu"
+                  className="border-zinc-700 bg-zinc-900"
+                />
+              </div>
+            ) : null}
             <div className={publicPageLayout ? "grid grid-cols-1 gap-4 sm:grid-cols-2" : "space-y-2"}>
-              {services.map((s) => (
+              {(hasFeaturedServices && !showAllServices ? featuredServices : services)
+                .filter((service) => {
+                  const search = normalizeSearch(serviceSearch);
+                  if (!search) return true;
+                  return normalizeSearch(serviceTitle(service)).includes(search);
+                })
+                .map((s) => (
                 <button
                   key={s.id}
                   type="button"
@@ -505,6 +557,18 @@ function BookingCardLive(props: LiveProps) {
                 </button>
               ))}
             </div>
+            {hasFeaturedServices && !showAllServices ? (
+              <button
+                type="button"
+                className="mt-3 text-sm font-medium text-indigo-300 hover:text-indigo-200"
+                onClick={() => {
+                  setShowAllServices(true);
+                  setServiceSearch("");
+                }}
+              >
+                Vezi toate serviciile ({services.length})
+              </button>
+            ) : null}
           </div>
 
           <div>

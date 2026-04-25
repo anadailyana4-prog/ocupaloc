@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { createService, deleteService, updateService } from "./actions";
+import { createService, deleteService, setServiceFeatured, updateService } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -18,15 +18,19 @@ export type ServiciuListRow = {
   duration_min: number;
   price: number;
   is_active: boolean | null;
+  is_featured: boolean;
   deleted_at: string | null;
 };
 
 type Props = {
   initialServices: ServiciuListRow[];
   orgSlug: string;
+  supportsFeatured: boolean;
 };
 
-export function ServiciiManager({ initialServices, orgSlug }: Props) {
+const MAX_FEATURED_SERVICES = 6;
+
+export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: Props) {
   const router = useRouter();
   const [addOpen, setAddOpen] = useState(false);
   const [editRow, setEditRow] = useState<ServiciuListRow | null>(null);
@@ -39,6 +43,8 @@ export function ServiciiManager({ initialServices, orgSlug }: Props) {
   const refresh = () => {
     router.refresh();
   };
+
+  const featuredCount = initialServices.filter((service) => service.is_featured).length;
 
   function openAdd() {
     setName("");
@@ -105,6 +111,26 @@ export function ServiciiManager({ initialServices, orgSlug }: Props) {
     }
   }
 
+  async function onToggleFeatured(row: ServiciuListRow, checked: boolean) {
+    if (checked && !row.is_featured && featuredCount >= MAX_FEATURED_SERVICES) {
+      toast.error("Poți selecta maxim 6 servicii afișate primele.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const res = await setServiceFeatured(row.id, checked);
+      if (!res.success) {
+        toast.error(res.message);
+        return;
+      }
+      toast.success(checked ? "Serviciul a fost marcat ca prioritar." : "Serviciul a fost scos din lista prioritară.");
+      refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-200 transition">
@@ -116,6 +142,11 @@ export function ServiciiManager({ initialServices, orgSlug }: Props) {
           <p className="text-sm text-muted-foreground">
             Organizație: <span className="font-mono text-xs">{orgSlug}</span>
           </p>
+          {supportsFeatured ? (
+            <p className="text-xs text-zinc-400">Servicii prioritare selectate: {featuredCount}/6</p>
+          ) : (
+            <p className="text-xs text-zinc-500">Serviciile prioritare devin disponibile după migrarea bazei de date.</p>
+          )}
         </div>
         <Button type="button" onClick={openAdd}>
           + Adaugă serviciu
@@ -130,13 +161,14 @@ export function ServiciiManager({ initialServices, orgSlug }: Props) {
               <th className="px-4 py-3 text-left font-medium">Durată (min)</th>
               <th className="px-4 py-3 text-left font-medium">Preț (RON)</th>
               <th className="px-4 py-3 text-left font-medium">Activ</th>
+              {supportsFeatured ? <th className="px-4 py-3 text-left font-medium">Afișat primul</th> : null}
               <th className="px-4 py-3 text-right font-medium">Acțiuni</th>
             </tr>
           </thead>
           <tbody>
             {initialServices.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={supportsFeatured ? 6 : 5} className="px-4 py-8 text-center text-muted-foreground">
                   Niciun serviciu. Adaugă primul.
                 </td>
               </tr>
@@ -147,6 +179,18 @@ export function ServiciiManager({ initialServices, orgSlug }: Props) {
                   <td className="px-4 py-3">{s.duration_min}</td>
                   <td className="px-4 py-3">{Number(s.price).toFixed(2)}</td>
                   <td className="px-4 py-3">{s.is_active === false ? "Nu" : "Da"}</td>
+                  {supportsFeatured ? (
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={s.is_featured}
+                          onCheckedChange={(checked) => void onToggleFeatured(s, checked)}
+                          disabled={busy || (!s.is_featured && featuredCount >= MAX_FEATURED_SERVICES)}
+                        />
+                        <span className="text-xs text-zinc-400">{s.is_featured ? "Da" : "Nu"}</span>
+                      </div>
+                    </td>
+                  ) : null}
                   <td className="px-4 py-3 text-right space-x-2">
                     <Button type="button" variant="outline" size="sm" onClick={() => openEdit(s)} disabled={busy}>
                       Editează

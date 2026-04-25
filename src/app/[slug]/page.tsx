@@ -193,12 +193,52 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
     notFound();
   }
 
-  const { data: servicii } = await supabase
-    .from("servicii")
-    .select("id,nume,durata_minute,pret,culoare,activ,ordine")
-    .eq("profesionist_id", prof.id)
-    .eq("activ", true)
-    .order("ordine", { ascending: true });
+  const serviceSelectAttempts = [
+    ["id", "nume", "durata_minute", "pret", "culoare", "activ", "ordine", "is_featured"].join(","),
+    ["id", "nume", "durata_minute", "pret", "culoare", "activ", "ordine"].join(",")
+  ] as const;
+  let servicii:
+    | Array<{
+        id: string;
+        nume: string;
+        durata_minute: number;
+        pret: number;
+        culoare: string;
+        activ: boolean;
+        ordine: number;
+        is_featured?: boolean;
+      }>
+    | null = null;
+
+  for (const columns of serviceSelectAttempts) {
+    const result = await supabase
+      .from("servicii")
+      .select(columns)
+      .eq("profesionist_id", prof.id)
+      .eq("activ", true)
+      .order("ordine", { ascending: true });
+
+    if (!result.error) {
+      servicii = (result.data ?? null) as unknown as Array<{
+        id: string;
+        nume: string;
+        durata_minute: number;
+        pret: number;
+        culoare: string;
+        activ: boolean;
+        ordine: number;
+        is_featured?: boolean;
+      }>;
+      break;
+    }
+
+    if (result.error.message.includes("is_featured")) {
+      continue;
+    }
+
+    servicii = null;
+    break;
+  }
 
   if (!servicii?.length) {
     return (

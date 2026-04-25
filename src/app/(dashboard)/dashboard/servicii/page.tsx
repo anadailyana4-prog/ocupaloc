@@ -17,11 +17,42 @@ export default async function ServiciiDashboardPage() {
     redirect("/onboarding");
   }
 
-  const { data: rows, error } = await supabase
-    .from("servicii")
-    .select("id, nume, durata_minute, pret, activ")
-    .eq("profesionist_id", prof.id)
-    .order("nume", { ascending: true });
+  const selectAttempts = [
+    ["id", "nume", "durata_minute", "pret", "activ", "is_featured"].join(", "),
+    ["id", "nume", "durata_minute", "pret", "activ"].join(", ")
+  ] as const;
+
+  let rows:
+    | Array<{ id: string; nume: string; durata_minute: number; pret: number; activ: boolean; is_featured?: boolean }>
+    | null = null;
+  let error: { message: string } | null = null;
+  let supportsFeatured = false;
+
+  for (const columns of selectAttempts) {
+    const result = await supabase.from("servicii").select(columns).eq("profesionist_id", prof.id).order("nume", { ascending: true });
+
+    if (!result.error) {
+      rows = (result.data ?? null) as unknown as Array<{
+        id: string;
+        nume: string;
+        durata_minute: number;
+        pret: number;
+        activ: boolean;
+        is_featured?: boolean;
+      }>;
+      error = null;
+      supportsFeatured = columns.includes("is_featured");
+      break;
+    }
+
+    if (result.error.message.includes("is_featured")) {
+      error = result.error;
+      continue;
+    }
+
+    error = result.error;
+    break;
+  }
 
   if (error) {
     return (
@@ -37,8 +68,9 @@ export default async function ServiciiDashboardPage() {
     duration_min: row.durata_minute,
     price: row.pret,
     is_active: row.activ,
+    is_featured: row.is_featured ?? false,
     deleted_at: null
   }));
 
-  return <ServiciiManager initialServices={initialServices} orgSlug={prof.slug} />;
+  return <ServiciiManager initialServices={initialServices} orgSlug={prof.slug} supportsFeatured={supportsFeatured} />;
 }

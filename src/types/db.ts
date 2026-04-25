@@ -30,6 +30,7 @@ export type ServiciuRow = {
   durata_minute: number;
   culoare: string;
   activ: boolean;
+  is_featured?: boolean;
   ordine: number;
   created_at: string;
 };
