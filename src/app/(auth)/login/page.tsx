@@ -137,7 +137,7 @@ function LoginForm() {
     const supabase = createSupabaseBrowserClient();
     const siteUrl = getAuthOrigin();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${siteUrl}/auth/bridge?next=/reset-password`
+      redirectTo: `${siteUrl}/reset-password`
     });
 
     if (error) {

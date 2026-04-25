@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
 export default function ResetPasswordPage() {
+  const searchParams = useSearchParams();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -17,15 +19,45 @@ export default function ResetPasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [hasRecoverySession, setHasRecoverySession] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
+    const tokenHash = searchParams.get("token_hash");
+    const type = searchParams.get("type");
 
-    void supabase.auth.getSession().then(({ data }) => {
+    async function verifyRecoveryToken() {
+      // If token_hash and type are in URL, verify them first
+      if (tokenHash && type === "recovery") {
+        try {
+          const { error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: "recovery"
+          });
+
+          if (verifyError) {
+            setError("Link invalid sau expirat. " + verifyError.message);
+            setSessionChecked(true);
+            return;
+          }
+
+          // Give session a moment to persist
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        } catch (err) {
+          setError("A apărut o eroare la verificarea linkului.");
+          setSessionChecked(true);
+          return;
+        }
+      }
+
+      // Check if we have a valid session (recovery or regular)
+      const { data } = await supabase.auth.getSession();
       setHasRecoverySession(Boolean(data.session));
       setSessionChecked(true);
-    });
-  }, []);
+    }
+
+    void verifyRecoveryToken();
+  }, [searchParams]);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -58,6 +90,24 @@ export default function ResetPasswordPage() {
     return (
       <main className="flex min-h-screen items-center justify-center p-4">
         <p className="text-sm text-muted-foreground">Verificăm linkul de resetare...</p>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-md border-zinc-800 bg-zinc-950">
+          <CardHeader>
+            <CardTitle>Eroare la resetare</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Link href="/login" className="text-sm text-primary underline underline-offset-4">
+              Înapoi la autentificare
+            </Link>
+          </CardFooter>
+        </Card>
       </main>
     );
   }

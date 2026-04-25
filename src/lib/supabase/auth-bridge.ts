@@ -2,7 +2,7 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 
 export type AuthBridgeAction =
   | { kind: "code"; code: string }
-  | { kind: "otp"; tokenHash: string; otpType: EmailOtpType }
+  | { kind: "otp"; tokenHash: string; otpType: EmailOtpType | "recovery" }
   | { kind: "session"; accessToken: string; refreshToken: string }
   | { kind: "none" };
 
@@ -22,7 +22,7 @@ export function getAuthBridgeAction(current: URL): AuthBridgeAction {
   const hashParams = new URLSearchParams(current.hash.startsWith("#") ? current.hash.slice(1) : current.hash);
   const code = current.searchParams.get("code");
   const tokenHash = current.searchParams.get("token_hash") ?? hashParams.get("token_hash");
-  const otpType = (current.searchParams.get("type") ?? hashParams.get("type")) as EmailOtpType | null;
+  const otpType = (current.searchParams.get("type") ?? hashParams.get("type")) as string | null;
   const accessToken = hashParams.get("access_token") ?? current.searchParams.get("access_token");
   const refreshToken = hashParams.get("refresh_token") ?? current.searchParams.get("refresh_token");
 
@@ -30,8 +30,8 @@ export function getAuthBridgeAction(current: URL): AuthBridgeAction {
     return { kind: "code", code };
   }
 
-  if (tokenHash && otpType) {
-    return { kind: "otp", tokenHash, otpType };
+  if (tokenHash && otpType && (otpType === "signup" || otpType === "recovery" || otpType === "magiclink" || otpType === "invite")) {
+    return { kind: "otp", tokenHash, otpType: otpType as EmailOtpType | "recovery" };
   }
 
   if (accessToken && refreshToken) {
