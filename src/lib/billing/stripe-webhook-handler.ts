@@ -173,6 +173,15 @@ export async function handleStripeWebhookRequest(
               stripe_subscription_id: subId,
               stripe_customer_id: obj.customer as string,
               status: "active",
+              current_period_end: obj.period_end
+                ? new Date((obj.period_end as number) * 1000).toISOString()
+                : obj.lines
+                  ? (() => {
+                      const lines = (obj as Record<string, unknown>).lines as { data?: Array<{ period?: { end?: number } }> } | undefined;
+                      const end = lines?.data?.[0]?.period?.end;
+                      return end ? new Date(end * 1000).toISOString() : null;
+                    })()
+                  : null,
               updated_at: new Date().toISOString(),
             },
             { onConflict: "stripe_subscription_id" }

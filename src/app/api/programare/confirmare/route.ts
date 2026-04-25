@@ -41,10 +41,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Refuză schimbarea dacă programarea e deja finalizată sau anulată anterior.
-  if (current.status === "finalizat" || current.status === "anulat") {
+  // Refuză schimbarea dacă programarea e deja finalizată, anulată sau marcată neprezent.
+  if (current.status === "finalizat" || current.status === "anulat" || current.status === "noaparit") {
     const url = new URL("/programare/confirmare", req.url);
-    url.searchParams.set("state", current.status === "anulat" ? "already_cancelled" : "already_finished");
+    url.searchParams.set(
+      "state",
+      current.status === "anulat" ? "already_cancelled" :
+      current.status === "noaparit" ? "already_cancelled" :
+      "already_finished"
+    );
     const rel = current.profesionisti as { slug?: string } | { slug?: string }[] | null;
     const p = Array.isArray(rel) ? rel[0] ?? null : rel;
     if (p?.slug) url.searchParams.set("slug", p.slug);

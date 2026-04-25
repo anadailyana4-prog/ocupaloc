@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { type BookingActionResult, cancelBooking, completeBooking, markNoShow } from "./actions";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export type ProgramareRow = {
   id: string;
@@ -51,6 +52,7 @@ type Props = {
 export function ProgramariTable({ rows }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [cancelTarget, setCancelTarget] = useState<{ id: string; clientName: string } | null>(null);
 
   async function run(label: string, fn: () => Promise<BookingActionResult>) {
     startTransition(async () => {
@@ -60,6 +62,25 @@ export function ProgramariTable({ rows }: Props) {
         return;
       }
       toast.success(label);
+      router.refresh();
+    });
+  }
+
+  function confirmCancel(row: ProgramareRow) {
+    setCancelTarget({ id: row.id, clientName: row.clientName });
+  }
+
+  async function executeCancel() {
+    if (!cancelTarget) return;
+    const id = cancelTarget.id;
+    setCancelTarget(null);
+    startTransition(async () => {
+      const res = await cancelBooking(id);
+      if (!res.success) {
+        toast.error(res.message);
+        return;
+      }
+      toast.success("Programare anulată.");
       router.refresh();
     });
   }
@@ -134,7 +155,7 @@ export function ProgramariTable({ rows }: Props) {
                       size="sm"
                       className="flex-1 rounded-full border-red-500/40 text-red-300 hover:bg-red-950/40"
                       disabled={pending}
-                      onClick={() => void run("Programare anulată.", () => cancelBooking(r.id))}
+                      onClick={() => confirmCancel(r)}
                     >
                       Anulează
                     </Button>
@@ -228,7 +249,7 @@ export function ProgramariTable({ rows }: Props) {
                               size="sm"
                               className="rounded-full border-red-500/40 text-red-300 hover:bg-red-950/40"
                               disabled={pending}
-                              onClick={() => void run("Programare anulată.", () => cancelBooking(r.id))}
+                              onClick={() => confirmCancel(r)}
                             >
                               Anulează
                             </Button>
@@ -264,6 +285,30 @@ export function ProgramariTable({ rows }: Props) {
           </tbody>
         </table>
       </div>
+
+      <Dialog open={cancelTarget !== null} onOpenChange={(open) => { if (!open) setCancelTarget(null); }}>
+        <DialogContent className="border-zinc-800 bg-zinc-950 text-white sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Confirmă anularea</DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Anulezi programarea lui <span className="font-semibold text-white">{cancelTarget?.clientName}</span>? Clientul va primi un email de notificare.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="secondary" type="button" onClick={() => setCancelTarget(null)}>
+              Înapoi
+            </Button>
+            <Button
+              type="button"
+              className="bg-red-700 text-white hover:bg-red-600"
+              disabled={pending}
+              onClick={() => void executeCancel()}
+            >
+              Da, anulează
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
