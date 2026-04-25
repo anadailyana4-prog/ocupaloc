@@ -42,6 +42,7 @@ export default function LoginPage() {
 function LoginForm() {
   const searchParams = useSearchParams();
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const authReason = searchParams.get("reason");
   const authError = searchParams.get("error");
@@ -186,7 +187,25 @@ function LoginForm() {
                   <FormItem>
                     <FormLabel>Parolă</FormLabel>
                     <FormControl>
-                      <Input data-testid="login-password-input" type="password" autoComplete="current-password" {...field} />
+                      <div className="relative">
+                        <Input
+                          data-testid="login-password-input"
+                          type={showPassword ? "text" : "password"}
+                          autoComplete="current-password"
+                          className="pr-12"
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1 h-8 px-2 text-zinc-400 hover:text-zinc-100"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          aria-label={showPassword ? "Ascunde parola" : "Arată parola"}
+                        >
+                          {showPassword ? "🙈" : "👁"}
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
