@@ -203,7 +203,7 @@ function LoginForm() {
                           onClick={() => setShowPassword((prev) => !prev)}
                           aria-label={showPassword ? "Ascunde parola" : "Arată parola"}
                         >
-                          {showPassword ? "🙈" : "👁"}
+                          {showPassword ? "👁" : "🙈"}
                         </Button>
                       </div>
                     </FormControl>
