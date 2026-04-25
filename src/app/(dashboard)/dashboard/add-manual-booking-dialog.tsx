@@ -57,7 +57,11 @@ export function AddManualBookingDialog({ servicii, onSuccess }: Props) {
         toast.error(res.message);
         return;
       }
-      toast.success("Programare adăugată.");
+      if (res.emailSent) {
+        toast.success("Programare adăugată. Email de confirmare trimis clientului.");
+      } else {
+        toast.success("Programare adăugată. Nu s-a trimis email (adresa clientului lipsă).");
+      }
       setOpen(false);
       onSuccess?.();
     } finally {
