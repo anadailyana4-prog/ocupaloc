@@ -204,7 +204,7 @@ function LoginForm() {
                   </FormItem>
                 )}
               />
-              <Button data-testid="login-submit" type="submit" className="w-full" disabled={busy}>
+              <Button data-testid="login-submit" type="submit" className="w-full h-12 text-base font-bold" disabled={busy}>
                 {busy ? "Se autentifică…" : "Continuă"}
               </Button>
               {authError === "auth" && decodedAuthReason ? (
