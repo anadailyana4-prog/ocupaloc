@@ -118,7 +118,7 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
   async function onToggleFeatured(row: ServiciuListRow, checked: boolean) {
     const currentlyFeatured = featuredIds.has(row.id);
     if (checked && !currentlyFeatured && featuredCount >= MAX_FEATURED_SERVICES) {
-      toast.error("Poți selecta maxim 6 servicii afișate primele.");
+      toast.error("Poți selecta maxim 6 servicii populare.");
       return;
     }
 
@@ -144,7 +144,7 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
         toast.error(res.message);
         return;
       }
-      toast.success(checked ? "Serviciul a fost marcat ca prioritar." : "Serviciul a fost scos din lista prioritară.");
+      toast.success(checked ? "Serviciul a fost marcat ca popular." : "Serviciul a fost scos din lista serviciilor populare.");
       refresh();
     } finally {
       setPendingFeaturedId(null);
@@ -163,9 +163,12 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
             Organizație: <span className="font-mono text-xs">{orgSlug}</span>
           </p>
           {supportsFeatured ? (
-            <p className="text-xs text-zinc-400">Servicii prioritare selectate: {featuredCount}/6</p>
+            <>
+              <p className="text-xs text-zinc-400">Servicii populare selectate: {featuredCount}/6</p>
+              <p className="text-xs text-zinc-500">Le setezi la crearea contului ca să apară primele în pagina publică și să ghidezi clienții spre cele mai cerute servicii.</p>
+            </>
           ) : (
-            <p className="text-xs text-zinc-500">Serviciile prioritare devin disponibile după migrarea bazei de date.</p>
+            <p className="text-xs text-zinc-500">Serviciile populare devin disponibile după migrarea bazei de date.</p>
           )}
         </div>
         <Button type="button" onClick={openAdd}>
@@ -181,7 +184,7 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
               <th className="px-4 py-3 text-left font-medium">Durată (min)</th>
               <th className="px-4 py-3 text-left font-medium">Preț (RON)</th>
               <th className="px-4 py-3 text-left font-medium">Activ</th>
-              {supportsFeatured ? <th className="px-4 py-3 text-left font-medium">Afișat primul</th> : null}
+              {supportsFeatured ? <th className="px-4 py-3 text-left font-medium">Popular</th> : null}
               <th className="px-4 py-3 text-right font-medium">Acțiuni</th>
             </tr>
           </thead>

@@ -522,7 +522,10 @@ function BookingCardLive(props: LiveProps) {
               {publicPageLayout ? "Servicii" : "1. Serviciu ales"}
             </div>
             {hasFeaturedServices && !showAllServices ? (
-              <p className="mb-3 text-xs text-zinc-400">Servicii recomandate</p>
+              <div className="mb-3 space-y-1">
+                <p className="text-xs text-zinc-300">Servicii populare</p>
+                <p className="text-xs text-zinc-500">Setate de profesionist la crearea contului ca să evidențieze serviciile cele mai cerute.</p>
+              </div>
             ) : null}
             {services.length > 6 ? (
               <div className="mb-3">
