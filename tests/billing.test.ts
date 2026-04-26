@@ -7,34 +7,19 @@ vi.mock("@/lib/billing/config", () => ({
   BILLING_TRIAL_DAYS: 14,
 }));
 
-function makeAdmin(subRow: Record<string, unknown> | null, bookingsThisMonth = 0) {
-  const countChain = {
-    count: bookingsThisMonth,
-    eq: () => countChain,
-    in: () => countChain,
-    gte: async () => ({ count: bookingsThisMonth }),
-  };
-
+function makeAdmin(subRow: Record<string, unknown> | null) {
   return {
-    from: (table: string) => {
-      if (table === "programari") {
-        return {
-          select: () => countChain,
-        };
-      }
-      // subscriptions
-      return {
-        select: () => ({
-          eq: () => ({
-            order: () => ({
-              limit: () => ({
-                maybeSingle: async () => ({ data: subRow }),
-              }),
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          order: () => ({
+            limit: () => ({
+              maybeSingle: async () => ({ data: subRow }),
             }),
           }),
         }),
-      };
-    },
+      }),
+    }),
   } as unknown as import("@supabase/supabase-js").SupabaseClient;
 }
 
