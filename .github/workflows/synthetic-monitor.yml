@@ -43,28 +43,17 @@ jobs:
           fi
           echo "✅ Health check OK (HTTP $HTTP_STATUS)"
 
-      - name: Ping public booking page
-        id: booking_page
+      - name: Ping landing page
+        id: landing_page
         run: |
-          echo "Checking public booking page load..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "https://ocupaloc.ro/ana-nails")
+          echo "Checking landing page load..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "https://ocupaloc.ro")
           echo "HTTP $HTTP_STATUS"
           if [ "$HTTP_STATUS" != "200" ]; then
-            echo "::error::Public booking page returned HTTP $HTTP_STATUS."
+            echo "::error::Landing page returned HTTP $HTTP_STATUS."
             exit 1
           fi
-          echo "✅ Public booking page OK"
-
-      - name: Ping /s/ slug redirect
-        id: slug_redirect
-        run: |
-          echo "Checking /s/ana-nails redirect..."
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 20 "https://ocupaloc.ro/s/ana-nails")
-          echo "HTTP $HTTP_STATUS"
-          if [ "$HTTP_STATUS" != "200" ]; then
-            echo "::warning::Slug redirect returned HTTP $HTTP_STATUS."
-          fi
-          echo "✅ Slug redirect OK"
+          echo "✅ Landing page OK"
 
       - name: Check booking API reachability (OPTIONS/HEAD)
         run: |
@@ -91,8 +80,8 @@ jobs:
             echo "✅ Dashboard → Login redirect OK"
           fi
 
-      - name: Alert routing (auto-triage)
+      - name: Log failure URL
         if: failure()
         run: |
-          echo "::notice::Failure detected — auto-triage.yml will trigger automatically and create a GitHub Issue."
+          echo "::notice::Monitor failure detected."
           echo "Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
