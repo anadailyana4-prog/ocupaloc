@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { ProgramEditor, type ProgramEditorRow } from "./program-editor";
-import { parseProgramJson } from "@/lib/program";
+import { getProgramSlotConfig, parseProgramJson } from "@/lib/program";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
@@ -64,6 +64,7 @@ export default async function ProgramDashboardPage() {
   }
 
   const initialRows = buildInitialRows(parseProgramJson(prof?.program ?? null));
+  const initialSlotConfig = getProgramSlotConfig(prof?.program ?? null);
 
-  return <ProgramEditor initialRows={initialRows} />;
+  return <ProgramEditor initialRows={initialRows} initialSlotConfig={initialSlotConfig} />;
 }

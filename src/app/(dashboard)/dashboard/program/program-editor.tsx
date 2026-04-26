@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { type WorkingHourRowInput, saveWorkingHours } from "./actions";
+import { type SlotConfigInput, type WorkingHourRowInput, saveWorkingHours } from "./actions";
+import type { ProgramSlotConfig } from "@/lib/program";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
@@ -25,25 +27,49 @@ export type ProgramEditorRow = WorkingHourRowInput;
 
 type Props = {
   initialRows: ProgramEditorRow[];
+  initialSlotConfig: ProgramSlotConfig;
 };
 
-export function ProgramEditor({ initialRows }: Props) {
+export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
   const router = useRouter();
   const [rows, setRows] = useState<ProgramEditorRow[]>(initialRows);
+  const [slotConfig, setSlotConfig] = useState<SlotConfigInput>({
+    strategy: initialSlotConfig.strategy,
+    fixedStepMinutes: initialSlotConfig.fixedStepMinutes
+  });
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setRows(initialRows);
   }, [initialRows]);
 
+  useEffect(() => {
+    setSlotConfig({
+      strategy: initialSlotConfig.strategy,
+      fixedStepMinutes: initialSlotConfig.fixedStepMinutes
+    });
+  }, [initialSlotConfig]);
+
   function setRow(day: ProgramEditorRow["day"], patch: Partial<ProgramEditorRow>) {
     setRows((prev) => prev.map((r) => (r.day === day ? { ...r, ...patch } : r)));
   }
 
   async function onSave() {
+    if (slotConfig.strategy === "fixed_step" && (!slotConfig.fixedStepMinutes || slotConfig.fixedStepMinutes < 5)) {
+      toast.error("Setează un pas fix valid (minimum 5 minute).");
+      return;
+    }
+
     setBusy(true);
     try {
-      const res = await saveWorkingHours(rows);
+      const payload: SlotConfigInput =
+        slotConfig.strategy === "service_duration"
+          ? { strategy: "service_duration" }
+          : { strategy: "fixed_step", fixedStepMinutes: Number(slotConfig.fixedStepMinutes) };
+      const res = await saveWorkingHours({
+        hours: rows,
+        slotConfig: payload
+      });
       if (!res.success) {
         toast.error(res.message);
         return;
@@ -113,6 +139,61 @@ export function ProgramEditor({ initialRows }: Props) {
             })}
           </tbody>
         </table>
+      </div>
+
+      <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-950/50 p-4">
+        <h2 className="text-sm font-semibold text-zinc-100">Strategie sloturi publice</h2>
+        <p className="text-xs text-zinc-400">Implicit recomandat: porniri aliniate la durata serviciului + pauza dintre clienți.</p>
+
+        <div className="space-y-2">
+          <label className="flex items-start gap-2 text-sm text-zinc-300">
+            <input
+              type="radio"
+              name="slot-strategy"
+              checked={slotConfig.strategy === "service_duration"}
+              onChange={() => setSlotConfig({ strategy: "service_duration" })}
+              className="mt-1"
+            />
+            <span>Pe durata serviciului (recomandat)</span>
+          </label>
+          <label className="flex items-start gap-2 text-sm text-zinc-300">
+            <input
+              type="radio"
+              name="slot-strategy"
+              checked={slotConfig.strategy === "fixed_step"}
+              onChange={() =>
+                setSlotConfig((prev) => ({
+                  strategy: "fixed_step",
+                  fixedStepMinutes: prev.fixedStepMinutes ?? 15
+                }))
+              }
+              className="mt-1"
+            />
+            <span>Pas fix (minute)</span>
+          </label>
+        </div>
+
+        {slotConfig.strategy === "fixed_step" ? (
+          <div className="max-w-xs space-y-1">
+            <Label htmlFor="fixed-step-minutes">Pas fix</Label>
+            <Input
+              id="fixed-step-minutes"
+              type="number"
+              min={5}
+              max={180}
+              step={5}
+              value={slotConfig.fixedStepMinutes ?? 15}
+              onChange={(e) =>
+                setSlotConfig({
+                  strategy: "fixed_step",
+                  fixedStepMinutes: Number(e.target.value)
+                })
+              }
+              className="border-zinc-700 bg-zinc-900"
+            />
+            <p className="text-xs text-zinc-500">Folosește doar dacă ai nevoie explicită de un grid operațional fix.</p>
+          </div>
+        ) : null}
       </div>
 
       <Button type="button" disabled={busy} onClick={() => void onSave()}>

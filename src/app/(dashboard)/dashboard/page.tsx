@@ -2,14 +2,16 @@ import { subDays } from "date-fns";
 import { formatInTimeZone, toDate } from "date-fns-tz";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { randomUUID } from "node:crypto";
 
 import { ActivationWidgets } from "./activation-widgets";
 import { AddManualBookingDialog, type ServiciuOption } from "./add-manual-booking-dialog";
 import { CopyPublicLinkButton } from "./copy-public-link";
 import { ProgramariTable, type ProgramareRow } from "./programari-table";
 import { Button } from "@/components/ui/button";
-import { parseProgramJson, ziKeyFromDate } from "@/lib/program";
+import { extractProgramPauza, getProgramSlotConfig, parseProgramJson, ziKeyFromDate } from "@/lib/program";
 import { computeFreeSlots } from "@/lib/slots";
+import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
 
@@ -69,6 +71,36 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   if ((prof.onboarding_pas ?? 0) < 4) {
     redirect("/onboarding");
+  }
+
+  // Production self-heal for multi-tenant rollout: ensure tenant + owner membership exist.
+  if (prof.slug?.trim()) {
+    const admin = createSupabaseServiceClient();
+    await admin.from("tenants").upsert(
+      {
+        id: prof.id,
+        slug: prof.slug.trim(),
+        name: (prof.nume_business ?? prof.slug).trim()
+      },
+      { onConflict: "id" }
+    );
+
+    const { data: ownerMembership } = await admin
+      .from("memberships")
+      .select("id")
+      .eq("tenant_id", prof.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!ownerMembership?.id) {
+      await admin.from("memberships").insert({
+        id: randomUUID(),
+        tenant_id: prof.id,
+        user_id: user.id,
+        role: "owner",
+        onboarding_state: "NEW"
+      });
+    }
   }
 
   if (prof.nume_business?.trim()) {
@@ -133,6 +165,8 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   const todayInBucharest = toDate(`${todayLocal}T12:00:00`, { timeZone: "Europe/Bucharest" });
   const parsedProgram = parseProgramJson(programRaw);
+  const pauzaProgram = extractProgramPauza(programRaw);
+  const slotConfig = getProgramSlotConfig(programRaw);
   const todayDayKey = ziKeyFromDate(todayInBucharest);
   const todayInterval = parsedProgram[todayDayKey];
 
@@ -159,7 +193,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
       end: new Date(row.data_final)
     }));
 
-    const freeSlots = computeFreeSlots(todayLocal, parsedProgram, minDuration, pauzaIntre, timpPreg, ocupate);
+    const freeSlots = computeFreeSlots(todayLocal, parsedProgram, minDuration, pauzaIntre, timpPreg, ocupate, pauzaProgram, slotConfig);
     semaforStatus = freeSlots.length === 0 ? "full" : "free";
   }
 

@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { checkBookingEntitlement } from "@/lib/billing/entitlements";
 import { entitlementMessage } from "@/lib/billing/entitlement-messages";
-import { parseProgramJson } from "@/lib/program";
+import { extractProgramPauza, getProgramSlotConfig, parseProgramJson } from "@/lib/program";
 import { calcDataFinalProgramare, computeFreeSlots } from "@/lib/slots";
 
 export type InsertProgramareInput = {
@@ -163,6 +163,8 @@ export async function insertProgramareForProfSlug(
   }));
 
   const program = parseProgramJson(prof.program);
+  const pauzaProgram = extractProgramPauza(prof.program);
+  const slotConfig = getProgramSlotConfig(prof.program);
   const prep = prof.lucreaza_acasa ? (prof.timp_pregatire as number) : 0;
   const slots = computeFreeSlots(
     input.dateStr,
@@ -170,7 +172,9 @@ export async function insertProgramareForProfSlug(
     srv.durata_minute as number,
     prof.pauza_intre_clienti as number,
     prep,
-    ocupate
+    ocupate,
+    pauzaProgram,
+    slotConfig
   );
   const okSlot = slots.some((s) => Math.abs(s.getTime() - dataStart.getTime()) < 60 * 1000);
   if (!okSlot) {

@@ -4,6 +4,7 @@ import test from "node:test";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
 import { calcDataFinalProgramare, computeFreeSlots, type IntervalOccupat } from "../src/lib/slots";
+import { getProgramSlotConfig } from "../src/lib/program";
 import type { ProgramSaptamanal } from "../src/lib/program";
 
 const TZ = "Europe/Bucharest";
@@ -67,6 +68,11 @@ test("calcDataFinalProgramare: zero extras", () => {
 
 // ─── computeFreeSlots ──────────────────────────────────────────────────────
 
+test("slot strategy fallback: existing profiles without metadata default to service_duration", () => {
+  const cfg = getProgramSlotConfig(null);
+  assert.equal(cfg.strategy, "service_duration");
+});
+
 test("computeFreeSlots: day off returns empty array", () => {
   const program = makeProgram({ sambata: [], duminica: [] });
   // 2026-11-07 is sambata
@@ -74,24 +80,22 @@ test("computeFreeSlots: day off returns empty array", () => {
   assert.equal(slots.length, 0);
 });
 
-test("computeFreeSlots: empty day with 60-min service yields slots from 09:00 to 17:00", () => {
+test("computeFreeSlots: empty day with 60-min service yields service-aligned starts", () => {
   const program = makeProgram();
   const slots = computeFreeSlots(MONDAY, program, 60, 0, 0, []);
   // Last valid slot: 17:00 (17:00 + 60 = 18:00 = workEnd)
   assert.ok(slots.length > 0, "should have slots");
-  // All slots should fall within [09:00, 17:00] Bucharest
   for (const s of slots) {
     const h = bucHour(s);
     assert.ok(h >= 9, `slot hour ${h} is before 09:00`);
     assert.ok(h <= 17, `slot hour ${h} is after 17:00`);
   }
-  // Verify first slot is 09:00 and last slot is 17:00
   assert.equal(bucHour(slots[0]!), 9);
   assert.equal(bucMinute(slots[0]!), 0);
   assert.equal(bucHour(slots[slots.length - 1]!), 17);
   assert.equal(bucMinute(slots[slots.length - 1]!), 0);
-  // Step is 15 min → from 09:00 to 17:00 = 32 intervals + 1 endpoint = 33 slots
-  assert.equal(slots.length, 33);
+  // 9-hour workday / 60-min block = 9 starts
+  assert.equal(slots.length, 9);
 });
 
 test("computeFreeSlots: pause between clients reduces number of slots", () => {
@@ -99,6 +103,19 @@ test("computeFreeSlots: pause between clients reduces number of slots", () => {
   const withoutPause = computeFreeSlots(MONDAY, program, 60, 0, 0, []);
   const withPause = computeFreeSlots(MONDAY, program, 60, 15, 0, []);
   assert.ok(withPause.length < withoutPause.length, "pause should reduce available slots");
+});
+
+test("computeFreeSlots: daily configured break blocks slots in that period", () => {
+  const program = makeProgram();
+  const slots = computeFreeSlots(MONDAY, program, 30, 0, 0, [], { start: "13:00", durationMinutes: 60 });
+
+  const has1300 = slots.some((s) => bucHour(s) === 13 && bucMinute(s) === 0);
+  const has1315 = slots.some((s) => bucHour(s) === 13 && bucMinute(s) === 15);
+  const has1245 = slots.some((s) => bucHour(s) === 12 && bucMinute(s) === 45);
+
+  assert.equal(has1300, false, "13:00 should be blocked by break");
+  assert.equal(has1315, false, "13:15 should be blocked by break");
+  assert.equal(has1245, false, "12:45 should be blocked because service overlaps break");
 });
 
 test("computeFreeSlots: prep time applied only for first slot", () => {
@@ -186,12 +203,33 @@ test("computeFreeSlots: slots are returned in chronological order", () => {
   }
 });
 
-test("computeFreeSlots: 15-min slot interval", () => {
+test("computeFreeSlots: default interval follows service duration", () => {
   const program = makeProgram();
   const slots = computeFreeSlots(TUESDAY, program, 30, 0, 0, []);
   assert.ok(slots.length >= 2, "need at least 2 slots to verify interval");
   const diff = (slots[1]!.getTime() - slots[0]!.getTime()) / 60_000;
-  assert.equal(diff, 15, "slots should be 15 minutes apart");
+  assert.equal(diff, 30, "slots should follow service duration");
+});
+
+test("computeFreeSlots: duration-aligned steps for 15/30/45/60 min services", () => {
+  const program = makeProgram();
+  for (const duration of [15, 30, 45, 60]) {
+    const slots = computeFreeSlots(TUESDAY, program, duration, 0, 0, []);
+    assert.ok(slots.length >= 2, `need at least 2 slots for duration ${duration}`);
+    const diff = (slots[1]!.getTime() - slots[0]!.getTime()) / 60_000;
+    assert.equal(diff, duration, `slots should be ${duration} minutes apart`);
+  }
+});
+
+test("computeFreeSlots: fixed-step strategy can override service alignment", () => {
+  const program = makeProgram();
+  const slots = computeFreeSlots(TUESDAY, program, 45, 0, 0, [], null, {
+    strategy: "fixed_step",
+    fixedStepMinutes: 15
+  });
+  assert.ok(slots.length >= 2, "need at least 2 slots to verify interval");
+  const diff = (slots[1]!.getTime() - slots[0]!.getTime()) / 60_000;
+  assert.equal(diff, 15, "fixed-step strategy should produce 15-minute spacing");
 });
 
 test("computeFreeSlots: concurrent booking attempt — second insert sees no free slot", () => {

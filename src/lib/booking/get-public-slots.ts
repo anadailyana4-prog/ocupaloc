@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { normalizeBookingSlug } from "@/lib/booking/normalize-booking-slug";
-import { parseProgramJson } from "@/lib/program";
+import { extractProgramPauza, getProgramSlotConfig, parseProgramJson } from "@/lib/program";
 import { computeFreeSlots } from "@/lib/slots";
 
 type GetPublicSlotsInput = {
@@ -78,13 +78,17 @@ export async function getPublicSlots(admin: SupabaseClient, input: GetPublicSlot
   }));
 
   const prep = prof.lucreaza_acasa ? Number(prof.timp_pregatire ?? 0) : 0;
+  const pauzaProgram = extractProgramPauza(prof.program);
+  const slotConfig = getProgramSlotConfig(prof.program);
   const slots = computeFreeSlots(
     input.date,
     parseProgramJson(prof.program),
     Number(srv.durata_minute ?? 0),
     Number(prof.pauza_intre_clienti ?? 0),
     prep,
-    occupied
+    occupied,
+    pauzaProgram,
+    slotConfig
   );
 
   return {

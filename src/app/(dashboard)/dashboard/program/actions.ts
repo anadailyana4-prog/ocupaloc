@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { extractProgramPauza, serializeProgram, type ProgramSaptamanal } from "@/lib/program";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
@@ -17,17 +18,42 @@ const hourRowSchema = z.object({
 
 const hoursSchema = z.array(hourRowSchema).length(7);
 
+const slotConfigSchema = z
+  .object({
+    strategy: z.enum(["service_duration", "fixed_step"]),
+    fixedStepMinutes: z.number().int().min(5).max(180).optional()
+  })
+  .superRefine((value, ctx) => {
+    if (value.strategy === "fixed_step") {
+      if (typeof value.fixedStepMinutes !== "number") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["fixedStepMinutes"],
+          message: "Pasul fix este obligatoriu."
+        });
+      }
+      return;
+    }
+    if (value.fixedStepMinutes !== undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["fixedStepMinutes"],
+        message: "Pasul fix se folosește doar pentru strategia cu pas fix."
+      });
+    }
+  });
+
 type SupabaseServer = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
-async function getProf(supabase: SupabaseServer): Promise<{ id: string; slug: string } | null> {
+async function getProf(supabase: SupabaseServer): Promise<{ id: string; slug: string; program: unknown } | null> {
   const {
     data: { user }
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: prof } = await supabase.from("profesionisti").select("id, slug").eq("user_id", user.id).maybeSingle();
+  const { data: prof } = await supabase.from("profesionisti").select("id, slug, program").eq("user_id", user.id).maybeSingle();
   if (!prof?.id || !prof.slug) return null;
-  return { id: prof.id, slug: prof.slug };
+  return { id: prof.id, slug: prof.slug, program: prof.program };
 }
 
 function toTimeWithSeconds(t: string): string {
@@ -47,10 +73,23 @@ export type SaveWorkingHoursResult = { success: true } | { success: false; messa
 
 export type WorkingHourRowInput = z.infer<typeof hourRowSchema>;
 
-export async function saveWorkingHours(hours: WorkingHourRowInput[]): Promise<SaveWorkingHoursResult> {
-  const parsed = hoursSchema.safeParse(hours);
+export type SlotConfigInput = {
+  strategy: "service_duration" | "fixed_step";
+  fixedStepMinutes?: number;
+};
+
+export async function saveWorkingHours(input: {
+  hours: WorkingHourRowInput[];
+  slotConfig: SlotConfigInput;
+}): Promise<SaveWorkingHoursResult> {
+  const parsed = hoursSchema.safeParse(input.hours);
   if (!parsed.success) {
     return { success: false, message: "Trimite exact 7 zile cu date valide." };
+  }
+
+  const parsedSlotConfig = slotConfigSchema.safeParse(input.slotConfig);
+  if (!parsedSlotConfig.success) {
+    return { success: false, message: parsedSlotConfig.error.errors[0]?.message ?? "Strategie sloturi invalidă." };
   }
 
   const days = new Set(parsed.data.map((h) => h.day));
@@ -83,11 +122,33 @@ export async function saveWorkingHours(hours: WorkingHourRowInput[]): Promise<Sa
     sat: "sambata",
     sun: "duminica"
   };
-  const program = parsed.data.reduce<Record<string, [string, string] | []>>((acc, row) => {
-    acc[DAY_LABELS[row.day]] = row.closed ? [] : [toTimeWithSeconds(row.start).slice(0, 5), toTimeWithSeconds(row.end).slice(0, 5)];
+  const program = parsed.data.reduce<ProgramSaptamanal>((acc, row) => {
+    const key = DAY_LABELS[row.day] as keyof ProgramSaptamanal;
+    acc[key] = row.closed ? [] : [toTimeWithSeconds(row.start).slice(0, 5), toTimeWithSeconds(row.end).slice(0, 5)];
     return acc;
-  }, {});
-  const { error: updateErr } = await supabase.from("profesionisti").update({ program }).eq("id", prof.id);
+  }, {
+    luni: [],
+    marti: [],
+    miercuri: [],
+    joi: [],
+    vineri: [],
+    sambata: [],
+    duminica: []
+  });
+  const nextSlotConfig =
+    parsedSlotConfig.data.strategy === "service_duration"
+      ? { strategy: "service_duration" as const }
+      : {
+          strategy: "fixed_step" as const,
+          fixedStepMinutes: parsedSlotConfig.data.fixedStepMinutes as number
+        };
+
+  const savedProgram = serializeProgram(program, {
+    pauza: extractProgramPauza(prof.program),
+    slotConfig: nextSlotConfig
+  });
+
+  const { error: updateErr } = await supabase.from("profesionisti").update({ program: savedProgram }).eq("id", prof.id);
   if (updateErr) {
     return { success: false, message: updateErr.message };
   }
