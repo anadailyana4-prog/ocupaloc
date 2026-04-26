@@ -14,7 +14,9 @@ type PageProps = {
 type OnboardingProfile = {
   nume_business?: string | null;
   telefon?: string | null;
+  whatsapp?: string | null;
   tip_activitate?: string | null;
+  pauza_intre_clienti?: number | null;
   onboarding_pas?: number | null;
 };
 
@@ -29,8 +31,8 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
   const supabase = await createSupabaseServerClient();
   const { data: profile, telefonColumnAvailable } = await selectWithTelefonFallback<OnboardingProfile>(
     async (columns) => await supabase.from("profesionisti").select(columns).eq("user_id", user.id).maybeSingle(),
-    "nume_business, telefon, tip_activitate, onboarding_pas",
-    "nume_business, tip_activitate, onboarding_pas"
+    "nume_business, telefon, whatsapp, tip_activitate, pauza_intre_clienti, onboarding_pas",
+    "nume_business, tip_activitate, pauza_intre_clienti, onboarding_pas"
   );
 
   if (
@@ -70,18 +72,32 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
             className="border-zinc-700 bg-zinc-900"
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="telefon">Telefon</Label>
-          <Input
-            id="telefon"
-            name="telefon"
-            type="tel"
-            required
-            maxLength={40}
-            defaultValue={profile?.telefon ?? ""}
-            placeholder="07xx xxx xxx"
-            className="border-zinc-700 bg-zinc-900"
-          />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="telefon">Telefon</Label>
+            <Input
+              id="telefon"
+              name="telefon"
+              type="tel"
+              required
+              maxLength={40}
+              defaultValue={profile?.telefon ?? ""}
+              placeholder="07xx xxx xxx"
+              className="border-zinc-700 bg-zinc-900"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="whatsapp">WhatsApp (Opțional)</Label>
+            <Input
+              id="whatsapp"
+              name="whatsapp"
+              type="tel"
+              maxLength={40}
+              defaultValue={profile?.whatsapp ?? ""}
+              placeholder="07xx xxx xxx"
+              className="border-zinc-700 bg-zinc-900"
+            />
+          </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="tip_activitate">Tip activitate</Label>
@@ -94,6 +110,21 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
             placeholder="ex: cabinet medical, salon, studio foto, etc."
             className="border-zinc-700 bg-zinc-900"
           />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="pauza_intre_clienti">Timp între programări (minute)</Label>
+          <Input
+            id="pauza_intre_clienti"
+            name="pauza_intre_clienti"
+            type="number"
+            min={0}
+            max={120}
+            step={5}
+            defaultValue={profile?.pauza_intre_clienti ?? ""}
+            placeholder="Opțional (ex: 10)"
+            className="border-zinc-700 bg-zinc-900"
+          />
+          <p className="text-xs text-muted-foreground">Lasă gol dacă nu vrei pauză implicită între programări.</p>
         </div>
         <Button type="submit" className="w-full rounded-full">
           Salvează și continuă

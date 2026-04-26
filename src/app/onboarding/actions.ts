@@ -11,7 +11,17 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 const schema = z.object({
   nume_business: z.string().trim().min(2, "Numele business-ului este obligatoriu."),
   telefon: z.string().trim().min(8, "Telefon invalid."),
-  tip_activitate: z.string().trim().min(2, "Tipul activității este obligatoriu.")
+  whatsapp: z.string().trim().max(40).optional(),
+  tip_activitate: z.string().trim().min(2, "Tipul activitatii este obligatoriu."),
+  pauza_intre_clienti: z.preprocess(
+    (value) => {
+      if (typeof value !== "string") return undefined;
+      const trimmed = value.trim();
+      if (!trimmed) return undefined;
+      return Number(trimmed);
+    },
+    z.number().int("Pauza trebuie sa fie un numar intreg.").min(0, "Pauza minima este 0 minute.").max(120, "Pauza maxima este 120 minute.").optional()
+  )
 });
 
 export async function saveOnboardingProfile(formData: FormData) {
@@ -26,7 +36,9 @@ export async function saveOnboardingProfile(formData: FormData) {
   const parsed = schema.safeParse({
     nume_business: String(formData.get("nume_business") ?? ""),
     telefon: String(formData.get("telefon") ?? ""),
-    tip_activitate: String(formData.get("tip_activitate") ?? "")
+    whatsapp: String(formData.get("whatsapp") ?? ""),
+    tip_activitate: String(formData.get("tip_activitate") ?? ""),
+    pauza_intre_clienti: String(formData.get("pauza_intre_clienti") ?? "")
   });
 
   if (!parsed.success) {
@@ -37,15 +49,23 @@ export async function saveOnboardingProfile(formData: FormData) {
   const { data: existingProf } = await supabase.from("profesionisti").select("id, slug").eq("user_id", user.id).maybeSingle();
 
   let errorMessage: string | null = null;
+  const pauseValue = parsed.data.pauza_intre_clienti;
+
   if (existingProf?.id) {
+    const values: Record<string, unknown> = {
+      nume_business: parsed.data.nume_business,
+      telefon: parsed.data.telefon,
+      whatsapp: parsed.data.whatsapp || null,
+      tip_activitate: parsed.data.tip_activitate,
+      onboarding_pas: 4
+    };
+    if (pauseValue !== undefined) {
+      values.pauza_intre_clienti = pauseValue;
+    }
+
     const result = await writeWithTelefonFallback(
       async (values) => await supabase.from("profesionisti").update(values).eq("id", existingProf.id),
-      {
-        nume_business: parsed.data.nume_business,
-        telefon: parsed.data.telefon,
-        tip_activitate: parsed.data.tip_activitate,
-        onboarding_pas: 4
-      }
+      values
     );
     errorMessage = result.error?.message ?? null;
   } else {
@@ -55,16 +75,22 @@ export async function saveOnboardingProfile(formData: FormData) {
       return Boolean(data?.id);
     });
 
+    const values: Record<string, unknown> = {
+      user_id: user.id,
+      slug,
+      nume_business: parsed.data.nume_business,
+      telefon: parsed.data.telefon,
+      whatsapp: parsed.data.whatsapp || null,
+      tip_activitate: parsed.data.tip_activitate,
+      onboarding_pas: 4
+    };
+    if (pauseValue !== undefined) {
+      values.pauza_intre_clienti = pauseValue;
+    }
+
     const result = await writeWithTelefonFallback(
       async (values) => await supabase.from("profesionisti").insert(values),
-      {
-        user_id: user.id,
-        slug,
-        nume_business: parsed.data.nume_business,
-        telefon: parsed.data.telefon,
-        tip_activitate: parsed.data.tip_activitate,
-        onboarding_pas: 4
-      }
+      values
     );
     errorMessage = result.error?.message ?? null;
   }
