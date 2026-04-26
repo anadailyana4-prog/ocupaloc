@@ -158,6 +158,8 @@ function BookingCardLive(props: LiveProps) {
   const highlightedServices = hasFeaturedServices ? featuredServices : defaultServices;
   const [showAllServices, setShowAllServices] = useState(false);
   const [serviceSearch, setServiceSearch] = useState("");
+  const normalizedServiceSearch = useMemo(() => normalizeSearch(serviceSearch), [serviceSearch]);
+  const hasServiceSearch = normalizedServiceSearch.length > 0;
 
   const initialServiceId = useMemo(() => {
     if (featuredServices[0]?.id) return featuredServices[0].id;
@@ -459,6 +461,13 @@ function BookingCardLive(props: LiveProps) {
           isSel ? "bg-[#1d4ed8] text-white font-bold" : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
         }`;
 
+  const servicesToRender = useMemo(() => {
+    const baseServices = showAllServices || hasServiceSearch ? services : highlightedServices;
+    if (!hasServiceSearch) return baseServices;
+
+    return baseServices.filter((service) => normalizeSearch(serviceTitle(service)).includes(normalizedServiceSearch));
+  }, [showAllServices, hasServiceSearch, services, highlightedServices, normalizedServiceSearch, tenant]);
+
   return (
     <div className={cardShell}>
       {!publicPageLayout ? (
@@ -515,7 +524,7 @@ function BookingCardLive(props: LiveProps) {
             {hasFeaturedServices && !showAllServices ? (
               <p className="mb-3 text-xs text-zinc-400">Servicii recomandate</p>
             ) : null}
-            {(showAllServices && services.length > 8) ? (
+            {services.length > 6 ? (
               <div className="mb-3">
                 <Input
                   type="search"
@@ -527,13 +536,7 @@ function BookingCardLive(props: LiveProps) {
               </div>
             ) : null}
             <div className={publicPageLayout ? "grid grid-cols-1 gap-4 sm:grid-cols-2" : "space-y-2"}>
-              {(showAllServices ? services : highlightedServices)
-                .filter((service) => {
-                  const search = normalizeSearch(serviceSearch);
-                  if (!search) return true;
-                  return normalizeSearch(serviceTitle(service)).includes(search);
-                })
-                .map((s) => (
+              {servicesToRender.map((s) => (
                 <button
                   key={s.id}
                   type="button"
