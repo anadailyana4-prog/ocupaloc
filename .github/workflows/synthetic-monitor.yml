@@ -80,8 +80,8 @@ jobs:
             echo "✅ Dashboard → Login redirect OK"
           fi
 
-      - name: Log failure URL
+      - name: Alert routing (auto-triage)
         if: failure()
         run: |
-          echo "::notice::Monitor failure detected."
+          echo "::notice::Failure detected — auto-triage.yml will trigger automatically and create a GitHub Issue."
           echo "Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

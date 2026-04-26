@@ -1,0 +1,118 @@
+name: Auto-Triage Incidents
+
+on:
+  workflow_run:
+    workflows: ["Synthetic Monitor"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      test_severity:
+        description: "Optional: force severity P0/P1/P2/P3"
+        required: false
+        default: ""
+
+permissions:
+  issues: write
+  actions: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  triage:
+    name: Classify and Open Incident
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'failure'
+    steps:
+      - name: Ensure incident labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create incident --color e11d48 --description "Operational incident" --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create auto-triage --color 0075ca --description "Created by automation" --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create P0 --color b60205 --description "Critical" --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create P1 --color d93f0b --description "High" --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create P2 --color e4e669 --description "Medium" --repo "${{ github.repository }}" 2>/dev/null || true
+          gh label create P3 --color 0e8a16 --description "Low" --repo "${{ github.repository }}" 2>/dev/null || true
+
+      - name: Build incident context
+        id: ctx
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
+          if [ -z "$WORKFLOW_NAME" ]; then WORKFLOW_NAME="Manual Triage"; fi
+
+          RUN_ID="${{ github.event.workflow_run.id }}"
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "0" ]; then RUN_ID="${{ github.run_id }}"; fi
+
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/$RUN_ID"
+          TS_UTC=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          DATE_UTC=$(date -u +"%Y-%m-%d")
+
+          FAILED_JOBS=$(gh api "/repos/${{ github.repository }}/actions/runs/$RUN_ID/jobs" --jq '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")' 2>/dev/null || true)
+          if [ -z "$FAILED_JOBS" ]; then FAILED_JOBS="unknown"; fi
+
+          TEST_SEV="${{ github.event.inputs.test_severity }}"
+          if [ -n "$TEST_SEV" ]; then
+            SEVERITY="$TEST_SEV"
+          else
+            TEXT=$(printf "%s %s" "$WORKFLOW_NAME" "$FAILED_JOBS" | tr '[:upper:]' '[:lower:]')
+            if echo "$TEXT" | grep -Eq 'health|availability|site down'; then
+              SEVERITY="P0"
+            elif echo "$TEXT" | grep -Eq 'booking|release guard|canary'; then
+              SEVERITY="P1"
+            elif echo "$TEXT" | grep -Eq 'login|auth|dashboard|redirect'; then
+              SEVERITY="P2"
+            else
+              SEVERITY="P3"
+            fi
+          fi
+
+          case "$SEVERITY" in
+            P0) IMPACT="Site availability degraded for all users."; RECOMMEND="Run health check, inspect Vercel deploy, rollback if needed." ;;
+            P1) IMPACT="Booking/release path degraded and may impact revenue."; RECOMMEND="Run synthetic booking and SLO checks, rollback if regression confirmed." ;;
+            P2) IMPACT="Authentication flow degraded for some users."; RECOMMEND="Check login, dashboard guard, and Supabase auth status." ;;
+            *) IMPACT="Non-critical operational check failed."; RECOMMEND="Observe next cycles and escalate if repeated." ;;
+          esac
+
+          {
+            echo "workflow_name=$WORKFLOW_NAME"
+            echo "run_url=$RUN_URL"
+            echo "timestamp=$TS_UTC"
+            echo "date=$DATE_UTC"
+            echo "failed_jobs=$FAILED_JOBS"
+            echo "severity=$SEVERITY"
+            echo "impact=$IMPACT"
+            echo "recommend=$RECOMMEND"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Deduplicate daily incidents
+        id: dedupe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PREFIX="[${{ steps.ctx.outputs.severity }}] ${{ steps.ctx.outputs.workflow_name }}"
+          TODAY="${{ steps.ctx.outputs.date }}"
+          COUNT=$(gh issue list --repo "${{ github.repository }}" --state open --label incident --json title,createdAt --jq "[.[] | select(.title | startswith(\"$PREFIX\")) | select(.createdAt | startswith(\"$TODAY\"))] | length" 2>/dev/null || echo 0)
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Create incident issue
+        if: steps.dedupe.outputs.count == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BODY=$(printf "Incident severity: %s\n\nImpact business:\n%s\n\nReproduction:\n1. Open run: %s\n2. Re-run failed checks.\n3. Validate user-facing behavior.\n\nLogs/context:\nFailed jobs: %s\n\nSuspect root cause:\nAutomated classification from failed workflow/jobs.\n\nFix recommendation:\n%s\n\nRunbook:\ncurl -s https://ocupaloc.ro/api/health | python3 -m json.tool\n" "${{ steps.ctx.outputs.severity }}" "${{ steps.ctx.outputs.impact }}" "${{ steps.ctx.outputs.run_url }}" "${{ steps.ctx.outputs.failed_jobs }}" "${{ steps.ctx.outputs.recommend }}")
+
+          gh issue create \
+            --repo "${{ github.repository }}" \
+            --title "[${{ steps.ctx.outputs.severity }}] ${{ steps.ctx.outputs.workflow_name }} failure - ${{ steps.ctx.outputs.timestamp }}" \
+            --body "$BODY" \
+            --label "incident,auto-triage,${{ steps.ctx.outputs.severity }}"
+
+      - name: Duplicate suppressed
+        if: steps.dedupe.outputs.count != '0'
+        run: |
+          echo "Existing open incident found for today. Skipping duplicate creation."
