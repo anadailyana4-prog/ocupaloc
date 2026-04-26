@@ -40,8 +40,8 @@ export function LandingPage() {
       detail: "Programări, status, KPI și modificări în același loc, fără haos în mesaje."
     },
     {
-      title: "Reminder înainte de programare",
-      detail: "Sistemul trimite remindere automate pentru a reduce no-show-urile."
+      title: "Reminder util cu o zi înainte",
+      detail: "Sistemul trimite reminderul de 24h cu acțiuni clare de confirmare sau anulare."
     }
   ];
 
@@ -113,7 +113,7 @@ export function LandingPage() {
           <div className="lux-card p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-amber-100/55">Cost ascuns</p>
             <h3 className="mt-2 text-lg font-semibold text-amber-50">Goluri în program din anulări</h3>
-            <p className="mt-2 text-sm text-amber-100/70">Confirmări și remindere automate ca să reduci absențele.</p>
+            <p className="mt-2 text-sm text-amber-100/70">Confirmări și reminderul de 24h ca să reduci absențele.</p>
           </div>
           <div className="lux-card p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-amber-100/55">Rezultat</p>
@@ -337,7 +337,17 @@ export function LandingPage() {
                     Contact
                   </a>
                 </li>
+                <li>
+                  <Link href="/suport" className="hover:text-zinc-300">
+                    Centru suport
+                  </Link>
+                </li>
                 <li className="text-zinc-400">{CONTACT_EMAIL}</li>
+                <li>
+                  <Link href="/status" className="hover:text-zinc-300">
+                    Status sistem
+                  </Link>
+                </li>
                 <li>
                   <a href="https://wa.me/40700000000" target="_blank" className="hover:text-zinc-300" rel="noreferrer">
                     WhatsApp

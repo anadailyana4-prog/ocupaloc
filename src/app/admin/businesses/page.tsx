@@ -260,6 +260,26 @@ export default async function AdminBusinessesPage() {
     return map[status] ?? "bg-zinc-700 text-zinc-300";
   };
 
+  // --- SaaS Revenue Metrics ---
+  const MONTHLY_PRICE_RON = 59.99;
+  const activeSubsCount = rows.filter((r) => r.subStatus === "active").length;
+  const trialingSubsCount = rows.filter((r) => r.subStatus === "trialing").length;
+  const mrr = Math.round(activeSubsCount * MONTHLY_PRICE_RON);
+  const trialCount = rows.filter((r) => r.subStatus === "trial").length;
+  const canceledCount = rows.filter((r) => r.subStatus === "canceled").length;
+  const pastDueCount = rows.filter((r) => r.subStatus === "past_due").length;
+  // Trial conversion: accounts that ever became active or trialing (Stripe), out of all onboarded
+  const convertedCount = rows.filter((r) => r.subStatus === "active" || r.subStatus === "trialing").length;
+  const onboardedTotal = rows.filter((r) => r.onboardingDone).length;
+  const trialConversionPct = onboardedTotal > 0 ? Math.round((convertedCount / onboardedTotal) * 100) : 0;
+  // MoM churn proxy: canceled in last 30d
+  const { count: churnedLast30dCount } = await admin
+    .from("subscriptions")
+    .select("profesionist_id", { count: "exact", head: true })
+    .eq("status", "canceled")
+    .gte("updated_at", thirtyDaysAgo);
+  // ---
+
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -278,6 +298,28 @@ export default async function AdminBusinessesPage() {
           <span><span className="inline-block w-2 h-2 rounded-full bg-orange-700 mr-1"></span>LA RISC — inactiv 14z / conf. &lt;60%</span>
           <span><span className="inline-block w-2 h-2 rounded-full bg-amber-700 mr-1"></span>ATENȚIE — conf. &lt;80% / login vechi / trial expiră</span>
           <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-700 mr-1"></span>OK — fără probleme critice</span>
+        </div>
+      </div>
+
+      {/* SaaS Revenue Metrics */}
+      <div className="rounded-2xl border border-violet-500/20 bg-violet-950/20 p-5">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-violet-400">SaaS Revenue Metrics</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+          {[
+            { label: "MRR (RON)", value: `${mrr} lei`, color: mrr > 0 ? "text-violet-200" : "text-zinc-500", highlight: true },
+            { label: "Abonamente active", value: activeSubsCount, color: activeSubsCount > 0 ? "text-emerald-300" : "text-zinc-500" },
+            { label: "Trialing (Stripe)", value: trialingSubsCount, color: trialingSubsCount > 0 ? "text-sky-300" : "text-zinc-500" },
+            { label: "Trial (legacy)", value: trialCount, color: trialCount > 0 ? "text-amber-300" : "text-zinc-500" },
+            { label: "Plată restantă", value: pastDueCount, color: pastDueCount > 0 ? "text-red-400" : "text-zinc-500" },
+            { label: "Anulate (total)", value: canceledCount, color: canceledCount > 0 ? "text-zinc-400" : "text-zinc-600" },
+            { label: "Churn (30z)", value: churnedLast30dCount ?? 0, color: (churnedLast30dCount ?? 0) > 0 ? "text-red-300" : "text-zinc-600" },
+            { label: "Conv. trial→plătit", value: `${trialConversionPct}%`, color: trialConversionPct >= 20 ? "text-emerald-300" : trialConversionPct > 0 ? "text-amber-300" : "text-zinc-500" },
+          ].map((s) => (
+            <div key={s.label} className={`rounded-xl border ${s.highlight ? "border-violet-500/30 bg-violet-900/30" : "border-zinc-800 bg-zinc-900/60"} px-4 py-3`}>
+              <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
+              <p className="mt-0.5 text-xs text-zinc-500">{s.label}</p>
+            </div>
+          ))}
         </div>
       </div>
 

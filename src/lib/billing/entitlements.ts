@@ -7,6 +7,9 @@ export type BookingEntitlementResult = {
   reason: string;
 };
 
+/** Max bookings per calendar month during legacy trial (no Stripe sub yet). */
+const TRIAL_MONTHLY_BOOKING_CAP = 30;
+
 export async function checkBookingEntitlement(
   admin: SupabaseClient,
   profesionistId: string,
@@ -48,12 +51,28 @@ export async function checkBookingEntitlement(
     return { allowed: false, reason: "subscription_past_due" };
   }
 
+  // No Stripe subscription — legacy trial window check
   const createdAt = new Date(profesionistCreatedAt);
   if (Number.isNaN(createdAt.getTime())) return { allowed: true, reason: "" };
   const trialEnd = new Date(createdAt.getTime() + BILLING_TRIAL_DAYS * 24 * 60 * 60 * 1000);
-  if (Date.now() <= trialEnd.getTime()) {
-    return { allowed: true, reason: "legacy_trial" };
+  if (Date.now() > trialEnd.getTime()) {
+    return { allowed: false, reason: "no_active_subscription" };
   }
-  return { allowed: false, reason: "no_active_subscription" };
+
+  // Within legacy trial — enforce monthly booking cap
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const { count: bookingsThisMonth } = await admin
+    .from("programari")
+    .select("*", { count: "exact", head: true })
+    .eq("profesionist_id", profesionistId)
+    .in("status", ["confirmat", "in_asteptare", "finalizat"])
+    .gte("created_at", monthStart);
+
+  if ((bookingsThisMonth ?? 0) >= TRIAL_MONTHLY_BOOKING_CAP) {
+    return { allowed: false, reason: "trial_booking_cap_reached" };
+  }
+
+  return { allowed: true, reason: "legacy_trial" };
 }
 

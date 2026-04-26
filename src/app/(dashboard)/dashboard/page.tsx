@@ -8,7 +8,9 @@ import { ActivationWidgets } from "./activation-widgets";
 import { AddManualBookingDialog, type ServiciuOption } from "./add-manual-booking-dialog";
 import { CopyPublicLinkButton } from "./copy-public-link";
 import { ProgramariTable, type ProgramareRow } from "./programari-table";
+import { PlanStatusBanner, type PlanStatus } from "@/components/billing/PlanStatusBanner";
 import { Button } from "@/components/ui/button";
+import { BILLING_TRIAL_DAYS, isBillingEnabled } from "@/lib/billing/config";
 import { extractProgramPauza, getProgramSlotConfig, parseProgramJson, ziKeyFromDate } from "@/lib/program";
 import { computeFreeSlots } from "@/lib/slots";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
@@ -106,6 +108,49 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   if (prof.nume_business?.trim()) {
     greetName = prof.nume_business.trim();
   }
+
+  // --- Plan status for billing banner ---
+  let planStatus: PlanStatus = { kind: "trial", daysLeft: BILLING_TRIAL_DAYS };
+  if (isBillingEnabled()) {
+    const admin = createSupabaseServiceClient();
+    const { data: sub } = await admin
+      .from("subscriptions")
+      .select("status, current_period_end, trial_end")
+      .eq("profesionist_id", prof.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (sub) {
+      const now = Date.now();
+      if (sub.status === "trialing") {
+        const end = sub.trial_end ? new Date(sub.trial_end as string).getTime() : now;
+        planStatus = { kind: "trialing_stripe", daysLeft: Math.max(0, Math.ceil((end - now) / 86400000)) };
+      } else if (sub.status === "active") {
+        planStatus = { kind: "active", periodEnd: sub.current_period_end as string };
+      } else if (sub.status === "past_due") {
+        planStatus = { kind: "past_due" };
+      } else if (sub.status === "canceled") {
+        planStatus = { kind: "canceled" };
+      } else {
+        planStatus = { kind: "none" };
+      }
+    } else if (prof.created_at) {
+      const createdAt = new Date(prof.created_at).getTime();
+      const trialEnd = createdAt + BILLING_TRIAL_DAYS * 86400000;
+      const daysLeft = Math.max(0, Math.ceil((trialEnd - Date.now()) / 86400000));
+      planStatus = daysLeft > 0 ? { kind: "trial", daysLeft } : { kind: "none" };
+    }
+  } else {
+    // Billing disabled — compute legacy trial display-only
+    if (prof.created_at) {
+      const createdAt = new Date(prof.created_at).getTime();
+      const trialEnd = createdAt + BILLING_TRIAL_DAYS * 86400000;
+      const daysLeft = Math.max(0, Math.ceil((trialEnd - Date.now()) / 86400000));
+      planStatus = daysLeft > 0 ? { kind: "trial", daysLeft } : { kind: "active", periodEnd: new Date(trialEnd).toISOString() };
+    }
+  }
+  // ---
 
   const sp = searchParams ? await searchParams : {};
   const filter = sp.filter === "azi" || sp.filter === "toate" ? sp.filter : "viitoare";
@@ -490,6 +535,8 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
         }
       />
 
+      <PlanStatusBanner status={planStatus} />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
           <h1 className="font-display text-3xl font-semibold tracking-wide text-amber-50">Bun venit, {greetName}</h1>
@@ -506,6 +553,34 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
           ) : null}
         </div>
       </div>
+
+      <section className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-2xl space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300/80">Operare SaaS</p>
+            <h2 className="text-2xl font-semibold text-zinc-50">Administrează contul, suportul și încrederea într-un singur loc</h2>
+            <p className="text-sm leading-6 text-zinc-400">
+              Ai acces rapid la pagina de preț, portalul de facturare, centrul de suport și statusul tehnic public, fără să ieși din dashboard.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Button asChild variant="outline" className="justify-start rounded-full border-zinc-700 bg-zinc-950/40 text-zinc-100 hover:bg-zinc-800">
+              <Link href="/preturi">Vezi oferta publică</Link>
+            </Button>
+            <form action="/api/billing/portal" method="post">
+              <Button type="submit" variant="outline" className="w-full justify-start rounded-full border-zinc-700 bg-zinc-950/40 text-zinc-100 hover:bg-zinc-800">
+                Deschide portalul de facturare
+              </Button>
+            </form>
+            <Button asChild variant="outline" className="justify-start rounded-full border-zinc-700 bg-zinc-950/40 text-zinc-100 hover:bg-zinc-800">
+              <Link href="/suport">Centru suport</Link>
+            </Button>
+            <Button asChild variant="outline" className="justify-start rounded-full border-zinc-700 bg-zinc-950/40 text-zinc-100 hover:bg-zinc-800">
+              <Link href="/status">Status sistem</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
 
       {sp.saved === "1" ? (
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">Datele publice au fost salvate.</div>

@@ -58,6 +58,30 @@ export default async function PreturiPage() {
           )}
         </section>
 
+        <section className="grid gap-6 md:grid-cols-3">
+          <article className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500">Trial clar</p>
+            <h2 className="mt-3 text-xl font-semibold text-zinc-100">14 zile ca să vezi produsul cap-coadă</h2>
+            <p className="mt-3 text-sm leading-6 text-zinc-400">
+              Îți configurezi pagina publică, serviciile și programul, apoi testezi fluxul complet de rezervare înainte să rămâi pe abonament.
+            </p>
+          </article>
+          <article className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500">Fără surprize</p>
+            <h2 className="mt-3 text-xl font-semibold text-zinc-100">Preț lunar simplu, fără comision per rezervare</h2>
+            <p className="mt-3 text-sm leading-6 text-zinc-400">
+              Nu plătești extra pentru fiecare client care rezervă. Modelul este clar: un abonament lunar fix pentru business-ul tău.
+            </p>
+          </article>
+          <article className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500">Încredere operațională</p>
+            <h2 className="mt-3 text-xl font-semibold text-zinc-100">Vezi legalul, statusul și suportul într-un loc</h2>
+            <p className="mt-3 text-sm leading-6 text-zinc-400">
+              Paginile publice de status și documentele operaționale sunt disponibile direct din site, astfel încât să știi pe ce te bazezi înainte de activare.
+            </p>
+          </article>
+        </section>
+
         <CalculatorEconomii />
 
         <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/50">
@@ -98,6 +122,52 @@ export default async function PreturiPage() {
             </Link>
           )}
         </div>
+
+        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-7">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500">Întrebări scurte, răspunsuri directe</p>
+            <div className="mt-5 space-y-5 text-sm leading-7 text-zinc-300">
+              <div>
+                <h2 className="text-base font-semibold text-zinc-100">Pot anula înainte să rămân pe abonament?</h2>
+                <p className="mt-1 text-zinc-400">Da. Înainte să continui pe planul plătit, verifică dacă produsul se potrivește business-ului tău și decide informat.</p>
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-zinc-100">Ce include planul actual?</h2>
+                <p className="mt-1 text-zinc-400">Pagina publică de rezervări, servicii, sloturi, dashboard, confirmări email și administrarea zilnică a programărilor.</p>
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-zinc-100">Am vizibilitate dacă apare o problemă tehnică?</h2>
+                <p className="mt-1 text-zinc-400">Da. Pagina publică de status arată verificările esențiale ale platformei, iar documentele legale și datele de contact sunt publice.</p>
+              </div>
+            </div>
+          </div>
+
+          <aside className="rounded-2xl border border-zinc-800 bg-zinc-900 p-7">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500">Linkuri utile înainte de activare</p>
+            <div className="mt-5 space-y-3 text-sm text-zinc-300">
+              <Link href="/status" className="flex items-center justify-between rounded-xl border border-zinc-800 px-4 py-3 transition hover:border-zinc-700 hover:bg-zinc-800/60">
+                <span>Status sistem</span>
+                <span className="text-zinc-500">Vezi verificările live</span>
+              </Link>
+              <Link href="/suport" className="flex items-center justify-between rounded-xl border border-zinc-800 px-4 py-3 transition hover:border-zinc-700 hover:bg-zinc-800/60">
+                <span>Centru suport</span>
+                <span className="text-zinc-500">Contact și onboarding</span>
+              </Link>
+              <Link href="/termeni" className="flex items-center justify-between rounded-xl border border-zinc-800 px-4 py-3 transition hover:border-zinc-700 hover:bg-zinc-800/60">
+                <span>Termeni și condiții</span>
+                <span className="text-zinc-500">Condițiile de utilizare</span>
+              </Link>
+              <Link href="/confidentialitate" className="flex items-center justify-between rounded-xl border border-zinc-800 px-4 py-3 transition hover:border-zinc-700 hover:bg-zinc-800/60">
+                <span>Confidențialitate</span>
+                <span className="text-zinc-500">Cum sunt tratate datele</span>
+              </Link>
+              <Link href="/gdpr" className="flex items-center justify-between rounded-xl border border-zinc-800 px-4 py-3 transition hover:border-zinc-700 hover:bg-zinc-800/60">
+                <span>Informare GDPR</span>
+                <span className="text-zinc-500">Drepturile tale</span>
+              </Link>
+            </div>
+          </aside>
+        </section>
       </div>
     </main>
   );
