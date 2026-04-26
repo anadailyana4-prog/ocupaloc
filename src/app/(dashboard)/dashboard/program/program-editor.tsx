@@ -9,7 +9,6 @@ import { type SlotConfigInput, type WorkingHourRowInput, saveWorkingHours } from
 import type { ProgramSlotConfig } from "@/lib/program";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const DAY_ORDER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
