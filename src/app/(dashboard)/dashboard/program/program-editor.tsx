@@ -144,18 +144,21 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
         <h2 className="text-sm font-semibold text-zinc-100">Strategie sloturi publice</h2>
         <p className="text-xs text-zinc-400">Implicit recomandat: porniri aliniate la durata serviciului + pauza dintre clienți.</p>
 
-        <div className="space-y-2">
-          <label className="flex items-start gap-2 text-sm text-zinc-300">
+        <div className="space-y-3">
+          <label className={`flex items-start gap-3 rounded-md border p-3 cursor-pointer transition-colors ${slotConfig.strategy === "service_duration" ? "border-zinc-500 bg-zinc-800/60" : "border-zinc-800 hover:border-zinc-700"}`}>
             <input
               type="radio"
               name="slot-strategy"
               checked={slotConfig.strategy === "service_duration"}
               onChange={() => setSlotConfig({ strategy: "service_duration" })}
-              className="mt-1"
+              className="mt-0.5 shrink-0"
             />
-            <span>Pe durata serviciului (recomandat)</span>
+            <div className="space-y-0.5">
+              <p className="text-sm font-medium text-zinc-100">Pe durata serviciului <span className="ml-1 rounded bg-zinc-700 px-1.5 py-0.5 text-xs text-zinc-300">recomandat</span></p>
+              <p className="text-xs text-zinc-400">Sloturile pornesc exact când se termină cel anterior. Dacă serviciul durează 60 min, clienții pot alege 09:00, 10:00, 11:00 etc. Ideal pentru saloane, cabinete sau orice business unde fiecare client ocupă tot intervalul.</p>
+            </div>
           </label>
-          <label className="flex items-start gap-2 text-sm text-zinc-300">
+          <label className={`flex items-start gap-3 rounded-md border p-3 cursor-pointer transition-colors ${slotConfig.strategy === "fixed_step" ? "border-zinc-500 bg-zinc-800/60" : "border-zinc-800 hover:border-zinc-700"}`}>
             <input
               type="radio"
               name="slot-strategy"
@@ -166,15 +169,18 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
                   fixedStepMinutes: prev.fixedStepMinutes ?? 15
                 }))
               }
-              className="mt-1"
+              className="mt-0.5 shrink-0"
             />
-            <span>Pas fix (minute)</span>
+            <div className="space-y-0.5">
+              <p className="text-sm font-medium text-zinc-100">Pas fix</p>
+              <p className="text-xs text-zinc-400">Sloturile apar la intervale egale indiferent de durata serviciului. De ex. la 5 min: 09:00, 09:05, 09:10... Util dacă oferi mai multe servicii cu durate diferite și vrei ca toți clienții să poată alege din același grid orar.</p>
+            </div>
           </label>
         </div>
 
         {slotConfig.strategy === "fixed_step" ? (
           <div className="max-w-xs space-y-1">
-            <Label htmlFor="fixed-step-minutes">Pas fix</Label>
+            <Label htmlFor="fixed-step-minutes">Interval între sloturi</Label>
             <select
               id="fixed-step-minutes"
               value={slotConfig.fixedStepMinutes ?? 15}
@@ -196,7 +202,6 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
               <option value={90}>90 minute</option>
               <option value={120}>120 minute</option>
             </select>
-            <p className="text-xs text-zinc-500">Folosește doar dacă ai nevoie explicită de un grid operațional fix.</p>
           </div>
         ) : null}
       </div>
