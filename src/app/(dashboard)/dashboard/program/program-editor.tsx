@@ -176,12 +176,8 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
         {slotConfig.strategy === "fixed_step" ? (
           <div className="max-w-xs space-y-1">
             <Label htmlFor="fixed-step-minutes">Pas fix</Label>
-            <Input
+            <select
               id="fixed-step-minutes"
-              type="number"
-              min={5}
-              max={180}
-              step={5}
               value={slotConfig.fixedStepMinutes ?? 15}
               onChange={(e) =>
                 setSlotConfig({
@@ -189,8 +185,18 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
                   fixedStepMinutes: Number(e.target.value)
                 })
               }
-              className="border-zinc-700 bg-zinc-900"
-            />
+              className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-zinc-500"
+            >
+              <option value={5}>5 minute</option>
+              <option value={10}>10 minute</option>
+              <option value={15}>15 minute</option>
+              <option value={20}>20 minute</option>
+              <option value={30}>30 minute</option>
+              <option value={45}>45 minute</option>
+              <option value={60}>60 minute</option>
+              <option value={90}>90 minute</option>
+              <option value={120}>120 minute</option>
+            </select>
             <p className="text-xs text-zinc-500">Folosește doar dacă ai nevoie explicită de un grid operațional fix.</p>
           </div>
         ) : null}
