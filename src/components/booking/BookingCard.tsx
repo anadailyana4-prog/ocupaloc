@@ -153,7 +153,9 @@ function BookingCardLive(props: LiveProps) {
   const { slug, publicBase, businessName, services, publicPageLayout = false } = props;
   const tenant = isTenantLive(props);
   const featuredServices = useMemo(() => services.filter((service) => isFeaturedService(service)).slice(0, 6), [services]);
+  const defaultServices = useMemo(() => services.slice(0, 6), [services]);
   const hasFeaturedServices = featuredServices.length > 0;
+  const highlightedServices = hasFeaturedServices ? featuredServices : defaultServices;
   const [showAllServices, setShowAllServices] = useState(false);
   const [serviceSearch, setServiceSearch] = useState("");
 
@@ -176,7 +178,11 @@ function BookingCardLive(props: LiveProps) {
   const [telefon, setTelefon] = useState("");
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [successSummary, setSuccessSummary] = useState<{ clientName: string; timeLabel: string } | null>(null);
+  const [successSummary, setSuccessSummary] = useState<{
+    clientName: string;
+    timeLabel: string;
+    emailNotification: "queued" | "failed";
+  } | null>(null);
 
   const horizonDays = useMemo(() => {
     const start = startOfDay(new Date());
@@ -347,7 +353,8 @@ function BookingCardLive(props: LiveProps) {
         });
         setSuccessSummary({
           clientName: cleanName,
-          timeLabel: formatSlotLabel(selectedPick.start)
+          timeLabel: formatSlotLabel(selectedPick.start),
+          emailNotification: "queued"
         });
         setModalOpen(false);
         setNume("");
@@ -417,9 +424,11 @@ function BookingCardLive(props: LiveProps) {
         experiment_id: experimentId,
         variant: experimentVariant
       });
+      const emailNotification: "queued" | "failed" = res.clientNotification === "queued" ? "queued" : "failed";
       setSuccessSummary({
         clientName: cleanName,
-        timeLabel: formatSlotLabel(selectedPick.start)
+        timeLabel: formatSlotLabel(selectedPick.start),
+        emailNotification
       });
       setModalOpen(false);
       setStep(3);
@@ -476,7 +485,11 @@ function BookingCardLive(props: LiveProps) {
           <p className={`font-semibold leading-relaxed text-white ${publicPageLayout ? "text-xl md:text-2xl" : "text-lg"}`}>
             Programare confirmată pentru {successSummary.clientName} la {successSummary.timeLabel}
           </p>
-          <p className="text-sm text-zinc-400">Vei primi un email de confirmare la adresa introdusă.</p>
+          <p className="text-sm text-zinc-400">
+            {successSummary.emailNotification === "queued"
+              ? "Emailul de confirmare a fost pus la trimis către adresa introdusă."
+              : "Programarea a fost făcută, dar emailul nu a putut fi trimis acum. Te rugăm încearcă din nou."}
+          </p>
           <Button
             type="button"
             variant="secondary"
@@ -502,7 +515,7 @@ function BookingCardLive(props: LiveProps) {
             {hasFeaturedServices && !showAllServices ? (
               <p className="mb-3 text-xs text-zinc-400">Servicii recomandate</p>
             ) : null}
-            {((hasFeaturedServices && showAllServices) || (!hasFeaturedServices && services.length > 8)) ? (
+            {(showAllServices && services.length > 8) ? (
               <div className="mb-3">
                 <Input
                   type="search"
@@ -514,7 +527,7 @@ function BookingCardLive(props: LiveProps) {
               </div>
             ) : null}
             <div className={publicPageLayout ? "grid grid-cols-1 gap-4 sm:grid-cols-2" : "space-y-2"}>
-              {(hasFeaturedServices && !showAllServices ? featuredServices : services)
+              {(showAllServices ? services : highlightedServices)
                 .filter((service) => {
                   const search = normalizeSearch(serviceSearch);
                   if (!search) return true;
@@ -558,7 +571,7 @@ function BookingCardLive(props: LiveProps) {
                 </button>
               ))}
             </div>
-            {hasFeaturedServices && !showAllServices ? (
+            {!showAllServices && services.length > highlightedServices.length ? (
               <button
                 type="button"
                 className="mt-3 text-sm font-medium text-indigo-300 hover:text-indigo-200"
