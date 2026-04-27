@@ -25,7 +25,7 @@ async function createCheckoutResponse() {
     const admin = createSupabaseServiceClient();
     let { data: prof, error: profError } = await admin
       .from("profesionisti")
-      .select("id,user_id,slug,nume_business,email_contact")
+      .select("id,user_id,slug,nume_business")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -43,7 +43,7 @@ async function createCheckoutResponse() {
       if (membership?.tenant_id) {
         const fallback = await admin
           .from("profesionisti")
-          .select("id,user_id,slug,nume_business,email_contact")
+          .select("id,user_id,slug,nume_business")
           .eq("id", membership.tenant_id)
           .maybeSingle();
         if (!fallback.error && fallback.data) {
@@ -87,7 +87,7 @@ async function createCheckoutResponse() {
       userId: String(user.id),
       slug: String(prof.slug ?? ""),
       businessName: String(prof.nume_business ?? "OcupaLoc"),
-      email: prof.email_contact ? String(prof.email_contact) : user.email ?? null
+      email: user.email ?? null
     });
 
     const session = await stripe.checkout.sessions.create({
