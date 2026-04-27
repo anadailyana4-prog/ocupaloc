@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { withProgramPauza } from "@/lib/program";
 import { slugifyBusinessName, uniqueSlug } from "@/lib/slug";
 import { recordOperationalEvent } from "@/lib/ops-events";
 import { writeWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
@@ -13,6 +14,23 @@ const schema = z.object({
   telefon: z.string().trim().min(8, "Telefon invalid."),
   whatsapp: z.string().trim().max(40).optional(),
   tip_activitate: z.string().trim().min(2, "Tipul activitatii este obligatoriu."),
+  pauza_start: z
+    .string()
+    .trim()
+    .optional()
+    .transform((s) => {
+      if (!s) return undefined;
+      return /^\d{2}:\d{2}$/.test(s) ? s : "invalid";
+    }),
+  pauza_durata: z.preprocess(
+    (value) => {
+      if (typeof value !== "string") return undefined;
+      const trimmed = value.trim();
+      if (!trimmed) return undefined;
+      return Number(trimmed);
+    },
+    z.number().int("Durata pauzei trebuie sa fie un numar intreg.").min(15, "Durata minima a pauzei este 15 minute.").max(240, "Durata maxima a pauzei este 240 minute.").optional()
+  ),
   pauza_intre_clienti: z.preprocess(
     (value) => {
       if (typeof value !== "string") return undefined;
@@ -38,6 +56,8 @@ export async function saveOnboardingProfile(formData: FormData) {
     telefon: String(formData.get("telefon") ?? ""),
     whatsapp: String(formData.get("whatsapp") ?? ""),
     tip_activitate: String(formData.get("tip_activitate") ?? ""),
+    pauza_start: String(formData.get("pauza_start") ?? ""),
+    pauza_durata: String(formData.get("pauza_durata") ?? ""),
     pauza_intre_clienti: String(formData.get("pauza_intre_clienti") ?? "")
   });
 
@@ -46,10 +66,27 @@ export async function saveOnboardingProfile(formData: FormData) {
     redirect(`/onboarding?error=${encodeURIComponent(msg)}`);
   }
 
-  const { data: existingProf } = await supabase.from("profesionisti").select("id, slug").eq("user_id", user.id).maybeSingle();
+  if (parsed.data.pauza_start === "invalid") {
+    redirect(`/onboarding?error=${encodeURIComponent("Ora pauzei este invalida. Foloseste formatul HH:MM.")}`);
+  }
+
+  const hasBreakStart = Boolean(parsed.data.pauza_start);
+  const hasBreakDuration = parsed.data.pauza_durata !== undefined;
+  if (hasBreakStart !== hasBreakDuration) {
+    redirect(`/onboarding?error=${encodeURIComponent("Completeaza atat ora de start, cat si durata pauzei.")}`);
+  }
+
+  const { data: existingProf } = await supabase.from("profesionisti").select("id, slug, program").eq("user_id", user.id).maybeSingle();
 
   let errorMessage: string | null = null;
   const pauseValue = parsed.data.pauza_intre_clienti;
+  const pauzaProgramConfig =
+    hasBreakStart && hasBreakDuration
+      ? {
+          start: parsed.data.pauza_start as string,
+          durationMinutes: parsed.data.pauza_durata as number
+        }
+      : undefined;
 
   if (existingProf?.id) {
     const values: Record<string, unknown> = {
@@ -61,6 +98,9 @@ export async function saveOnboardingProfile(formData: FormData) {
     };
     if (pauseValue !== undefined) {
       values.pauza_intre_clienti = pauseValue;
+    }
+    if (pauzaProgramConfig) {
+      values.program = withProgramPauza(existingProf?.program ?? null, pauzaProgramConfig);
     }
 
     const result = await writeWithTelefonFallback(
@@ -87,6 +127,9 @@ export async function saveOnboardingProfile(formData: FormData) {
     if (pauseValue !== undefined) {
       values.pauza_intre_clienti = pauseValue;
     }
+    if (pauzaProgramConfig) {
+      values.program = withProgramPauza(null, pauzaProgramConfig);
+    }
 
     const result = await writeWithTelefonFallback(
       async (values) => await supabase.from("profesionisti").insert(values),
@@ -111,5 +154,9 @@ export async function saveOnboardingProfile(formData: FormData) {
     }
   });
 
-  redirect("/dashboard");
+  // Get the slug (either updated or newly created) to pass to bun-venit
+  const { data: updatedProf } = await supabase.from("profesionisti").select("slug").eq("user_id", user.id).maybeSingle();
+  const slug = updatedProf?.slug ?? existingProf?.slug ?? "";
+
+  redirect(`/onboarding/bun-venit?slug=${encodeURIComponent(slug)}`);
 }

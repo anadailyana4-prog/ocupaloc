@@ -1,19 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 
 import { Button } from "@/components/ui/button";
 import { trackOnboardingEvent } from "@/lib/analytics";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 export default function BunVenitPage() {
-  const [slug, setSlug] = useState("businessul-tau");
+  const searchParams = useSearchParams();
+  const slug = searchParams.get("slug") || "businessul-tau";
 
   useEffect(() => {
-    const lastSlug = localStorage.getItem("ocupaloc:lastSlug");
-    if (lastSlug) setSlug(lastSlug);
     trackOnboardingEvent("onboarding_activation", {
       step: 4,
       page: "/onboarding/bun-venit"
@@ -41,7 +42,7 @@ export default function BunVenitPage() {
             </svg>
           </div>
           <h1 className="text-4xl font-bold tracking-tight">Cont creat cu succes!</h1>
-          <p className="text-lg text-zinc-400">Îți ia 3 minute să fii gata de primul client</p>
+          <p className="text-lg text-zinc-400">Un pas rămas: activează trial-ul gratuit ca să poți primi programări.</p>
         </header>
 
         <section className="grid gap-4 md:grid-cols-3">
@@ -79,12 +80,17 @@ export default function BunVenitPage() {
           Intră cu link pe email din pagina de login.
         </div>
 
-        <div className="text-center">
-          <Button asChild size="lg">
-            <Link href="/dashboard">Mergi în dashboard</Link>
-          </Button>
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-6 text-center space-y-3">
+          <p className="text-base font-semibold text-zinc-100">Activează trial gratuit 14 zile</p>
+          <p className="text-sm text-zinc-400">Introdu cardul acum — nu ți se percepe nimic astăzi. Abonamentul (59,99 RON/lună) începe automat după cele 14 zile. Poți anula oricând.</p>
+          <form method="get" action="/api/billing/create-checkout">
+            <Button type="submit" size="lg" className="mt-2 bg-emerald-600 hover:bg-emerald-500 text-white">
+              Introdu cardul și activează trial-ul
+            </Button>
+          </form>
         </div>
       </div>
     </main>
   );
 }
+

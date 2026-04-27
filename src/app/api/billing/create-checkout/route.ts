@@ -96,6 +96,7 @@ async function createCheckoutResponse() {
       client_reference_id: String(prof.id),
       line_items: [{ price: getStripePriceId(), quantity: 1 }],
       allow_promotion_codes: true,
+      payment_method_collection: "always",
       success_url: `${getSiteUrl()}/billing/succes?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${getSiteUrl()}/billing/anulat`,
       subscription_data: {
