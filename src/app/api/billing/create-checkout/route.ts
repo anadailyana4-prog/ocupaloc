@@ -19,7 +19,7 @@ export async function POST() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.redirect(new URL("/auth/login", getSiteUrl()), 303);
+      return NextResponse.redirect(new URL("/login", getSiteUrl()), 303);
     }
 
     const admin = createSupabaseServiceClient();
