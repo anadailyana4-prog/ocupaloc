@@ -74,11 +74,6 @@ export function BunVenitClient({ slug }: Props) {
           </Card>
         </section>
 
-        <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 p-4 text-center text-sm text-amber-200">
-          Dacă nu poți intra imediat în cont, verifică emailul și confirmă adresa. Pentru autentificare rapidă poți folosi și opțiunea
-          Intră cu link pe email din pagina de login.
-        </div>
-
         <div className="space-y-3 rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-6 text-center">
           <p className="text-base font-semibold text-zinc-100">Activează trial gratuit 14 zile</p>
           <p className="text-sm text-zinc-400">Introdu cardul acum - nu ti se percepe nimic astazi. Abonamentul (59,99 RON/luna) incepe automat dupa cele 14 zile. Poti anula oricand.</p>
