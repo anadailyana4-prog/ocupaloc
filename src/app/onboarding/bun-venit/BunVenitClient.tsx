@@ -76,10 +76,10 @@ export function BunVenitClient({ slug }: Props) {
 
         <div className="space-y-3 rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-6 text-center">
           <p className="text-base font-semibold text-zinc-100">Activează trial gratuit 14 zile</p>
-          <p className="text-sm text-zinc-400">Introdu cardul acum - nu ti se percepe nimic astazi. Abonamentul (59,99 RON/luna) incepe automat dupa cele 14 zile. Poti anula oricand.</p>
+          <p className="text-sm text-zinc-400">Nu ți se percepe nimic astăzi. Abonamentul (59,99 RON/lună) începe automat după cele 14 zile. Poți anula oricând.</p>
           <form method="get" action="/api/billing/create-checkout">
             <Button type="submit" size="lg" className="mt-2 bg-emerald-600 text-white hover:bg-emerald-500">
-              Introdu cardul si activeaza trial-ul
+              Activează trial gratuit
             </Button>
           </form>
         </div>
