@@ -37,7 +37,7 @@ export async function POST() {
       .maybeSingle();
 
     if (profError || !prof) {
-      return NextResponse.redirect(new URL("/dashboard?error=" + encodeURIComponent("Nu am găsit profilul profesional."), siteUrl), 303);
+      return NextResponse.redirect(new URL("/onboarding", siteUrl), 303);
     }
 
     const stripe = getStripeClient();

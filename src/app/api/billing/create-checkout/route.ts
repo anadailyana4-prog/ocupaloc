@@ -30,7 +30,7 @@ export async function POST() {
       .maybeSingle();
 
     if (profError || !prof) {
-      return NextResponse.redirect(new URL("/dashboard?error=" + encodeURIComponent("Profilul profesional nu a fost găsit. Completează onboarding-ul."), getSiteUrl()), 303);
+      return NextResponse.redirect(new URL("/onboarding", getSiteUrl()), 303);
     }
 
     // Guard: block duplicate active subscription
