@@ -510,47 +510,13 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     return null;
   })();
 
-  // Hard paywall: trial expired and no subscription — show upgrade screen
+  // No active subscription: send user to activation step instead of showing a dead-end lock screen.
   if (planStatus.kind === "none") {
-    return (
-      <div className="flex min-h-[70vh] flex-col items-center justify-center px-6 py-20 text-center">
-        <div className="mx-auto max-w-md space-y-6">
-          {sp.error ? (
-            <div className="rounded-2xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-200">{decodeURIComponent(sp.error)}</div>
-          ) : null}
-          <div className="flex justify-center">
-            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-red-950/60 text-4xl">🔒</span>
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-zinc-50">Perioada de trial a expirat</h1>
-            <p className="text-sm leading-6 text-zinc-400">
-              Pentru a activa contul specialist trebuie să introduci cardul. Nu se retrage nimic acum: începi cu 14 zile trial gratuite.
-            </p>
-          </div>
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 space-y-4">
-            <p className="text-4xl font-black text-zinc-50">59,99 <span className="text-lg font-medium text-zinc-400">RON/lună</span></p>
-            <ul className="space-y-1.5 text-left text-sm text-zinc-300">
-              <li>✓ 14 zile trial gratuit (0 RON azi)</li>
-              <li>✓ Programări nelimitate</li>
-              <li>✓ Zero comision per programare</li>
-              <li>✓ Link personalizat de rezervare</li>
-              <li>✓ Suport în limba română</li>
-            </ul>
-            <form method="get" action="/api/billing/create-checkout">
-              <button
-                type="submit"
-                className="block w-full rounded-xl bg-indigo-600 px-6 py-3 text-center font-semibold text-white transition-colors hover:bg-indigo-500"
-              >
-                Introdu cardul și activează trial-ul
-              </button>
-            </form>
-          </div>
-          <p className="text-xs text-zinc-500">
-            Datele tale și istoricul programărilor sunt păstrate. Reactivarea este instantanee.
-          </p>
-        </div>
-      </div>
-    );
+    const slug = prof.slug?.trim();
+    if (slug) {
+      redirect(`/onboarding/bun-venit?slug=${encodeURIComponent(slug)}`);
+    }
+    redirect("/onboarding");
   }
 
   return (
