@@ -513,6 +513,45 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     return null;
   })();
 
+  // Hard paywall: trial expired and no subscription — show upgrade screen
+  if (planStatus.kind === "none") {
+    return (
+      <div className="flex min-h-[70vh] flex-col items-center justify-center px-6 py-20 text-center">
+        <div className="mx-auto max-w-md space-y-6">
+          <div className="flex justify-center">
+            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-red-950/60 text-4xl">🔒</span>
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-zinc-50">Perioada de trial a expirat</h1>
+            <p className="text-sm leading-6 text-zinc-400">
+              Activează abonamentul pentru a continua să primești programări și să folosești dashboard-ul.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 space-y-4">
+            <p className="text-4xl font-black text-zinc-50">59,99 <span className="text-lg font-medium text-zinc-400">RON/lună</span></p>
+            <ul className="space-y-1.5 text-left text-sm text-zinc-300">
+              <li>✓ Programări nelimitate</li>
+              <li>✓ Zero comision per programare</li>
+              <li>✓ Link personalizat de rezervare</li>
+              <li>✓ Suport în limba română</li>
+            </ul>
+            <form action="/api/billing/create-checkout" method="post">
+              <button
+                type="submit"
+                className="w-full rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500 transition-colors"
+              >
+                Activează abonamentul
+              </button>
+            </form>
+          </div>
+          <p className="text-xs text-zinc-500">
+            Datele tale și istoricul programărilor sunt păstrate. Reactivarea este instantanee.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-12 section-reveal">
       {sp.info ? (

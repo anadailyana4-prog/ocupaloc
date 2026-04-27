@@ -48,7 +48,7 @@ export default async function PreturiPage() {
           {user ? (
             <form action="/api/billing/create-checkout" method="post" className="mt-6">
               <button type="submit" data-cta-location="preturi_hero_card" className="inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
-                Încearcă 14 zile gratis
+                Activează abonamentul
               </button>
             </form>
           ) : (
