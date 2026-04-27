@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const servicePayload = z.object({
@@ -15,15 +16,15 @@ const servicePayload = z.object({
 
 type SupabaseServer = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
-async function getPrimaryProf(supabase: SupabaseServer): Promise<{ id: string; slug: string } | null> {
+async function getPrimaryProf(supabase: SupabaseServer): Promise<{ id: string; slug: string; nume_business: string | null } | null> {
   const {
     data: { user }
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: prof } = await supabase.from("profesionisti").select("id, slug").eq("user_id", user.id).maybeSingle();
+  const { data: prof } = await supabase.from("profesionisti").select("id, slug, nume_business").eq("user_id", user.id).maybeSingle();
   if (!prof?.id || !prof.slug) return null;
-  return { id: prof.id, slug: prof.slug };
+  return { id: prof.id, slug: prof.slug, nume_business: prof.nume_business ?? null };
 }
 
 export type ServiceActionResult = { success: true } | { success: false; message: string };
@@ -40,11 +41,52 @@ export async function createService(raw: z.infer<typeof servicePayload>): Promis
   if (!prof) {
     return { success: false, message: "Nu am găsit profilul profesionistului." };
   }
+  const admin = createSupabaseServiceClient();
 
-  const { data: inserted, error } = await supabase
+  // Keep tenant creation resilient: a historical slug collision in `tenants`
+  // must not block adding services from dashboard.
+  const { data: existingTenant, error: existingTenantErr } = await admin
+    .from("tenants")
+    .select("id")
+    .eq("id", prof.id)
+    .maybeSingle();
+
+  if (existingTenantErr) {
+    return { success: false, message: existingTenantErr.message };
+  }
+
+  if (!existingTenant) {
+    let tenantCreated = false;
+    const slugCandidates = [prof.slug, `${prof.slug}-${prof.id.slice(0, 8)}`];
+
+    for (const candidateSlug of slugCandidates) {
+      const { error: tenantInsertErr } = await admin.from("tenants").insert({
+        id: prof.id,
+        slug: candidateSlug,
+        name: prof.nume_business ?? prof.slug
+      });
+
+      if (!tenantInsertErr) {
+        tenantCreated = true;
+        break;
+      }
+
+      const isSlugConflict = tenantInsertErr.code === "23505" && tenantInsertErr.message.toLowerCase().includes("slug");
+      if (!isSlugConflict) {
+        return { success: false, message: tenantInsertErr.message };
+      }
+    }
+
+    if (!tenantCreated) {
+      return { success: false, message: "Nu am putut sincroniza tenant-ul pentru acest cont." };
+    }
+  }
+
+  const { data: inserted, error } = await admin
     .from("servicii")
     .insert({
       profesionist_id: prof.id,
+      tenant_id: prof.id,
       nume: parsed.data.name.trim(),
       durata_minute: parsed.data.duration_min,
       pret: parsed.data.price,
@@ -78,6 +120,7 @@ export async function updateService(serviceId: string, raw: z.infer<typeof servi
   if (!prof) {
     return { success: false, message: "Nu am găsit profilul profesionistului." };
   }
+  const admin = createSupabaseServiceClient();
 
   const updatePayload: {
     nume: string;
@@ -95,7 +138,7 @@ export async function updateService(serviceId: string, raw: z.infer<typeof servi
     updatePayload.is_featured = parsed.data.is_featured;
   }
 
-  const { error } = await supabase.from("servicii").update(updatePayload).eq("id", id.data).eq("profesionist_id", prof.id);
+  const { error } = await admin.from("servicii").update(updatePayload).eq("id", id.data).eq("profesionist_id", prof.id);
 
   if (error) {
     return { success: false, message: error.message };
@@ -117,9 +160,10 @@ export async function setServiceFeatured(serviceId: string, isFeatured: boolean)
   if (!prof) {
     return { success: false, message: "Nu am găsit profilul profesionistului." };
   }
+  const admin = createSupabaseServiceClient();
 
   if (isFeatured) {
-    const { count, error: countError } = await supabase
+    const { count, error: countError } = await admin
       .from("servicii")
       .select("id", { count: "exact", head: true })
       .eq("profesionist_id", prof.id)
@@ -134,7 +178,7 @@ export async function setServiceFeatured(serviceId: string, isFeatured: boolean)
     }
   }
 
-  const { error } = await supabase
+  const { error } = await admin
     .from("servicii")
     .update({ is_featured: isFeatured })
     .eq("id", id.data)
@@ -160,8 +204,9 @@ export async function deleteService(serviceId: string): Promise<ServiceActionRes
   if (!prof) {
     return { success: false, message: "Nu am găsit profilul profesionistului." };
   }
+  const admin = createSupabaseServiceClient();
 
-  const { error } = await supabase.from("servicii").delete().eq("id", id.data).eq("profesionist_id", prof.id);
+  const { error } = await admin.from("servicii").delete().eq("id", id.data).eq("profesionist_id", prof.id);
 
   if (error) {
     return { success: false, message: error.message };
