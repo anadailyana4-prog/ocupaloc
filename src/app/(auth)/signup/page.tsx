@@ -32,6 +32,8 @@ type WorkDay = {
 };
 
 const SIGNUP_STEP_STORAGE_KEY = "ocupaloc:signupStep";
+const SIGNUP_EMAIL_STORAGE_KEY = "ocupaloc:signupEmail";
+const SIGNUP_NAME_STORAGE_KEY = "ocupaloc:signupName";
 
 const ACTIVITATI = [
   "Consultanță / Coaching",
@@ -131,8 +133,14 @@ export default function SignupPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const savedStep = Number(localStorage.getItem(SIGNUP_STEP_STORAGE_KEY));
-    if (Number.isInteger(savedStep) && savedStep >= 1 && savedStep <= 3) {
+    const savedEmail = localStorage.getItem(SIGNUP_EMAIL_STORAGE_KEY) ?? "";
+    const savedName = localStorage.getItem(SIGNUP_NAME_STORAGE_KEY) ?? "";
+    const hasFormData = savedEmail.trim().length > 0 && savedName.trim().length > 0;
+    // Only restore step 2 or 3 if user previously filled step 1 fields
+    if (Number.isInteger(savedStep) && savedStep >= 1 && (savedStep === 1 || hasFormData)) {
       setStep(savedStep);
+      if (savedName) setBusinessName(savedName);
+      if (savedEmail) setEmail(savedEmail);
     }
   }, []);
 
@@ -140,6 +148,16 @@ export default function SignupPage() {
     if (typeof window === "undefined") return;
     localStorage.setItem(SIGNUP_STEP_STORAGE_KEY, String(step));
   }, [step]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (businessName) localStorage.setItem(SIGNUP_NAME_STORAGE_KEY, businessName);
+  }, [businessName]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (email) localStorage.setItem(SIGNUP_EMAIL_STORAGE_KEY, email);
+  }, [email]);
 
   useEffect(() => {
     if (!scheduleTouched) {
@@ -306,6 +324,8 @@ export default function SignupPage() {
 
     localStorage.setItem("ocupaloc:lastSlug", slug);
     localStorage.removeItem(SIGNUP_STEP_STORAGE_KEY);
+    localStorage.removeItem(SIGNUP_EMAIL_STORAGE_KEY);
+    localStorage.removeItem(SIGNUP_NAME_STORAGE_KEY);
     localStorage.setItem("ocupaloc:lastImportedClients", String(importedCount));
     localStorage.setItem("ocupaloc:onboardingServices", JSON.stringify(services));
     localStorage.setItem("ocupaloc:onboardingSchedule", JSON.stringify(workDays));
