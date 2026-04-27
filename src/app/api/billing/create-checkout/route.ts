@@ -7,7 +7,7 @@ import { reportError } from "@/lib/observability";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export async function POST() {
+async function createCheckoutResponse() {
   if (!isBillingEnabled()) {
     return NextResponse.redirect(new URL("/preturi", getSiteUrl()), 303);
   }
@@ -122,4 +122,12 @@ export async function POST() {
     reportError("billing", "create_checkout_failed", error);
     return NextResponse.redirect(new URL("/dashboard?error=" + encodeURIComponent("Eroare la inițierea plății. Încearcă din nou."), getSiteUrl()), 303);
   }
+}
+
+export async function GET() {
+  return createCheckoutResponse();
+}
+
+export async function POST() {
+  return createCheckoutResponse();
 }

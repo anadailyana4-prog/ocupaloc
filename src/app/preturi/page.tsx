@@ -46,11 +46,9 @@ export default async function PreturiPage() {
             <li>✓ Suport rapid în limba română</li>
           </ul>
           {user ? (
-            <form action="/api/billing/create-checkout" method="post" className="mt-6">
-              <button type="submit" data-cta-location="preturi_hero_card" className="inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
-                Activează abonamentul
-              </button>
-            </form>
+            <Link href="/api/billing/create-checkout" data-cta-location="preturi_hero_card" className="mt-6 inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
+              Activează abonamentul
+            </Link>
           ) : (
             <Link href="/signup" data-cta-location="preturi_hero_card" className="mt-6 inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
               Încearcă 14 zile gratis
@@ -111,11 +109,9 @@ export default async function PreturiPage() {
 
         <div className="flex justify-center">
           {user ? (
-            <form action="/api/billing/create-checkout" method="post">
-              <button type="submit" data-cta-location="preturi_footer_cta" className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
-                Activează abonamentul
-              </button>
-            </form>
+            <Link href="/api/billing/create-checkout" data-cta-location="preturi_footer_cta" className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
+              Activează abonamentul
+            </Link>
           ) : (
             <Link href="/signup" data-cta-location="preturi_footer_cta" className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
               Creează cont gratuit
