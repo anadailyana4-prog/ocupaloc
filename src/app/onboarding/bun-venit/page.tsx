@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, Suspense } from "react";
 
 import { Button } from "@/components/ui/button";
 import { trackOnboardingEvent } from "@/lib/analytics";
@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useEffect } from "react";
 
-export default function BunVenitPage() {
+function BunVenitContent() {
   const searchParams = useSearchParams();
   const slug = searchParams.get("slug") || "businessul-tau";
 
@@ -94,3 +94,10 @@ export default function BunVenitPage() {
   );
 }
 
+export default function BunVenitPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-950 flex items-center justify-center text-zinc-400">Se încarcă...</div>}>
+      <BunVenitContent />
+    </Suspense>
+  );
+}
