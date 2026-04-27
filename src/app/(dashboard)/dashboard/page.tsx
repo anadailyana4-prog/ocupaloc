@@ -554,34 +554,6 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
         </div>
       </div>
 
-      <section className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-2xl space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300/80">Operare SaaS</p>
-            <h2 className="text-2xl font-semibold text-zinc-50">Administrează contul, suportul și încrederea într-un singur loc</h2>
-            <p className="text-sm leading-6 text-zinc-400">
-              Ai acces rapid la pagina de preț, portalul de facturare, centrul de suport și statusul tehnic public, fără să ieși din dashboard.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Button asChild variant="outline" className="justify-start rounded-full border-zinc-700 bg-zinc-950/40 text-zinc-100 hover:bg-zinc-800">
-              <Link href="/preturi">Vezi oferta publică</Link>
-            </Button>
-            <form action="/api/billing/portal" method="post">
-              <Button type="submit" variant="outline" className="w-full justify-start rounded-full border-zinc-700 bg-zinc-950/40 text-zinc-100 hover:bg-zinc-800">
-                Deschide portalul de facturare
-              </Button>
-            </form>
-            <Button asChild variant="outline" className="justify-start rounded-full border-zinc-700 bg-zinc-950/40 text-zinc-100 hover:bg-zinc-800">
-              <Link href="/suport">Centru suport</Link>
-            </Button>
-            <Button asChild variant="outline" className="justify-start rounded-full border-zinc-700 bg-zinc-950/40 text-zinc-100 hover:bg-zinc-800">
-              <Link href="/status">Status sistem</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
       {sp.saved === "1" ? (
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">Datele publice au fost salvate.</div>
       ) : null}
