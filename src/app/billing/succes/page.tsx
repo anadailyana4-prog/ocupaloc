@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getStripeClient } from "@/lib/billing/stripe";
 import { isBillingEnabled } from "@/lib/billing/config";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
@@ -16,18 +16,46 @@ export default async function BillingSuccessPage({ searchParams }: Props) {
     try {
       const stripe = getStripeClient();
       const session = await stripe.checkout.sessions.retrieve(session_id, {
-        expand: ["customer"]
+        expand: ["subscription"]
       });
 
       const profesionistId = session.metadata?.profesionist_id;
-      const email =
-        session.customer_details?.email ??
-        (typeof session.customer === "object" && session.customer !== null
-          ? (session.customer as { email?: string | null }).email ?? null
-          : null);
+      const email = session.customer_details?.email ?? null;
+      const customerId =
+        typeof session.customer === "string"
+          ? session.customer
+          : (session.customer as { id?: string } | null)?.id ?? null;
 
+      const admin = createSupabaseServiceClient();
+
+      // Sync subscription immediately — don't wait for the webhook
+      if (profesionistId && session.subscription && typeof session.subscription !== "string") {
+        const sub = session.subscription as {
+          id: string;
+          status: string;
+          current_period_end?: number | null;
+          trial_end?: number | null;
+        };
+        await admin.from("subscriptions").upsert(
+          {
+            profesionist_id: profesionistId,
+            stripe_subscription_id: sub.id,
+            stripe_customer_id: customerId,
+            status: sub.status,
+            current_period_end: sub.current_period_end
+              ? new Date(sub.current_period_end * 1000).toISOString()
+              : null,
+            trial_end: sub.trial_end
+              ? new Date(sub.trial_end * 1000).toISOString()
+              : null,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: "stripe_subscription_id" }
+        );
+      }
+
+      // Send welcome email
       if (profesionistId && email) {
-        const admin = createSupabaseServiceClient();
         const { data: prof } = await admin
           .from("profesionisti")
           .select("slug,nume_business")
@@ -45,20 +73,5 @@ export default async function BillingSuccessPage({ searchParams }: Props) {
     }
   }
 
-  return (
-    <main className="mx-auto w-full max-w-2xl px-6 py-16">
-      <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">Trial activat!</h1>
-      <p className="mt-4 text-zinc-700">
-        Contul tău este activ cu 14 zile gratuite. Ți-am trimis un email de confirmare. Abonamentul (59,99 RON/lună) pornește automat la final.
-      </p>
-      <div className="mt-8">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800"
-        >
-          Mergi în dashboard
-        </Link>
-      </div>
-    </main>
-  );
+  redirect("/dashboard");
 }

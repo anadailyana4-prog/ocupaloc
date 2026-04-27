@@ -129,7 +129,7 @@ export default async function PreturiPage() {
               </div>
               <div>
                 <h2 className="text-base font-semibold text-zinc-100">Ce include planul actual?</h2>
-                <p className="mt-1 text-zinc-400">Pagina publică de rezervări, servicii, sloturi, dashboard, confirmări email și administrarea zilnică a programărilor.</p>
+                <p className="mt-1 text-zinc-400">Pagina publică de rezervări, servicii, sloturi, meniu de administrare, confirmări email și gestionarea zilnică a programărilor.</p>
               </div>
               <div>
                 <h2 className="text-base font-semibold text-zinc-100">Am vizibilitate dacă apare o problemă tehnică?</h2>

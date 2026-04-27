@@ -35,7 +35,7 @@ const faq = [
     answer: `Trimite-ne un email la ${CONTACT_EMAIL} cu numele business-ului, adresa contului și problema exactă. Cu cât descrii mai clar contextul, cu atât intervenția este mai rapidă.`
   },
   {
-    question: "Cum semnalez o eroare în booking sau dashboard?",
+    question: "Cum semnalez o eroare în booking sau meniu?",
     answer: "Menționează linkul unde apare problema, pașii exacți care duc la eroare și, ideal, un screenshot. Verifică și pagina de status înainte, ca să separi un incident general de o problemă locală de cont."
   },
   {

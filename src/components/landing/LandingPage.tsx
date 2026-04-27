@@ -36,7 +36,7 @@ export function LandingPage() {
       detail: "Clientul primește imediat confirmare și link pentru confirmare/anulare."
     },
     {
-      title: "Tu vezi totul în dashboard",
+      title: "Tu vezi totul în meniu",
       detail: "Programări, status, KPI și modificări în același loc, fără haos în mesaje."
     },
     {
@@ -77,7 +77,7 @@ export function LandingPage() {
               Pierzi timp și programări în telefoane, mesaje și anulări de ultim moment?
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-amber-100/70">
-              OcupaLoc îți organizează programările într-un flux clar: clientul rezervă online, confirmă din email, iar tu vezi totul într-un dashboard simplu.
+              OcupaLoc îți organizează programările într-un flux clar: clientul rezervă online, confirmă din email, iar tu vezi totul într-un meniu simplu.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -118,7 +118,7 @@ export function LandingPage() {
           <div className="lux-card p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-amber-100/55">Rezultat</p>
             <h3 className="mt-2 text-lg font-semibold text-amber-50">Zi consumată pe administrare</h3>
-            <p className="mt-2 text-sm text-amber-100/70">Dashboard clar pentru statusuri, modificări și calendar.</p>
+            <p className="mt-2 text-sm text-amber-100/70">Meniu clar pentru statusuri, modificări și calendar.</p>
           </div>
         </div>
       </section>
@@ -223,7 +223,7 @@ export function LandingPage() {
           <div className="lux-card p-5">
             <div className="mb-2 text-sm font-semibold text-cyan-200">Pasul 3</div>
             <h3 className="text-xl font-semibold text-amber-50">Tu primești confirmări automate</h3>
-            <p className="mt-2 text-sm text-amber-100/70">Status clar în dashboard, fără apeluri repetitive.</p>
+            <p className="mt-2 text-sm text-amber-100/70">Status clar în meniu, fără apeluri repetitive.</p>
           </div>
         </div>
       </section>
