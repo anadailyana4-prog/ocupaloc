@@ -244,7 +244,7 @@ export default function SignupPage() {
           phone: cleanPhone,
           activity
         },
-        emailRedirectTo: siteUrl ? `${siteUrl}/auth/bridge?next=/dashboard` : undefined
+        emailRedirectTo: siteUrl ? `${siteUrl}/auth/bridge?next=/login?signup=confirmed` : undefined
       }
     });
 
@@ -252,39 +252,20 @@ export default function SignupPage() {
       const errorText = (error?.message ?? "").toLowerCase();
       const alreadyRegistered = errorText.includes("already registered") || errorText.includes("already exists");
       if (alreadyRegistered) {
-        const response = await fetch("/api/auth/magic-link", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: cleanEmail })
-        });
-
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
         setIsSubmitting(false);
-
-        if (!response.ok) {
-          toast.error(payload?.message ?? "Emailul există deja. Intră în cont sau folosește resetarea parolei.");
-          return;
-        }
-
-        const { error: magicLinkError } = await supabase.auth.signInWithOtp({
-          email: cleanEmail,
-          options: {
-            emailRedirectTo: siteUrl ? `${siteUrl}/auth/bridge?next=/dashboard` : undefined
-          }
-        });
-
-        if (magicLinkError) {
-          setIsSubmitting(false);
-          toast.error(magicLinkError.message);
-          return;
-        }
-
-        toast.success(payload?.message ?? "Emailul este deja înregistrat. Dacă emailul există, am trimis linkul.");
+        toast.error("Emailul există deja. Intră în cont sau folosește resetarea parolei.");
         router.push("/login");
         return;
       }
       setIsSubmitting(false);
       toast.error(error?.message ?? "Nu am putut crea contul.");
+      return;
+    }
+
+    if (!data.session) {
+      setIsSubmitting(false);
+      toast.success("Va vom trimite un email de confirmare. Confirmă adresa pentru a activa contul.");
+      router.push("/login?signup=pending");
       return;
     }
 
@@ -316,7 +297,6 @@ export default function SignupPage() {
       activity
     });
     trackAuthEvent("signup_success", "email_password");
-    localStorage.removeItem(SIGNUP_STEP_STORAGE_KEY);
     toast.success("Cont creat cu succes.");
     router.push("/onboarding/bun-venit");
   }

@@ -44,6 +44,14 @@ export default function AuthBridgePage() {
             type: action.otpType
           });
           if (error) throw error;
+
+          if (action.otpType === "signup") {
+            await supabase.auth.signOut().catch(() => {
+              // If there is no local session yet, continue to login success screen.
+            });
+            if (!cancelled) window.location.replace("/login?signup=confirmed");
+            return;
+          }
         } else if (action.kind === "session") {
           const { error } = await supabase.auth.setSession({
             access_token: action.accessToken,
