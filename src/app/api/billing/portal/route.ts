@@ -30,11 +30,35 @@ export async function POST() {
     }
 
     const admin = createSupabaseServiceClient();
-    const { data: prof, error: profError } = await admin
+    let { data: prof, error: profError } = await admin
       .from("profesionisti")
       .select("id,user_id,slug,nume_business,email_contact")
       .eq("user_id", user.id)
       .maybeSingle();
+
+    // Fallback for legacy/migrated accounts where profesionisti.user_id is not aligned,
+    // but membership ownership exists through tenant_id.
+    if ((!prof || profError) && user.id) {
+      const { data: membership } = await admin
+        .from("memberships")
+        .select("tenant_id")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (membership?.tenant_id) {
+        const fallback = await admin
+          .from("profesionisti")
+          .select("id,user_id,slug,nume_business,email_contact")
+          .eq("id", membership.tenant_id)
+          .maybeSingle();
+        if (!fallback.error && fallback.data) {
+          prof = fallback.data;
+          profError = null;
+        }
+      }
+    }
 
     if (profError || !prof) {
       return NextResponse.redirect(new URL("/onboarding", siteUrl), 303);
