@@ -17,11 +17,6 @@ export default function AuthBridgePage() {
     return getSafeNext(new URL(window.location.href).searchParams.get("next"));
   }, []);
 
-  const isSignupConfirmation = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    return new URL(window.location.href).searchParams.get("signup") === "1";
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
 
@@ -92,8 +87,7 @@ export default function AuthBridgePage() {
         }
 
         setMessage("Autentificare reușită. Redirecționăm...");
-        const destination = isSignupConfirmation ? "/login?signup=confirmat" : safeNext;
-        if (!cancelled) window.location.replace(destination);
+        if (!cancelled) window.location.replace(safeNext);
       } catch (error) {
         const reason = encodeURIComponent(getErrorMessage(error));
         console.error("[auth/bridge] finalize auth failed:", error);
@@ -107,7 +101,7 @@ export default function AuthBridgePage() {
     return () => {
       cancelled = true;
     };
-  }, [safeNext, isSignupConfirmation]);
+  }, [safeNext]);
 
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
