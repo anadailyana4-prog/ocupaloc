@@ -131,10 +131,8 @@ export default function SignupPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const savedStep = Number(localStorage.getItem(SIGNUP_STEP_STORAGE_KEY));
-    if (Number.isInteger(savedStep) && savedStep >= 1 && savedStep <= 2) {
+    if (Number.isInteger(savedStep) && savedStep >= 1 && savedStep <= 3) {
       setStep(savedStep);
-    } else {
-      localStorage.removeItem(SIGNUP_STEP_STORAGE_KEY);
     }
   }, []);
 
