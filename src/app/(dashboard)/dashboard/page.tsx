@@ -110,7 +110,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   }
 
   // --- Plan status for billing banner ---
-  let planStatus: PlanStatus = { kind: "trial", daysLeft: BILLING_TRIAL_DAYS };
+  let planStatus: PlanStatus = { kind: "none" };
   if (isBillingEnabled()) {
     const admin = createSupabaseServiceClient();
     const { data: sub } = await admin
@@ -135,11 +135,8 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
       } else {
         planStatus = { kind: "none" };
       }
-    } else if (prof.created_at) {
-      const createdAt = new Date(prof.created_at).getTime();
-      const trialEnd = createdAt + BILLING_TRIAL_DAYS * 86400000;
-      const daysLeft = Math.max(0, Math.ceil((trialEnd - Date.now()) / 86400000));
-      planStatus = daysLeft > 0 ? { kind: "trial", daysLeft } : { kind: "none" };
+    } else {
+      planStatus = { kind: "none" };
     }
   } else {
     // Billing disabled — compute legacy trial display-only
@@ -527,12 +524,13 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-zinc-50">Perioada de trial a expirat</h1>
             <p className="text-sm leading-6 text-zinc-400">
-              Activează abonamentul pentru a continua să primești programări și să folosești dashboard-ul.
+              Pentru a activa contul specialist trebuie să introduci cardul. Nu se retrage nimic acum: începi cu 14 zile trial gratuite.
             </p>
           </div>
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 space-y-4">
             <p className="text-4xl font-black text-zinc-50">59,99 <span className="text-lg font-medium text-zinc-400">RON/lună</span></p>
             <ul className="space-y-1.5 text-left text-sm text-zinc-300">
+              <li>✓ 14 zile trial gratuit (0 RON azi)</li>
               <li>✓ Programări nelimitate</li>
               <li>✓ Zero comision per programare</li>
               <li>✓ Link personalizat de rezervare</li>
@@ -543,7 +541,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
                 type="submit"
                 className="block w-full rounded-xl bg-indigo-600 px-6 py-3 text-center font-semibold text-white transition-colors hover:bg-indigo-500"
               >
-                Activează abonamentul
+                Introdu cardul și activează trial-ul
               </button>
             </form>
           </div>

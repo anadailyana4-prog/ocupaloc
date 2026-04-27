@@ -10,7 +10,7 @@ export type BookingEntitlementResult = {
 export async function checkBookingEntitlement(
   admin: SupabaseClient,
   profesionistId: string,
-  profesionistCreatedAt: string
+  _profesionistCreatedAt: string
 ): Promise<BookingEntitlementResult> {
   if (!isBillingEnabled()) {
     return { allowed: true, reason: "" };
@@ -48,14 +48,7 @@ export async function checkBookingEntitlement(
     return { allowed: false, reason: "subscription_past_due" };
   }
 
-  // No Stripe subscription — legacy trial window check
-  const createdAt = new Date(profesionistCreatedAt);
-  if (Number.isNaN(createdAt.getTime())) return { allowed: true, reason: "" };
-  const trialEnd = new Date(createdAt.getTime() + BILLING_TRIAL_DAYS * 24 * 60 * 60 * 1000);
-  if (Date.now() > trialEnd.getTime()) {
-    return { allowed: false, reason: "no_active_subscription" };
-  }
-
-  return { allowed: true, reason: "legacy_trial" };
+  // Billing enabled and no Stripe subscription means account is not activated yet.
+  return { allowed: false, reason: "no_active_subscription" };
 }
 

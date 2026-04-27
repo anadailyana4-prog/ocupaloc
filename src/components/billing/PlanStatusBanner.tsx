@@ -40,9 +40,11 @@ export function PlanStatusBanner({ status }: Props) {
         <span className="text-blue-200">
           Trial activ — mai ai <strong>{status.daysLeft} zile</strong> gratuite.
         </span>
-        <Link href="/preturi" className="ml-auto shrink-0 text-xs text-blue-400 underline underline-offset-2 hover:text-blue-300">
-          Abonează-te
-        </Link>
+        <form method="get" action="/api/billing/create-checkout" className="ml-auto shrink-0">
+          <button type="submit" className="text-xs text-blue-400 underline underline-offset-2 hover:text-blue-300">
+            Actualizează cardul
+          </button>
+        </form>
       </div>
     );
   }
@@ -55,9 +57,11 @@ export function PlanStatusBanner({ status }: Props) {
           <span className="text-orange-200">
             Trial expiră în <strong>{status.daysLeft === 0 ? "mai puțin de 24h" : `${status.daysLeft} ${status.daysLeft === 1 ? "zi" : "zile"}`}</strong> — după aceea nu mai primești programări noi.
           </span>
-          <Link href="/preturi" className="ml-auto shrink-0 text-xs font-semibold text-orange-400 underline underline-offset-2 hover:text-orange-300">
-            Activează acum
-          </Link>
+          <form method="get" action="/api/billing/create-checkout" className="ml-auto shrink-0">
+            <button type="submit" className="text-xs font-semibold text-orange-400 underline underline-offset-2 hover:text-orange-300">
+              Activează acum
+            </button>
+          </form>
         </div>
       );
     }
@@ -67,9 +71,11 @@ export function PlanStatusBanner({ status }: Props) {
         <span className="text-sky-200">
           Perioadă de trial — mai ai <strong>{status.daysLeft} zile</strong> gratuite.
         </span>
-        <Link href="/preturi" className="ml-auto shrink-0 text-xs text-sky-400 underline underline-offset-2 hover:text-sky-300">
-          Vezi planuri
-        </Link>
+        <form method="get" action="/api/billing/create-checkout" className="ml-auto shrink-0">
+          <button type="submit" className="text-xs text-sky-400 underline underline-offset-2 hover:text-sky-300">
+            Activează trial
+          </button>
+        </form>
       </div>
     );
   }
@@ -97,9 +103,11 @@ export function PlanStatusBanner({ status }: Props) {
         <span className="text-zinc-300">
           Abonamentul a fost anulat. Reabonează-te pentru a reactiva programările.
         </span>
-        <Link href="/preturi" className="ml-auto shrink-0 text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-300">
-          Reabonează-te
-        </Link>
+        <form method="get" action="/api/billing/create-checkout" className="ml-auto shrink-0">
+          <button type="submit" className="text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-300">
+            Reabonează-te
+          </button>
+        </form>
       </div>
     );
   }
@@ -111,9 +119,11 @@ export function PlanStatusBanner({ status }: Props) {
       <span className="text-red-200">
         Nu ai un abonament activ. Programările noi sunt blocate.
       </span>
-      <Link href="/preturi" className="ml-auto shrink-0 text-xs font-semibold text-red-400 underline underline-offset-2 hover:text-red-300">
-        Abonează-te
-      </Link>
+      <form method="get" action="/api/billing/create-checkout" className="ml-auto shrink-0">
+        <button type="submit" className="text-xs font-semibold text-red-400 underline underline-offset-2 hover:text-red-300">
+          Activează acum
+        </button>
+      </form>
     </div>
   );
 }
