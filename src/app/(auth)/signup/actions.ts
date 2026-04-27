@@ -154,6 +154,7 @@ export async function bootstrapTenantAfterSignup(input: {
       if (!Number.isFinite(price) || price < 0) return null;
       return {
         profesionist_id: profesionistId,
+        tenant_id: profesionistId,
         nume: name,
         durata_minute: duration,
         pret: price,
