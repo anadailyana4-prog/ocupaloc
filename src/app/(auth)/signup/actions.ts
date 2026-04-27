@@ -70,14 +70,23 @@ export async function bootstrapTenantAfterSignup(input: {
   phone?: string;
   services?: BootstrapService[];
   workDays?: BootstrapWorkDay[];
+  /** Optional: pass the userId directly from signUp response to skip getUser() */
+  userId?: string;
 }) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userErr
-  } = await supabase.auth.getUser();
-  if (userErr || !user) {
-    return { ok: false as const, error: "Nu ești autentificat." };
+  let userId: string;
+
+  if (input.userId) {
+    userId = input.userId;
+  } else {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error: userErr
+    } = await supabase.auth.getUser();
+    if (userErr || !user) {
+      return { ok: false as const, error: "Nu ești autentificat." };
+    }
+    userId = user.id;
   }
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -89,7 +98,7 @@ export async function bootstrapTenantAfterSignup(input: {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 
-  const { data: existing } = await admin.from("profesionisti").select("id").eq("user_id", user.id).maybeSingle();
+  const { data: existing } = await admin.from("profesionisti").select("id").eq("user_id", userId).maybeSingle();
   let profesionistId = existing?.id ?? null;
 
   if (!profesionistId) {
@@ -99,7 +108,7 @@ export async function bootstrapTenantAfterSignup(input: {
       const { data: inserted, error: insErr } = await admin
         .from("profesionisti")
         .insert({
-          user_id: user.id,
+          user_id: userId,
           nume_business: input.orgName,
           tip_activitate: mapActivity(input.activity),
           telefon: input.phone?.trim() || null,
@@ -122,7 +131,7 @@ export async function bootstrapTenantAfterSignup(input: {
 
       const isUserConflict = insErr.code === "23505" && insErr.message.toLowerCase().includes("user_id");
       if (isUserConflict) {
-        const { data: created } = await admin.from("profesionisti").select("id").eq("user_id", user.id).maybeSingle();
+        const { data: created } = await admin.from("profesionisti").select("id").eq("user_id", userId).maybeSingle();
         profesionistId = created?.id ?? null;
         continue;
       }

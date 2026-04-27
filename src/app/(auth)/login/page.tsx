@@ -47,6 +47,7 @@ function LoginForm() {
   const authReason = searchParams.get("reason");
   const authError = searchParams.get("error");
   const decodedAuthReason = authReason ? decodeURIComponent(authReason) : null;
+  const signupConfirmed = searchParams.get("signup") === "confirmat";
 
   const [alreadyLoggedIn, setAlreadyLoggedIn] = useState(false);
 
@@ -140,6 +141,11 @@ function LoginForm() {
           <CardDescription>Intră în contul OcupaLoc.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {signupConfirmed && (
+            <div className="rounded-md border border-emerald-700 bg-emerald-950 px-4 py-3 text-sm text-emerald-300">
+              ✓ Contul dumneavoastră a fost creat cu succes! Vă puteți autentifica acum.
+            </div>
+          )}
           {alreadyLoggedIn && (
             <div className="rounded-md border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-300">
               Ești deja autentificat.{" "}

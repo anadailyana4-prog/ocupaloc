@@ -119,6 +119,7 @@ export default function SignupPage() {
   const [workDays, setWorkDays] = useState<WorkDay[]>(DEFAULT_DAYS);
   const [workWeekend, setWorkWeekend] = useState(false);
   const [scheduleTouched, setScheduleTouched] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const progress = useMemo(() => (step / 3) * 100, [step]);
 
@@ -306,20 +307,20 @@ export default function SignupPage() {
       return;
     }
 
-    if (data.session) {
-      const boot = await bootstrapTenantAfterSignup({
-        orgName: businessName,
-        slug,
-        activity,
-        phone: cleanPhone,
-        services,
-        workDays
-      });
-      if (!boot.ok) {
-        setIsSubmitting(false);
-        toast.error(boot.error);
-        return;
-      }
+    // Bootstrap always runs with userId — works regardless of email confirmation setting
+    const boot = await bootstrapTenantAfterSignup({
+      orgName: businessName,
+      slug,
+      activity,
+      phone: cleanPhone,
+      services,
+      workDays,
+      userId: data.user.id
+    });
+    if (!boot.ok) {
+      setIsSubmitting(false);
+      toast.error(boot.error);
+      return;
     }
 
     localStorage.setItem("ocupaloc:lastSlug", slug);
@@ -336,8 +337,42 @@ export default function SignupPage() {
       activity
     });
     trackAuthEvent("signup_success", "email_password");
-    toast.success("Cont creat cu succes.");
-    router.push("/onboarding/bun-venit");
+    setIsSubmitting(false);
+    setEmailSent(true);
+  }
+
+  if (emailSent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4">
+        <Card className="w-full max-w-md border-zinc-800 bg-zinc-950 text-center">
+          <CardHeader className="space-y-4 pb-2">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-950 text-4xl">
+              📧
+            </div>
+            <CardTitle className="text-2xl">Verificați emailul</CardTitle>
+            <CardDescription className="text-base text-zinc-300">
+              Vă vom trimite un email de confirmare la adresa{" "}
+              <span className="font-semibold text-white">{email}</span>.
+              <br />
+              <span className="mt-2 block text-sm text-zinc-400">
+                Accesați linkul din email pentru a activa contul.
+              </span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-4">
+            <div className="rounded-md border border-zinc-800 bg-zinc-900 p-4 text-sm text-zinc-400">
+              Nu ați primit emailul? Verificați și folderul{" "}
+              <span className="font-medium text-zinc-300">Spam / Junk</span>.
+            </div>
+          </CardContent>
+          <CardFooter className="justify-center">
+            <Link href="/login" className="text-sm text-zinc-400 underline underline-offset-2 hover:text-white">
+              Mergi la autentificare
+            </Link>
+          </CardFooter>
+        </Card>
+      </div>
+    );
   }
 
   return (
