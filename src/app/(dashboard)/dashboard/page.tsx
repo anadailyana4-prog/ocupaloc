@@ -518,6 +518,9 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     return (
       <div className="flex min-h-[70vh] flex-col items-center justify-center px-6 py-20 text-center">
         <div className="mx-auto max-w-md space-y-6">
+          {sp.error ? (
+            <div className="rounded-2xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-200">{decodeURIComponent(sp.error)}</div>
+          ) : null}
           <div className="flex justify-center">
             <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-red-950/60 text-4xl">🔒</span>
           </div>
