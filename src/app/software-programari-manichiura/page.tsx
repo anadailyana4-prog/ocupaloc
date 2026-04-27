@@ -58,10 +58,10 @@ export default function SoftwareProgramariManichiuraPage() {
             control complet asupra agendei.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/signup" data-cta-location="seo_manichiura_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
+            <Link href="/signup?start=1" data-cta-location="seo_manichiura_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
               Încearcă gratuit
             </Link>
-            <Link href="/signup" data-cta-location="seo_manichiura_hero_secondary" className="rounded-lg border border-zinc-700 px-5 py-3 font-semibold text-zinc-200 hover:bg-zinc-800">
+            <Link href="/signup?start=1" data-cta-location="seo_manichiura_hero_secondary" className="rounded-lg border border-zinc-700 px-5 py-3 font-semibold text-zinc-200 hover:bg-zinc-800">
               Activează contul
             </Link>
           </div>

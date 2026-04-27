@@ -79,7 +79,7 @@ export function Header() {
               <Link href="/login">Intră în cont</Link>
             </Button>
             <Button asChild size="sm" className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105">
-              <Link href="/signup">Creează cont</Link>
+              <Link href="/signup?start=1">Creează cont</Link>
             </Button>
           </div>
         ) : (

@@ -25,7 +25,7 @@ export default function DesprePage() {
           Viziunea noastră este să facem programarea online standardul pentru saloanele locale din România. Începem cu frizerii, coafor și
           manichiură, apoi extindem acolo unde există cerere reală.
         </p>
-        <Link href="/signup" className="inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
+        <Link href="/signup?start=1" className="inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
           Începe gratuit
         </Link>
       </article>

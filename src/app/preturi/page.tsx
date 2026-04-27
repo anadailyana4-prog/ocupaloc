@@ -50,7 +50,7 @@ export default async function PreturiPage() {
               Activează abonamentul
             </Link>
           ) : (
-            <Link href="/signup" data-cta-location="preturi_hero_card" className="mt-6 inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
+            <Link href="/signup?start=1" data-cta-location="preturi_hero_card" className="mt-6 inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
               Încearcă 14 zile gratis
             </Link>
           )}
@@ -113,7 +113,7 @@ export default async function PreturiPage() {
               Activează abonamentul
             </Link>
           ) : (
-            <Link href="/signup" data-cta-location="preturi_footer_cta" className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
+            <Link href="/signup?start=1" data-cta-location="preturi_footer_cta" className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
               Creează cont gratuit
             </Link>
           )}

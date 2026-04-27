@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -106,7 +106,16 @@ const PRESET_SCHEDULES: Record<Activitate, { days: WorkDay[]; weekend: boolean }
 };
 
 export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupPageContent />
+    </Suspense>
+  );
+}
+
+function SignupPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
@@ -132,6 +141,14 @@ export default function SignupPage() {
   }, [step]);
 
   useEffect(() => {
+    if (searchParams.get("start") === "1") {
+      localStorage.removeItem(SIGNUP_STEP_STORAGE_KEY);
+      localStorage.removeItem(SIGNUP_EMAIL_STORAGE_KEY);
+      localStorage.removeItem(SIGNUP_NAME_STORAGE_KEY);
+      setStep(1);
+      return;
+    }
+
     if (typeof window === "undefined") return;
     const savedStep = Number(localStorage.getItem(SIGNUP_STEP_STORAGE_KEY));
     const savedEmail = localStorage.getItem(SIGNUP_EMAIL_STORAGE_KEY) ?? "";
@@ -143,7 +160,7 @@ export default function SignupPage() {
       if (savedName) setBusinessName(savedName);
       if (savedEmail) setEmail(savedEmail);
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

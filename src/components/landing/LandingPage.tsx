@@ -60,7 +60,7 @@ export function LandingPage() {
               Intră în cont
             </Link>
             <Link
-              href="/signup"
+              href="/signup?start=1"
               className="inline-flex h-9 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 px-3 text-xs font-semibold text-slate-900 hover:brightness-105 sm:px-4 sm:text-sm"
             >
               Creează cont
@@ -81,7 +81,7 @@ export function LandingPage() {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href="/signup" data-analytics="homepage_cta_signup" data-cta-location="homepage_hero" className="lux-cta">
+              <Link href="/signup?start=1" data-analytics="homepage_cta_signup" data-cta-location="homepage_hero" className="lux-cta">
                 Încearcă 14 zile gratis
               </Link>
               <button type="button" className="lux-outline" onClick={() => setIsWalkthroughOpen(true)}>
@@ -157,7 +157,7 @@ export function LandingPage() {
               </div>
 
               <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-amber-200/15 pt-5">
-                <Link href="/signup" className="lux-cta" data-cta-location="homepage_walkthrough_modal">
+                <Link href="/signup?start=1" className="lux-cta" data-cta-location="homepage_walkthrough_modal">
                   Încearcă 14 zile gratis
                 </Link>
                 <a href="#pricing" className="lux-outline" onClick={() => setIsWalkthroughOpen(false)}>
@@ -261,7 +261,7 @@ export function LandingPage() {
               <span>Suport pe email</span>
             </li>
           </ul>
-          <Link href="/signup" data-analytics="homepage_cta_signup" data-cta-location="homepage_pricing" className="block w-full text-center lux-cta">
+          <Link href="/signup?start=1" data-analytics="homepage_cta_signup" data-cta-location="homepage_pricing" className="block w-full text-center lux-cta">
             Începe gratuit
           </Link>
         </div>
@@ -292,7 +292,7 @@ export function LandingPage() {
           <h3 className="font-display text-3xl font-semibold text-amber-50 md:text-4xl">Dacă programările sunt haotice, soluția poate fi simplă.</h3>
           <p className="mt-3 text-base text-amber-100/70">Pornire rapidă, fără implementări complicate. Primești acces instant și poți testa complet 14 zile.</p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/signup" data-analytics="homepage_cta_signup" data-cta-location="homepage_final_cta" className="lux-cta">
+            <Link href="/signup?start=1" data-analytics="homepage_cta_signup" data-cta-location="homepage_final_cta" className="lux-cta">
               Încearcă 14 zile gratis
             </Link>
             <button type="button" className="lux-outline" onClick={() => setIsWalkthroughOpen(true)}>

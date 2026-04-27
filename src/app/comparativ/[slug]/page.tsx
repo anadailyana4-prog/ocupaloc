@@ -119,7 +119,7 @@ export default async function ComparativPage({ params }: PageProps) {
           ))}
         </section>
 
-        <Link href="/signup" className="inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
+        <Link href="/signup?start=1" className="inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
           Treci la OcupaLoc fără comision
         </Link>
       </div>

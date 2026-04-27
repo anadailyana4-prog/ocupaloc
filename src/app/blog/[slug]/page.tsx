@@ -151,7 +151,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/20 p-6 text-center">
           <h3 className="text-xl font-semibold">Vrei mai multe rezervări fără comision?</h3>
           <p className="mt-2 text-sm text-zinc-300">Începe cu un software salon la 59,99 RON și mută toate programările în online.</p>
-          <Link href="/signup" data-cta-location={`blog_${post.slug}_cta`} className="mt-4 inline-flex rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-500">
+          <Link href="/signup?start=1" data-cta-location={`blog_${post.slug}_cta`} className="mt-4 inline-flex rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-500">
             Creează cont gratuit
           </Link>
         </div>

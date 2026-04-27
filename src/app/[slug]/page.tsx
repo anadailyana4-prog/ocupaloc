@@ -141,7 +141,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
 
           <section className="rounded-2xl border border-indigo-500/30 bg-indigo-950/20 p-6 text-center">
             <p className="mb-3 text-lg font-semibold">Ești frizer în {orasName}? Creează cont gratuit</p>
-            <Link href="/signup" className="inline-flex rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-500">
+            <Link href="/signup?start=1" className="inline-flex rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-500">
               Creează cont gratuit
             </Link>
           </section>

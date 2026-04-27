@@ -67,10 +67,10 @@ export default function ComparatieCosturiProgramariPage() {
             Dacă vrei programari online fără comision, suport local și cost clar de 59,99 RON, OcupaLoc este software salon construit pentru piața din România.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/signup" data-cta-location="seo_alternativa_fresha_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
+            <Link href="/signup?start=1" data-cta-location="seo_alternativa_fresha_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
               Încearcă gratuit
             </Link>
-            <Link href="/signup" data-cta-location="seo_alternativa_fresha_hero_secondary" className="rounded-lg border border-zinc-700 px-5 py-3 font-semibold text-zinc-200 hover:bg-zinc-800">
+            <Link href="/signup?start=1" data-cta-location="seo_alternativa_fresha_hero_secondary" className="rounded-lg border border-zinc-700 px-5 py-3 font-semibold text-zinc-200 hover:bg-zinc-800">
               Mută-te pe OcupaLoc
             </Link>
           </div>

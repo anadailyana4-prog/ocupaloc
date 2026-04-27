@@ -59,10 +59,10 @@ export default function AplicatieProgramariFrizeriePage() {
             Organizează agenda rapid cu programari online fără comision. OcupaLoc este software salon pentru frizerie, cu preț clar: 59,99 RON pe lună.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/signup" data-cta-location="seo_frizerie_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
+            <Link href="/signup?start=1" data-cta-location="seo_frizerie_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
               Încearcă gratuit
             </Link>
-            <Link href="/signup" data-cta-location="seo_frizerie_hero_secondary" className="rounded-lg border border-zinc-700 px-5 py-3 font-semibold text-zinc-200 hover:bg-zinc-800">
+            <Link href="/signup?start=1" data-cta-location="seo_frizerie_hero_secondary" className="rounded-lg border border-zinc-700 px-5 py-3 font-semibold text-zinc-200 hover:bg-zinc-800">
               Activează aplicația
             </Link>
           </div>

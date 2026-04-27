@@ -221,7 +221,7 @@ function LoginForm() {
         <CardFooter className="flex flex-col gap-3 border-t border-zinc-800 pt-4">
           <p className="text-sm text-muted-foreground">
             Nu ai cont?{" "}
-            <Link href="/signup" className="text-primary underline-offset-4 hover:underline">
+            <Link href="/signup?start=1" className="text-primary underline-offset-4 hover:underline">
               Creează unul
             </Link>
           </p>
