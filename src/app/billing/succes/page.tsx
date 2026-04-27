@@ -34,7 +34,6 @@ export default async function BillingSuccessPage({ searchParams }: Props) {
           id: string;
           status: string;
           current_period_end?: number | null;
-          trial_end?: number | null;
         };
         await admin.from("subscriptions").upsert(
           {
@@ -44,9 +43,6 @@ export default async function BillingSuccessPage({ searchParams }: Props) {
             status: sub.status,
             current_period_end: sub.current_period_end
               ? new Date(sub.current_period_end * 1000).toISOString()
-              : null,
-            trial_end: sub.trial_end
-              ? new Date(sub.trial_end * 1000).toISOString()
               : null,
             updated_at: new Date().toISOString()
           },

@@ -115,7 +115,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     const admin = createSupabaseServiceClient();
     const { data: sub } = await admin
       .from("subscriptions")
-      .select("status, current_period_end, trial_end")
+      .select("status, current_period_end")
       .eq("profesionist_id", prof.id)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -124,7 +124,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     if (sub) {
       const now = Date.now();
       if (sub.status === "trialing") {
-        const end = sub.trial_end ? new Date(sub.trial_end as string).getTime() : now;
+        const end = sub.current_period_end ? new Date(sub.current_period_end as string).getTime() : now;
         planStatus = { kind: "trialing_stripe", daysLeft: Math.max(0, Math.ceil((end - now) / 86400000)) };
       } else if (sub.status === "active") {
         planStatus = { kind: "active", periodEnd: sub.current_period_end as string };
