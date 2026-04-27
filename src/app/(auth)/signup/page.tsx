@@ -113,8 +113,6 @@ export default function SignupPage() {
   const [businessName, setBusinessName] = useState("");
   const [telefon, setTelefon] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [services, setServices] = useState<ServiceDraft[]>(EMPTY_SERVICES);
   const [workDays, setWorkDays] = useState<WorkDay[]>(DEFAULT_DAYS);
   const [workWeekend, setWorkWeekend] = useState(false);
@@ -183,14 +181,6 @@ export default function SignupPage() {
       toast.error("Completează numele business-ului, telefonul și emailul.");
       return;
     }
-    if (step === 1 && password.length < 8) {
-      toast.error("Parola trebuie să aibă minim 8 caractere.");
-      return;
-    }
-    if (step === 1 && password !== confirmPassword) {
-      toast.error("Parolele nu coincid.");
-      return;
-    }
     trackOnboardingEvent("onboarding_step_completed", {
       step,
       page: "/signup"
@@ -220,16 +210,6 @@ export default function SignupPage() {
       setStep(1);
       return;
     }
-    if (password.length < 8) {
-      toast.error("Parola trebuie să aibă minim 8 caractere.");
-      setStep(1);
-      return;
-    }
-    if (password !== confirmPassword) {
-      toast.error("Parolele nu coincid.");
-      setStep(1);
-      return;
-    }
 
     const cleanEmail = email.trim().toLowerCase();
     const cleanPhone = telefon.trim().replace(/\s+/g, " ");
@@ -254,16 +234,17 @@ export default function SignupPage() {
       slug = `${baseSlug}-${suffix}`;
     }
 
+    const generatedPassword = `${crypto.randomUUID()}-Aa1!`;
     const { data, error } = await supabase.auth.signUp({
       email: cleanEmail,
-      password,
+      password: generatedPassword,
       options: {
         data: {
           full_name: businessName,
           phone: cleanPhone,
           activity
         },
-        emailRedirectTo: siteUrl ? `${siteUrl}/auth/bridge?next=/login?signup=confirmed` : undefined
+        emailRedirectTo: siteUrl ? `${siteUrl}/auth/bridge?next=/dashboard` : undefined
       }
     });
 
@@ -271,25 +252,39 @@ export default function SignupPage() {
       const errorText = (error?.message ?? "").toLowerCase();
       const alreadyRegistered = errorText.includes("already registered") || errorText.includes("already exists");
       if (alreadyRegistered) {
+        const response = await fetch("/api/auth/magic-link", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cleanEmail })
+        });
+
+        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
         setIsSubmitting(false);
-        toast.error("Emailul există deja. Intră în cont sau folosește resetarea parolei.");
+
+        if (!response.ok) {
+          toast.error(payload?.message ?? "Emailul există deja. Intră în cont sau folosește resetarea parolei.");
+          return;
+        }
+
+        const { error: magicLinkError } = await supabase.auth.signInWithOtp({
+          email: cleanEmail,
+          options: {
+            emailRedirectTo: siteUrl ? `${siteUrl}/auth/bridge?next=/dashboard` : undefined
+          }
+        });
+
+        if (magicLinkError) {
+          setIsSubmitting(false);
+          toast.error(magicLinkError.message);
+          return;
+        }
+
+        toast.success(payload?.message ?? "Emailul este deja înregistrat. Dacă emailul există, am trimis linkul.");
         router.push("/login");
         return;
       }
       setIsSubmitting(false);
       toast.error(error?.message ?? "Nu am putut crea contul.");
-      return;
-    }
-
-    if (!data.session) {
-      localStorage.setItem("ocupaloc:lastSlug", slug);
-      localStorage.removeItem(SIGNUP_STEP_STORAGE_KEY);
-      localStorage.setItem("ocupaloc:lastImportedClients", String(importedCount));
-      localStorage.setItem("ocupaloc:onboardingServices", JSON.stringify(services));
-      localStorage.setItem("ocupaloc:onboardingSchedule", JSON.stringify(workDays));
-      setIsSubmitting(false);
-      toast.success("Va vom trimite un email de confirmare. Confirmă adresa pentru a activa contul.");
-      router.push("/login?signup=pending");
       return;
     }
 
@@ -381,24 +376,6 @@ export default function SignupPage() {
                     placeholder="contact@business.ro"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Parolă</label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Minim 8 caractere"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Confirmă parola</label>
-                  <Input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    placeholder="Repetă parola"
-                  />
-                </div>
               </div>
 
               <Dialog open={csvOpen} onOpenChange={setCsvOpen}>
@@ -462,6 +439,15 @@ export default function SignupPage() {
                   }}
                 >
                   Adaugă alte servicii
+                </Button>
+                <Button
+                  type="button"
+                  className="bg-emerald-600 text-white hover:bg-emerald-700"
+                  onClick={() => {
+                    setStep(3);
+                  }}
+                >
+                  Finalizare
                 </Button>
                 <Button
                   type="button"
