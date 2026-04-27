@@ -1,7 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
-
 import { createClient } from "@supabase/supabase-js";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -137,47 +135,6 @@ export async function bootstrapTenantAfterSignup(input: {
     return { ok: false as const, error: "Nu am putut pregăti profilul profesionistului." };
   }
 
-  const { data: profRow, error: profRowErr } = await admin
-    .from("profesionisti")
-    .select("id, slug, nume_business")
-    .eq("id", profesionistId)
-    .maybeSingle();
-  if (profRowErr || !profRow?.id || !profRow.slug) {
-    return { ok: false as const, error: profRowErr?.message ?? "Nu am putut citi profilul profesionistului." };
-  }
-
-  const { error: tenantErr } = await admin.from("tenants").upsert(
-    {
-      id: profRow.id,
-      slug: profRow.slug,
-      name: profRow.nume_business ?? input.orgName
-    },
-    { onConflict: "id" }
-  );
-  if (tenantErr) {
-    return { ok: false as const, error: tenantErr.message };
-  }
-
-  const { data: membership } = await admin
-    .from("memberships")
-    .select("id")
-    .eq("tenant_id", profesionistId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!membership?.id) {
-    const { error: membershipErr } = await admin.from("memberships").insert({
-      id: randomUUID(),
-      tenant_id: profesionistId,
-      user_id: user.id,
-      role: "owner",
-      onboarding_state: "NEW"
-    });
-    if (membershipErr && membershipErr.code !== "23505") {
-      return { ok: false as const, error: membershipErr.message };
-    }
-  }
-
   const draftServices = (input.services ?? [])
     .map((service) => {
       const name = service.nume.trim();
@@ -188,7 +145,6 @@ export async function bootstrapTenantAfterSignup(input: {
       if (!Number.isFinite(price) || price < 0) return null;
       return {
         profesionist_id: profesionistId,
-        tenant_id: profesionistId,
         nume: name,
         durata_minute: duration,
         pret: price,
