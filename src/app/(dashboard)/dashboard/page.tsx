@@ -535,12 +535,14 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
               <li>✓ Link personalizat de rezervare</li>
               <li>✓ Suport în limba română</li>
             </ul>
-            <Link
-              href="/api/billing/create-checkout"
-              className="block w-full rounded-xl bg-indigo-600 px-6 py-3 text-center font-semibold text-white transition-colors hover:bg-indigo-500"
-            >
-              Activează abonamentul
-            </Link>
+            <form method="get" action="/api/billing/create-checkout">
+              <button
+                type="submit"
+                className="block w-full rounded-xl bg-indigo-600 px-6 py-3 text-center font-semibold text-white transition-colors hover:bg-indigo-500"
+              >
+                Activează abonamentul
+              </button>
+            </form>
           </div>
           <p className="text-xs text-zinc-500">
             Datele tale și istoricul programărilor sunt păstrate. Reactivarea este instantanee.
