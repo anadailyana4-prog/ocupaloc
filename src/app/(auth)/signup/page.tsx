@@ -131,8 +131,10 @@ export default function SignupPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const savedStep = Number(localStorage.getItem(SIGNUP_STEP_STORAGE_KEY));
-    if (Number.isInteger(savedStep) && savedStep >= 1 && savedStep <= 3) {
+    if (Number.isInteger(savedStep) && savedStep >= 1 && savedStep <= 2) {
       setStep(savedStep);
+    } else {
+      localStorage.removeItem(SIGNUP_STEP_STORAGE_KEY);
     }
   }, []);
 
@@ -316,6 +318,7 @@ export default function SignupPage() {
       activity
     });
     trackAuthEvent("signup_success", "email_password");
+    localStorage.removeItem(SIGNUP_STEP_STORAGE_KEY);
     toast.success("Cont creat cu succes.");
     router.push("/onboarding/bun-venit");
   }
