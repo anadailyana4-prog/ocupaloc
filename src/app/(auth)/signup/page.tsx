@@ -290,7 +290,7 @@ function SignupPageContent() {
           phone: cleanPhone,
           activity
         },
-        emailRedirectTo: siteUrl ? `${siteUrl}/auth/bridge?signup=1&next=/login` : undefined
+        emailRedirectTo: siteUrl ? `${siteUrl}/auth/callback?signup=1&next=/login` : undefined
       }
     });
 
