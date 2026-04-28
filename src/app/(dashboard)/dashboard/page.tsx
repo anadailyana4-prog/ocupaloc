@@ -18,7 +18,7 @@ import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
 
 type PageProps = {
-  searchParams?: Promise<{ saved?: string; error?: string; filter?: string; info?: string }>;
+  searchParams?: Promise<{ saved?: string; error?: string; filter?: string; info?: string; activated?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -511,7 +511,9 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   })();
 
   // No active subscription: send user to activation step instead of showing a dead-end lock screen.
-  if (planStatus.kind === "none") {
+  // Exception: if user just returned from Stripe checkout (?activated=1), don't redirect — the
+  // subscription is being synced and the webhook / billing/succes upsert may still be in flight.
+  if (planStatus.kind === "none" && sp.activated !== "1") {
     const slug = prof.slug?.trim();
     if (slug) {
       redirect(`/onboarding/bun-venit?slug=${encodeURIComponent(slug)}`);

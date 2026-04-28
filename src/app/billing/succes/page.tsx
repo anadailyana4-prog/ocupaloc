@@ -35,7 +35,13 @@ export default async function BillingSuccessPage({ searchParams }: Props) {
           status: string;
           current_period_end?: number | null;
         };
-        await admin.from("subscriptions").upsert(
+        console.log("[billing/succes] syncing subscription", {
+          profesionistId,
+          subId: sub.id,
+          status: sub.status,
+          customerId
+        });
+        const { error: upsertError } = await admin.from("subscriptions").upsert(
           {
             profesionist_id: profesionistId,
             stripe_subscription_id: sub.id,
@@ -48,6 +54,34 @@ export default async function BillingSuccessPage({ searchParams }: Props) {
           },
           { onConflict: "stripe_subscription_id" }
         );
+        if (upsertError) {
+          console.error("[billing/succes] upsert failed:", JSON.stringify(upsertError));
+          // Retry with insert ignore conflict on profesionist_id in case subscription ID mismatch
+          const { error: retryError } = await admin.from("subscriptions").upsert(
+            {
+              profesionist_id: profesionistId,
+              stripe_subscription_id: sub.id,
+              stripe_customer_id: customerId,
+              status: sub.status,
+              current_period_end: sub.current_period_end
+                ? new Date(sub.current_period_end * 1000).toISOString()
+                : null,
+              updated_at: new Date().toISOString()
+            },
+            { onConflict: "profesionist_id" }
+          );
+          if (retryError) {
+            console.error("[billing/succes] retry upsert also failed:", JSON.stringify(retryError));
+            throw new Error(`Subscription upsert failed: ${upsertError.message}`);
+          }
+        }
+        console.log("[billing/succes] subscription synced OK, status:", sub.status);
+      } else {
+        console.warn("[billing/succes] skipped upsert — missing profesionistId or subscription object", {
+          profesionistId,
+          hasSubscription: !!session.subscription,
+          subscriptionType: typeof session.subscription
+        });
       }
 
       // Send welcome email
@@ -69,5 +103,5 @@ export default async function BillingSuccessPage({ searchParams }: Props) {
     }
   }
 
-  redirect("/dashboard");
+  redirect("/dashboard?activated=1");
 }

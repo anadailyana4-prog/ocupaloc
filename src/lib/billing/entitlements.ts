@@ -48,7 +48,12 @@ export async function checkBookingEntitlement(
     return { allowed: false, reason: "subscription_past_due" };
   }
 
-  // Billing enabled and no Stripe subscription means account is not activated yet.
+  // Billing enabled and no Stripe subscription: allow if account is still within the legacy trial window.
+  const createdAt = new Date(_profesionistCreatedAt).getTime();
+  const trialEnd = createdAt + BILLING_TRIAL_DAYS * 24 * 60 * 60 * 1000;
+  if (Date.now() <= trialEnd) {
+    return { allowed: true, reason: "legacy_trial" };
+  }
   return { allowed: false, reason: "no_active_subscription" };
 }
 
