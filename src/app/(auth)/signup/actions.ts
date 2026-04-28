@@ -150,17 +150,24 @@ export async function bootstrapTenantAfterSignup(input: {
     const { data: profData } = await admin.from("profesionisti").select("slug, nume_business").eq("id", profesionistId).maybeSingle();
     const baseSlug = profData?.slug ?? profesionistId.slice(0, 8);
     const slugCandidates = [baseSlug, `${baseSlug}-${profesionistId.slice(0, 8)}`];
+    let tenantCreated = false;
     for (const candidateSlug of slugCandidates) {
       const { error: tenantErr } = await admin.from("tenants").insert({
         id: profesionistId,
         slug: candidateSlug,
         name: profData?.nume_business ?? baseSlug
       });
-      if (!tenantErr) break;
+      if (!tenantErr) {
+        tenantCreated = true;
+        break;
+      }
       const isSlugConflict = tenantErr.code === "23505" && tenantErr.message.toLowerCase().includes("slug");
       if (!isSlugConflict) {
         return { ok: false as const, error: tenantErr.message };
       }
+    }
+    if (!tenantCreated) {
+      return { ok: false as const, error: "Nu am putut sincroniza tenant-ul pentru acest cont." };
     }
   }
 
