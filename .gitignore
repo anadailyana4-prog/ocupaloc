@@ -23,3 +23,9 @@ package-lock.json
 .config
 tsconfig.tsbuildinfo
 test-results/
+
+# Debug scripts & temp files
+check_subscription.sh
+search_logic.py
+page-*.js
+page-*.js.map
