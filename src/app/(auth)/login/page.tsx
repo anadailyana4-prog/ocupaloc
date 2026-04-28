@@ -175,6 +175,14 @@ function LoginForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Parolă</FormLabel>
+                    <button
+                      type="button"
+                      className="mb-2 w-full text-left text-sm text-primary underline-offset-4 hover:underline"
+                      onClick={() => void sendPasswordReset()}
+                      disabled={busy}
+                    >
+                      Ai uitat parola?
+                    </button>
                     <FormControl>
                       <div className="relative">
                         <Input
@@ -209,14 +217,6 @@ function LoginForm() {
               {submitError ? <p className="text-sm text-red-400">{submitError}</p> : null}
             </form>
           </Form>
-          <button
-            type="button"
-            className="w-full text-center text-sm text-primary underline-offset-4 hover:underline"
-            onClick={() => void sendPasswordReset()}
-            disabled={busy}
-          >
-            Ai uitat parola?
-          </button>
         </CardContent>
         <CardFooter className="flex flex-col gap-3 border-t border-zinc-800 pt-4">
           <p className="text-sm text-muted-foreground">

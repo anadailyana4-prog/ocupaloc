@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   // A PKCE code can only be redeemed on the same device+browser where the
   // request originated, which breaks cross-device and incognito reset flows.
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
-  const redirectTo = siteUrl ? `${siteUrl}/auth/callback` : undefined;
+  const redirectTo = siteUrl ? `${siteUrl}/auth/callback?type=recovery` : undefined;
   if (redirectTo) {
     try {
       const admin = createSupabaseServiceClient();

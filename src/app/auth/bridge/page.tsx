@@ -36,6 +36,12 @@ export default function AuthBridgePage() {
     return new URL(window.location.href).searchParams.get("signup") === "1";
   }, []);
 
+  const isRecoveryFlow = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const current = new URL(window.location.href);
+    return current.searchParams.get("type") === "recovery";
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -88,6 +94,12 @@ export default function AuthBridgePage() {
           return;
         }
 
+        // Recovery links should send user to set a new password.
+        if (isRecoveryFlow) {
+          if (!cancelled) window.location.replace("/reset-password");
+          return;
+        }
+
         // Signup confirmation should only verify email and then send user to login.
         // Do not enforce an authenticated session in this branch.
         if (isSignupConfirmation) {
@@ -135,7 +147,7 @@ export default function AuthBridgePage() {
     return () => {
       cancelled = true;
     };
-  }, [safeNext, isSignupConfirmation]);
+  }, [safeNext, isSignupConfirmation, isRecoveryFlow]);
 
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
