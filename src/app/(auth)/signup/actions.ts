@@ -145,7 +145,7 @@ export async function bootstrapTenantAfterSignup(input: {
     return { ok: false as const, error: "Nu am putut pregăti profilul profesionistului." };
   }
 
-  // Ensure tenant record exists before inserting servicii (servicii.tenant_id FK → tenants.id)
+  // Best-effort tenant sync; signup should not fail if tenant bootstrap is temporarily inconsistent.
   const { data: existingTenant } = await admin.from("tenants").select("id").eq("id", profesionistId).maybeSingle();
   if (!existingTenant) {
     const { data: profData } = await admin.from("profesionisti").select("slug, nume_business").eq("id", profesionistId).maybeSingle();
@@ -159,7 +159,11 @@ export async function bootstrapTenantAfterSignup(input: {
       { onConflict: "id" }
     );
     if (tenantErr) {
-      return { ok: false as const, error: tenantErr.message };
+      reportError("auth", "bootstrap_tenant_sync_failed", new Error(tenantErr.message), {
+        code: tenantErr.code,
+        profesionistId,
+        userId
+      });
     }
   }
 
