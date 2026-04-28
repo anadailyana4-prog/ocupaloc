@@ -5,6 +5,19 @@ import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { normalizeBookingSlug } from "@/lib/booking/normalize-booking-slug";
 import { checkApiRateLimit } from "@/lib/rate-limit";
 
+/**
+ * GET /api/public/slots
+ *
+ * Returns available booking slots for a profesionist on a given date.
+ * No authentication required — public endpoint used by the booking widget.
+ *
+ * Rate limited: 60 requests per minute per slug + IP.
+ *
+ * @query slug      - Profesionist slug (e.g. "ana-nails")
+ * @query serviciuId - UUID of the selected service
+ * @query date      - ISO date string ("YYYY-MM-DD") in Europe/Bucharest timezone
+ * @returns 200 with `{ slots: string[] }` (ISO datetime strings), or 4xx with `{ error }`.
+ */
 export async function GET(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const slugRaw = req.nextUrl.searchParams.get("slug");

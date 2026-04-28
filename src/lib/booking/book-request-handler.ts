@@ -8,6 +8,19 @@ import { reportError } from "@/lib/observability";
 import { checkApiRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
+/**
+ * Core booking handler — validates the request body, checks rate limits,
+ * inserts the appointment in the database, and sends confirmation emails
+ * to both the client and the profesionist.
+ *
+ * Rate limited: 10 booking attempts per minute per IP + slug combination.
+ *
+ * @param body    - Raw (unvalidated) request body parsed from JSON
+ * @param ip      - Client IP address used for rate limiting
+ * @param headers - Original request headers (used for idempotency / tracing)
+ * @returns `{ ok: true, data }` on success or `{ ok: false, error, status }` on failure.
+ */
+
 const TZ = "Europe/Bucharest";
 
 const bodySchema = z.object({

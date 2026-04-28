@@ -3,7 +3,16 @@ import { handleBookRequest } from "@/lib/booking/book-request-handler";
 import { getRequestId, recordOperationalEvent } from "@/lib/ops-events";
 
 /**
- * Rezervare JSON (ex. BookingCard tenant): slug = profesionist.
+ * POST /api/book
+ *
+ * Creates a new appointment (programare) for a given profesionist slug.
+ * No authentication required — public endpoint used by the booking widget.
+ *
+ * Rate limiting is handled inside {@link handleBookRequest} (10 req/min per IP+slug).
+ *
+ * @body {BookingPayload} JSON with orgSlug, serviceId, staffId?, startTime,
+ *   clientName, clientPhone, clientEmail?
+ * @returns 200 with the created programare id, or 4xx/5xx with `{ error }` message.
  */
 export async function POST(req: Request) {
   const startedAt = Date.now();

@@ -8,6 +8,21 @@ import { validateCronSecret } from "@/lib/cron-auth";
 import { getRequestId, recordOperationalEvent } from "@/lib/ops-events";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
+/**
+ * POST /api/jobs/send-reminders
+ *
+ * Cron job that sends email reminders to clients with upcoming appointments.
+ * Called by Vercel Cron (or any scheduler) every 30 minutes.
+ *
+ * Authentication: requires `Authorization: Bearer <CRON_SECRET>` header
+ *   (or legacy `x-cron-secret` header).
+ *
+ * @body {{ type: "24h" | "2h" }} Which reminder window to process.
+ *   - "24h": appointments starting in ~24 hours
+ *   - "2h":  appointments starting in ~2 hours
+ * @returns 200 with `{ sent, skipped, errors }` counts, or 401/500.
+ */
+
 type ReminderType = "24h" | "2h";
 const TZ = "Europe/Bucharest";
 
