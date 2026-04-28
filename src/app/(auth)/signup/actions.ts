@@ -144,6 +144,26 @@ export async function bootstrapTenantAfterSignup(input: {
     return { ok: false as const, error: "Nu am putut pregăti profilul profesionistului." };
   }
 
+  // Ensure tenant record exists before inserting servicii (servicii.tenant_id FK → tenants.id)
+  const { data: existingTenant } = await admin.from("tenants").select("id").eq("id", profesionistId).maybeSingle();
+  if (!existingTenant) {
+    const { data: profData } = await admin.from("profesionisti").select("slug, nume_business").eq("id", profesionistId).maybeSingle();
+    const baseSlug = profData?.slug ?? profesionistId.slice(0, 8);
+    const slugCandidates = [baseSlug, `${baseSlug}-${profesionistId.slice(0, 8)}`];
+    for (const candidateSlug of slugCandidates) {
+      const { error: tenantErr } = await admin.from("tenants").insert({
+        id: profesionistId,
+        slug: candidateSlug,
+        name: profData?.nume_business ?? baseSlug
+      });
+      if (!tenantErr) break;
+      const isSlugConflict = tenantErr.code === "23505" && tenantErr.message.toLowerCase().includes("slug");
+      if (!isSlugConflict) {
+        return { ok: false as const, error: tenantErr.message };
+      }
+    }
+  }
+
   const draftServices = (input.services ?? [])
     .map((service) => {
       const name = service.nume.trim();
