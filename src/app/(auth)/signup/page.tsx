@@ -130,6 +130,7 @@ function SignupPageContent() {
   const [workWeekend, setWorkWeekend] = useState(false);
   const [scheduleTouched, setScheduleTouched] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const progress = useMemo(() => (step / 3) * 100, [step]);
 
@@ -505,13 +506,26 @@ function SignupPageContent() {
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium">Parolă</label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Minim 8 caractere"
-                    autoComplete="new-password"
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      placeholder="Minim 8 caractere"
+                      autoComplete="new-password"
+                      className="pr-12"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1 h-8 px-2 text-zinc-400 hover:text-zinc-100"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? "Ascunde parola" : "Arată parola"}
+                    >
+                      {showPassword ? "👁" : "🙈"}
+                    </Button>
+                  </div>
                 </div>
               </div>
 
