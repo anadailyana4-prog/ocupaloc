@@ -2,6 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 
+import { reportError } from "@/lib/observability";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type BootstrapService = {
@@ -210,10 +211,18 @@ export async function bootstrapTenantAfterSignup(input: {
 
         const { error: retryServicesErr } = await admin.from("servicii").insert(draftServices);
         if (retryServicesErr) {
-          return { ok: false as const, error: retryServicesErr.message };
+          reportError("auth", "bootstrap_services_insert_retry_failed", new Error(retryServicesErr.message), {
+            code: retryServicesErr.code,
+            profesionistId,
+            userId
+          });
         }
       } else {
-        return { ok: false as const, error: servicesErr.message };
+        reportError("auth", "bootstrap_services_insert_failed", new Error(servicesErr.message), {
+          code: servicesErr.code,
+          profesionistId,
+          userId
+        });
       }
     }
   }
