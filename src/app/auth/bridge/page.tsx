@@ -16,7 +16,10 @@ function isIgnorableSignupLinkError(error: unknown) {
     raw.includes("expired") ||
     raw.includes("already") ||
     raw.includes("otp") ||
-    raw.includes("token")
+    raw.includes("token") ||
+    raw.includes("pkce") ||
+    raw.includes("verifier") ||
+    raw.includes("storage")
   );
 }
 
