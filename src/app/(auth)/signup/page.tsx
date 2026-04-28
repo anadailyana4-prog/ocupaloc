@@ -309,6 +309,21 @@ function SignupPageContent() {
 
     let signupUser = data.user;
 
+    // Supabase can return a "fake success" for existing emails (anti-enumeration).
+    // In this case, user.identities is empty and no confirmation email is sent.
+    const looksLikeExistingUserWithoutNewSignup =
+      !error &&
+      !!data.user &&
+      Array.isArray((data.user as { identities?: unknown[] }).identities) &&
+      ((data.user as { identities?: unknown[] }).identities?.length ?? 0) === 0;
+
+    if (looksLikeExistingUserWithoutNewSignup) {
+      setIsSubmitting(false);
+      toast.error("Emailul este deja înregistrat. Intră în cont sau folosește resetarea parolei.");
+      router.push("/login");
+      return;
+    }
+
     if (!signupUser && recoverableSignupError) {
       // Some DB triggers can return a post-insert FK error even though Auth user was created.
       // Try to recover by signing in with the credentials just created.
