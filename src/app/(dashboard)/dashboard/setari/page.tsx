@@ -74,60 +74,7 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
         </div>
       ) : null}
 
-      {/* Public profile fields */}
-      <section className="lux-card space-y-4 p-6">
-        <div>
-          <h2 className="font-display text-xl font-semibold tracking-wide text-amber-100">Date publice</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Telefonul și descrierea apar pe pagina publică a business-ului tău.
-            {prof.slug ? (
-              <>
-                {" "}
-                <a
-                  href={`/${prof.slug}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-amber-300 hover:underline"
-                >
-                  Deschide pagina publică →
-                </a>
-              </>
-            ) : null}
-          </p>
-        </div>
-        <form action={updatePublicBusinessFields} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="telefon">Telefon</Label>
-            <Input
-              id="telefon"
-              name="telefon"
-              type="tel"
-              maxLength={50}
-              defaultValue={prof.telefon ?? ""}
-              className="border-zinc-700 bg-zinc-900"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Descriere</Label>
-            <Textarea
-              id="description"
-              name="description"
-              maxLength={2000}
-              rows={4}
-              defaultValue={prof.description ?? ""}
-              className="resize-y border-zinc-700 bg-zinc-900"
-            />
-          </div>
-          <Button
-            type="submit"
-            className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105"
-          >
-            Salvează datele publice
-          </Button>
-        </form>
-      </section>
-
-      {/* Pause settings */}
+      {/* Pause settings — first so it's visible without scrolling */}
       <section className="lux-card space-y-4 p-6">
         <div>
           <h2 className="font-display text-xl font-semibold tracking-wide text-amber-100">Pauze</h2>
@@ -184,6 +131,59 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
             className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105"
           >
             Salvează pauzele
+          </Button>
+        </form>
+      </section>
+
+      {/* Public profile fields */}
+      <section className="lux-card space-y-4 p-6">
+        <div>
+          <h2 className="font-display text-xl font-semibold tracking-wide text-amber-100">Date publice</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Telefonul și descrierea apar pe pagina publică a business-ului tău.
+            {prof.slug ? (
+              <>
+                {" "}
+                <a
+                  href={`/${prof.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-amber-300 hover:underline"
+                >
+                  Deschide pagina publică →
+                </a>
+              </>
+            ) : null}
+          </p>
+        </div>
+        <form action={updatePublicBusinessFields} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="telefon">Telefon</Label>
+            <Input
+              id="telefon"
+              name="telefon"
+              type="tel"
+              maxLength={50}
+              defaultValue={prof.telefon ?? ""}
+              className="border-zinc-700 bg-zinc-900"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Descriere</Label>
+            <Textarea
+              id="description"
+              name="description"
+              maxLength={2000}
+              rows={4}
+              defaultValue={prof.description ?? ""}
+              className="resize-y border-zinc-700 bg-zinc-900"
+            />
+          </div>
+          <Button
+            type="submit"
+            className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105"
+          >
+            Salvează datele publice
           </Button>
         </form>
       </section>

@@ -28,34 +28,51 @@ export function DashboardHeader() {
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950/80 px-4 py-3 backdrop-blur">
-      <div className="flex items-center gap-6">
-        <Link href="/dashboard" className="text-sm font-semibold tracking-tight">
-          OcupaLoc
+    <header className="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur">
+      <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center gap-6">
+          <Link href="/dashboard" className="text-sm font-semibold tracking-tight">
+            OcupaLoc
+          </Link>
+          <nav className="hidden sm:flex items-center gap-3 text-sm text-zinc-400 flex-wrap">
+            <Link href="/dashboard" className="transition hover:text-zinc-100">
+              Acasă
+            </Link>
+            <Link href="/dashboard/servicii" className="transition hover:text-zinc-100">
+              Servicii
+            </Link>
+            <Link href="/dashboard/program" className="transition hover:text-zinc-100">
+              Program
+            </Link>
+            <Link href="/dashboard/pagina" className="transition hover:text-zinc-100 hidden sm:inline">
+              Pagină publică
+            </Link>
+          </nav>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => router.back()} className="text-zinc-300 border-zinc-600">
+            ← Înapoi
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => void logout()} disabled={loading}>
+            {loading ? "Se iese…" : "Ieși din cont"}
+          </Button>
+        </div>
+      </div>
+      {/* Mobile nav — visible only below sm breakpoint */}
+      <nav className="flex sm:hidden items-center gap-4 overflow-x-auto px-4 pb-2 text-sm text-zinc-400 whitespace-nowrap">
+        <Link href="/dashboard" className="transition hover:text-zinc-100 py-1">
+          Acasă
         </Link>
-        <nav className="hidden sm:flex items-center gap-3 text-sm text-zinc-400 flex-wrap">
-          <Link href="/dashboard" className="transition hover:text-zinc-100">
-            Acasă
-          </Link>
-          <Link href="/dashboard/servicii" className="transition hover:text-zinc-100">
-            Servicii
-          </Link>
-          <Link href="/dashboard/program" className="transition hover:text-zinc-100">
-            Program
-          </Link>
-          <Link href="/dashboard/pagina" className="transition hover:text-zinc-100 hidden sm:inline">
-            Pagină publică
-          </Link>
-        </nav>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button type="button" variant="outline" size="sm" onClick={() => router.back()} className="text-zinc-300 border-zinc-600">
-          ← Înapoi
-        </Button>
-        <Button type="button" variant="outline" size="sm" onClick={() => void logout()} disabled={loading}>
-          {loading ? "Se iese…" : "Ieși din cont"}
-        </Button>
-      </div>
+        <Link href="/dashboard/servicii" className="transition hover:text-zinc-100 py-1">
+          Servicii
+        </Link>
+        <Link href="/dashboard/program" className="transition hover:text-zinc-100 py-1">
+          Program
+        </Link>
+        <Link href="/dashboard/pagina" className="transition hover:text-zinc-100 py-1">
+          Pagină publică
+        </Link>
+      </nav>
     </header>
   );
 }
