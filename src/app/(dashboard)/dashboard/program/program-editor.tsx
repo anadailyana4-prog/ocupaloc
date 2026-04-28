@@ -83,7 +83,7 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
   return (
     <div className="space-y-6">
       <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-200 transition">
-        ← Înapoi la dashboard
+        ← Înapoi la meniu
       </Link>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Program</h1>

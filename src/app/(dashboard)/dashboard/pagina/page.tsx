@@ -31,12 +31,17 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
     nume_business: string | null;
     telefon?: string | null;
     whatsapp?: string | null;
+    adresa_publica?: string | null;
     email: string | null;
     description: string | null;
     slug: string | null;
   };
 
   const attempts = [
+    "nume_business, telefon, whatsapp, adresa_publica, email, description, slug",
+    "nume_business, telefon, adresa_publica, email, description, slug",
+    "nume_business, whatsapp, adresa_publica, email, description, slug",
+    "nume_business, adresa_publica, email, description, slug",
     "nume_business, telefon, whatsapp, email, description, slug",
     "nume_business, telefon, email, description, slug",
     "nume_business, whatsapp, email, description, slug",
@@ -55,7 +60,8 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
 
     const missingTelefon = isMissingProfesionistiColumn(result.error, "telefon");
     const missingWhatsapp = isMissingProfesionistiColumn(result.error, "whatsapp");
-    if (missingTelefon || missingWhatsapp) {
+    const missingAddress = isMissingProfesionistiColumn(result.error, "adresa_publica");
+    if (missingTelefon || missingWhatsapp || missingAddress) {
       error = result.error;
       continue;
     }
@@ -86,11 +92,11 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
             /{org.slug}
           </Link>
           . WhatsApp este opțional: dacă îl completezi, apare buton dedicat; dacă îl lași gol, folosim telefonul doar ca fallback pentru contact.
-          Emailul e opțional și e folosit doar pentru alerte la rezervări noi.
+          Adresa publică este opțională și, dacă este completată, apare și în reminderul de 24h trimis clientului. Emailul e opțional și e folosit doar pentru alerte la rezervări noi.
         </p>
         <div className="flex flex-wrap gap-2 pt-2">
           <Button asChild variant="outline" className="rounded-full">
-            <Link href="/dashboard">Înapoi la dashboard</Link>
+            <Link href="/dashboard">Înapoi la meniu</Link>
           </Button>
           {org.slug?.trim() ? (
             <Button asChild variant="secondary" className="rounded-full">
@@ -145,6 +151,18 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
             className="border-zinc-700 bg-zinc-900"
           />
           <p className="text-xs text-muted-foreground">Opțional. Dacă e completat, apare butonul „Scrie pe WhatsApp” pe pagina publică.</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="publicAddress">Adresă publică</Label>
+          <Input
+            id="publicAddress"
+            name="publicAddress"
+            maxLength={200}
+            defaultValue={org.adresa_publica ?? ""}
+            placeholder="ex: Str. Exemplu 12, București"
+            className="border-zinc-700 bg-zinc-900"
+          />
+          <p className="text-xs text-muted-foreground">Opțional. Dacă o completezi, apare pe pagina publică și în reminderul de 24h trimis clientului.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email notificări rezervări</Label>

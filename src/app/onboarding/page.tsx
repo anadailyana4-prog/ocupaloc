@@ -4,6 +4,7 @@ import { saveOnboardingProfile } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { extractProgramPauza } from "@/lib/program";
 import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { getUser, createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -16,6 +17,7 @@ type OnboardingProfile = {
   telefon?: string | null;
   whatsapp?: string | null;
   tip_activitate?: string | null;
+  program?: unknown;
   pauza_intre_clienti?: number | null;
   onboarding_pas?: number | null;
 };
@@ -31,8 +33,8 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
   const supabase = await createSupabaseServerClient();
   const { data: profile, telefonColumnAvailable } = await selectWithTelefonFallback<OnboardingProfile>(
     async (columns) => await supabase.from("profesionisti").select(columns).eq("user_id", user.id).maybeSingle(),
-    "nume_business, telefon, whatsapp, tip_activitate, pauza_intre_clienti, onboarding_pas",
-    "nume_business, tip_activitate, pauza_intre_clienti, onboarding_pas"
+    "nume_business, telefon, whatsapp, tip_activitate, program, pauza_intre_clienti, onboarding_pas",
+    "nume_business, tip_activitate, program, pauza_intre_clienti, onboarding_pas"
   );
 
   if (
@@ -45,12 +47,13 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
   }
 
   const sp = searchParams ? await searchParams : {};
+  const pauzaProgram = extractProgramPauza(profile?.program ?? null);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center bg-background p-6">
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-bold tracking-tight">Finalizează profilul</h1>
-        <p className="text-sm text-muted-foreground">Completează datele de bază ca să accesezi dashboard-ul.</p>
+        <p className="text-sm text-muted-foreground">Completează datele de bază ca să accesezi meniul.</p>
       </div>
 
       {sp.error ? (
@@ -126,6 +129,33 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
           />
           <p className="text-xs text-muted-foreground">Lasă gol dacă nu vrei pauză implicită între programări.</p>
         </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="pauza_start">Pauză zilnică - ora de start</Label>
+            <Input
+              id="pauza_start"
+              name="pauza_start"
+              type="time"
+              defaultValue={pauzaProgram?.start ?? ""}
+              className="border-zinc-700 bg-zinc-900"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="pauza_durata">Pauză zilnică - durată (minute)</Label>
+            <Input
+              id="pauza_durata"
+              name="pauza_durata"
+              type="number"
+              min={15}
+              max={240}
+              step={5}
+              defaultValue={pauzaProgram?.durationMinutes ?? ""}
+              placeholder="ex: 60"
+              className="border-zinc-700 bg-zinc-900"
+            />
+          </div>
+        </div>
+        <p className="-mt-2 text-xs text-muted-foreground">Opțional. Dacă setezi ora și durata, în intervalul de pauză nu vor exista sloturi disponibile.</p>
         <Button type="submit" className="w-full rounded-full">
           Salvează și continuă
         </Button>

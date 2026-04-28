@@ -55,7 +55,7 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
           <p className="mt-1 text-sm text-muted-foreground">Configurează informațiile publice și regulile de rezervare.</p>
         </div>
         <Button asChild variant="secondary" className="rounded-full text-sm">
-          <Link href="/dashboard">← Dashboard</Link>
+          <Link href="/dashboard">← Meniu</Link>
         </Button>
       </div>
 

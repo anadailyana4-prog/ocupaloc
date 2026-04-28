@@ -302,7 +302,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
       {isOwner ? (
         <div className="flex items-center gap-3 border-b border-zinc-800 bg-zinc-900/90 px-4 py-2">
           <Link href="/dashboard" className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700 hover:text-white">
-            ← Înapoi la dashboard
+            ← Înapoi la meniu
           </Link>
           <span className="text-xs text-zinc-500">Ești pe pagina ta publică</span>
         </div>

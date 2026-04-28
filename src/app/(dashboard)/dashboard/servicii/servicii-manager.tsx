@@ -154,7 +154,7 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
   return (
     <div className="space-y-6">
       <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-200 transition">
-        ← Înapoi la dashboard
+        ← Înapoi la meniu
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
