@@ -4,11 +4,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { randomUUID } from "node:crypto";
 
-import { ActivationWidgets } from "./activation-widgets";
 import { AddManualBookingDialog, type ServiciuOption } from "./add-manual-booking-dialog";
 import { CopyPublicLinkButton } from "./copy-public-link";
 import { ProgramariTable, type ProgramareRow } from "./programari-table";
-import { PlanStatusBanner, type PlanStatus } from "@/components/billing/PlanStatusBanner";
+import { type PlanStatus } from "@/components/billing/PlanStatusBanner";
 import { Button } from "@/components/ui/button";
 import { BILLING_TRIAL_DAYS, isBillingEnabled } from "@/lib/billing/config";
 import { extractProgramPauza, getProgramSlotConfig, parseProgramJson, ziKeyFromDate } from "@/lib/program";
@@ -59,9 +58,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     redirect("/login");
   }
 
-  let greetName = user.email?.split("@")[0] ?? "acolo";
-
-  const { data: prof, error: profErr, telefonColumnAvailable } = await selectWithTelefonFallback<DashboardProfile>(
+  const { data: prof, error: profErr } = await selectWithTelefonFallback<DashboardProfile>(
     async (columns) => await supabase.from("profesionisti").select(columns).eq("user_id", user.id).maybeSingle(),
     "id, created_at, slug, telefon, description, nume_business, onboarding_pas, program, pauza_intre_clienti, timp_pregatire, lucreaza_acasa",
     "id, created_at, slug, description, nume_business, onboarding_pas, program, pauza_intre_clienti, timp_pregatire, lucreaza_acasa"
@@ -103,10 +100,6 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
         onboarding_state: "NEW"
       });
     }
-  }
-
-  if (prof.nume_business?.trim()) {
-    greetName = prof.nume_business.trim();
   }
 
   // --- Plan status for billing banner ---
@@ -182,8 +175,6 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     programRaw &&
       Object.values(programRaw).some((value) => Array.isArray(value) && value.length === 2 && typeof value[0] === "string" && typeof value[1] === "string")
   );
-  const profileDone = Boolean(prof.nume_business?.trim() && (!telefonColumnAvailable || prof.telefon?.trim()));
-
   const todayLocal = formatInTimeZone(new Date(), "Europe/Bucharest", "yyyy-MM-dd");
   const dayStartIso = toDate(`${todayLocal}T00:00:00`, { timeZone: "Europe/Bucharest" }).toISOString();
   const dayEndIso = toDate(`${todayLocal}T23:59:59`, { timeZone: "Europe/Bucharest" }).toISOString();
@@ -470,14 +461,6 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     .gte("data_start", new Date().toISOString())
     .order("data_start", { ascending: true })
     .limit(20);
-
-  // For the post-activation habit panel: count future confirmed bookings only (avoids stale past bookings)
-  const { count: allTimeConfirmedCount } = await supabase
-    .from("programari")
-    .select("*", { count: "exact", head: true })
-    .eq("profesionist_id", prof.id)
-    .eq("status", "confirmat")
-    .gte("data_start", new Date().toISOString());
 
   // Next-best-action: single prioritized hint based on current state
   const nextBestAction: { icon: string; message: string; href: string | null; urgent: boolean } | null = (() => {

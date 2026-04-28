@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { formatInTimeZone } from "date-fns-tz";
 
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
@@ -22,7 +22,7 @@ function csvRow(fields: string[]): string {
   );
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   // Auth: must be a logged-in profesionist
   const supabase = await createSupabaseServerClient();
   const user = await getUser();

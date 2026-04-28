@@ -101,7 +101,9 @@ test("handleBookRequest returns 409 when slot is unavailable", async () => {
 });
 
 test("handleBookRequest succeeds when clientEmail is absent", async () => {
-  const { clientEmail: _omitted, ...payloadWithoutEmail } = validPayload;
+  const payloadWithoutEmail = Object.fromEntries(
+    Object.entries(validPayload).filter(([k]) => k !== "clientEmail")
+  ) as typeof validPayload;
   let capturedEmailClient: string | null | undefined = "SENTINEL";
   const deps = makeDeps({
     insertBooking: async (_admin, input) => {

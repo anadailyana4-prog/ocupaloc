@@ -223,7 +223,7 @@ function BookingCardLive(props: LiveProps) {
     setSuccessSummary(null);
   }, [selectedServiceId]);
 
-  const serviceTitle = (s: LegacyService | TenantService) => (tenant ? (s as TenantService).name : (s as LegacyService).nume);
+  const serviceTitle = useCallback((s: LegacyService | TenantService) => (tenant ? (s as TenantService).name : (s as LegacyService).nume), [tenant]);
   const serviceDurationMin = (s: LegacyService | TenantService | null) => {
     if (!s) return 0;
     return tenant ? (s as TenantService).duration_min : (s as LegacyService).durata_minute;
@@ -466,7 +466,7 @@ function BookingCardLive(props: LiveProps) {
     if (!hasServiceSearch) return baseServices;
 
     return baseServices.filter((service) => normalizeSearch(serviceTitle(service)).includes(normalizedServiceSearch));
-  }, [showAllServices, hasServiceSearch, services, highlightedServices, normalizedServiceSearch, tenant]);
+  }, [showAllServices, hasServiceSearch, services, highlightedServices, normalizedServiceSearch, serviceTitle]);
 
   return (
     <div className={cardShell}>

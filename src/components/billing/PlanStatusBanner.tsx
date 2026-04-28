@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export type PlanStatus =
   | { kind: "trial"; daysLeft: number }
   | { kind: "active"; periodEnd: string }
