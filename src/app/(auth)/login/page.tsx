@@ -76,7 +76,12 @@ function LoginForm() {
 
     if (error) {
       setBusy(false);
-      setSubmitError(error.message);
+      const isUnconfirmed = error.message.toLowerCase().includes("email not confirmed");
+      setSubmitError(
+        isUnconfirmed
+          ? "Trebuie să confirmi emailul înainte de a te autentifica. Verifică inbox-ul și dă click pe linkul din email."
+          : error.message
+      );
       void reportAuthOutcome("failure", error.message);
       return;
     }
