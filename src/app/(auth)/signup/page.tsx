@@ -309,19 +309,27 @@ function SignupPageContent() {
       return;
     }
 
-    // Bootstrap always runs with userId — works regardless of email confirmation setting
-    const boot = await bootstrapTenantAfterSignup({
-      orgName: businessName,
-      slug,
-      activity,
-      phone: cleanPhone,
-      services,
-      workDays,
-      userId: data.user.id
-    });
-    if (!boot.ok) {
-      const message = (boot.error ?? "").trim();
-      toast.error(message || "Contul a fost creat, dar configurarea inițială nu s-a finalizat complet. Poți continua din cont.");
+    // Bootstrap always runs with userId — works regardless of email confirmation setting.
+    // Wrapped in try/catch: any server-action crash must never block the email-confirmation screen.
+    try {
+      const boot = await bootstrapTenantAfterSignup({
+        orgName: businessName,
+        slug,
+        activity,
+        phone: cleanPhone,
+        services,
+        workDays,
+        userId: data.user.id
+      });
+      if (!boot.ok) {
+        // Non-fatal: show informational message but always continue
+        toast.info(
+          (boot.error ?? "").trim() ||
+            "Contul a fost creat. Serviciile pot fi adăugate din cont."
+        );
+      }
+    } catch {
+      // Server action threw — non-fatal, user can configure from dashboard
     }
 
     localStorage.setItem("ocupaloc:lastSlug", slug);

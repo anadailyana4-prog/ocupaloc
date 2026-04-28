@@ -210,16 +210,21 @@ export async function bootstrapTenantAfterSignup(input: {
           { onConflict: "id" }
         );
         if (tenantErr) {
-          return { ok: false as const, error: tenantErr.message };
-        }
-
-        const { error: retryServicesErr } = await admin.from("servicii").insert(draftServices);
-        if (retryServicesErr) {
-          reportError("auth", "bootstrap_services_insert_retry_failed", new Error(retryServicesErr.message), {
-            code: retryServicesErr.code,
+          // Non-fatal: log and continue — servicii can be added from dashboard
+          reportError("auth", "bootstrap_tenant_recovery_failed", new Error(tenantErr.message), {
+            code: tenantErr.code,
             profesionistId,
             userId
           });
+        } else {
+          const { error: retryServicesErr } = await admin.from("servicii").insert(draftServices);
+          if (retryServicesErr) {
+            reportError("auth", "bootstrap_services_insert_retry_failed", new Error(retryServicesErr.message), {
+              code: retryServicesErr.code,
+              profesionistId,
+              userId
+            });
+          }
         }
       } else {
         reportError("auth", "bootstrap_services_insert_failed", new Error(servicesErr.message), {
