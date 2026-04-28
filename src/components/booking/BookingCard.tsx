@@ -527,13 +527,13 @@ function BookingCardLive(props: LiveProps) {
                 <p className="text-xs text-zinc-500">Setate de profesionist la crearea contului ca să evidențieze serviciile cele mai cerute.</p>
               </div>
             ) : null}
-            {services.length > 6 ? (
+            {services.length > 1 ? (
               <div className="mb-3">
                 <Input
                   type="search"
                   value={serviceSearch}
                   onChange={(event) => setServiceSearch(event.target.value)}
-                  placeholder="Caută serviciu"
+                  placeholder="Caută serviciu…"
                   className="border-zinc-700 bg-zinc-900"
                 />
               </div>
