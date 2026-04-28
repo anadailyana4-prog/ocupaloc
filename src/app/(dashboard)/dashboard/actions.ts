@@ -7,6 +7,8 @@ import { z } from "zod";
 import { logBookingStatusEvent } from "@/lib/booking/status-events";
 import { notifyClientBookingCancelledByProvider, notifyClientBookingConfirmation, notifyClientPostCompletion } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
+import { withProgramPauza } from "@/lib/program";
+import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { writeWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -34,7 +36,8 @@ export async function cancelBooking(id: string): Promise<BookingActionResult> {
   if (!ctx) {
     return { success: false, message: "Nu ești autentificat sau lipsește profilul." };
   }
-  const { error } = await ctx.supabase
+  const admin = createSupabaseServiceClient();
+  const { error } = await admin
     .from("programari")
     .update({ status: "anulat" })
     .eq("id", parsed.data)
@@ -62,7 +65,8 @@ export async function completeBooking(id: string): Promise<BookingActionResult> 
   if (!ctx) {
     return { success: false, message: "Nu ești autentificat sau lipsește profilul." };
   }
-  const { error } = await ctx.supabase
+  const admin = createSupabaseServiceClient();
+  const { error } = await admin
     .from("programari")
     .update({ status: "finalizat" })
     .eq("id", parsed.data)
@@ -90,7 +94,8 @@ export async function markNoShow(id: string): Promise<BookingActionResult> {
   if (!ctx) {
     return { success: false, message: "Nu ești autentificat sau lipsește profilul." };
   }
-  const { error } = await ctx.supabase
+  const admin = createSupabaseServiceClient();
+  const { error } = await admin
     .from("programari")
     .update({ status: "noaparit" })
     .eq("id", parsed.data)
@@ -107,6 +112,35 @@ export async function markNoShow(id: string): Promise<BookingActionResult> {
 const publicFields = z.object({
   telefon: z.string().trim().max(50).optional().transform((s) => (s === "" ? null : s)),
   description: z.string().trim().max(2000).optional().transform((s) => (s === "" ? null : s))
+});
+
+const pauzeFields = z.object({
+  pauza_intre_clienti: z.preprocess(
+    (v) => {
+      if (typeof v !== "string") return undefined;
+      const t = v.trim();
+      if (!t) return undefined;
+      return Number(t);
+    },
+    z.number().int("Pauza trebuie să fie un număr întreg.").min(0, "Pauza minimă este 0 minute.").max(120, "Pauza maximă este 120 minute.").optional()
+  ),
+  pauza_start: z
+    .string()
+    .trim()
+    .optional()
+    .transform((s) => {
+      if (!s) return undefined;
+      return /^\d{2}:\d{2}$/.test(s) ? s : "invalid";
+    }),
+  pauza_durata: z.preprocess(
+    (v) => {
+      if (typeof v !== "string") return undefined;
+      const t = v.trim();
+      if (!t) return undefined;
+      return Number(t);
+    },
+    z.number().int("Durata pauzei trebuie să fie un număr întreg.").min(15, "Durata minimă a pauzei zilnice este 15 minute.").max(240, "Durata maximă a pauzei zilnice este 240 minute.").optional()
+  )
 });
 
 const smartRulesFields = z.object({
@@ -143,6 +177,74 @@ export async function updatePublicBusinessFields(formData: FormData) {
   if (error) {
     redirect("/dashboard/setari?error=" + encodeURIComponent(error.message ?? "Nu am putut salva datele publice."));
   }
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/setari");
+  redirect("/dashboard/setari?saved=1");
+}
+
+export async function updatePauzeSettings(formData: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/login");
+  }
+
+  const raw = {
+    pauza_intre_clienti: String(formData.get("pauza_intre_clienti") ?? ""),
+    pauza_start: String(formData.get("pauza_start") ?? ""),
+    pauza_durata: String(formData.get("pauza_durata") ?? "")
+  };
+  const parsed = pauzeFields.safeParse(raw);
+  if (!parsed.success) {
+    redirect("/dashboard/setari?error=" + encodeURIComponent("Date invalide la pauze."));
+  }
+
+  if (parsed.data.pauza_start === "invalid") {
+    redirect("/dashboard/setari?error=" + encodeURIComponent("Ora de start a pauzei zilnice este invalidă (format HH:MM)."));
+  }
+
+  const hasBreakStart = Boolean(parsed.data.pauza_start);
+  const hasBreakDuration = parsed.data.pauza_durata !== undefined;
+  if (hasBreakStart !== hasBreakDuration) {
+    redirect("/dashboard/setari?error=" + encodeURIComponent("Completează atât ora de start cât și durata pauzei zilnice."));
+  }
+
+  // Fetch existing program to merge pauza config
+  const { data: prof } = await supabase
+    .from("profesionisti")
+    .select("program")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const pauzaProgramConfig =
+    hasBreakStart && hasBreakDuration
+      ? {
+          start: parsed.data.pauza_start as string,
+          durationMinutes: parsed.data.pauza_durata as number
+        }
+      : null;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updateValues: Record<string, any> = {};
+  if (parsed.data.pauza_intre_clienti !== undefined) {
+    updateValues.pauza_intre_clienti = parsed.data.pauza_intre_clienti;
+  }
+  if (pauzaProgramConfig !== null) {
+    updateValues.program = withProgramPauza(prof?.program ?? null, pauzaProgramConfig);
+  } else if (!hasBreakStart && !hasBreakDuration) {
+    // Clear pauza zilnica from program if both fields are empty
+    updateValues.program = withProgramPauza(prof?.program ?? null, null);
+  }
+
+  if (Object.keys(updateValues).length > 0) {
+    const { error } = await supabase.from("profesionisti").update(updateValues).eq("user_id", user.id);
+    if (error) {
+      redirect("/dashboard/setari?error=" + encodeURIComponent(error.message ?? "Nu am putut salva setările de pauze."));
+    }
+  }
+
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/setari");
   redirect("/dashboard/setari?saved=1");
@@ -204,7 +306,9 @@ const manualBookingSchema = z.object({
   oraStr: z.string().regex(/^\d{2}:\d{2}$/, "Ora invalidă.")
 });
 
-export type ManualBookingResult = { success: true } | { success: false; message: string };
+export type ManualBookingResult =
+  | { success: true; clientNotification: "queued" | "failed" | "not_requested" }
+  | { success: false; message: string };
 
 export async function addManualBooking(input: {
   numeClient: string;
@@ -231,7 +335,9 @@ export async function addManualBooking(input: {
     return { success: false, message: "Nu ești autentificat sau lipsește profilul." };
   }
 
-  const { data: srv, error: srvErr } = await ctx.supabase
+  const admin = createSupabaseServiceClient();
+
+  const { data: srv, error: srvErr } = await admin
     .from("servicii")
     .select("id, durata_minute")
     .eq("id", parsed.data.serviciuId)
@@ -242,21 +348,19 @@ export async function addManualBooking(input: {
     return { success: false, message: "Serviciu invalid sau nu îți aparține." };
   }
 
-  const dataStart = new Date(`${parsed.data.dataStr}T${parsed.data.oraStr}:00`);
+  const dataStart = toDate(`${parsed.data.dataStr}T${parsed.data.oraStr}:00`, { timeZone: "Europe/Bucharest" });
   if (Number.isNaN(dataStart.getTime())) {
     return { success: false, message: "Data sau ora sunt invalide." };
   }
 
-  if (dataStart.getTime() <= Date.now()) {
-    return { success: false, message: "Nu poți adăuga o programare în trecut." };
-  }
-
+  // We already checked if appointmentDate < new Date() above, which uses toDate correctly
   const dataFinal = new Date(dataStart.getTime() + (srv.durata_minute ?? 60) * 60_000);
 
-  const { data: inserted, error: insErr } = await ctx.supabase
+  const { data: inserted, error: insErr } = await admin
     .from("programari")
     .insert({
       profesionist_id: ctx.profId,
+      tenant_id: ctx.profId,
       serviciu_id: parsed.data.serviciuId,
       nume_client: parsed.data.numeClient,
       telefon_client: parsed.data.telefonClient,
@@ -276,15 +380,19 @@ export async function addManualBooking(input: {
     return { success: false, message: insErr.message };
   }
 
-  // Notifică clientul dacă a furnizat email (fire-and-forget).
+  let clientNotification: "queued" | "failed" | "not_requested" = "not_requested";
   if (inserted?.id && parsed.data.emailClient) {
-    notifyClientBookingConfirmation(inserted.id).catch((err) =>
-      reportError("email", "manual_booking_notify_client_failed", err, { bookingId: inserted.id })
-    );
+    try {
+      const sent = await notifyClientBookingConfirmation(inserted.id);
+      clientNotification = sent ? "queued" : "failed";
+    } catch (err) {
+      clientNotification = "failed";
+      reportError("email", "manual_booking_notify_client_failed", err, { bookingId: inserted.id });
+    }
   }
 
   await logBookingStatusEvent({ bookingId: inserted.id, status: "confirmat", source: "salon_manual" });
 
   revalidatePath("/dashboard");
-  return { success: true };
+  return { success: true, clientNotification };
 }
