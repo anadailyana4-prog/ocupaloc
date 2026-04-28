@@ -334,6 +334,43 @@ function SignupPageContent() {
     }
 
     if (error && !recoverableSignupError) {
+      const failedToSendEmail = (error.message ?? "").toLowerCase().includes("error sending confirmation email");
+      if (failedToSendEmail) {
+        const fallbackResponse = await fetch("/api/auth/signup-fallback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: cleanEmail,
+            password,
+            fullName: businessName,
+            phone: cleanPhone,
+            activity,
+            redirectTo: siteUrl ? `${siteUrl}/auth/callback?signup=1&next=/login` : undefined
+          })
+        });
+
+        const fallbackPayload = (await fallbackResponse.json().catch(() => null)) as
+          | { message?: string; code?: string }
+          | null;
+
+        if (fallbackResponse.status === 409 || fallbackPayload?.code === "already_registered") {
+          setIsSubmitting(false);
+          toast.error("Emailul este deja înregistrat. Intră în cont cu parola sau folosește resetarea parolei.");
+          router.push("/login");
+          return;
+        }
+
+        if (fallbackResponse.ok) {
+          setIsSubmitting(false);
+          setEmailSent(true);
+          return;
+        }
+
+        setIsSubmitting(false);
+        toast.error(fallbackPayload?.message ?? "Nu am putut trimite emailul de confirmare.");
+        return;
+      }
+
       const errorText = (error?.message ?? "").toLowerCase();
       const alreadyRegistered = errorText.includes("already registered") || errorText.includes("already exists");
       if (alreadyRegistered) {
