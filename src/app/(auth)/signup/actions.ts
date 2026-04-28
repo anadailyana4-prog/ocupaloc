@@ -1,8 +1,11 @@
 "use server";
 
+import { headers } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
 import { reportError } from "@/lib/observability";
+import { checkApiRateLimit } from "@/lib/rate-limit";
+import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type BootstrapService = {
@@ -74,6 +77,15 @@ export async function bootstrapTenantAfterSignup(input: {
   /** Optional: pass the userId directly from signUp response to skip getUser() */
   userId?: string;
 }) {
+  // Rate limit: max 5 signup bootstraps per 15 minutes per IP
+  const hdrs = await headers();
+  const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rateLimitAdmin = createSupabaseServiceClient();
+  const { allowed } = await checkApiRateLimit(rateLimitAdmin, `signup:${ip}`, 5, 15 * 60 * 1000);
+  if (!allowed) {
+    return { ok: false as const, error: "Prea multe încercări. Încearcă din nou în 15 minute." };
+  }
+
   let userId: string;
 
   if (input.userId) {

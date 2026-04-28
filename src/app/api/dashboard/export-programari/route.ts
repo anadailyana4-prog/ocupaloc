@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { formatInTimeZone } from "date-fns-tz";
 
+import { checkApiRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
 
@@ -41,6 +42,13 @@ export async function GET() {
   }
 
   const admin = createSupabaseServiceClient();
+
+  // Rate limit: max 20 exports per hour per user
+  const { allowed } = await checkApiRateLimit(admin, `export:${user.id}`, 20, 60 * 60 * 1000);
+  if (!allowed) {
+    return NextResponse.json({ error: "Prea multe cereri. Încearcă din nou mai târziu." }, { status: 429 });
+  }
+
   const { data: rows, error } = await admin
     .from("programari")
     .select("id, data_start, data_final, status, nume_client, email_client, telefon_client, servicii(nume)")
