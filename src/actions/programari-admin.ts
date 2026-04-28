@@ -77,6 +77,7 @@ export async function createStaffProgramare(input: {
 
   const { data: inserted, error: ins } = await admin.from("programari").insert({
     profesionist_id: profId,
+    tenant_id: profId,
     serviciu_id: srv.id,
     nume_client: input.numeClient.trim(),
     telefon_client: input.telefonClient.trim(),

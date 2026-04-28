@@ -60,7 +60,10 @@ export async function createPublicBooking(raw: z.infer<typeof schema>) {
       reportError("email", "notify_client_failed", notifyClientResult.reason, { slug: normalizedSlug });
     }
 
-    return { ok: true as const };
+    const clientNotification =
+      notifyClientResult.status === "fulfilled" && notifyClientResult.value ? "queued" : "failed";
+
+    return { ok: true as const, clientNotification };
   } catch (e) {
     const message = e instanceof Error ? e.message : "Eroare la salvare.";
     reportError("booking", "public_booking_failed", e, { slug: normalizedSlug });

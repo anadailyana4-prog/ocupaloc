@@ -1,4 +1,5 @@
-import { addHours } from "date-fns";
+import { addHours, addMinutes, subMinutes } from "date-fns";
+import { formatInTimeZone, toDate } from "date-fns-tz";
 import { NextRequest, NextResponse } from "next/server";
 
 import { notifyClientReminder } from "@/lib/email/programare-notify";
@@ -8,6 +9,7 @@ import { getRequestId, recordOperationalEvent } from "@/lib/ops-events";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 type ReminderType = "24h" | "2h";
+const TZ = "Europe/Bucharest";
 
 function isMissingProgramariRemindersTable(error: { message?: string; code?: string } | null | undefined): boolean {
   const message = error?.message?.toLowerCase() ?? "";
@@ -17,17 +19,19 @@ function isMissingProgramariRemindersTable(error: { message?: string; code?: str
 function getWindow(type: ReminderType): { from: Date; to: Date } {
   const now = new Date();
   if (type === "24h") {
-    // Window covers the full next-day slice so a once-daily cron catches all booking
-    // times regardless of the hour they are scheduled. The programari_reminders
-    // dedup table prevents a booking from receiving the same reminder twice.
+    // Daily at 11:00: target only bookings from the next calendar day
+    // (Europe/Bucharest), so clients get confirm/cancel reminder for "mâine".
+    const nextDay = formatInTimeZone(addHours(now, 24), TZ, "yyyy-MM-dd");
     return {
-      from: addHours(now, 23),
-      to: addHours(now, 47)
+      from: toDate(`${nextDay}T00:00:00`, { timeZone: TZ }),
+      to: toDate(`${nextDay}T23:59:59`, { timeZone: TZ })
     };
   }
+  // 2h reminder: same cadence/tolerance approach as 24h.
+  const target = addHours(now, 2);
   return {
-    from: addHours(now, 1),
-    to: addHours(now, 3)
+    from: subMinutes(target, 2),
+    to: addMinutes(target, 3)
   };
 }
 
@@ -147,6 +151,7 @@ export async function GET(req: NextRequest) {
     ok: cronError === null,
     sent24h,
     sent2h,
+    sent2hDelivery: "best_effort" as const,
     total: sent24h + sent2h,
     ranAt: new Date().toISOString(),
     ...(cronError ? { error: String(cronError) } : {})
@@ -159,7 +164,7 @@ export async function GET(req: NextRequest) {
     requestId,
     statusCode: cronError ? 500 : 200,
     latencyMs: Date.now() - startedAt,
-    metadata: { sent24h, sent2h, total: sent24h + sent2h }
+    metadata: { sent24h, sent2h, sent2hDelivery: "best_effort", total: sent24h + sent2h }
   });
 
   // Machine-parseable single-line summary for log scraping / uptime monitors.

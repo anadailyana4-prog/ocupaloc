@@ -57,7 +57,13 @@ export function AddManualBookingDialog({ servicii, onSuccess }: Props) {
         toast.error(res.message);
         return;
       }
-      toast.success("Programare adăugată.");
+      toast.success(
+        res.clientNotification === "queued"
+          ? "Programarea a fost adăugată. Emailul de confirmare a fost pus la trimis către client."
+          : res.clientNotification === "failed"
+            ? "Programarea a fost adăugată, dar emailul de confirmare NU a putut fi trimis."
+          : "Programarea a fost adăugată în calendar. Nu s-a trimis email clientului pentru că adresa nu a fost completată."
+      );
       setOpen(false);
       onSuccess?.();
     } finally {

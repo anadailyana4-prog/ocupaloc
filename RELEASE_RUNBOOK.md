@@ -7,6 +7,13 @@
 - Deployment target: Vercel production (main website)
 - Optional runtime target: Cloudflare (OpenNext/Wrangler flows)
 
+## GitHub -> Vercel Auto-Deploy Contract
+
+- Source of truth for live production is GitHub `main` deployed to Vercel.
+- `vercel.json` must not disable GitHub deployment integration for production.
+- Vercel Project must track repository `anadailyana4-prog/ocupaloc` with Production Branch set to `main`.
+- If production is stale while `main` has new commits, first suspect project integration/branch mapping/alias state in Vercel dashboard.
+
 ## Environment Variables
 
 ### Vercel (required)

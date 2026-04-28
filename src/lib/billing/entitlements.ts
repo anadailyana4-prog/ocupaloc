@@ -16,13 +16,23 @@ export async function checkBookingEntitlement(
     return { allowed: true, reason: "" };
   }
 
-  const { data: sub } = await admin
+  const { data: sub, error: subError } = await admin
     .from("subscriptions")
     .select("status, current_period_end, cancel_at_period_end")
     .eq("profesionist_id", profesionistId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  // Production safety net: if billing migrations are missing, keep users in legacy trial.
+  if ((subError?.code ?? "") === "PGRST205") {
+    const createdAt = new Date(_profesionistCreatedAt).getTime();
+    const trialEnd = createdAt + BILLING_TRIAL_DAYS * 24 * 60 * 60 * 1000;
+    if (Date.now() <= trialEnd) {
+      return { allowed: true, reason: "legacy_trial" };
+    }
+    return { allowed: false, reason: "no_active_subscription" };
+  }
 
   if (sub) {
     const { status, current_period_end } = sub;

@@ -31,6 +31,11 @@ const settingsSchema = z.object({
     .trim()
     .max(50)
     .transform((s) => (s === "" ? null : s)),
+  publicAddress: z
+    .string()
+    .trim()
+    .max(200, "Adresa poate avea maximum 200 de caractere.")
+    .transform((s) => (s === "" ? null : s)),
   description: z
     .string()
     .trim()
@@ -57,6 +62,7 @@ export async function savePageSettings(formData: FormData) {
     name: String(formData.get("name") ?? ""),
     phone: String(formData.get("phone") ?? ""),
     whatsapp: String(formData.get("whatsapp") ?? ""),
+    publicAddress: String(formData.get("publicAddress") ?? ""),
     description: String(formData.get("description") ?? ""),
     email: String(formData.get("email") ?? "")
   };
@@ -70,6 +76,7 @@ export async function savePageSettings(formData: FormData) {
   const runUpdate = async (values: Record<string, unknown>) => await supabase.from("profesionisti").update(values).eq("id", profId);
   const baseValues = {
     nume_business: parsed.data.name,
+    adresa_publica: parsed.data.publicAddress,
     description: parsed.data.description,
     email: parsed.data.email
   };
@@ -91,7 +98,8 @@ export async function savePageSettings(formData: FormData) {
 
     const missingTelefon = isMissingProfesionistiColumn(result.error, "telefon");
     const missingWhatsapp = isMissingProfesionistiColumn(result.error, "whatsapp");
-    if (missingTelefon || missingWhatsapp) {
+    const missingAddress = isMissingProfesionistiColumn(result.error, "adresa_publica");
+    if (missingTelefon || missingWhatsapp || missingAddress) {
       error = result.error;
       continue;
     }

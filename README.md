@@ -43,7 +43,18 @@ pnpm run dev
 - Admin (necesită login): [http://localhost:3000/admin](http://localhost:3000/admin)
 - Demo (login automat demo → admin): [http://localhost:3000/demo](http://localhost:3000/demo) — necesită user-ul din `002_demo.sql` / Dashboard.
 
-## Deploy pe Cloudflare Pages
+## Deploy producție (Vercel, sursa de adevăr)
+
+Producția pentru site-ul live `ocupaloc.ro` este deținută de **Vercel**.
+
+Fluxul corect pentru producție:
+1. Push/merge în branch-ul `main` pe GitHub.
+2. Vercel trebuie să creeze automat un deployment nou din commit-ul respectiv.
+3. Deployment-ul trebuie promovat pe domeniul de producție.
+
+Verificările manuale obligatorii sunt documentate în `DEPLOY_CHECKLIST.md`.
+
+## Runtime opțional Cloudflare (non-production ownership)
 
 ### Build settings (Cloudflare Pages)
 
@@ -126,13 +137,13 @@ Migrări: `001_init.sql`, `002_demo.sql`, `003_storage_logos.sql`.
 
 Fișierul `index.html` din rădăcină rămâne ca referință statică; aplicația rulează din componentele React din `src/`.
 
-## Deploy
+## Deploy (producție)
 1. `npx supabase db push`
 2. `pnpm run verify:db`
 3. `pnpm run verify:secrets`
-4. Push pe branch-ul `main` (production branch în Cloudflare Pages)
+4. Push pe branch-ul `main` (declanșează deploy-ul de producție în Vercel)
 
-## Deploy pe Cloudflare Pages
+## Deploy pe Cloudflare Pages (opțional)
 
 - Build command: `pnpm install && npx @opennextjs/cloudflare build`
 - Output directory: `.open-next/assets`

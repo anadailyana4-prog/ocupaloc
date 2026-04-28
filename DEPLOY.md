@@ -1,16 +1,17 @@
-# Cloudflare Pages Deploy Checklist
+# Deploy Ownership (Production)
 
-- [ ] Variabile setate în Cloudflare
-- [ ] Domeniu www.ocupaloc.ro legat
-- [ ] Test login/signup
-- [ ] Test dashboard
-- [ ] Test booking flow
-- [ ] Analytics activ
+## Source of truth
 
-## Verificări rapide după deploy
+- Production deploy ownership: **Vercel**
+- Production branch: **GitHub `main`**
+- Expected flow: commit pe `main` -> Vercel auto-deploy -> alias pe domeniul live
 
-- URL preview Cloudflare răspunde cu 200
-- `/login` și `/signup` funcționează
-- `/dashboard` redirecționează corect când nu ești autentificat
-- `/api/auth/signout` răspunde fără erori
-- `sitemap.xml` și `robots.txt` servite corect
+## Repository contract
+
+- `vercel.json` nu trebuie să dezactiveze integrarea GitHub pentru deploy (`github.enabled: false` nu este permis pentru producție).
+- Documentația de release trebuie să trateze Vercel ca țintă principală de producție.
+- Fluxurile Cloudflare/OpenNext/Wrangler sunt opționale și nu definesc deploy-ul live principal.
+
+## Manual verification in Vercel dashboard (required)
+
+Urmează în ordine pașii din `DEPLOY_CHECKLIST.md`.

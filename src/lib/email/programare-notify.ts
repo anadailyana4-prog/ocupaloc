@@ -121,10 +121,10 @@ export async function notifyProfesionistDespreProgramare(programareId: string): 
   return { profesionistEmail: profesionist?.email_contact ?? null };
 }
 
-export async function notifyClientBookingConfirmation(programareId: string): Promise<void> {
+export async function notifyClientBookingConfirmation(programareId: string): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) {
-    return;
+    return false;
   }
 
   const admin = createSupabaseServiceClient();
@@ -135,12 +135,12 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
     .maybeSingle();
 
   if (error || !row) {
-    return;
+    return false;
   }
 
   const clientEmail = row.email_client?.trim();
   if (!clientEmail) {
-    return;
+    return false;
   }
 
   const relProf = row.profesionisti as { slug?: string; nume_business?: string | null } | { slug?: string; nume_business?: string | null }[] | null;
@@ -156,7 +156,6 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
   const startsAt = new Date(String(row.data_start));
   const dataStr = formatInTimeZone(startsAt, TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(startsAt, TZ, "HH:mm");
-
   const confirmLink = createBookingConfirmationLink({ bookingId: row.id, action: "confirm" });
   const cancelLink = createBookingConfirmationLink({ bookingId: row.id, action: "cancel" });
 
@@ -166,7 +165,9 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
     "",
     `Rezervarea ta la ${salonName} pentru ${serviceName} pe ${dataStr} la ${timeStr} a fost înregistrată.`,
     "",
-    "Confirmă că vii sau anulează accesând linkurile din email.",
+    "Poți confirma sau anula direct din linkurile de mai jos:",
+    `Confirmă prezența: ${confirmLink}`,
+    `Anulează programarea: ${cancelLink}`,
     "",
     "Dacă nu ai făcut tu această rezervare, poți ignora acest email."
   ].join("\n");
@@ -176,12 +177,12 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
     <h2 style="margin:0 0 12px;">Rezervare confirmată ✓</h2>
     <p style="margin:0 0 12px;">Salut ${safeClientName},</p>
     <p style="margin:0 0 16px;">Rezervarea ta la <strong>${safeSalonName}</strong> pentru <strong>${safeServiceName}</strong> pe <strong>${dataStr}</strong> la <strong>${timeStr}</strong> a fost înregistrată.</p>
-    <p style="margin:0 0 12px;color:#374151;">Confirmi că vii?</p>
+    <p style="margin:0 0 12px;color:#374151;">Poți confirma sau anula chiar acum:</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px;">
       <a href="${confirmLink}" style="background:#16a34a;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:999px;font-weight:700;display:inline-block;">Confirmă prezența</a>
-      <a href="${cancelLink}" style="background:#f3f4f6;color:#374151;text-decoration:none;padding:10px 16px;border-radius:999px;font-weight:700;display:inline-block;">Anulează</a>
+      <a href="${cancelLink}" style="background:#f3f4f6;color:#374151;text-decoration:none;padding:10px 16px;border-radius:999px;font-weight:700;display:inline-block;">Anulează programarea</a>
     </div>
-    <p style="margin:0;color:#6b7280;font-size:13px;">Dacă nu ai făcut tu această rezervare, poți ignora acest email.</p>
+    <p style="margin:0;color:#6b7280;font-size:13px;">Dacă nu ai făcut tu această rezervare, poți ignora acest email. Reminderul automat rămâne activ înainte de programare.</p>
   </div>`;
 
   await sendResendEmail({
@@ -192,6 +193,8 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
     event: "notify_client_booking_confirmation_failed",
     context: { clientEmail, bookingId: row.id }
   });
+
+  return true;
 }
 
 export async function notifyClientBookingCancelledByProvider(programareId: string): Promise<void> {
@@ -305,13 +308,16 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
   const admin = createSupabaseServiceClient();
   const { data: row } = await admin
     .from("programari")
-    .select("nume_client, email_client, data_start, profesionisti(nume_business), servicii(nume)")
+    .select("nume_client, email_client, data_start, profesionisti(nume_business, adresa_publica, lucreaza_acasa), servicii(nume)")
     .eq("id", programareId)
     .maybeSingle();
 
   if (!row?.email_client) return false;
 
-  const relProf = row.profesionisti as { nume_business?: string | null } | { nume_business?: string | null }[] | null;
+  const relProf = row.profesionisti as
+    | { nume_business?: string | null; adresa_publica?: string | null; lucreaza_acasa?: boolean | null }
+    | { nume_business?: string | null; adresa_publica?: string | null; lucreaza_acasa?: boolean | null }[]
+    | null;
   const relServ = row.servicii as { nume?: string } | { nume?: string }[] | null;
   const profesionist = Array.isArray(relProf) ? relProf[0] ?? null : relProf;
   const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
@@ -322,23 +328,37 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
   const timeStr = formatInTimeZone(startsAt, TZ, "HH:mm");
   const subject = tip === "24h" ? `Reminder: ai programare mâine la ${salonName}` : `Reminder: ai programare în curând la ${salonName}`;
   const serviceName = serviciu?.nume ?? "serviciu";
+  const publicAddress = profesionist?.adresa_publica?.trim() || "";
+  const locationNote = publicAddress
+    ? `Locație: ${publicAddress}`
+    : profesionist?.lucreaza_acasa
+      ? "Locație: adresa exactă se comunică direct de profesionist."
+      : "";
 
   const confirmUrl = tip === "24h" ? createBookingConfirmationLink({ bookingId: programareId, action: "confirm" }) : null;
   const cancelUrl = tip === "24h" ? createBookingConfirmationLink({ bookingId: programareId, action: "cancel" }) : null;
 
-  const confirmBlock =
-    confirmUrl && cancelUrl
-      ? `\n\nConfirmă sau anulează:\n  ✓ Confirmă: ${confirmUrl}\n  ✗ Anulează: ${cancelUrl}`
-      : "";
-
-  const text = [
+  const textLines = [
     `Salut ${row.nume_client},`,
     "",
     `Acesta este un reminder pentru programarea ta la ${salonName}.`,
+    `Business: ${salonName}`,
     `Serviciu: ${serviceName}`,
     `Data: ${dataStr}`,
-    `Ora: ${timeStr}${confirmBlock}`
-  ].join("\n");
+    `Ora: ${timeStr}`,
+    ...(locationNote ? [locationNote] : [])
+  ];
+
+  if (confirmUrl && cancelUrl) {
+    textLines.push(
+      "",
+      "Confirmă sau anulează:",
+      `Confirmă prezența: ${confirmUrl}`,
+      `Anulează programarea: ${cancelUrl}`
+    );
+  }
+
+  const text = textLines.join("\n");
 
   let html: string | undefined;
   if (confirmUrl && cancelUrl) {
@@ -348,16 +368,17 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
   <p style="margin:0 0 16px;">Salut <strong>${escapeHtml(row.nume_client ?? "")}</strong>,</p>
 
   <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:0 0 20px;">
-    <p style="margin:0 0 4px;"><strong>Furnizor:</strong> ${escapeHtml(salonName)}</p>
+    <p style="margin:0 0 4px;"><strong>Business:</strong> ${escapeHtml(salonName)}</p>
     <p style="margin:0 0 4px;"><strong>Serviciu:</strong> ${escapeHtml(serviceName)}</p>
     <p style="margin:0 0 4px;"><strong>Data:</strong> ${escapeHtml(dataStr)}</p>
     <p style="margin:0;"><strong>Ora:</strong> ${escapeHtml(timeStr)}</p>
+    ${locationNote ? `<p style="margin:4px 0 0;"><strong>Locație:</strong> ${escapeHtml(publicAddress || "Adresa exactă se comunică direct de profesionist.")}</p>` : ""}
   </div>
 
   <p style="margin:0 0 12px;font-weight:600;">Confirmi că vii?</p>
   <div style="display:flex;gap:12px;flex-wrap:wrap;">
     <a href="${confirmUrl}" style="background:#16a34a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;display:inline-block;margin:0 8px 8px 0;">✓ Confirmă prezența</a>
-    <a href="${cancelUrl}" style="background:#f3f4f6;color:#374151;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 8px;">✗ Anulează</a>
+    <a href="${cancelUrl}" style="background:#f3f4f6;color:#374151;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 8px;">✗ Anulează programarea</a>
   </div>
 
   <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">OcupaLoc · ocupaloc.ro</p>

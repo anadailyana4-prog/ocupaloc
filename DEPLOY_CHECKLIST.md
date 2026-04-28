@@ -1,25 +1,38 @@
-## Pre-Deploy Checklist
-- [ ] Rulează `node --import tsx scripts/check-secrets.ts` - trebuie să vezi ✅ OK
-- [ ] Rulează `node --import tsx scripts/verify-production-readiness.ts` - trebuie toate ✅
-- [ ] SAU rulează `pnpm run deploy:safe` care le face pe ambele + deploy
-- [ ] `npx supabase db push` rulat - confirmă că șterge tabelele deprecated
-- [ ] `npx next build` trece fără warnings
-- [ ] `pnpm tsc --noEmit` trece
-- [ ] `wrangler secret list` conține: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY, RESEND_FROM
-- [ ] RESEND_FROM = noreply@ocupaloc.ro și domeniul e verificat în Resend
-- [ ] `.env.local` e în `.gitignore` - rulează `git check-ignore .env.local` să confirmi
+## Vercel Production Alignment Checklist (GitHub `main`)
 
-## Smoke Test E2E - 2 minute
-1. Signup nou în incognito -> confirmă email -> primești welcome o singură dată -> /onboarding -> /dashboard
-2. Login cont existent -> direct /dashboard dacă profil complet
-3. Header: neautentificat vezi "Intră în cont", autentificat vezi "Ieși din cont"
-4. Booking test: creează programare pe pagina publică -> verifică rând în tabela programari -> verifică email în Resend
-5. Verifică /dashboard/servicii -> CRUD pe servicii funcționează
+## 1) Confirm deployment trigger path
+- [ ] În Vercel Project Settings -> Git: repository conectat este `anadailyana4-prog/ocupaloc`
+- [ ] Production Branch este `main`
+- [ ] Auto-deploy pentru production branch este activ
 
-## Post-Deploy
-- [ ] `npx wrangler deploy` rulat
-- [ ] Test pe https://ocupaloc.ro/signup cu cont real
-- [ ] Verifică logs: `npx wrangler tail` să nu vezi erori
+## 2) Confirm latest GitHub commit is deployed
+- [ ] În Vercel Deployments: există un deployment nou pentru ultimul commit din `main`
+- [ ] Deployment status este `Ready`
+- [ ] Commit SHA din deployment = SHA-ul din GitHub `main`
 
-## Documentație operațională
-- Consultă `RELEASE_RUNBOOK.md` pentru matricea completă de variabile (Vercel + Cloudflare), pași de release și rollback.
+## 2b) Prove deployment SHA from CLI (recommended)
+- [ ] Rulează `git rev-parse HEAD` și notează SHA-ul local curent
+- [ ] Rulează `npx vercel ls --prod` și confirmă că apare deployment `Ready` pentru SHA-ul din `main`
+
+## 3) Confirm production domain points to latest ready deployment
+- [ ] În Vercel Deployments/Domains: aliasul de producție (`ocupaloc.ro` / `www.ocupaloc.ro`) este pe deployment-ul de la pasul 2
+- [ ] Nu există alias pe un deployment mai vechi
+
+## 4) Confirm runtime health after alias
+- [ ] `GET /api/health` returnează `200`
+- [ ] Landing page afișează conținutul nou (inclusiv ultimul FAQ fix)
+- [ ] Login/signup și booking smoke checks trec
+
+## 4b) Prove live content with cache-bust (recommended)
+- [ ] Rulează `curl -sL "https://ocupaloc.ro?cb=$(date +%s)"` și verifică markerul nou de conținut
+- [ ] Rulează `curl -sL "https://www.ocupaloc.ro?cb=$(date +%s)"` și verifică același marker
+- [ ] Confirmă că markerul vechi nu mai apare în răspunsul HTML
+
+## 5) If auto-deploy did not run
+- [ ] Trigger manual redeploy din Vercel pentru ultimul commit din `main`
+- [ ] Sau rulează direct `npx vercel --prod --yes` din repo-ul curent
+- [ ] Confirmă alias de producție după deploy (ex. `ocupaloc.ro`)
+- [ ] Repetă pașii 2-4
+
+## Scope note
+- Cloudflare DNS/domain management rămâne separat; checklist-ul acesta validează strict alinierea GitHub -> Vercel pentru producție.
