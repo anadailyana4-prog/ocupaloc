@@ -309,7 +309,7 @@ function SignupPageContent() {
       }
     }
 
-    if ((error && !recoverableSignupError) || !signupUser) {
+    if (error && !recoverableSignupError) {
       const errorText = (error?.message ?? "").toLowerCase();
       const alreadyRegistered = errorText.includes("already registered") || errorText.includes("already exists");
       if (alreadyRegistered) {
@@ -324,27 +324,35 @@ function SignupPageContent() {
       return;
     }
 
+    if (!signupUser && !recoverableSignupError) {
+      setIsSubmitting(false);
+      toast.error("Nu am putut crea contul.");
+      return;
+    }
+
     // Bootstrap always runs with userId — works regardless of email confirmation setting.
     // Wrapped in try/catch: any server-action crash must never block the email-confirmation screen.
-    try {
-      const boot = await bootstrapTenantAfterSignup({
-        orgName: businessName,
-        slug,
-        activity,
-        phone: cleanPhone,
-        services,
-        workDays,
-        userId: signupUser.id
-      });
-      if (!boot.ok) {
-        // Non-fatal: show informational message but always continue
-        toast.info(
-          (boot.error ?? "").trim() ||
-            "Contul a fost creat. Serviciile pot fi adăugate din cont."
-        );
+    if (signupUser) {
+      try {
+        const boot = await bootstrapTenantAfterSignup({
+          orgName: businessName,
+          slug,
+          activity,
+          phone: cleanPhone,
+          services,
+          workDays,
+          userId: signupUser.id
+        });
+        if (!boot.ok) {
+          // Non-fatal: show informational message but always continue
+          toast.info(
+            (boot.error ?? "").trim() ||
+              "Contul a fost creat. Serviciile pot fi adăugate din cont."
+          );
+        }
+      } catch {
+        // Server action threw — non-fatal, user can configure from dashboard
       }
-    } catch {
-      // Server action threw — non-fatal, user can configure from dashboard
     }
 
     localStorage.setItem("ocupaloc:lastSlug", slug);
