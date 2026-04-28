@@ -546,6 +546,7 @@ function BookingCardLive(props: LiveProps) {
                   data-testid="service-option"
                   onClick={() => {
                     setSelectedServiceId(s.id);
+                    setServiceSearch("");
                     trackBookingEvent("booking_service_selected", {
                       mode: tenant ? "tenant" : "public",
                       slug,
