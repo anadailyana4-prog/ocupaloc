@@ -6,7 +6,7 @@ import Script from "next/script";
 
 import { BookingCard } from "@/components/booking/BookingCard";
 import { isMissingProfesionistiColumn } from "@/lib/supabase/profesionisti-fallback";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
 
 type PageProps = { params: Promise<{ slug: string }> };
 const ORASE_TARGET = ["bucuresti", "cluj-napoca", "timisoara", "iasi", "constanta", "brasov", "sibiu", "oradea"] as const;
@@ -261,6 +261,21 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
 
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const telefon = (prof.telefon as string | null)?.trim() ?? "";
+
+  // Check if the logged-in user is the owner of this salon
+  const currentUser = await getUser();
+  let isOwner = false;
+  if (currentUser) {
+    const supabase2 = await createSupabaseServerClient();
+    const { data: ownerProf } = await supabase2
+      .from("profesionisti")
+      .select("id")
+      .eq("user_id", currentUser.id)
+      .eq("id", prof.id)
+      .maybeSingle();
+    isOwner = !!ownerProf;
+  }
+
   const whatsapp = (prof.whatsapp as string | null)?.trim() ?? "";
   const telHref = telefon ? telefon.replace(/\s+/g, "") : "";
   const waHref = whatsapp ? whatsapp.replace(/\D+/g, "") : "";
@@ -284,6 +299,14 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-950 to-black text-zinc-50">
       <Script id={`local-business-schema-${slug}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }} />
+      {isOwner ? (
+        <div className="flex items-center gap-3 border-b border-zinc-800 bg-zinc-900/90 px-4 py-2">
+          <Link href="/dashboard" className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700 hover:text-white">
+            ← Înapoi la dashboard
+          </Link>
+          <span className="text-xs text-zinc-500">Ești pe pagina ta publică</span>
+        </div>
+      ) : null}
       <div className="mx-auto max-w-3xl space-y-14 px-6 py-14 md:space-y-16 md:py-20">
         <header className="flex flex-col items-center gap-8 text-center">
           {prof.logo_url ? (
