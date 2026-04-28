@@ -339,30 +339,9 @@ function SignupPageContent() {
       return;
     }
 
-    // Bootstrap always runs with userId — works regardless of email confirmation setting.
-    // Wrapped in try/catch: any server-action crash must never block the email-confirmation screen.
-    if (signupUser) {
-      try {
-        const boot = await bootstrapTenantAfterSignup({
-          orgName: businessName,
-          slug,
-          activity,
-          phone: cleanPhone,
-          services,
-          workDays,
-          userId: signupUser.id
-        });
-        if (!boot.ok) {
-          // Non-fatal: show informational message but always continue
-          toast.info(
-            (boot.error ?? "").trim() ||
-              "Contul a fost creat. Serviciile pot fi adăugate din cont."
-          );
-        }
-      } catch {
-        // Server action threw — non-fatal, user can configure from dashboard
-      }
-    }
+    // IMPORTANT: do not run server bootstrap in signup flow.
+    // Any transient DB/FK issue here would block onboarding UX.
+    // Initial setup is handled safely after login from dashboard actions.
 
     localStorage.setItem("ocupaloc:lastSlug", slug);
     localStorage.removeItem(SIGNUP_STEP_STORAGE_KEY);
