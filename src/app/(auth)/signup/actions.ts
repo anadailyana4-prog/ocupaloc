@@ -184,7 +184,37 @@ export async function bootstrapTenantAfterSignup(input: {
   if (draftServices.length > 0) {
     const { error: servicesErr } = await admin.from("servicii").insert(draftServices);
     if (servicesErr) {
-      return { ok: false as const, error: servicesErr.message };
+      const isTenantFkError =
+        servicesErr.code === "23503" &&
+        (servicesErr.message?.includes("servicii_tenant_id_fkey") || servicesErr.message?.includes("tenant_id"));
+
+      if (isTenantFkError) {
+        const { data: profData } = await admin
+          .from("profesionisti")
+          .select("nume_business")
+          .eq("id", profesionistId)
+          .maybeSingle();
+
+        const tenantSlug = `tenant-${profesionistId}`;
+        const { error: tenantErr } = await admin.from("tenants").upsert(
+          {
+            id: profesionistId,
+            slug: tenantSlug,
+            name: profData?.nume_business ?? tenantSlug
+          },
+          { onConflict: "id" }
+        );
+        if (tenantErr) {
+          return { ok: false as const, error: tenantErr.message };
+        }
+
+        const { error: retryServicesErr } = await admin.from("servicii").insert(draftServices);
+        if (retryServicesErr) {
+          return { ok: false as const, error: retryServicesErr.message };
+        }
+      } else {
+        return { ok: false as const, error: servicesErr.message };
+      }
     }
   }
 
