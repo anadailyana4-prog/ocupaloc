@@ -108,7 +108,9 @@ function LoginForm() {
     toast.success("Autentificare reușită.");
     trackAuthEvent("login_success", "password");
     void reportAuthOutcome("success");
-    window.location.replace("/dashboard");
+    const nextUrl = searchParams.get("next");
+    const safeNext = nextUrl && nextUrl.startsWith("/") ? nextUrl : "/dashboard";
+    window.location.href = safeNext;
   }
 
   async function sendPasswordReset() {
