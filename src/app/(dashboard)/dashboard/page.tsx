@@ -536,20 +536,6 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
         </div>
       ) : null}
 
-      <ActivationWidgets
-        slug={prof.slug ?? null}
-        profileDone={profileDone}
-        serviciiCount={serviciiCount ?? 0}
-        programSetat={programSetat}
-        accountCreatedAt={prof.created_at ?? null}
-        confirmedBookingsCount={allTimeConfirmedCount ?? 0}
-        showFirstBookingCelebration={
-          (allTimeConfirmedCount ?? 0) === 1 &&
-          Boolean(prof.created_at) &&
-          (Date.now() - new Date(prof.created_at as string).getTime()) < 30 * 24 * 60 * 60 * 1000
-        }
-      />
-
       {sp.saved === "1" ? (
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">Datele publice au fost salvate.</div>
       ) : null}
