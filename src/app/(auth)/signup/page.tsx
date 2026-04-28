@@ -124,6 +124,7 @@ function SignupPageContent() {
   const [businessName, setBusinessName] = useState("");
   const [telefon, setTelefon] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [services, setServices] = useState<ServiceDraft[]>(EMPTY_SERVICES);
   const [workDays, setWorkDays] = useState<WorkDay[]>(DEFAULT_DAYS);
   const [workWeekend, setWorkWeekend] = useState(false);
@@ -213,8 +214,12 @@ function SignupPageContent() {
   };
 
   const nextStep = () => {
-    if (step === 1 && (!businessName.trim() || !telefon.trim() || !email.trim())) {
-      toast.error("Completează numele business-ului, telefonul și emailul.");
+    if (step === 1 && (!businessName.trim() || !telefon.trim() || !email.trim() || !password.trim())) {
+      toast.error("Completează numele business-ului, telefonul, emailul și parola.");
+      return;
+    }
+    if (step === 1 && password.trim().length < 8) {
+      toast.error("Parola trebuie să aibă cel puțin 8 caractere.");
       return;
     }
     trackOnboardingEvent("onboarding_step_completed", {
@@ -241,8 +246,14 @@ function SignupPageContent() {
   };
 
   async function onCreateAccount() {
-    if (!businessName.trim() || !telefon.trim() || !email.trim()) {
-      toast.error("Completează datele obligatorii din primul pas.");
+    if (!businessName.trim() || !telefon.trim() || !email.trim() || !password.trim()) {
+      toast.error("Completează datele obligatorii din primul pas, inclusiv parola.");
+      setStep(1);
+      return;
+    }
+
+    if (password.trim().length < 8) {
+      toast.error("Parola trebuie să aibă cel puțin 8 caractere.");
       setStep(1);
       return;
     }
@@ -270,17 +281,16 @@ function SignupPageContent() {
       slug = `${baseSlug}-${suffix}`;
     }
 
-    const generatedPassword = `${crypto.randomUUID()}-Aa1!`;
     const { data, error } = await supabase.auth.signUp({
       email: cleanEmail,
-      password: generatedPassword,
+      password,
       options: {
         data: {
           full_name: businessName,
           phone: cleanPhone,
           activity
         },
-        emailRedirectTo: siteUrl ? `${siteUrl}/auth/bridge?next=/dashboard` : undefined
+        emailRedirectTo: siteUrl ? `${siteUrl}/auth/bridge?signup=1&next=/login` : undefined
       }
     });
 
@@ -288,34 +298,9 @@ function SignupPageContent() {
       const errorText = (error?.message ?? "").toLowerCase();
       const alreadyRegistered = errorText.includes("already registered") || errorText.includes("already exists");
       if (alreadyRegistered) {
-        const response = await fetch("/api/auth/magic-link", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: cleanEmail })
-        });
-
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
         setIsSubmitting(false);
 
-        if (!response.ok) {
-          toast.error(payload?.message ?? "Emailul există deja. Intră în cont sau folosește resetarea parolei.");
-          return;
-        }
-
-        const { error: magicLinkError } = await supabase.auth.signInWithOtp({
-          email: cleanEmail,
-          options: {
-            emailRedirectTo: siteUrl ? `${siteUrl}/auth/bridge?next=/dashboard` : undefined
-          }
-        });
-
-        if (magicLinkError) {
-          setIsSubmitting(false);
-          toast.error(magicLinkError.message);
-          return;
-        }
-
-        toast.success(payload?.message ?? "Emailul este deja înregistrat. Dacă emailul există, am trimis linkul.");
+        toast.error("Emailul este deja înregistrat. Intră în cont cu parola sau folosește resetarea parolei.");
         router.push("/login");
         return;
       }
@@ -446,6 +431,16 @@ function SignupPageContent() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     placeholder="contact@business.ro"
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium">Parolă</label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Minim 8 caractere"
+                    autoComplete="new-password"
                   />
                 </div>
               </div>

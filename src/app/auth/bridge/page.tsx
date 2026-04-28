@@ -74,6 +74,14 @@ export default function AuthBridgePage() {
           return;
         }
 
+        // Signup confirmation should only verify email and then send user to login.
+        // Do not enforce an authenticated session in this branch.
+        if (isSignupConfirmation) {
+          setMessage("Email confirmat. Redirecționăm către autentificare...");
+          if (!cancelled) window.location.replace("/login?signup=confirmat");
+          return;
+        }
+
         let sessionFound = false;
         for (let i = 0; i < 8; i += 1) {
           const { data, error } = await supabase.auth.getSession();
@@ -92,8 +100,7 @@ export default function AuthBridgePage() {
         }
 
         setMessage("Autentificare reușită. Redirecționăm...");
-        const destination = isSignupConfirmation ? "/login?signup=confirmat" : safeNext;
-        if (!cancelled) window.location.replace(destination);
+  if (!cancelled) window.location.replace(safeNext);
       } catch (error) {
         const reason = encodeURIComponent(getErrorMessage(error));
         console.error("[auth/bridge] finalize auth failed:", error);
