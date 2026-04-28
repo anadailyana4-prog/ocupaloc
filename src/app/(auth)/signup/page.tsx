@@ -294,9 +294,18 @@ function SignupPageContent() {
       }
     });
 
-    const recoverableSignupError =
-      !!error &&
-      /servicii_tenant_id_fkey|insert or update on table "servicii"/i.test(error.message ?? "");
+    const recoverableSignupError = (() => {
+      if (!error) return false;
+      const text = `${error.message ?? ""} ${(error as { status?: number }).status ?? ""}`.toLowerCase();
+      return (
+        text.includes("servicii_tenant_id_fkey") ||
+        text.includes("insert or update on table \"servicii\"") ||
+        text.includes("foreign key") ||
+        text.includes("constraint") ||
+        text.includes("database error saving new user") ||
+        text.includes("insert or update")
+      );
+    })();
 
     let signupUser = data.user;
 
