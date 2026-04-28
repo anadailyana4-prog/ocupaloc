@@ -49,7 +49,7 @@ export function DashboardHeader() {
         </nav>
       </div>
       <div className="flex items-center gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={() => router.back()} className="text-zinc-400 hover:text-zinc-100">
+        <Button type="button" variant="outline" size="sm" onClick={() => router.back()} className="text-zinc-300 border-zinc-600">
           ← Înapoi
         </Button>
         <Button type="button" variant="outline" size="sm" onClick={() => void logout()} disabled={loading}>
