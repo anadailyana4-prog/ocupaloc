@@ -320,9 +320,8 @@ function SignupPageContent() {
       userId: data.user.id
     });
     if (!boot.ok) {
-      setIsSubmitting(false);
-      toast.error(boot.error);
-      return;
+      const message = (boot.error ?? "").trim();
+      toast.error(message || "Contul a fost creat, dar configurarea inițială nu s-a finalizat complet. Poți continua din cont.");
     }
 
     localStorage.setItem("ocupaloc:lastSlug", slug);
