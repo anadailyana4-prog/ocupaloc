@@ -203,7 +203,7 @@ function LoginForm() {
               <Button data-testid="login-submit" type="submit" className="w-full h-12 text-base font-bold" disabled={busy}>
                 {busy ? "Se autentifică…" : "Continuă"}
               </Button>
-              {authError === "auth" && decodedAuthReason ? (
+              {authError === "auth" && decodedAuthReason && !signupConfirmed ? (
                 <p className="text-sm text-amber-300">Autentificarea anterioară a eșuat: {decodedAuthReason}</p>
               ) : null}
               {submitError ? <p className="text-sm text-red-400">{submitError}</p> : null}

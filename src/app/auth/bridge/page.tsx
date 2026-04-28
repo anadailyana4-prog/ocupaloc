@@ -9,6 +9,17 @@ function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function isIgnorableSignupLinkError(error: unknown) {
+  const raw = getErrorMessage(error).toLowerCase();
+  return (
+    raw.includes("invalid") ||
+    raw.includes("expired") ||
+    raw.includes("already") ||
+    raw.includes("otp") ||
+    raw.includes("token")
+  );
+}
+
 export default function AuthBridgePage() {
   const [message, setMessage] = useState("Finalizăm autentificarea...");
 
@@ -102,6 +113,13 @@ export default function AuthBridgePage() {
         setMessage("Autentificare reușită. Redirecționăm...");
   if (!cancelled) window.location.replace(safeNext);
       } catch (error) {
+        if (isSignupConfirmation && isIgnorableSignupLinkError(error)) {
+          // Reused/expired signup links are common after the first successful click.
+          // Treat them as confirmation-complete to avoid trapping users in an auth-error loop.
+          if (!cancelled) window.location.replace("/login?signup=confirmat");
+          return;
+        }
+
         const reason = encodeURIComponent(getErrorMessage(error));
         console.error("[auth/bridge] finalize auth failed:", error);
         setMessage("Nu am putut finaliza autentificarea. Redirecționăm către login...");
