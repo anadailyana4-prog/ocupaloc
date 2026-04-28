@@ -279,12 +279,14 @@ export function ActivationWidgets({
                     Pune QR-ul la recepție sau pe chitanță
                   </p>
                   {publicUrl ? (
-                    <Link
-                      href="/dashboard/pagina"
+                    <a
+                      href={publicUrl}
+                      target="_blank"
+                      rel="noreferrer"
                       className="mt-2 inline-block rounded-full bg-slate-700 px-3 py-1 text-xs font-medium text-white hover:bg-slate-600"
                     >
                       Pagina mea →
-                    </Link>
+                    </a>
                   ) : null}
                 </div>
               </div>
