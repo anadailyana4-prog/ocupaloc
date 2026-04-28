@@ -81,7 +81,7 @@ export async function bootstrapTenantAfterSignup(input: {
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const rateLimitAdmin = createSupabaseServiceClient();
-  const { allowed } = await checkApiRateLimit(rateLimitAdmin, `signup:${ip}`, 5, 15 * 60 * 1000);
+  const { allowed } = await checkApiRateLimit(rateLimitAdmin, `signup:${ip}`, 5, 15 * 60 * 1000, { failOpen: true });
   if (!allowed) {
     return { ok: false as const, error: "Prea multe încercări. Încearcă din nou în 15 minute." };
   }
