@@ -294,7 +294,22 @@ function SignupPageContent() {
       }
     });
 
-    if (error || !data.user) {
+    const recoverableSignupError =
+      !!error &&
+      /servicii_tenant_id_fkey|insert or update on table "servicii"/i.test(error.message ?? "");
+
+    let signupUser = data.user;
+
+    if (!signupUser && recoverableSignupError) {
+      // Some DB triggers can return a post-insert FK error even though Auth user was created.
+      // Try to recover by signing in with the credentials just created.
+      const recovered = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+      if (!recovered.error && recovered.data.user) {
+        signupUser = recovered.data.user;
+      }
+    }
+
+    if ((error && !recoverableSignupError) || !signupUser) {
       const errorText = (error?.message ?? "").toLowerCase();
       const alreadyRegistered = errorText.includes("already registered") || errorText.includes("already exists");
       if (alreadyRegistered) {
@@ -319,7 +334,7 @@ function SignupPageContent() {
         phone: cleanPhone,
         services,
         workDays,
-        userId: data.user.id
+        userId: signupUser.id
       });
       if (!boot.ok) {
         // Non-fatal: show informational message but always continue
