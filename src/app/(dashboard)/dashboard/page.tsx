@@ -113,7 +113,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   let planStatus: PlanStatus = { kind: "none" };
   if (isBillingEnabled()) {
     const admin = createSupabaseServiceClient();
-    const { data: sub } = await admin
+    const { data: sub, error: subError } = await admin
       .from("subscriptions")
       .select("status, current_period_end")
       .eq("profesionist_id", prof.id)
@@ -121,7 +121,14 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
       .limit(1)
       .maybeSingle();
 
-    if (sub) {
+    const missingSubscriptionsTable = (subError?.code ?? "") === "PGRST205";
+
+    if (missingSubscriptionsTable && prof.created_at) {
+      const createdAt = new Date(prof.created_at).getTime();
+      const trialEnd = createdAt + BILLING_TRIAL_DAYS * 86400000;
+      const daysLeft = Math.max(0, Math.ceil((trialEnd - Date.now()) / 86400000));
+      planStatus = daysLeft > 0 ? { kind: "trial", daysLeft } : { kind: "active", periodEnd: new Date(trialEnd).toISOString() };
+    } else if (sub) {
       const now = Date.now();
       if (sub.status === "trialing") {
         const end = sub.current_period_end ? new Date(sub.current_period_end as string).getTime() : now;
@@ -542,25 +549,6 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
           (Date.now() - new Date(prof.created_at as string).getTime()) < 30 * 24 * 60 * 60 * 1000
         }
       />
-
-      <PlanStatusBanner status={planStatus} />
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-2">
-          <h1 className="font-display text-3xl font-semibold tracking-wide text-amber-50">Bun venit, {greetName}</h1>
-          <p className="text-sm text-muted-foreground">Autentificat ca {user.email ?? "—"}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {prof.slug ? <CopyPublicLinkButton slug={prof.slug} /> : null}
-          {prof.slug?.trim() ? (
-            <Button asChild variant="secondary" className="rounded-full">
-              <a href={`/${prof.slug.trim()}`} target="_blank" rel="noreferrer">
-                Deschide pagina publică
-              </a>
-            </Button>
-          ) : null}
-        </div>
-      </div>
 
       {sp.saved === "1" ? (
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">Datele publice au fost salvate.</div>
