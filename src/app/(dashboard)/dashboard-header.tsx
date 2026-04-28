@@ -47,6 +47,9 @@ export function DashboardHeader() {
             <Link href="/dashboard/pagina" className="transition hover:text-zinc-100 hidden sm:inline">
               Pagină publică
             </Link>
+            <Link href="/dashboard/setari" className="transition hover:text-zinc-100 hidden sm:inline">
+              Setări
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-2">
@@ -71,6 +74,9 @@ export function DashboardHeader() {
         </Link>
         <Link href="/dashboard/pagina" className="transition hover:text-zinc-100 py-1">
           Pagină publică
+        </Link>
+        <Link href="/dashboard/setari" className="transition hover:text-zinc-100 py-1">
+          Setări
         </Link>
       </nav>
     </header>
