@@ -33,7 +33,7 @@ export function DashboardHeader() {
         <Link href="/dashboard" className="text-sm font-semibold tracking-tight">
           OcupaLoc
         </Link>
-        <nav className="flex items-center gap-3 text-sm text-zinc-400 flex-wrap">
+        <nav className="hidden sm:flex items-center gap-3 text-sm text-zinc-400 flex-wrap">
           <Link href="/dashboard" className="transition hover:text-zinc-100">
             Acasă
           </Link>
