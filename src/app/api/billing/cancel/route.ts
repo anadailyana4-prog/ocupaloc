@@ -69,20 +69,88 @@ export async function POST() {
 
     const stripe = getStripeClient();
     const customerIds = new Set<string>();
+    const subscriptionIdsToCancel = new Set<string>();
 
     for (const sub of localSubs ?? []) {
       if (sub.stripe_customer_id) {
         customerIds.add(String(sub.stripe_customer_id));
       }
+      if (sub.stripe_subscription_id) {
+        subscriptionIdsToCancel.add(String(sub.stripe_subscription_id));
+      }
+    }
 
-      const subId = sub.stripe_subscription_id ? String(sub.stripe_subscription_id) : "";
-      if (!subId) continue;
+    // Fallback for stale local state: derive Stripe customer by current user email.
+    if (customerIds.size === 0 && user.email) {
+      try {
+        const customerList = await stripe.customers.list({ email: user.email, limit: 10 });
+        for (const c of customerList.data) {
+          customerIds.add(c.id);
+        }
+      } catch (error) {
+        reportError("billing", "cancel_subscription_find_customer_failed", error, {
+          profesionistId: String(prof.id)
+        });
+      }
+    }
 
+    // If no local subscription rows exist, inspect Stripe subscriptions for known customers.
+    if (subscriptionIdsToCancel.size === 0 && customerIds.size > 0) {
+      for (const customerId of customerIds) {
+        try {
+          const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: "all", limit: 100 });
+          for (const subscription of subscriptions.data) {
+            const metaProfId = subscription.metadata?.profesionist_id;
+            if (metaProfId && metaProfId !== String(prof.id)) continue;
+
+            if (
+              subscription.status === "active" ||
+              subscription.status === "trialing" ||
+              subscription.status === "past_due" ||
+              subscription.status === "unpaid"
+            ) {
+              subscriptionIdsToCancel.add(subscription.id);
+            }
+          }
+        } catch (error) {
+          reportError("billing", "cancel_subscription_list_customer_subscriptions_failed", error, {
+            profesionistId: String(prof.id),
+            customerId
+          });
+        }
+      }
+    }
+
+    if (subscriptionIdsToCancel.size === 0) {
+      return NextResponse.redirect(
+        new URL(
+          "/dashboard?error=" +
+            encodeURIComponent("Nu am găsit un abonament activ de anulat. Verifică Billing Portal sau contactează suportul."),
+          siteUrl
+        ),
+        303
+      );
+    }
+
+    let canceledCount = 0;
+    for (const subId of subscriptionIdsToCancel) {
       try {
         await stripe.subscriptions.cancel(subId, { prorate: false });
+        canceledCount += 1;
       } catch (error) {
         reportError("billing", "cancel_subscription_stripe_failed", error, { profesionistId: String(prof.id), subscriptionId: subId });
       }
+    }
+
+    if (canceledCount === 0) {
+      return NextResponse.redirect(
+        new URL(
+          "/dashboard?error=" +
+            encodeURIComponent("Nu am putut confirma anularea în Stripe. Nu s-a aplicat nicio schimbare locală."),
+          siteUrl
+        ),
+        303
+      );
     }
 
     const { error: deleteLocalError } = await admin.from("subscriptions").delete().eq("profesionist_id", String(prof.id));
@@ -102,7 +170,7 @@ export async function POST() {
     return NextResponse.redirect(
       new URL(
         "/dashboard?canceled=1&info=" +
-          encodeURIComponent("Abonamentul a fost anulat. Nu se vor mai retrage bani, iar înregistrările de abonament au fost eliminate local."),
+          encodeURIComponent("Abonamentul a fost anulat în Stripe. Nu se vor mai retrage bani, iar înregistrările locale au fost curățate."),
         siteUrl
       ),
       303

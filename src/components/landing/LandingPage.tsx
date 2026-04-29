@@ -254,10 +254,6 @@ export function LandingPage() {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-emerald-400">✓</span>
-              <span>Integrare Google Calendar</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-400">✓</span>
               <span>Suport pe email</span>
             </li>
           </ul>
@@ -272,10 +268,6 @@ export function LandingPage() {
           <h2 className="font-display text-4xl md:text-5xl font-semibold tracking-wide text-amber-100">Întrebări frecvente</h2>
         </div>
         <div className="space-y-4">
-          <details className="rounded-xl border border-zinc-800 bg-zinc-900 px-6 py-4 text-base text-zinc-300" open>
-            <summary className="cursor-pointer list-none font-semibold text-white">Cum îmi conectez Google Calendar?</summary>
-            <p className="mt-3 text-zinc-400">Te loghezi cu Google o singură dată. Programările noi apar instant în calendarul tău.</p>
-          </details>
           <details className="rounded-xl border border-zinc-800 bg-zinc-900 px-6 py-4 text-base text-zinc-300">
             <summary className="cursor-pointer list-none font-semibold text-white">Cum gestionez plățile pentru serviciile mele?</summary>
             <p className="mt-3 text-zinc-400">OcupaLoc se concentrează acum pe programări, confirmări, remindere și organizarea agendei. Plata online la rezervare nu este integrată în acest moment.</p>
