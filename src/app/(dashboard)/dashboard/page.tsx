@@ -8,7 +8,6 @@ import { AddManualBookingDialog, type ServiciuOption } from "./add-manual-bookin
 import { CopyPublicLinkButton } from "./copy-public-link";
 import { ProgramariTable, type ProgramareRow } from "./programari-table";
 import { type PlanStatus } from "@/components/billing/PlanStatusBanner";
-import { Button } from "@/components/ui/button";
 import { BILLING_TRIAL_DAYS, isBillingEnabled } from "@/lib/billing/config";
 import { extractProgramPauza, getProgramSlotConfig, parseProgramJson, ziKeyFromDate } from "@/lib/program";
 import { computeFreeSlots } from "@/lib/slots";
@@ -279,6 +278,13 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     .gte("data_start", new Date().toISOString())
     .lte("data_start", sevenDaysAheadIso);
 
+  const { count: upcomingConfirmedTotalCount } = await supabase
+    .from("programari")
+    .select("*", { count: "exact", head: true })
+    .eq("profesionist_id", prof.id)
+    .eq("status", "confirmat")
+    .gte("data_start", new Date().toISOString());
+
   // Overdue: past confirmed bookings not yet finalized or no-showed — operator should act on these
   const { count: overdueCount } = await supabase
     .from("programari")
@@ -449,8 +455,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   // Retention signal: fully-set-up salon with zero upcoming confirmed bookings
   const fullySetUp = programSetat && (serviciiCount ?? 0) > 0 && Boolean(prof.slug);
-  const upcomingConfirmedCount = programari.filter((p) => p.status === "confirmat").length;
-  const showNoBookingsNudge = fullySetUp && upcomingConfirmedCount === 0 && filter !== "azi";
+  const showNoBookingsNudge = fullySetUp && (upcomingConfirmedTotalCount ?? 0) === 0 && filter !== "azi";
 
   // Dedicated query for pending confirmations panel (independent of main filter/pagination)
   const { data: pendingBookings } = await supabase
