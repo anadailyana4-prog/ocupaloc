@@ -42,27 +42,18 @@ test.describe('Release Validation', () => {
 
     const days = guestPage.locator('[data-testid="day-option"]');
     const dayCount = await days.count();
-    const today = new Date().getDate();
     let selectedDayIndex = -1;
 
-    // Scan all days for available slots: try tomorrow+ first, then today as fallback.
-    // Two-pass strategy ensures CI robustness regardless of time of day.
-    for (let pass = 0; pass < 2 && selectedDayIndex === -1; pass++) {
-      for (let i = 0; i < dayCount; i++) {
-        const txt = (await days.nth(i).textContent())?.trim() ?? '';
-        const dayNo = Number.parseInt(txt, 10);
-        // Pass 0: prefer future days (tomorrow+). Pass 1: include today as fallback.
-        if (pass === 0 && !Number.isNaN(dayNo) && dayNo <= today) continue;
-        if (pass === 1 && !Number.isNaN(dayNo) && dayNo < today) continue;
+    // Scan all visible days in order for any with available slots.
+    // Day-of-month comparison is intentionally avoided: it breaks across month
+    // boundaries (e.g. today=Apr-29, calendar shows May-1..15 which are all < 29).
+    for (let i = 0; i < dayCount && selectedDayIndex === -1; i++) {
+      await days.nth(i).click();
+      await guestPage.waitForTimeout(1000);
 
-        await days.nth(i).click();
-        await guestPage.waitForTimeout(1000);
-
-        const slotCount = await guestPage.locator('[data-testid="slot-option"]').count();
-        if (slotCount > 0) {
-          selectedDayIndex = i;
-          break;
-        }
+      const slotCount = await guestPage.locator('[data-testid="slot-option"]').count();
+      if (slotCount > 0) {
+        selectedDayIndex = i;
       }
     }
 
