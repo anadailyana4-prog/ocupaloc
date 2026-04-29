@@ -101,7 +101,7 @@ export async function POST() {
 
     return NextResponse.redirect(
       new URL(
-        "/dashboard?info=" +
+        "/dashboard?canceled=1&info=" +
           encodeURIComponent("Abonamentul a fost anulat. Nu se vor mai retrage bani, iar înregistrările de abonament au fost eliminate local."),
         siteUrl
       ),

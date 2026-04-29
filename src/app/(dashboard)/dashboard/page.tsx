@@ -17,7 +17,7 @@ import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
 
 type PageProps = {
-  searchParams?: Promise<{ saved?: string; error?: string; filter?: string; info?: string; activated?: string }>;
+  searchParams?: Promise<{ saved?: string; error?: string; filter?: string; info?: string; activated?: string; canceled?: string }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -150,6 +150,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   // ---
 
   const sp = searchParams ? await searchParams : {};
+  const isPostCancelState = sp.canceled === "1";
   const filter = sp.filter === "azi" || sp.filter === "toate" ? sp.filter : "viitoare";
 
   const { count: serviciiCount } = await supabase
@@ -511,7 +512,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   // No active subscription: send user to activation step instead of showing a dead-end lock screen.
   // Exception: if user just returned from Stripe checkout (?activated=1), don't redirect — the
   // subscription is being synced and the webhook / billing/succes upsert may still be in flight.
-  if (planStatus.kind === "none" && sp.activated !== "1") {
+  if (planStatus.kind === "none" && sp.activated !== "1" && !isPostCancelState) {
     const slug = prof.slug?.trim();
     if (slug) {
       redirect(`/onboarding/bun-venit?slug=${encodeURIComponent(slug)}`);
@@ -532,6 +533,23 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
       ) : null}
       {sp.error ? (
         <div className="rounded-2xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-200">{decodeURIComponent(sp.error)}</div>
+      ) : null}
+
+      {isPostCancelState ? (
+        <div className="rounded-2xl border border-zinc-700/60 bg-zinc-900/60 px-5 py-4">
+          <p className="text-sm font-semibold text-zinc-100">Ne pare rău că ai ales să pleci.</p>
+          <p className="mt-1 text-xs text-zinc-400">
+            Abonamentul este anulat și nu se vor mai retrage bani. Dacă vrei să revii, poți reactiva oricând trial-ul sau abonamentul din dashboard.
+          </p>
+          <form method="get" action="/api/billing/create-checkout" className="mt-3">
+            <button
+              type="submit"
+              className="inline-flex items-center rounded-full border border-amber-400/40 bg-amber-950/40 px-4 py-1.5 text-xs font-medium text-amber-200 transition hover:border-amber-300/60 hover:bg-amber-900/50"
+            >
+              Reactivează abonamentul
+            </button>
+          </form>
+        </div>
       ) : null}
 
       <section className="space-y-4">
