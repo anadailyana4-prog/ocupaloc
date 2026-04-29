@@ -702,17 +702,6 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
         </section>
       ) : null}
 
-      {/* Settings link chip — Date publice + Smart Rules are in /dashboard/setari */}
-      <div className="flex items-center justify-between rounded-2xl border border-zinc-700/50 bg-zinc-900/40 px-5 py-3">
-        <div>
-          <p className="text-sm font-medium text-amber-100">Setări business</p>
-          <p className="mt-0.5 text-xs text-zinc-500">Date publice (telefon, descriere) și reguli de rezervare</p>
-        </div>
-        <Button asChild variant="secondary" size="sm" className="rounded-full shrink-0">
-          <Link href="/dashboard/setari">Configurează →</Link>
-        </Button>
-      </div>
-
       {/* Today's upcoming appointments quick strip */}
       {filter !== "azi" && todayUpcomingRows.length > 0 ? (
         <section className="space-y-2">
