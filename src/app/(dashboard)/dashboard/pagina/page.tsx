@@ -33,14 +33,15 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
     whatsapp?: string | null;
     email: string | null;
     description: string | null;
+    adresa_publica: string | null;
     slug: string | null;
   };
 
   const attempts = [
-    "nume_business, telefon, whatsapp, email, description, slug",
-    "nume_business, telefon, email, description, slug",
-    "nume_business, whatsapp, email, description, slug",
-    "nume_business, email, description, slug"
+    "nume_business, telefon, whatsapp, email, description, adresa_publica, slug",
+    "nume_business, telefon, email, description, adresa_publica, slug",
+    "nume_business, whatsapp, email, description, adresa_publica, slug",
+    "nume_business, email, description, adresa_publica, slug"
   ] as const;
 
   let org: OrgRow | null = null;
@@ -171,6 +172,18 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
             className="resize-y border-zinc-700 bg-zinc-900"
           />
           <p className="text-xs text-muted-foreground">Maximum 200 de caractere.</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="adresa_publica">Adresă publică</Label>
+          <Input
+            id="adresa_publica"
+            name="adresa_publica"
+            maxLength={300}
+            defaultValue={org.adresa_publica ?? ""}
+            placeholder="ex: Str. Florilor 10, București"
+            className="border-zinc-700 bg-zinc-900"
+          />
+          <p className="text-xs text-muted-foreground">Apare pe pagina publică și în remindere, dacă e completată.</p>
         </div>
         <Button type="submit" className="rounded-full px-8">
           Salvează

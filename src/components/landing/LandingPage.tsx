@@ -250,7 +250,7 @@ export function LandingPage() {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-emerald-400">✓</span>
-              <span>Confirmări automate SMS/Email</span>
+              <span>Confirmări automate pe email</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-emerald-400">✓</span>

@@ -31,6 +31,11 @@ const settingsSchema = z.object({
     .trim()
     .max(50)
     .transform((s) => (s === "" ? null : s)),
+  adresa_publica: z
+    .string()
+    .trim()
+    .max(300)
+    .transform((s) => (s === "" ? null : s)),
   description: z
     .string()
     .trim()
@@ -57,6 +62,7 @@ export async function savePageSettings(formData: FormData) {
     name: String(formData.get("name") ?? ""),
     phone: String(formData.get("phone") ?? ""),
     whatsapp: String(formData.get("whatsapp") ?? ""),
+    adresa_publica: String(formData.get("adresa_publica") ?? ""),
     description: String(formData.get("description") ?? ""),
     email: String(formData.get("email") ?? "")
   };
@@ -71,7 +77,8 @@ export async function savePageSettings(formData: FormData) {
   const baseValues = {
     nume_business: parsed.data.name,
     description: parsed.data.description,
-    email: parsed.data.email
+    email: parsed.data.email,
+    adresa_publica: parsed.data.adresa_publica
   };
 
   const updateAttempts: Array<Record<string, unknown>> = [

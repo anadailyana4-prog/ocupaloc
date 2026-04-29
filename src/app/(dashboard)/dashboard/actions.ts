@@ -204,7 +204,7 @@ const manualBookingSchema = z.object({
   oraStr: z.string().regex(/^\d{2}:\d{2}$/, "Ora invalidă.")
 });
 
-export type ManualBookingResult = { success: true } | { success: false; message: string };
+export type ManualBookingResult = { success: true; emailSent: boolean } | { success: false; message: string };
 
 export async function addManualBooking(input: {
   numeClient: string;
@@ -277,7 +277,8 @@ export async function addManualBooking(input: {
   }
 
   // Notifică clientul dacă a furnizat email (fire-and-forget).
-  if (inserted?.id && parsed.data.emailClient) {
+  const emailSent = Boolean(inserted?.id && parsed.data.emailClient);
+  if (emailSent) {
     notifyClientBookingConfirmation(inserted.id).catch((err) =>
       reportError("email", "manual_booking_notify_client_failed", err, { bookingId: inserted.id })
     );
@@ -286,5 +287,5 @@ export async function addManualBooking(input: {
   await logBookingStatusEvent({ bookingId: inserted.id, status: "confirmat", source: "salon_manual" });
 
   revalidatePath("/dashboard");
-  return { success: true };
+  return { success: true, emailSent };
 }

@@ -147,6 +147,7 @@ export async function GET(req: NextRequest) {
     ok: cronError === null,
     sent24h,
     sent2h,
+    sent2hDelivery: "best_effort" as const,
     total: sent24h + sent2h,
     ranAt: new Date().toISOString(),
     ...(cronError ? { error: String(cronError) } : {})
