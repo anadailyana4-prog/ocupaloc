@@ -191,9 +191,25 @@ export async function handleStripeWebhookRequest(
       case "invoice.payment_failed": {
         const subId = obj.subscription as string | undefined;
         if (!subId) break;
+        let canceledInStripe = false;
+        try {
+          await stripe.subscriptions.cancel(subId, { prorate: false });
+          canceledInStripe = true;
+        } catch (error) {
+          reportError("billing", "stripe_webhook_auto_cancel_failed", error, {
+            eventType: event.type,
+            subId,
+            customerId: obj.customer as string | undefined,
+            eventId: event.id
+          });
+        }
+
         await admin
           .from("subscriptions")
-          .update({ status: "past_due", updated_at: new Date().toISOString() })
+          .update({
+            status: canceledInStripe ? "canceled" : "past_due",
+            updated_at: new Date().toISOString()
+          })
           .eq("stripe_subscription_id", subId);
         break;
       }

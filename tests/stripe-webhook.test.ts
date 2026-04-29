@@ -179,6 +179,67 @@ test("stripe webhook: returns 200 for invoice.payment_failed", async () => {
   delete process.env.STRIPE_WEBHOOK_SECRET;
 });
 
+test("stripe webhook: invoice.payment_failed auto-cancels subscription and marks local row canceled", async () => {
+  process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
+
+  const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
+  const updates: Array<Record<string, unknown>> = [];
+  const canceledSubIds: string[] = [];
+
+  const deps: StripeWebhookDeps = {
+    getStripe: () =>
+      ({
+        webhooks: {
+          constructEventAsync: async () => ({
+            id: "evt_inv_fail_cancel",
+            type: "invoice.payment_failed",
+            data: {
+              object: {
+                id: "in_test_1",
+                subscription: "sub_cancel_me",
+                customer: "cus_test_1"
+              }
+            }
+          })
+        },
+        subscriptions: {
+          cancel: async (subId: string) => {
+            canceledSubIds.push(subId);
+            return { id: subId };
+          }
+        }
+      }) as unknown as ReturnType<StripeWebhookDeps["getStripe"]>,
+    getAdmin: () =>
+      ({
+        from: () => ({
+          update: (payload: Record<string, unknown>) => {
+            updates.push(payload);
+            return {
+              eq: async () => ({ data: null, error: null })
+            };
+          },
+          select: () => ({
+            eq: () => ({
+              limit: () => ({
+                maybeSingle: async () => ({ data: null })
+              })
+            })
+          }),
+          upsert: async () => ({ data: null, error: null })
+        })
+      }) as unknown as ReturnType<StripeWebhookDeps["getAdmin"]>
+  };
+
+  const res = await handleStripeWebhookRequest(req, deps);
+  assert.equal(res.status, 200);
+  assert.equal((await jsonBody(res)).received, true);
+  assert.deepEqual(canceledSubIds, ["sub_cancel_me"]);
+  assert.equal(updates.length, 1);
+  assert.equal(updates[0].status, "canceled");
+
+  delete process.env.STRIPE_WEBHOOK_SECRET;
+});
+
 test("stripe webhook: returns 200 for unknown event type (no-op)", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
   const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
