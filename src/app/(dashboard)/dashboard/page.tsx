@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { randomUUID } from "node:crypto";
 
 import { AddManualBookingDialog, type ServiciuOption } from "./add-manual-booking-dialog";
+import { CancelSubscriptionButton } from "./cancel-subscription-button";
 import { CopyPublicLinkButton } from "./copy-public-link";
 import { ProgramariTable, type ProgramareRow } from "./programari-table";
 import { type PlanStatus } from "@/components/billing/PlanStatusBanner";
@@ -505,6 +506,8 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     return null;
   })();
 
+  const canCancelSubscription = planStatus.kind === "active" || planStatus.kind === "trialing_stripe" || planStatus.kind === "past_due";
+
   // No active subscription: send user to activation step instead of showing a dead-end lock screen.
   // Exception: if user just returned from Stripe checkout (?activated=1), don't redirect — the
   // subscription is being synced and the webhook / billing/succes upsert may still be in flight.
@@ -835,6 +838,16 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
               </tbody>
             </table>
           </div>
+        </section>
+      ) : null}
+
+      {canCancelSubscription ? (
+        <section className="space-y-2 border-t border-zinc-800/70 pt-6">
+          <h3 className="text-sm font-semibold tracking-wide text-zinc-300">Abonament</h3>
+          <p className="text-xs text-zinc-500">
+            Dacă anulezi, plata recurentă este oprită imediat, iar abonamentul este scos din evidența locală.
+          </p>
+          <CancelSubscriptionButton />
         </section>
       ) : null}
     </div>
