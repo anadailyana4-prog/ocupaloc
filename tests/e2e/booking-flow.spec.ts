@@ -20,7 +20,7 @@ test("homepage loads and shows CTA", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveTitle(/ocupaloc|programare online/i);
   // Main CTA button — text varies; assert at least one link to /signup or /login exists
-  const ctaLink = page.getByRole("link", { name: /\bîncepe\b|\bînregistrează\b|\bcreează\b|\bincearca\b/i }).first();
+  const ctaLink = page.getByRole("link", { name: /încearcă|înregistrează|creează|începe/i }).first();
   await expect(ctaLink).toBeVisible({ timeout: 10_000 });
 });
 

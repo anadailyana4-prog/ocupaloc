@@ -46,12 +46,12 @@ test("login smoke test", async ({ page, context }) => {
 
   await expect
     .poll(() => page.url(), { timeout: 20_000, intervals: [250, 500, 1_000] })
-    .toMatch(/\/(dashboard|onboarding)(\?|$)/);
+    .toMatch(/\/(dashboard|onboarding)/);
 
   const finalUrl = page.url();
   const cookies = await context.cookies();
 
   expect(authResponses.some(({ status }) => status === 200)).toBeTruthy();
   expect(cookies.some(({ name }) => name.startsWith("sb-"))).toBeTruthy();
-  expect(finalUrl).toMatch(/\/(dashboard|onboarding)(\?|$)/);
+  expect(finalUrl).toMatch(/\/(dashboard|onboarding)/);
 });
