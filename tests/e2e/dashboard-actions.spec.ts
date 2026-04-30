@@ -30,7 +30,7 @@ function requireCreds() {
 }
 
 async function loginToDashboard(page: import("@playwright/test").Page) {
-  await page.goto(`${baseUrl}/login`, { waitUntil: "networkidle" });
+  await page.goto(`${baseUrl}/login`, { waitUntil: "load" });
   await page.getByTestId("login-email-input").fill(loginEmail!);
   await page.getByTestId("login-password-input").fill(loginPassword!);
   await page.getByTestId("login-submit").click();
@@ -112,7 +112,7 @@ test.describe("Dashboard owner actions", () => {
     await loginToDashboard(page);
 
     // Navigate to /dashboard/program
-    await page.goto(`${baseUrl}/dashboard/program`, { waitUntil: "networkidle" });
+    await page.goto(`${baseUrl}/dashboard/program`, { waitUntil: "load" });
 
     // Page should contain the schedule editor heading
     await expect(page.getByRole("heading", { name: /Program/i })).toBeVisible({ timeout: 10_000 });

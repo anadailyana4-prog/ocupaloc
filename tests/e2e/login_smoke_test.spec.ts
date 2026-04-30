@@ -29,7 +29,7 @@ test("login smoke test", async ({ page, context }) => {
     });
   });
 
-  await page.goto("/login", { waitUntil: "networkidle" });
+  await page.goto("/login", { waitUntil: "load" });
 
   const emailInput = page.getByTestId("login-email-input");
   const passwordInput = page.getByTestId("login-password-input");

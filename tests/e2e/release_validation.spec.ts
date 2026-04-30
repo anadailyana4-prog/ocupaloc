@@ -34,7 +34,7 @@ test.describe('Release Validation', () => {
     const guestPage = await guestCtx.newPage();
 
     console.log('Navigating to public page...');
-    await guestPage.goto(publicUrl, { waitUntil: 'networkidle' });
+    await guestPage.goto(publicUrl, { waitUntil: 'load' });
 
     // Select service
     await guestPage.locator('[data-testid="service-option"]').first().click();
@@ -106,7 +106,7 @@ test.describe('Release Validation', () => {
     const proPage = await proCtx.newPage();
 
     console.log('Logging in to dashboard...');
-    await proPage.goto(`${baseUrl}/login`, { waitUntil: 'networkidle' });
+    await proPage.goto(`${baseUrl}/login`, { waitUntil: 'load' });
     await proPage.getByTestId('login-email-input').fill(loginEmail!);
     await proPage.getByTestId('login-password-input').fill(loginPassword!);
     await proPage.getByTestId('login-submit').click();
