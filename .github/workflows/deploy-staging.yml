@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Validate & Test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -57,7 +57,7 @@ jobs:
     needs: validate-and-test
     if: github.ref == 'refs/heads/staging' || github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Deploy to Vercel Staging
         run: |
