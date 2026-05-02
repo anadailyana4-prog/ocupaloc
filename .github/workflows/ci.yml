@@ -48,13 +48,17 @@ jobs:
           fi
 
       - name: "🔐 Validate critical secrets for E2E release tests"
+        id: e2e_gate
+        env:
+          E2E_EMAIL: ${{ secrets.PLAYWRIGHT_LOGIN_EMAIL }}
+          E2E_PASS: ${{ secrets.PLAYWRIGHT_LOGIN_PASSWORD }}
         run: |
-          if [ "${{ vars.ENABLE_E2E }}" = "true" ]; then
-            if [ -z "${{ secrets.PLAYWRIGHT_LOGIN_EMAIL }}" ] || [ -z "${{ secrets.PLAYWRIGHT_LOGIN_PASSWORD }}" ]; then
-              echo "::warning::E2E secrets missing (PLAYWRIGHT_LOGIN_EMAIL/PLAYWRIGHT_LOGIN_PASSWORD). Skipping E2E steps for this run."
-            else
-              echo "✓ E2E secrets validated: PLAYWRIGHT_LOGIN_EMAIL and PLAYWRIGHT_LOGIN_PASSWORD are set."
-            fi
+          if [ "${{ vars.ENABLE_E2E }}" = "true" ] && [ -n "$E2E_EMAIL" ] && [ -n "$E2E_PASS" ]; then
+            echo "e2e_ready=true" >> "$GITHUB_OUTPUT"
+            echo "✓ E2E secrets validated."
+          else
+            echo "e2e_ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::E2E secrets missing or ENABLE_E2E not set. Skipping E2E steps."
           fi
 
       - name: Scan for hardcoded credentials in E2E tests
@@ -103,11 +107,11 @@ jobs:
           NEXT_PUBLIC_SITE_URL: https://ocupaloc.ro
 
       - name: Install Playwright browser (E2E only)
-        if: ${{ vars.ENABLE_E2E == 'true' && secrets.PLAYWRIGHT_LOGIN_EMAIL != '' && secrets.PLAYWRIGHT_LOGIN_PASSWORD != '' }}
+        if: steps.e2e_gate.outputs.e2e_ready == 'true'
         run: pnpm exec playwright install --with-deps chromium
 
       - name: "🚀 E2E Release Validation — Run 1 (CRITICAL)"
-        if: ${{ vars.ENABLE_E2E == 'true' && secrets.PLAYWRIGHT_LOGIN_EMAIL != '' && secrets.PLAYWRIGHT_LOGIN_PASSWORD != '' }}
+        if: steps.e2e_gate.outputs.e2e_ready == 'true'
         id: e2e_run1
         env:
           PLAYWRIGHT_REQUIRE_EXECUTION: "true"
@@ -122,7 +126,7 @@ jobs:
           echo "✅ E2E Run 1 passed."
 
       - name: "🔁 E2E Release Validation — Run 2 (Determinism)"
-        if: ${{ vars.ENABLE_E2E == 'true' && secrets.PLAYWRIGHT_LOGIN_EMAIL != '' && secrets.PLAYWRIGHT_LOGIN_PASSWORD != '' && steps.e2e_run1.outcome == 'success' }}
+        if: steps.e2e_gate.outputs.e2e_ready == 'true' && steps.e2e_run1.outcome == 'success'
         env:
           PLAYWRIGHT_REQUIRE_EXECUTION: "true"
           PLAYWRIGHT_BASE_URL: ${{ vars.PLAYWRIGHT_BASE_URL }}
