@@ -315,7 +315,6 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
               alt={`Logo ${String(prof.nume_business ?? "salon")}`}
               width={96}
               height={96}
-              unoptimized
               className="h-24 w-24 rounded-full border border-zinc-800 object-cover shadow-lg"
             />
           ) : (

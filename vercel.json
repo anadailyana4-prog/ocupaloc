@@ -35,7 +35,7 @@
     },
     {
       "path": "/api/jobs/trial-expiry-warning",
-      "schedule": "0 10 * * *"
+      "schedule": "15 10 * * *"
     }
   ]
 }
