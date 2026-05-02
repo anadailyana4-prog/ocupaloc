@@ -1,0 +1,44 @@
+name: DB Backup
+
+on:
+  schedule:
+    # Runs daily at 02:00 UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  backup:
+    name: Supabase DB Dump
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/supabase/cli/main/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Dump schema + data
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          mkdir -p backups
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H-%M-%SZ")
+          pg_dump "$SUPABASE_DB_URL" \
+            --no-owner \
+            --no-acl \
+            --schema=public \
+            --format=custom \
+            --file="backups/ocupaloc-${TIMESTAMP}.dump"
+          echo "BACKUP_FILE=backups/ocupaloc-${TIMESTAMP}.dump" >> $GITHUB_ENV
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backups/
+          retention-days: 90
+          if-no-files-found: error
