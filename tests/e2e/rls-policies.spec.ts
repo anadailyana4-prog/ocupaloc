@@ -145,7 +145,7 @@ test.describe("Row-Level Security Policies", () => {
     requireCreds();
     test.setTimeout(90_000);
 
-    const tokens = await loginAndGetTokens(page);
+    await loginAndGetTokens(page);
     await page.goto(`${baseUrl}/dashboard/program`, { waitUntil: "load" });
 
     // Check if sensitive fields are properly masked

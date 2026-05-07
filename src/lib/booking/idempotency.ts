@@ -22,11 +22,6 @@ export type IdempotentResult = {
   statusCode: number;
 };
 
-type DeduplicationRecord = {
-  status: "in_progress" | "completed" | "failed";
-  result: IdempotentResult | null;
-};
-
 const LOCK_WAIT_TIMEOUT_MS = 5000;
 const LOCK_POLL_INTERVAL_MS = 100;
 
@@ -42,7 +37,7 @@ export async function acquireIdempotencyLock(
 
   try {
     // Try to insert with status='in_progress'
-    const { data, error } = await admin.from("request_deduplication").insert({
+    const { error } = await admin.from("request_deduplication").insert({
       idempotency_key: idempotencyKey,
       request_id: requestId ?? null,
       status: "in_progress",

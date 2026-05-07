@@ -44,6 +44,9 @@ export function DashboardHeader() {
             <Link href="/dashboard/program" className="transition hover:text-zinc-100">
               Program
             </Link>
+            <Link href="/dashboard/billing" className="transition hover:text-zinc-100">
+              Billing
+            </Link>
             <Link href="/dashboard/pagina" className="transition hover:text-zinc-100 hidden sm:inline">
               Pagină publică
             </Link>
@@ -71,6 +74,9 @@ export function DashboardHeader() {
         </Link>
         <Link href="/dashboard/program" className="transition hover:text-zinc-100 py-1">
           Program
+        </Link>
+        <Link href="/dashboard/billing" className="transition hover:text-zinc-100 py-1">
+          Billing
         </Link>
         <Link href="/dashboard/pagina" className="transition hover:text-zinc-100 py-1">
           Pagină publică
