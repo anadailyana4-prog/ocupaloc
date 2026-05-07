@@ -64,13 +64,28 @@ export async function handleBookRequest(
   payload: unknown,
   ip: string,
   depsOrRequestId?: BookRouteDeps | string,
-  maybeDeps?: BookRouteDeps
+  maybeDepsOrIdempotency?: BookRouteDeps | string,
+  maybeIdempotencyKey?: string
 ): Promise<{ status: number; body: { success: boolean; error: string | Record<string, string[] | undefined> | null } }> {
-  const requestId = typeof depsOrRequestId === "string" ? depsOrRequestId : undefined;
-  const deps: BookRouteDeps =
-    typeof depsOrRequestId === "string"
-      ? maybeDeps ?? defaultDeps
-      : depsOrRequestId ?? defaultDeps;
+  let requestId: string | undefined;
+  let deps: BookRouteDeps = defaultDeps;
+  let idempotencyKey: string | undefined;
+
+  if (typeof depsOrRequestId === "string") {
+    requestId = depsOrRequestId;
+    if (typeof maybeDepsOrIdempotency === "string") {
+      idempotencyKey = maybeDepsOrIdempotency;
+      deps = defaultDeps;
+    } else {
+      deps = maybeDepsOrIdempotency ?? defaultDeps;
+      idempotencyKey = maybeIdempotencyKey;
+    }
+  } else {
+    deps = depsOrRequestId ?? defaultDeps;
+    if (typeof maybeDepsOrIdempotency === "string") {
+      idempotencyKey = maybeDepsOrIdempotency;
+    }
+  }
   const parsed = bodySchema.safeParse(payload);
   if (!parsed.success) {
     return {
@@ -118,7 +133,9 @@ export async function handleBookRequest(
       slotIso: start.toISOString(),
       numeClient: requestData.clientName.trim(),
       telefonClient: requestData.clientPhone.trim(),
-      emailClient: requestData.clientEmail ?? null
+      emailClient: requestData.clientEmail ?? null,
+      idempotencyKey,
+      requestId
     });
 
     if (!res.ok) {

@@ -1,9 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { checkBookingEntitlement } from "@/lib/billing/entitlements";
-import { entitlementMessage } from "@/lib/billing/entitlement-messages";
-import { extractProgramPauza, getProgramSlotConfig, parseProgramJson } from "@/lib/program";
-import { calcDataFinalProgramare, computeFreeSlots } from "@/lib/slots";
+import {
+  BlockedClientError,
+  BookingError,
+  NoSubscriptionError,
+  SlotConflictError
+} from "@/lib/domain/booking/errors";
+import { logError, logWarn, logInfo } from "@/lib/logger";
+import { normalizeRoPhone } from "@/lib/phone";
 
 export type InsertProgramareInput = {
   slug: string;
@@ -13,207 +17,167 @@ export type InsertProgramareInput = {
   numeClient: string;
   telefonClient: string;
   emailClient?: string | null;
+  idempotencyKey?: string;
+  requestId?: string;
 };
 
 export type InsertProgramareResult =
   | { ok: true; programareId: string }
   | { ok: false; message: string };
 
-async function countClientCancellationsInWindow(
+export async function createBookingAtomic(
   admin: SupabaseClient,
   profesionistId: string,
-  phone: string,
-  cutoffIso: string
-): Promise<number> {
-  const { data: events } = await admin
-    .from("programari_status_events")
-    .select("programare_id")
-    .eq("profesionist_id", profesionistId)
-    .eq("status", "anulat")
-    .eq("source", "client_link")
-    .gte("created_at", cutoffIso);
+  serviciuId: string,
+  dataStart: Date,
+  dataFinal: Date,
+  telefonClient: string,
+  numeClient: string,
+  emailClient?: string
+): Promise<{ ok: true; programareId: string } | { ok: false; error: BookingError }> {
+  const normalizedPhone = normalizeRoPhone(telefonClient);
 
-  const bookingIds = Array.from(new Set((events ?? []).map((e) => e.programare_id).filter(Boolean)));
-  if (bookingIds.length === 0) {
-    return 0;
+  try {
+    const { data, error } = await admin.rpc("book_appointment_atomic", {
+      p_profesionist_id: profesionistId,
+      p_serviciu_id: serviciuId,
+      p_data_start: dataStart.toISOString(),
+      p_data_final: dataFinal.toISOString(),
+      p_telefon_client: normalizedPhone,
+      p_nume_client: numeClient,
+      p_email_client: emailClient
+    }) as {
+      data?: { programare_id: string } | Array<{ programare_id: string }> | null;
+      error?: { message?: string } | null;
+    };
+
+    if (error) {
+      if (error.message?.includes("CONFLICT")) {
+        return { ok: false, error: new SlotConflictError() };
+      }
+      if (error.message?.includes("BLOCKED")) {
+        return { ok: false, error: new BlockedClientError() };
+      }
+      if (error.message?.includes("NOSUBSCRIPTION")) {
+        return { ok: false, error: new NoSubscriptionError() };
+      }
+      throw error;
+    }
+
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row?.programare_id) {
+      throw new Error("book_appointment_atomic returned no programare_id");
+    }
+
+    return { ok: true, programareId: row.programare_id };
+  } catch (err) {
+    logError("book_appointment_atomic failed", err, { profesionistId });
+    return { ok: false, error: new BookingError("System error") };
   }
-
-  const { count } = await admin
-    .from("programari")
-    .select("id", { count: "exact", head: true })
-    .in("id", bookingIds)
-    .eq("profesionist_id", profesionistId)
-    .eq("telefon_client", phone);
-
-  return count ?? 0;
 }
 
 /**
- * Inserează o programare publică pentru un profesionist (slug).
- * Verifică clienti_blocati, serviciu, slot liber, apoi insert.
+ * Call atomic booking RPC (PR 2).
+ * All checks (entitlement, client block, slot availability, smart rules) happen atomically in DB.
+ * No race condition risk — uses SERIALIZABLE transaction with FOR UPDATE locks.
  */
 export async function insertProgramareForProfSlug(
   admin: SupabaseClient,
   input: InsertProgramareInput
 ): Promise<InsertProgramareResult> {
-  const phone = input.telefonClient.trim();
+  const phone = normalizeRoPhone(input.telefonClient);
   const name = input.numeClient.trim();
+  const email = input.emailClient?.trim() ?? "";
 
-  const { data: prof, error: e1 } = await admin.from("profesionisti").select("*").eq("slug", input.slug).maybeSingle();
-  if (e1 || !prof) {
-    return { ok: false, message: "Pagina nu există." };
-  }
-
-  // Entitlement check: subscription active / within trial window
-  const entitlement = await checkBookingEntitlement(
-    admin,
-    prof.id as string,
-    prof.created_at as string
-  );
-  if (!entitlement.allowed) {
-    return { ok: false, message: entitlementMessage(entitlement.reason) };
-  }
-
-  const { data: blocked } = await admin
-    .from("clienti_blocati")
-    .select("id")
-    .eq("profesionist_id", prof.id)
-    .eq("telefon", phone)
-    .maybeSingle();
-  if (blocked) {
-    return {
-      ok: false,
-      message: `Ne pare rău, sună la ${prof.telefon ?? "furnizor"} pentru programare.`
+  try {
+    // Call atomic booking RPC (PR 2)
+    const { data, error: rpcError } = await admin.rpc("book_appointment_atomic", {
+      p_prof_slug: input.slug,
+      p_service_id: input.serviciuId,
+      p_slot_start: input.slotIso,
+      p_client_phone: phone,
+      p_client_name: name,
+      p_client_email: email
+    }) as unknown as {
+      data?: Array<{
+        success: boolean;
+        programare_id: string;
+        error_code: string | null;
+        error_message: string | null;
+      }>;
+      error?: { code?: string; message?: string };
     };
-  }
 
-  const startRequest = new Date(input.slotIso);
-  if (Number.isNaN(startRequest.getTime())) {
-    return { ok: false, message: "Oră invalidă." };
-  }
-
-  // Always reject bookings in the past (independent of smart rules)
-  if (startRequest.getTime() <= Date.now()) {
-    return { ok: false, message: "Slot expirat — alege o oră viitoare." };
-  }
-
-  if (prof.smart_rules_enabled) {
-    const minNotice = Number(prof.smart_min_notice_minutes ?? 0);
-    if (minNotice > 0) {
-      const minAllowed = new Date(Date.now() + minNotice * 60_000);
-      if (startRequest.getTime() < minAllowed.getTime()) {
-        return { ok: false, message: `Rezervările se fac cu minim ${minNotice} minute înainte.` };
-      }
+    if (rpcError) {
+      logError(
+        "[booking] atomic RPC failed",
+        rpcError,
+        { slug: input.slug, errorCode: rpcError.code }
+      );
+      return { ok: false, message: "Nu am putut crea programarea. Te rugăm reîncearcă." };
     }
 
-    const maxFuture = Number(prof.smart_max_future_bookings ?? 0);
-    if (maxFuture > 0) {
-      const { count: futureCount } = await admin
-        .from("programari")
-        .select("id", { count: "exact", head: true })
-        .eq("profesionist_id", prof.id)
-        .eq("telefon_client", phone)
-        .eq("status", "confirmat")
-        .gte("data_start", new Date().toISOString());
-      if ((futureCount ?? 0) >= maxFuture) {
-        return { ok: false, message: "Ai atins limita de programări active pentru această locație." };
-      }
+    if (!data || !data[0]) {
+      logError(
+        "[booking] atomic RPC returned no data",
+        undefined,
+        { slug: input.slug }
+      );
+      return { ok: false, message: "Nu am putut crea programarea. Te rugăm reîncearcă." };
     }
 
-    const cancelThreshold = Number(prof.smart_client_cancel_threshold ?? 0);
-    const windowDays = Number(prof.smart_cancel_window_days ?? 60);
-    if (cancelThreshold > 0) {
-      const cutoff = new Date(Date.now() - Math.max(7, windowDays) * 24 * 60 * 60 * 1000).toISOString();
-      const cancellations = await countClientCancellationsInWindow(admin, prof.id, phone, cutoff);
-      if (cancellations >= cancelThreshold) {
-        return { ok: false, message: `Momentan nu poți rezerva online. Te rugăm să contactezi direct ${prof.telefon ?? "business-ul"}.` };
-      }
+    const result = data[0];
+
+    if (result.success) {
+      logInfo(
+        "[booking] appointment created successfully via atomic RPC",
+        { slug: input.slug, programareId: result.programare_id, requestId: input.requestId }
+      );
+      return { ok: true, programareId: result.programare_id };
     }
+
+    // Map error_code to user message
+    const userMessage = mapAtomicBookingErrorCode(result.error_code);
+    logWarn(
+      `[booking] atomic RPC returned error: ${result.error_code}`,
+      { slug: input.slug, errorCode: result.error_code }
+    );
+
+    return { ok: false, message: userMessage };
+  } catch (err) {
+    logError(
+      "[booking] atomic booking unexpected error",
+      err,
+      { slug: input.slug }
+    );
+    return { ok: false, message: "Nu am putut crea programarea. Te rugăm reîncearcă." };
   }
+}
 
-  const { data: srv, error: e2 } = await admin
-    .from("servicii")
-    .select("*")
-    .eq("id", input.serviciuId)
-    .eq("profesionist_id", prof.id)
-    .eq("activ", true)
-    .maybeSingle();
-  if (e2 || !srv) {
-    return { ok: false, message: "Serviciu invalid." };
+/**
+ * Map RPC error_code to user-facing message.
+ */
+function mapAtomicBookingErrorCode(errorCode: string | null): string {
+  switch (errorCode) {
+    case "PROFESIONIST_NOT_FOUND":
+      return "Pagina nu există.";
+    case "SERVICE_NOT_FOUND":
+      return "Serviciu invalid.";
+    case "SLOT_CONFLICT":
+      return "Slotul nu mai e disponibil. Alege altă oră.";
+    case "CLIENT_BLOCKED":
+      return "Ne pare rău, sună direct pentru programare.";
+    case "NO_SUBSCRIPTION":
+      return "Abonament inactiv. Contactează furnizor.";
+    case "SLOT_IN_PAST":
+      return "Slot expirat — alege o oră viitoare.";
+    case "MIN_NOTICE_VIOLATION":
+      return "Rezervările se fac cu o anumită preaviz. Contactează direct.";
+    case "MAX_FUTURE_VIOLATION":
+      return "Ai atins limita de programări active pentru această locație.";
+    case "CANCEL_THRESHOLD_VIOLATION":
+      return "Momentan nu poți rezerva online. Te rugăm să contactezi direct business-ul.";
+    default:
+      return "Nu am putut crea programarea. Te rugăm reîncearcă.";
   }
-
-  const dataStart = startRequest;
-  if (Number.isNaN(dataStart.getTime())) {
-    return { ok: false, message: "Oră invalidă." };
-  }
-
-  const startDay = `${input.dateStr}T00:00:00.000Z`;
-  const endDay = `${input.dateStr}T23:59:59.999Z`;
-  const { data: progs } = await admin
-    .from("programari")
-    .select("data_start,data_final,status")
-    .eq("profesionist_id", prof.id)
-    .neq("status", "anulat")
-    .lt("data_start", endDay)
-    .gt("data_final", startDay);
-
-  const ocupate = (progs ?? []).map((p) => ({
-    start: new Date(p.data_start as string),
-    end: new Date(p.data_final as string)
-  }));
-
-  const program = parseProgramJson(prof.program);
-  const pauzaProgram = extractProgramPauza(prof.program);
-  const slotConfig = getProgramSlotConfig(prof.program);
-  const prep = prof.lucreaza_acasa ? (prof.timp_pregatire as number) : 0;
-  const slots = computeFreeSlots(
-    input.dateStr,
-    program,
-    srv.durata_minute as number,
-    prof.pauza_intre_clienti as number,
-    prep,
-    ocupate,
-    pauzaProgram,
-    slotConfig
-  );
-  const okSlot = slots.some((s) => Math.abs(s.getTime() - dataStart.getTime()) < 60 * 1000);
-  if (!okSlot) {
-    return { ok: false, message: "Slotul nu mai e disponibil. Alege altă oră." };
-  }
-
-  const hasEarlier = ocupate.some((o) => o.start < dataStart);
-  const ePrimul = !hasEarlier;
-  const dataFinal = calcDataFinalProgramare(
-    dataStart,
-    srv.durata_minute as number,
-    prof.pauza_intre_clienti as number,
-    prep,
-    ePrimul
-  );
-
-  const { data: inserted, error: ins } = await admin
-    .from("programari")
-    .insert({
-      profesionist_id: prof.id,
-      serviciu_id: srv.id,
-      tenant_id: prof.id,
-      nume_client: name,
-      telefon_client: phone,
-      email_client: input.emailClient?.trim() || null,
-      data_start: dataStart.toISOString(),
-      data_final: dataFinal.toISOString(),
-      status: "confirmat",
-      creat_de: "client"
-    })
-    .select("id")
-    .single();
-  if (ins || !inserted?.id) {
-    const code = (ins as { code?: string } | null)?.code;
-    if (code === "23P01") {
-      return { ok: false, message: "Slotul nu mai e disponibil. Alege altă oră." };
-    }
-    return { ok: false, message: "Nu am putut crea programarea acum. Te rugăm să încerci din nou." };
-  }
-
-  return { ok: true, programareId: inserted.id };
 }

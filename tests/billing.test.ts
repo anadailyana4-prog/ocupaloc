@@ -130,3 +130,104 @@ describe("entitlementMessage", () => {
     expect(msg.length).toBeGreaterThan(5);
   });
 });
+
+describe("runBillingReconciliation", () => {
+  it("fixes drifted DB subscription and upserts missing Stripe subscription", async () => {
+    vi.resetModules();
+
+    const updateCalls: Array<Record<string, unknown>> = [];
+    const upsertCalls: Array<Record<string, unknown>> = [];
+
+    const dbSubs = [
+      {
+        profesionist_id: "prof-1",
+        stripe_subscription_id: "sub_existing_1",
+        stripe_customer_id: "cus_existing_1",
+        status: "past_due",
+        current_period_start: null,
+        current_period_end: null,
+        cancel_at_period_end: false
+      }
+    ];
+
+    const admin = {
+      from: (table: string) => {
+        expect(table).toBe("subscriptions");
+        return {
+          select: async () => ({ data: dbSubs, error: null }),
+          update: (payload: Record<string, unknown>) => ({
+            eq: async () => {
+              updateCalls.push(payload);
+              return { error: null };
+            }
+          }),
+          upsert: async (payload: Record<string, unknown>) => {
+            upsertCalls.push(payload);
+            return { error: null };
+          }
+        };
+      }
+    } as unknown as import("@supabase/supabase-js").SupabaseClient;
+
+    vi.doMock("@/lib/supabase/admin", () => ({
+      createSupabaseServiceClient: () => admin
+    }));
+
+    vi.doMock("@/lib/ops-events", () => ({
+      recordOperationalEvent: async () => undefined
+    }));
+
+    vi.doMock("@/lib/observability", () => ({
+      reportError: vi.fn()
+    }));
+
+    vi.doMock("@/lib/billing/stripe", () => ({
+      getStripeClient: () => ({
+        subscriptions: {
+          retrieve: async () => ({
+            id: "sub_existing_1",
+            status: "active",
+            current_period_start: 1778000000,
+            current_period_end: 1780000000,
+            cancel_at_period_end: false
+          }),
+          list: async () => ({
+            data: [
+              {
+                id: "sub_existing_1",
+                status: "active",
+                customer: "cus_existing_1",
+                metadata: { profesionist_id: "prof-1" },
+                current_period_start: 1778000000,
+                current_period_end: 1780000000,
+                cancel_at_period_end: false
+              },
+              {
+                id: "sub_missing_2",
+                status: "active",
+                customer: "cus_missing_2",
+                metadata: { profesionist_id: "prof-2" },
+                current_period_start: 1778100000,
+                current_period_end: 1780100000,
+                cancel_at_period_end: false
+              }
+            ]
+          })
+        }
+      })
+    }));
+
+    const { runBillingReconciliation } = await import("@/lib/jobs/billing-reconciliation");
+    const result = await runBillingReconciliation();
+
+    expect(result).toEqual({
+      checkedDb: 1,
+      checkedStripe: 2,
+      fixed: 2,
+      failed: 0
+    });
+    expect(updateCalls.length).toBe(1);
+    expect(upsertCalls.length).toBe(1);
+    expect(upsertCalls[0]?.stripe_subscription_id).toBe("sub_missing_2");
+  });
+});

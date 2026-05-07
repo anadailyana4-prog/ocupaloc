@@ -11,6 +11,20 @@ type ProfProfile = {
   onboarding_pas?: number | null;
 };
 
+function buildForwardHeaders(request: NextRequest): Headers {
+  const headers = new Headers(request.headers);
+  const existingRequestId = headers.get("x-request-id")?.trim();
+  const existingCorrelationId = headers.get("x-correlation-id")?.trim();
+  const requestId = existingRequestId || existingCorrelationId || crypto.randomUUID();
+
+  headers.set("x-request-id", requestId);
+  if (!existingCorrelationId) {
+    headers.set("x-correlation-id", requestId);
+  }
+
+  return headers;
+}
+
 function copyAuthCookies(from: NextResponse, to: NextResponse) {
   from.cookies.getAll().forEach(({ name, value }) => {
     to.cookies.set(name, value);
@@ -35,15 +49,16 @@ async function isProfileComplete(
 }
 
 export async function middleware(request: NextRequest) {
+  const forwardHeaders = buildForwardHeaders(request);
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anon) {
-    return NextResponse.next({ request: { headers: request.headers } });
+    return NextResponse.next({ request: { headers: forwardHeaders } });
   }
 
   let supabaseResponse = NextResponse.next({
     request: {
-      headers: request.headers
+      headers: forwardHeaders
     }
   });
 
@@ -55,7 +70,7 @@ export async function middleware(request: NextRequest) {
       setAll(cookiesToSet: CookieToSet[]) {
         supabaseResponse = NextResponse.next({
           request: {
-            headers: request.headers
+            headers: forwardHeaders
           }
         });
         cookiesToSet.forEach(({ name, value, options }: CookieToSet) => {
@@ -75,12 +90,14 @@ export async function middleware(request: NextRequest) {
 
   if ((path.startsWith("/dashboard") || path === "/onboarding") && !hasSession) {
     const redirect = NextResponse.redirect(new URL("/login", request.url));
+    redirect.headers.set("x-request-id", forwardHeaders.get("x-request-id") ?? "");
     copyAuthCookies(supabaseResponse, redirect);
     return redirect;
   }
 
   if (hasSession && (path === "/login" || path === "/signup")) {
     const redirect = NextResponse.redirect(new URL("/dashboard", request.url));
+    redirect.headers.set("x-request-id", forwardHeaders.get("x-request-id") ?? "");
     copyAuthCookies(supabaseResponse, redirect);
     return redirect;
   }
@@ -99,11 +116,13 @@ export async function middleware(request: NextRequest) {
 
     if (!complete && path !== "/onboarding") {
       const redirect = NextResponse.redirect(new URL("/onboarding", request.url));
+      redirect.headers.set("x-request-id", forwardHeaders.get("x-request-id") ?? "");
       copyAuthCookies(supabaseResponse, redirect);
       return redirect;
     }
     if (complete && path === "/onboarding") {
       const redirect = NextResponse.redirect(new URL("/dashboard", request.url));
+      redirect.headers.set("x-request-id", forwardHeaders.get("x-request-id") ?? "");
       copyAuthCookies(supabaseResponse, redirect);
       return redirect;
     }
@@ -118,6 +137,8 @@ export async function middleware(request: NextRequest) {
       });
     }
   }
+
+  supabaseResponse.headers.set("x-request-id", forwardHeaders.get("x-request-id") ?? "");
 
   return supabaseResponse;
 }

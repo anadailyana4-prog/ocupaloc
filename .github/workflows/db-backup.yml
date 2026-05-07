@@ -21,13 +21,51 @@ jobs:
           curl -fsSL https://raw.githubusercontent.com/supabase/cli/main/install.sh | bash
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Dump schema + data
+      - name: Resolve backup DB URL
         env:
+          SUPABASE_DIRECT_DB_URL: ${{ secrets.SUPABASE_DIRECT_DB_URL }}
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          DB_URL="${SUPABASE_DIRECT_DB_URL:-$SUPABASE_DB_URL}"
+          if [ -z "$DB_URL" ]; then
+            echo "Missing SUPABASE_DIRECT_DB_URL or SUPABASE_DB_URL secret."
+            exit 1
+          fi
+
+          case "$DB_URL" in
+            *pooler.supabase.com:6543*)
+              NORMALIZED_DB_URL=$(python3 - <<'PY'
+              import os
+              from urllib.parse import urlsplit, urlunsplit
+
+              db_url = os.environ["DB_URL"]
+              parts = urlsplit(db_url)
+
+              username = parts.username or ""
+              password = parts.password or ""
+
+              project_ref = ""
+              if username.startswith("postgres."):
+                project_ref = username.split(".", 1)[1]
+
+              if project_ref:
+                netloc = f"postgres:{password}@db.{project_ref}.supabase.co:5432"
+                print(urlunsplit((parts.scheme, netloc, parts.path or "/postgres", parts.query, parts.fragment)))
+              else:
+                print(db_url)
+              PY
+              )
+              DB_URL="$NORMALIZED_DB_URL"
+              ;;
+          esac
+
+          echo "DB_URL=$DB_URL" >> $GITHUB_ENV
+
+      - name: Dump schema + data
         run: |
           mkdir -p backups
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H-%M-%SZ")
-          pg_dump "$SUPABASE_DB_URL" \
+          pg_dump "$DB_URL" \
             --no-owner \
             --no-acl \
             --schema=public \

@@ -133,3 +133,33 @@ test("handleBookRequest succeeds when clientEmail is empty string and treats it 
   assert.equal(result.body.success, false);
   assert.equal(capturedEmailClient, "SENTINEL"); // insertBooking not reached
 });
+
+test("handleBookRequest passes idempotencyKey to insertBooking", async () => {
+  let capturedIdempotencyKey: string | undefined = "SENTINEL";
+  const deps = makeDeps({
+    insertBooking: async (_admin, input) => {
+      capturedIdempotencyKey = input.idempotencyKey;
+      return { ok: true, programareId: "p-1" };
+    }
+  });
+
+  const result = await handleBookRequest(validPayload, "127.0.0.1", deps, "idempotency-key-123");
+  assert.equal(result.status, 200);
+  assert.equal(result.body.success, true);
+  assert.equal(capturedIdempotencyKey, "idempotency-key-123");
+});
+
+test("handleBookRequest passes requestId to insertBooking", async () => {
+  let capturedRequestId: string | undefined = "SENTINEL";
+  const deps = makeDeps({
+    insertBooking: async (_admin, input) => {
+      capturedRequestId = input.requestId;
+      return { ok: true, programareId: "p-1" };
+    }
+  });
+
+  const result = await handleBookRequest(validPayload, "127.0.0.1", "my-request-id-456", deps);
+  assert.equal(result.status, 200);
+  assert.equal(result.body.success, true);
+  assert.equal(capturedRequestId, "my-request-id-456");
+});

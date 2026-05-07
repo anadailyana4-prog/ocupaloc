@@ -1,5 +1,6 @@
 type CriticalFlow = "booking" | "email" | "cron" | "auth" | "billing";
 
+import { logError } from "@/lib/logger";
 import { sendOpsAlert } from "@/lib/ops-alerting";
 
 function serializeError(error: unknown): Record<string, unknown> {
@@ -31,7 +32,11 @@ export function reportError(
     timestamp: new Date().toISOString()
   };
 
-  console.error("[observability]", JSON.stringify(payload));
+  logError("[observability] reportError", error, {
+    flow,
+    event,
+    requestId: typeof context?.requestId === "string" ? context.requestId : undefined
+  });
 
   void sendOpsAlert({
     flow,

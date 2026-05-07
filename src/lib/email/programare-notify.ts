@@ -1,6 +1,8 @@
 import { formatInTimeZone } from "date-fns-tz";
 
 import { createBookingConfirmationLink } from "@/lib/booking/confirmation-link";
+import { enqueueEmail } from "@/lib/email/email-queue";
+import { sendResendEmail } from "@/lib/email/resend";
 import { reportError } from "@/lib/observability";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
@@ -16,53 +18,13 @@ function escapeHtml(value: string): string {
 }
 
 export type ProgramareNotifyInput = {
-  /** profesionisti.email_contact */
+  /** profesionisti.email */
   to: string | null | undefined;
   clientName: string;
   clientPhone: string;
   serviceName: string;
   appointmentStart: Date;
 };
-
-async function sendResendEmail(input: {
-  to: string[];
-  subject: string;
-  text: string;
-  html?: string;
-  event: string;
-  context?: Record<string, unknown>;
-}): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.RESEND_FROM?.trim();
-
-  if (!apiKey) {
-    throw new Error("RESEND_API_KEY lipsă");
-  }
-
-  if (!from) {
-    throw new Error("RESEND_FROM lipsă");
-  }
-
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      from,
-      to: input.to,
-      subject: input.subject,
-      text: input.text,
-      html: input.html
-    })
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`Resend ${res.status}: ${body || input.event}`);
-  }
-}
 
 /**
  * Notificare salon după programare nouă (Resend).
@@ -96,7 +58,7 @@ export async function notifyProfesionistDespreProgramare(programareId: string): 
   const admin = createSupabaseServiceClient();
   const { data: row, error } = await admin
     .from("programari")
-    .select("nume_client, telefon_client, data_start, profesionisti(email_contact), servicii(nume)")
+    .select("nume_client, telefon_client, data_start, profesionisti(email), servicii(nume)")
     .eq("id", programareId)
     .maybeSingle();
 
@@ -105,20 +67,27 @@ export async function notifyProfesionistDespreProgramare(programareId: string): 
     return { profesionistEmail: null };
   }
 
-  const relProf = row.profesionisti as { email_contact: string | null } | { email_contact: string | null }[] | null;
+  const relProf = row.profesionisti as { email: string | null } | { email: string | null }[] | null;
   const relServ = row.servicii as { nume: string } | { nume: string }[] | null;
   const profesionist = Array.isArray(relProf) ? relProf[0] ?? null : relProf;
   const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
 
-  await notifyProfesionistNewProgramare({
-    to: profesionist?.email_contact ?? null,
-    clientName: row.nume_client,
-    clientPhone: row.telefon_client,
-    serviceName: serviciu?.nume ?? "Serviciu",
-    appointmentStart: new Date(row.data_start)
-  });
+  const dataStr = formatInTimeZone(new Date(row.data_start), TZ, "dd.MM.yyyy");
+  const timeStr = formatInTimeZone(new Date(row.data_start), TZ, "HH:mm");
+  const subject = `Rezervare noua - ${row.nume_client}`;
+  const text = `${row.nume_client} (${row.telefon_client}) a rezervat ${serviciu?.nume ?? "Serviciu"} pe ${dataStr} la ${timeStr}`;
 
-  return { profesionistEmail: profesionist?.email_contact ?? null };
+  const to = profesionist?.email?.trim();
+  if (to) {
+    await enqueueEmail({
+      template: "booking_pro_new",
+      toEmail: to,
+      subject,
+      payload: { text }
+    });
+  }
+
+  return { profesionistEmail: profesionist?.email ?? null };
 }
 
 export async function notifyClientBookingConfirmation(programareId: string): Promise<boolean> {
@@ -185,13 +154,11 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
     <p style="margin:0;color:#6b7280;font-size:13px;">Dacă nu ai făcut tu această rezervare, poți ignora acest email. Reminderul automat rămâne activ înainte de programare.</p>
   </div>`;
 
-  await sendResendEmail({
-    to: [clientEmail],
+  await enqueueEmail({
+    template: "booking_client_confirmation",
+    toEmail: clientEmail,
     subject,
-    text,
-    html,
-    event: "notify_client_booking_confirmation_failed",
-    context: { clientEmail, bookingId: row.id }
+    payload: { text, html }
   });
 
   return true;
@@ -236,13 +203,11 @@ export async function notifyClientBookingCancelledByProvider(programareId: strin
   <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">OcupaLoc · ocupaloc.ro</p>
 </div>`;
 
-  await sendResendEmail({
-    to: [row.email_client.trim()],
+  await enqueueEmail({
+    template: "booking_client_cancelled",
+    toEmail: row.email_client.trim(),
     subject,
-    text,
-    html,
-    event: "notify_client_booking_cancelled_failed",
-    context: { programareId, clientEmail: row.email_client.trim() }
+    payload: { text, html }
   });
 }
 
@@ -291,13 +256,11 @@ export async function notifyClientBookingRescheduledByProvider(programareId: str
   <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">OcupaLoc · ocupaloc.ro</p>
 </div>`;
 
-  await sendResendEmail({
-    to: [row.email_client.trim()],
+  await enqueueEmail({
+    template: "booking_client_rescheduled",
+    toEmail: row.email_client.trim(),
     subject,
-    text,
-    html,
-    event: "notify_client_booking_rescheduled_failed",
-    context: { programareId, clientEmail: row.email_client.trim() }
+    payload: { text, html }
   });
 }
 
@@ -465,7 +428,7 @@ export async function notifyProfesionistClientResponse(programareId: string, sta
   const admin = createSupabaseServiceClient();
   const { data: row, error } = await admin
     .from("programari")
-    .select("nume_client, telefon_client, data_start, profesionisti(email_contact), servicii(nume)")
+    .select("nume_client, telefon_client, data_start, profesionisti(email), servicii(nume)")
     .eq("id", programareId)
     .maybeSingle();
 
@@ -473,12 +436,12 @@ export async function notifyProfesionistClientResponse(programareId: string, sta
     return;
   }
 
-  const relProf = row.profesionisti as { email_contact: string | null } | { email_contact: string | null }[] | null;
+  const relProf = row.profesionisti as { email: string | null } | { email: string | null }[] | null;
   const relServ = row.servicii as { nume: string } | { nume: string }[] | null;
   const profesionist = Array.isArray(relProf) ? relProf[0] ?? null : relProf;
   const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
 
-  const to = profesionist?.email_contact?.trim();
+  const to = profesionist?.email?.trim();
   if (!to) {
     return;
   }

@@ -1,11 +1,3 @@
-/**
- * Unit tests for the Stripe webhook route handler.
- *
- * The handler is tested through its extracted handleStripeWebhookRequest function
- * (same DI pattern as book-request-handler). No real Stripe SDK or Next.js
- * server is required — all deps are replaced with stubs.
- */
-
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -14,47 +6,9 @@ import {
   type StripeWebhookDeps
 } from "../src/lib/billing/stripe-webhook-handler";
 
-// ─── Stubs ───────────────────────────────────────────────────────────────────
-
 type StubEvent = { type: string; id: string; data: { object: Record<string, unknown> } };
 
-/** Build full deps with a stubbed Stripe client and a no-op Supabase admin. */
-function makeDeps(
-  constructEventFn: (payload: string, sig: string, secret: string) => StubEvent
-): StripeWebhookDeps {
-  return {
-    getStripe: () =>
-      ({
-        webhooks: {
-          constructEventAsync: async (payload: string, sig: string, secret: string) =>
-            constructEventFn(payload, sig, secret)
-        }
-      }) as unknown as ReturnType<StripeWebhookDeps["getStripe"]>,
-    getAdmin: () =>
-      ({
-        from: () => ({
-          select: () => ({
-            eq: () => ({
-              limit: () => ({
-                maybeSingle: async () => ({ data: null })
-              })
-            })
-          }),
-          upsert: async () => ({ data: null, error: null })
-        })
-      }) as unknown as ReturnType<StripeWebhookDeps["getAdmin"]>
-  };
-}
-
-/** Helper: returns a minimal valid event shape for a given type. */
-function makeEvent(type: string, id: string): StubEvent {
-  return { type, id, data: { object: {} } };
-}
-
-function makeRequest(
-  body: string,
-  headers: Record<string, string> = {}
-): Request {
+function makeRequest(body: string, headers: Record<string, string> = {}): Request {
   return new Request("https://ocupaloc.ro/api/webhooks/stripe", {
     method: "POST",
     body,
@@ -69,256 +23,130 @@ async function jsonBody(res: Response): Promise<Record<string, unknown>> {
   return res.json() as Promise<Record<string, unknown>>;
 }
 
-// ─── Tests ───────────────────────────────────────────────────────────────────
+function makeDeps(input: {
+  event?: StubEvent;
+  eventError?: Error;
+  processResult?: { replayed: boolean };
+  processError?: Error;
+  onProcess?: (event: StubEvent) => void;
+} = {}): StripeWebhookDeps {
+  return {
+    getStripe: () =>
+      ({
+        webhooks: {
+          constructEventAsync: async () => {
+            if (input.eventError) {
+              throw input.eventError;
+            }
+            return input.event ?? { type: "invoice.paid", id: "evt_1", data: { object: {} } };
+          }
+        }
+      }) as unknown as ReturnType<StripeWebhookDeps["getStripe"]>,
+    getAdmin: () => ({}) as ReturnType<StripeWebhookDeps["getAdmin"]>,
+    processEvent: async (_stripe, _admin, event) => {
+      input.onProcess?.(event as unknown as StubEvent);
+      if (input.processError) {
+        throw input.processError;
+      }
+      return input.processResult ?? { replayed: false };
+    }
+  };
+}
 
-test("stripe webhook: returns 400 when STRIPE_WEBHOOK_SECRET is not set", async () => {
+test("stripe webhook: returns 400 when STRIPE_WEBHOOK_SECRET is missing", async () => {
   delete process.env.STRIPE_WEBHOOK_SECRET;
-  const req = makeRequest("{}", { "stripe-signature": "t=123,v1=abc" });
-  const deps = makeDeps(() => { throw new Error("should not be called"); });
 
-  const res = await handleStripeWebhookRequest(req, deps);
+  const res = await handleStripeWebhookRequest(
+    makeRequest("{}", { "stripe-signature": "t=1,v1=sig" }),
+    makeDeps()
+  );
+
   assert.equal(res.status, 400);
-  const body = await jsonBody(res);
-  assert.ok(body.error, "should return error field");
+  assert.match(String((await jsonBody(res)).error), /secret/i);
 });
 
 test("stripe webhook: returns 400 when stripe-signature header is missing", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
-  const req = makeRequest("{}"); // no stripe-signature header
-  const deps = makeDeps(() => { throw new Error("should not be called"); });
 
-  const res = await handleStripeWebhookRequest(req, deps);
+  const res = await handleStripeWebhookRequest(makeRequest("{}"), makeDeps());
+
   assert.equal(res.status, 400);
-  const body = await jsonBody(res);
-  assert.ok(body.error);
+  assert.match(String((await jsonBody(res)).error), /signature/i);
 
   delete process.env.STRIPE_WEBHOOK_SECRET;
 });
 
-test("stripe webhook: returns 400 when constructEvent throws (invalid signature)", async () => {
+test("stripe webhook: returns 400 for invalid signature", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
-  const req = makeRequest("{}", { "stripe-signature": "t=0,v1=bad" });
-  const deps = makeDeps(() => {
-    throw new Error("No signatures found matching the expected signature for payload.");
-  });
 
-  const res = await handleStripeWebhookRequest(req, deps);
+  const res = await handleStripeWebhookRequest(
+    makeRequest("{}", { "stripe-signature": "t=1,v1=bad" }),
+    makeDeps({ eventError: new Error("invalid signature") })
+  );
+
   assert.equal(res.status, 400);
-  const body = await jsonBody(res);
-  assert.match(String(body.error), /signature/i);
+  assert.match(String((await jsonBody(res)).error), /signature/i);
 
   delete process.env.STRIPE_WEBHOOK_SECRET;
 });
 
-test("stripe webhook: returns 200 for checkout.session.completed", async () => {
+test("stripe webhook: returns 200 and includes replayed=false when processing succeeds", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
-  const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const deps = makeDeps(() => makeEvent("checkout.session.completed", "evt_checkout_1"));
 
-  const res = await handleStripeWebhookRequest(req, deps);
+  const seen: string[] = [];
+  const res = await handleStripeWebhookRequest(
+    makeRequest("{}", { "stripe-signature": "t=1,v1=ok" }),
+    makeDeps({
+      event: { type: "invoice.paid", id: "evt_paid_1", data: { object: {} } },
+      processResult: { replayed: false },
+      onProcess: (event) => seen.push(event.id)
+    })
+  );
+
   assert.equal(res.status, 200);
   const body = await jsonBody(res);
   assert.equal(body.received, true);
+  assert.equal(body.replayed, false);
+  assert.equal(body.eventId, "evt_paid_1");
+  assert.deepEqual(seen, ["evt_paid_1"]);
 
   delete process.env.STRIPE_WEBHOOK_SECRET;
 });
 
-test("stripe webhook: returns 200 for customer.subscription.created", async () => {
+test("stripe webhook: returns 200 and includes replayed=true for duplicate event", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
-  const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const deps = makeDeps(() => makeEvent("customer.subscription.created", "evt_sub_created"));
 
-  const res = await handleStripeWebhookRequest(req, deps);
+  const res = await handleStripeWebhookRequest(
+    makeRequest("{}", { "stripe-signature": "t=1,v1=ok" }),
+    makeDeps({
+      event: { type: "customer.subscription.updated", id: "evt_dupe_1", data: { object: {} } },
+      processResult: { replayed: true }
+    })
+  );
+
   assert.equal(res.status, 200);
-  assert.equal((await jsonBody(res)).received, true);
+  const body = await jsonBody(res);
+  assert.equal(body.received, true);
+  assert.equal(body.replayed, true);
 
   delete process.env.STRIPE_WEBHOOK_SECRET;
 });
 
-test("stripe webhook: returns 200 for customer.subscription.updated", async () => {
-  process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
-  const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const deps = makeDeps(() => makeEvent("customer.subscription.updated", "evt_sub_updated"));
-
-  const res = await handleStripeWebhookRequest(req, deps);
-  assert.equal(res.status, 200);
-
-  delete process.env.STRIPE_WEBHOOK_SECRET;
-});
-
-test("stripe webhook: returns 200 for customer.subscription.deleted", async () => {
-  process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
-  const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const deps = makeDeps(() => makeEvent("customer.subscription.deleted", "evt_sub_deleted"));
-
-  const res = await handleStripeWebhookRequest(req, deps);
-  assert.equal(res.status, 200);
-
-  delete process.env.STRIPE_WEBHOOK_SECRET;
-});
-
-test("stripe webhook: returns 200 for invoice.payment_succeeded", async () => {
-  process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
-  const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const deps = makeDeps(() => makeEvent("invoice.payment_succeeded", "evt_inv_ok"));
-
-  const res = await handleStripeWebhookRequest(req, deps);
-  assert.equal(res.status, 200);
-
-  delete process.env.STRIPE_WEBHOOK_SECRET;
-});
-
-test("stripe webhook: returns 200 for invoice.payment_failed", async () => {
-  process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
-  const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const deps = makeDeps(() => makeEvent("invoice.payment_failed", "evt_inv_fail"));
-
-  const res = await handleStripeWebhookRequest(req, deps);
-  assert.equal(res.status, 200);
-
-  delete process.env.STRIPE_WEBHOOK_SECRET;
-});
-
-test("stripe webhook: invoice.payment_failed auto-cancels subscription and marks local row canceled", async () => {
+test("stripe webhook: returns 500 when processing fails so Stripe can retry", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
 
-  const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const updates: Array<Record<string, unknown>> = [];
-  const canceledSubIds: string[] = [];
+  const res = await handleStripeWebhookRequest(
+    makeRequest("{}", { "stripe-signature": "t=1,v1=ok" }),
+    makeDeps({
+      event: { type: "checkout.session.completed", id: "evt_fail_1", data: { object: {} } },
+      processError: new Error("db unavailable")
+    })
+  );
 
-  const deps: StripeWebhookDeps = {
-    getStripe: () =>
-      ({
-        webhooks: {
-          constructEventAsync: async () => ({
-            id: "evt_inv_fail_cancel",
-            type: "invoice.payment_failed",
-            data: {
-              object: {
-                id: "in_test_1",
-                subscription: "sub_cancel_me",
-                customer: "cus_test_1"
-              }
-            }
-          })
-        },
-        subscriptions: {
-          cancel: async (subId: string) => {
-            canceledSubIds.push(subId);
-            return { id: subId };
-          }
-        }
-      }) as unknown as ReturnType<StripeWebhookDeps["getStripe"]>,
-    getAdmin: () =>
-      ({
-        from: () => ({
-          update: (payload: Record<string, unknown>) => {
-            updates.push(payload);
-            return {
-              eq: async () => ({ data: null, error: null })
-            };
-          },
-          select: () => ({
-            eq: () => ({
-              limit: () => ({
-                maybeSingle: async () => ({ data: null })
-              })
-            })
-          }),
-          upsert: async () => ({ data: null, error: null })
-        })
-      }) as unknown as ReturnType<StripeWebhookDeps["getAdmin"]>
-  };
-
-  const res = await handleStripeWebhookRequest(req, deps);
-  assert.equal(res.status, 200);
-  assert.equal((await jsonBody(res)).received, true);
-  assert.deepEqual(canceledSubIds, ["sub_cancel_me"]);
-  assert.equal(updates.length, 1);
-  assert.equal(updates[0].status, "canceled");
-
-  delete process.env.STRIPE_WEBHOOK_SECRET;
-});
-
-test("stripe webhook: returns 200 for unknown event type (no-op)", async () => {
-  process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
-  const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const deps = makeDeps(() => makeEvent("payment_intent.created", "evt_unknown"));
-
-  const res = await handleStripeWebhookRequest(req, deps);
-  assert.equal(res.status, 200);
-  assert.equal((await jsonBody(res)).received, true);
-
-  delete process.env.STRIPE_WEBHOOK_SECRET;
-});
-
-test("stripe webhook: fallback resolves profesionist by stripe_customer_id when metadata is missing", async () => {
-  process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
-
-  const req = makeRequest("{}", { "stripe-signature": "t=1,v1=valid" });
-  const upsertCalls: Array<Record<string, unknown>> = [];
-
-  const deps: StripeWebhookDeps = {
-    getStripe: () =>
-      ({
-        webhooks: {
-          constructEventAsync: async () => ({
-            id: "evt_checkout_lookup",
-            type: "checkout.session.completed",
-            data: {
-              object: {
-                id: "cs_test_1",
-                subscription: "sub_test_1",
-                customer: "cus_lookup_1",
-                metadata: {}
-              }
-            }
-          })
-        },
-        subscriptions: {
-          retrieve: async () => ({ metadata: {} })
-        }
-      }) as unknown as ReturnType<StripeWebhookDeps["getStripe"]>,
-    getAdmin: () =>
-      ({
-        from: (table: string) => {
-          if (table === "subscriptions") {
-            return {
-              select: () => ({
-                eq: () => ({
-                  limit: () => ({
-                    maybeSingle: async () => ({ data: { profesionist_id: "prof_lookup_1" } })
-                  })
-                })
-              }),
-              upsert: async (payload: Record<string, unknown>) => {
-                upsertCalls.push(payload);
-                return { data: null, error: null };
-              }
-            };
-          }
-          return {
-            select: () => ({
-              eq: () => ({
-                limit: () => ({
-                  maybeSingle: async () => ({ data: null })
-                })
-              })
-            }),
-            upsert: async () => ({ data: null, error: null })
-          };
-        }
-      }) as unknown as ReturnType<StripeWebhookDeps["getAdmin"]>
-  };
-
-  const res = await handleStripeWebhookRequest(req, deps);
-  assert.equal(res.status, 200);
-  assert.equal((await jsonBody(res)).received, true);
-
-  assert.equal(upsertCalls.length, 1);
-  assert.equal(upsertCalls[0].profesionist_id, "prof_lookup_1");
-  assert.equal(upsertCalls[0].stripe_subscription_id, "sub_test_1");
-  assert.equal(upsertCalls[0].stripe_customer_id, "cus_lookup_1");
+  assert.equal(res.status, 500);
+  const body = await jsonBody(res);
+  assert.equal(body.received, false);
+  assert.equal(body.eventId, "evt_fail_1");
 
   delete process.env.STRIPE_WEBHOOK_SECRET;
 });

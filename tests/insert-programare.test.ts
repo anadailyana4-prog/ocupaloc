@@ -1,9 +1,8 @@
 /**
- * Unit tests for smart rules inside insertProgramareForProfSlug.
+ * Unit tests for insertProgramareForProfSlug (PR 2: Atomic Booking).
  *
- * All Supabase interactions are replaced with in-memory stub objects
- * that mimic the chainable builder API used in the production code.
- * Tests focus on the guard clauses that don't require slot computation.
+ * Tests the RPC call to book_appointment_atomic() and error_code mapping.
+ * All Supabase interactions use stubs.
  */
 
 import assert from "node:assert/strict";
@@ -13,99 +12,66 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { insertProgramareForProfSlug } from "../src/lib/booking/insert-programare";
 
-// ─── Minimal Supabase chain builder ─────────────────────────────────────────
+// ─── Stub Supabase Client ───────────────────────────────────────────────────
 
-type ChainResult = { data: unknown; error: unknown; count?: number };
-
-/**
- * Creates a Supabase stub where each table name maps to a response object.
- * Supports .select().eq()...maybeSingle() / .single() / count-style queries.
- */
-function makeAdmin(tables: Record<string, ChainResult>): SupabaseClient {
-  function chain(result: ChainResult): Record<string, unknown> {
-    const terminal = {
-      maybeSingle: async () => result,
-      single: async () => result,
-      // make it thenable so `await admin.from(...).insert(...).select(...).single()` works
-      then: (resolve: (v: unknown) => void) => resolve(result)
-    };
-    const proxy: Record<string, unknown> = new Proxy(terminal, {
-      get(target, prop) {
-        if (prop in target) return (target as Record<string | symbol, unknown>)[prop];
-        // Any unknown method on the chain returns the same chain again
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        return (..._: unknown[]) => proxy;
-      }
-    });
-    return proxy;
-  }
-
+function makeAdmin(rpcResponse: {
+  data?: Array<{
+    success: boolean;
+    programare_id: string;
+    error_code: string | null;
+    error_message: string | null;
+  }>;
+  error?: { code?: string; message?: string };
+}): SupabaseClient {
   return {
-    from: (table: string) => {
-      const result = tables[table] ?? { data: null, error: null };
-      return chain(result);
-    },
-    rpc: async () => ({ data: null, error: null })
+    rpc: async () => rpcResponse
   } as unknown as SupabaseClient;
 }
 
-// Shared base profesionist profile used across tests
-const BASE_PROF = {
-  id: "prof-uuid-1",
-  slug: "test-salon",
-  telefon: "0712345678",
-  program: {
-    luni: ["09:00", "18:00"],
-    marti: ["09:00", "18:00"],
-    miercuri: ["09:00", "18:00"],
-    joi: ["09:00", "18:00"],
-    vineri: ["09:00", "18:00"],
-    sambata: [],
-    duminica: []
-  },
-  pauza_intre_clienti: 0,
-  lucreaza_acasa: false,
-  timp_pregatire: 0,
-  smart_rules_enabled: false,
-  smart_min_notice_minutes: 0,
-  smart_max_future_bookings: 0,
-  smart_client_cancel_threshold: 0,
-  smart_cancel_window_days: 60,
-  created_at: new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString() // 10 days ago (within trial)
-};
-
-const BASE_SERVICIU = {
-  id: "svc-uuid-1",
-  durata_minute: 60,
-  nume: "Tuns",
-  activ: true,
-  profesionist_id: "prof-uuid-1"
-};
-
-function nextBookableSlotIso(): string {
-  const d = new Date(Date.now() + 30 * 24 * 3600 * 1000);
-  while (d.getDay() !== 1) {
-    d.setDate(d.getDate() + 1);
-  }
-  d.setUTCHours(7, 0, 0, 0);
-  return d.toISOString();
-}
-
-const FUTURE_SLOT = nextBookableSlotIso();
-const FUTURE_DATE = FUTURE_SLOT.slice(0, 10);
-
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
-test("insertProgramareForProfSlug: returns error when prof not found", async () => {
+test("insertProgramareForProfSlug: success returns ok=true with programareId", async () => {
   const admin = makeAdmin({
-    profesionisti: { data: null, error: { message: "not found" } }
+    data: [
+      {
+        success: true,
+        programare_id: "new-booking-uuid",
+        error_code: null,
+        error_message: null
+      }
+    ]
+  });
+
+  const result = await insertProgramareForProfSlug(admin, {
+    slug: "test-salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
+    telefonClient: "0712345678"
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal((result as { ok: true; programareId: string }).programareId, "new-booking-uuid");
+});
+
+test("insertProgramareForProfSlug: PROFESIONIST_NOT_FOUND maps to 'Pagina nu există'", async () => {
+  const admin = makeAdmin({
+    data: [
+      {
+        success: false,
+        programare_id: "",
+        error_code: "PROFESIONIST_NOT_FOUND",
+        error_message: "Profesionist not found"
+      }
+    ]
   });
 
   const result = await insertProgramareForProfSlug(admin, {
     slug: "no-such-salon",
-    serviciuId: BASE_SERVICIU.id,
-    dateStr: FUTURE_DATE,
-    slotIso: FUTURE_SLOT,
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
     numeClient: "Test Client",
     telefonClient: "0712345678"
   });
@@ -114,160 +80,24 @@ test("insertProgramareForProfSlug: returns error when prof not found", async () 
   assert.match((result as { ok: false; message: string }).message, /nu există/i);
 });
 
-test("insertProgramareForProfSlug: blocked client returns salon-phone message", async () => {
+test("insertProgramareForProfSlug: SERVICE_NOT_FOUND maps to 'Serviciu invalid'", async () => {
   const admin = makeAdmin({
-    profesionisti: { data: BASE_PROF, error: null },
-    clienti_blocati: { data: { id: "block-1" }, error: null }
+    data: [
+      {
+        success: false,
+        programare_id: "",
+        error_code: "SERVICE_NOT_FOUND",
+        error_message: "Service not found"
+      }
+    ]
   });
 
   const result = await insertProgramareForProfSlug(admin, {
-    slug: BASE_PROF.slug,
-    serviciuId: BASE_SERVICIU.id,
-    dateStr: FUTURE_DATE,
-    slotIso: FUTURE_SLOT,
-    numeClient: "Client Blocat",
-    telefonClient: "0712345678"
-  });
-
-  assert.equal(result.ok, false);
-  const msg = (result as { ok: false; message: string }).message;
-  assert.ok(
-    msg.includes("sună") || msg.includes("Ne pare rău"),
-    `expected blocked message, got: ${msg}`
-  );
-});
-
-test("insertProgramareForProfSlug: past slot returns expired message", async () => {
-  const admin = makeAdmin({
-    profesionisti: { data: BASE_PROF, error: null },
-    clienti_blocati: { data: null, error: null }
-  });
-
-  const pastSlot = new Date(Date.now() - 3600 * 1000).toISOString();
-  const result = await insertProgramareForProfSlug(admin, {
-    slug: BASE_PROF.slug,
-    serviciuId: BASE_SERVICIU.id,
-    dateStr: pastSlot.slice(0, 10),
-    slotIso: pastSlot,
-    numeClient: "Client Test",
-    telefonClient: "0712345678"
-  });
-
-  assert.equal(result.ok, false);
-  assert.match((result as { ok: false; message: string }).message, /expirat|viitoare/i);
-});
-
-test("insertProgramareForProfSlug: smart_rules min_notice_minutes blocks too-soon slot", async () => {
-  const prof = {
-    ...BASE_PROF,
-    smart_rules_enabled: true,
-    smart_min_notice_minutes: 120 // 2h advance required
-  };
-  const admin = makeAdmin({
-    profesionisti: { data: prof, error: null },
-    clienti_blocati: { data: null, error: null }
-  });
-
-  // Slot that's only 30 minutes in the future (less than the 120-min required)
-  const tooSoonSlot = new Date(Date.now() + 30 * 60_000).toISOString();
-
-  const result = await insertProgramareForProfSlug(admin, {
-    slug: prof.slug,
-    serviciuId: BASE_SERVICIU.id,
-    dateStr: tooSoonSlot.slice(0, 10),
-    slotIso: tooSoonSlot,
-    numeClient: "Client Test",
-    telefonClient: "0712345678"
-  });
-
-  assert.equal(result.ok, false);
-  const msg = (result as { ok: false; message: string }).message;
-  assert.ok(msg.includes("minim"), `expected notice message, got: ${msg}`);
-});
-
-test("insertProgramareForProfSlug: smart_rules max_future_bookings blocks when limit reached", async () => {
-  const prof = {
-    ...BASE_PROF,
-    smart_rules_enabled: true,
-    smart_max_future_bookings: 1
-  };
-
-  // Programari table returns count=1 (limit reached)
-  const adminTables: Record<string, ChainResult> = {
-    profesionisti: { data: prof, error: null },
-    clienti_blocati: { data: null, error: null },
-    programari: { data: null, error: null, count: 1 }
-  };
-  const admin = makeAdmin(adminTables);
-
-  const result = await insertProgramareForProfSlug(admin, {
-    slug: prof.slug,
-    serviciuId: BASE_SERVICIU.id,
-    dateStr: FUTURE_DATE,
-    slotIso: FUTURE_SLOT,
-    numeClient: "Client Test",
-    telefonClient: "0712345678"
-  });
-
-  assert.equal(result.ok, false);
-  const msg = (result as { ok: false; message: string }).message;
-  assert.ok(msg.toLowerCase().includes("limita") || msg.toLowerCase().includes("limit"), `expected limit message, got: ${msg}`);
-});
-
-test("insertProgramareForProfSlug: smart_rules cancel threshold blocks repeat-canceller", async () => {
-  const prof = {
-    ...BASE_PROF,
-    smart_rules_enabled: true,
-    smart_client_cancel_threshold: 2,
-    smart_cancel_window_days: 30
-  };
-
-  // programari_status_events returns 2 events → 2 unique booking IDs
-  // programari returns count=2 (both match the phone)
-  const eventsData = [
-    { programare_id: "p-1" },
-    { programare_id: "p-2" }
-  ];
-
-  const adminTables: Record<string, ChainResult> = {
-    profesionisti: { data: prof, error: null },
-    clienti_blocati: { data: null, error: null },
-    programari: { data: null, error: null, count: 2 },
-    programari_status_events: { data: eventsData, error: null }
-  };
-  const admin = makeAdmin(adminTables);
-
-  const result = await insertProgramareForProfSlug(admin, {
-    slug: prof.slug,
-    serviciuId: BASE_SERVICIU.id,
-    dateStr: FUTURE_DATE,
-    slotIso: FUTURE_SLOT,
-    numeClient: "Client Test",
-    telefonClient: "0712345678"
-  });
-
-  assert.equal(result.ok, false);
-  const msg = (result as { ok: false; message: string }).message;
-  assert.ok(
-    msg.toLowerCase().includes("online") || msg.toLowerCase().includes("contactezi"),
-    `expected cancel-threshold message, got: ${msg}`
-  );
-});
-
-test("insertProgramareForProfSlug: invalid service returns service error", async () => {
-  const admin = makeAdmin({
-    profesionisti: { data: BASE_PROF, error: null },
-    clienti_blocati: { data: null, error: null },
-    servicii: { data: null, error: { message: "not found" } },
-    programari: { data: [], error: null }
-  });
-
-  const result = await insertProgramareForProfSlug(admin, {
-    slug: BASE_PROF.slug,
-    serviciuId: "00000000-0000-0000-0000-000000000000",
-    dateStr: FUTURE_DATE,
-    slotIso: FUTURE_SLOT,
-    numeClient: "Client Test",
+    slug: "salon",
+    serviciuId: "no-such-service",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
     telefonClient: "0712345678"
   });
 
@@ -275,98 +105,381 @@ test("insertProgramareForProfSlug: invalid service returns service error", async
   assert.match((result as { ok: false; message: string }).message, /serviciu/i);
 });
 
-test("insertProgramareForProfSlug: slot unavailable returns conflict message", async () => {
-  // Use a far-future date so we're definitely past the "past slot" guard
-  const farFuture = new Date(Date.now() + 30 * 24 * 3600 * 1000);
-  // Find the luni date
-  while (farFuture.getDay() !== 1) {
-    farFuture.setDate(farFuture.getDate() + 1);
-  }
-  farFuture.setUTCHours(7, 0, 0, 0); // 09:00 EET (UTC+2) or 06:00 EEST (UTC+3)
-  const slotIso = farFuture.toISOString();
-  const dateStr = slotIso.slice(0, 10);
-
-  // Occupied: the entire 09:00–18:00 window (UTC 07:00–16:00 in winter)
-  const ocupateStart = new Date(farFuture);
-  ocupateStart.setUTCHours(6, 0, 0, 0);
-  const ocupateEnd = new Date(farFuture);
-  ocupateEnd.setUTCHours(16, 0, 0, 0);
-
+test("insertProgramareForProfSlug: SLOT_CONFLICT maps to 'Slotul nu mai e disponibil'", async () => {
   const admin = makeAdmin({
-    profesionisti: { data: BASE_PROF, error: null },
-    clienti_blocati: { data: null, error: null },
-    servicii: { data: BASE_SERVICIU, error: null },
-    programari: {
-      data: [
-        {
-          data_start: ocupateStart.toISOString(),
-          data_final: ocupateEnd.toISOString(),
-          status: "confirmat"
-        }
-      ],
-      error: null
+    data: [
+      {
+        success: false,
+        programare_id: "",
+        error_code: "SLOT_CONFLICT",
+        error_message: "Slot already booked"
+      }
+    ]
+  });
+
+  const result = await insertProgramareForProfSlug(admin, {
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
+    telefonClient: "0712345678"
+  });
+
+  assert.equal(result.ok, false);
+  assert.match((result as { ok: false; message: string }).message, /disponibil/i);
+});
+
+test("insertProgramareForProfSlug: CLIENT_BLOCKED maps to 'sună direct'", async () => {
+  const admin = makeAdmin({
+    data: [
+      {
+        success: false,
+        programare_id: "",
+        error_code: "CLIENT_BLOCKED",
+        error_message: "Client is blocked"
+      }
+    ]
+  });
+
+  const result = await insertProgramareForProfSlug(admin, {
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
+    telefonClient: "0712345678"
+  });
+
+  assert.equal(result.ok, false);
+  assert.ok((result as { ok: false; message: string }).message.toLowerCase().includes("direct") || 
+    (result as { ok: false; message: string }).message.toLowerCase().includes("rău"));
+});
+
+test("insertProgramareForProfSlug: NO_SUBSCRIPTION maps to 'Abonament inactiv'", async () => {
+  const admin = makeAdmin({
+    data: [
+      {
+        success: false,
+        programare_id: "",
+        error_code: "NO_SUBSCRIPTION",
+        error_message: "No active subscription"
+      }
+    ]
+  });
+
+  const result = await insertProgramareForProfSlug(admin, {
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
+    telefonClient: "0712345678"
+  });
+
+  assert.equal(result.ok, false);
+  assert.match((result as { ok: false; message: string }).message, /abonament|inactiv/i);
+});
+
+test("insertProgramareForProfSlug: SLOT_IN_PAST maps to 'Slot expirat'", async () => {
+  const admin = makeAdmin({
+    data: [
+      {
+        success: false,
+        programare_id: "",
+        error_code: "SLOT_IN_PAST",
+        error_message: "Slot is in the past"
+      }
+    ]
+  });
+
+  const result = await insertProgramareForProfSlug(admin, {
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
+    telefonClient: "0712345678"
+  });
+
+  assert.equal(result.ok, false);
+  assert.match((result as { ok: false; message: string }).message, /expirat/i);
+});
+
+test("insertProgramareForProfSlug: MIN_NOTICE_VIOLATION maps to 'minim...preaviz'", async () => {
+  const admin = makeAdmin({
+    data: [
+      {
+        success: false,
+        programare_id: "",
+        error_code: "MIN_NOTICE_VIOLATION",
+        error_message: "Insufficient notice"
+      }
+    ]
+  });
+
+  const result = await insertProgramareForProfSlug(admin, {
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
+    telefonClient: "0712345678"
+  });
+
+  assert.equal(result.ok, false);
+  assert.match((result as { ok: false; message: string }).message, /preaviz/i);
+});
+
+test("insertProgramareForProfSlug: MAX_FUTURE_VIOLATION maps to 'limita de programări'", async () => {
+  const admin = makeAdmin({
+    data: [
+      {
+        success: false,
+        programare_id: "",
+        error_code: "MAX_FUTURE_VIOLATION",
+        error_message: "Too many future bookings"
+      }
+    ]
+  });
+
+  const result = await insertProgramareForProfSlug(admin, {
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
+    telefonClient: "0712345678"
+  });
+
+  assert.equal(result.ok, false);
+  assert.match((result as { ok: false; message: string }).message, /limita/i);
+});
+
+test("insertProgramareForProfSlug: CANCEL_THRESHOLD_VIOLATION maps to 'Momentan nu poți rezerva'", async () => {
+  const admin = makeAdmin({
+    data: [
+      {
+        success: false,
+        programare_id: "",
+        error_code: "CANCEL_THRESHOLD_VIOLATION",
+        error_message: "Too many cancellations"
+      }
+    ]
+  });
+
+  const result = await insertProgramareForProfSlug(admin, {
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
+    telefonClient: "0712345678"
+  });
+
+  assert.equal(result.ok, false);
+  assert.match((result as { ok: false; message: string }).message, /online/i);
+});
+
+test("insertProgramareForProfSlug: unknown error_code returns generic message", async () => {
+  const admin = makeAdmin({
+    data: [
+      {
+        success: false,
+        programare_id: "",
+        error_code: "UNKNOWN_ERROR_123",
+        error_message: "Unknown error"
+      }
+    ]
+  });
+
+  const result = await insertProgramareForProfSlug(admin, {
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
+    telefonClient: "0712345678"
+  });
+
+  assert.equal(result.ok, false);
+  assert.match((result as { ok: false; message: string }).message, /nu am putut crea/i);
+});
+
+test("insertProgramareForProfSlug: RPC error returns sanitized generic message", async () => {
+  const admin = makeAdmin({
+    error: { code: "PGRST102", message: "The database returned an error" }
+  });
+
+  const result = await insertProgramareForProfSlug(admin, {
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
+    telefonClient: "0712345678"
+  });
+
+  assert.equal(result.ok, false);
+  assert.match((result as { ok: false; message: string }).message, /nu am putut crea/i);
+});
+
+test("insertProgramareForProfSlug: no data in RPC response returns generic message", async () => {
+  const admin = makeAdmin({});
+
+  const result = await insertProgramareForProfSlug(admin, {
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
+    telefonClient: "0712345678"
+  });
+
+  assert.equal(result.ok, false);
+  assert.match((result as { ok: false; message: string }).message, /nu am putut crea/i);
+});
+
+test("insertProgramareForProfSlug: exception during RPC call returns generic message", async () => {
+  const admin = {
+    rpc: async () => {
+      throw new Error("Network timeout");
     }
-  });
+  } as unknown as SupabaseClient;
 
   const result = await insertProgramareForProfSlug(admin, {
-    slug: BASE_PROF.slug,
-    serviciuId: BASE_SERVICIU.id,
-    dateStr,
-    slotIso,
-    numeClient: "Client Test",
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
     telefonClient: "0712345678"
   });
 
   assert.equal(result.ok, false);
-  assert.match((result as { ok: false; message: string }).message, /disponibil|oră/i);
+  assert.match((result as { ok: false; message: string }).message, /nu am putut crea/i);
 });
 
-test("insertProgramareForProfSlug: 23P01 overlap is translated to Romanian conflict message", async () => {
-  const slotIso = nextBookableSlotIso();
-  const dateStr = slotIso.slice(0, 10);
-
-  const admin = makeAdmin({
-    profesionisti: { data: BASE_PROF, error: null },
-    clienti_blocati: { data: null, error: null },
-    servicii: { data: BASE_SERVICIU, error: null },
-    programari: { data: null, error: { code: "23P01", message: "overlap constraint" } }
-  });
+test("insertProgramareForProfSlug: trims phone and name inputs", async () => {
+  let capturedArgs: Record<string, unknown> = {};
+  const admin = {
+    rpc: async (_name: string, args: Record<string, unknown>) => {
+      capturedArgs = args;
+      return {
+        data: [
+          {
+            success: true,
+            programare_id: "booking-uuid",
+            error_code: null,
+            error_message: null
+          }
+        ]
+      };
+    }
+  } as unknown as SupabaseClient;
 
   const result = await insertProgramareForProfSlug(admin, {
-    slug: BASE_PROF.slug,
-    serviciuId: BASE_SERVICIU.id,
-    dateStr,
-    slotIso,
-    numeClient: "Client Test",
-    telefonClient: "0712345678"
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "  Test Client  ",
+    telefonClient: "  0712345678  ",
+    emailClient: "  test@example.com  "
   });
 
-  assert.equal(result.ok, false);
-  assert.match((result as { ok: false; message: string }).message, /slotul nu mai e disponibil/i);
+  assert.equal(result.ok, true);
+  assert.equal(capturedArgs.p_client_phone, "+40712345678");
+  assert.equal(capturedArgs.p_client_name, "Test Client");
+  assert.equal(capturedArgs.p_client_email, "test@example.com");
 });
 
-test("insertProgramareForProfSlug: unknown insert errors are sanitized for public users", async () => {
-  const slotIso = nextBookableSlotIso();
-  const dateStr = slotIso.slice(0, 10);
+test("insertProgramareForProfSlug: blocked client rejects normalized phone variants consistently", async () => {
+  const admin = {
+    rpc: async (_name: string, args: Record<string, unknown>) => {
+      const phone = String(args.p_client_phone ?? "");
+      if (phone === "+40712345678") {
+        return {
+          data: [
+            {
+              success: false,
+              programare_id: "",
+              error_code: "CLIENT_BLOCKED",
+              error_message: "Client is blocked"
+            }
+          ]
+        };
+      }
 
-  const admin = makeAdmin({
-    profesionisti: { data: BASE_PROF, error: null },
-    clienti_blocati: { data: null, error: null },
-    servicii: { data: BASE_SERVICIU, error: null },
-    programari: { data: null, error: { code: "23505", message: "duplicate key value violates unique constraint public.secret_internal" } }
-  });
+      return {
+        data: [
+          {
+            success: true,
+            programare_id: "booking-uuid",
+            error_code: null,
+            error_message: null
+          }
+        ]
+      };
+    }
+  } as unknown as SupabaseClient;
 
-  const result = await insertProgramareForProfSlug(admin, {
-    slug: BASE_PROF.slug,
-    serviciuId: BASE_SERVICIU.id,
-    dateStr,
-    slotIso,
-    numeClient: "Client Test",
+  const baseInput = {
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client"
+  };
+
+  const first = await insertProgramareForProfSlug(admin, {
+    ...baseInput,
     telefonClient: "0712345678"
   });
+  const second = await insertProgramareForProfSlug(admin, {
+    ...baseInput,
+    telefonClient: "40712345678"
+  });
+  const third = await insertProgramareForProfSlug(admin, {
+    ...baseInput,
+    telefonClient: "+40 712 345 678"
+  });
 
-  assert.equal(result.ok, false);
-  const msg = (result as { ok: false; message: string }).message;
-  assert.match(msg, /nu am putut crea programarea/i);
-  assert.equal(msg.includes("public.secret_internal"), false);
+  assert.equal(first.ok, false);
+  assert.equal(second.ok, false);
+  assert.equal(third.ok, false);
+  assert.match((first as { ok: false; message: string }).message, /sună direct|Ne pare rău/i);
+  assert.match((second as { ok: false; message: string }).message, /sună direct|Ne pare rău/i);
+  assert.match((third as { ok: false; message: string }).message, /sună direct|Ne pare rău/i);
+});
+
+test("insertProgramareForProfSlug: null email is converted to empty string", async () => {
+  let capturedEmail: unknown = "SENTINEL";
+  const admin = {
+    rpc: async (_name: string, args: Record<string, unknown>) => {
+      capturedEmail = args.p_client_email;
+      return {
+        data: [
+          {
+            success: true,
+            programare_id: "booking-uuid",
+            error_code: null,
+            error_message: null
+          }
+        ]
+      };
+    }
+  } as unknown as SupabaseClient;
+
+  await insertProgramareForProfSlug(admin, {
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
+    telefonClient: "0712345678",
+    emailClient: null
+  });
+
+  assert.equal(capturedEmail, "");
 });

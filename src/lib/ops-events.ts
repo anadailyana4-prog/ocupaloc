@@ -1,10 +1,11 @@
 import { randomUUID } from "crypto";
 
+import { logError } from "@/lib/logger";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 export type OperationalEventInput = {
   eventType: string;
-  flow: "booking" | "auth" | "api" | "cron" | "synthetic" | "onboarding" | "growth";
+  flow: "booking" | "auth" | "api" | "cron" | "synthetic" | "onboarding" | "growth" | "billing" | "email";
   outcome: "success" | "failure";
   requestId?: string;
   entityId?: string;
@@ -36,9 +37,17 @@ export async function recordOperationalEvent(event: OperationalEventInput): Prom
     });
 
     if (error) {
-      console.error("[ops-events] insert failed", error.message);
+      logError("[ops-events] insert failed", error, {
+        eventType: event.eventType,
+        flow: event.flow,
+        requestId: event.requestId
+      });
     }
   } catch (error) {
-    console.error("[ops-events] unexpected failure", error);
+    logError("[ops-events] unexpected failure", error, {
+      eventType: event.eventType,
+      flow: event.flow,
+      requestId: event.requestId
+    });
   }
 }
