@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useEffect, useRef } from "react";
 import { Chart, type ChartConfiguration } from "chart.js/auto";
 
