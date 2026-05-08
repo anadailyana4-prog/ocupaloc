@@ -3,9 +3,10 @@ import Link from "next/link";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Programări Online Cosmetică | Software Salon",
+  title: "Programări Online Cosmetică | Software Salon 59,99 RON",
   description:
-    "Software salon pentru programari online în cosmetică: fără comision, preț fix 59,99 RON și organizare simplă pentru tratamente faciale și corporale."
+    "Software salon pentru programari online în cosmetică: fără comision, preț fix 59,99 RON și organizare simplă pentru tratamente faciale și corporale.",
+  alternates: { canonical: "https://ocupaloc.ro/programari-online-cosmetica" }
 };
 
 const faqItems = [

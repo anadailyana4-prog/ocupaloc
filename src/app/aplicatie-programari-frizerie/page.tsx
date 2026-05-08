@@ -3,9 +3,10 @@ import Link from "next/link";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Aplicație Programări Frizerie | Fără Comision",
+  title: "Aplicație Programări Frizerie | Fără Comision | 59,99 RON",
   description:
-    "Aplicație de programari online pentru frizeri și barberi: software salon fără comision, preț fix 59,99 RON, cu setup rapid."
+    "Aplicație de programari online pentru frizeri și barberi: software salon fără comision, preț fix 59,99 RON, cu setup rapid în 5 minute.",
+  alternates: { canonical: "https://ocupaloc.ro/aplicatie-programari-frizerie" }
 };
 
 const faqItems = [

@@ -283,16 +283,27 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
   const publicDescription = ((prof as { description?: string | null }).description ?? "").trim();
   const tip = tipLabel(prof.tip_activitate as string | undefined);
   const city = ((prof as { oras?: string | null }).oras ?? "").trim();
+
+  const schemaTypeMap: Record<string, string> = {
+    frizerie: "HairSalon",
+    manichiura: "BeautySalon",
+    coafor: "HairSalon",
+    altul: "LocalBusiness"
+  };
+  const schemaType = schemaTypeMap[prof.tip_activitate as string] ?? "LocalBusiness";
+
   const localBusinessSchema = {
     "@context": "https://schema.org",
-    "@type": "HairSalon",
+    "@type": schemaType,
     name: String(prof.nume_business ?? ""),
+    description: publicDescription || undefined,
     address: {
       "@type": "PostalAddress",
       addressLocality: city || "România",
+      addressCountry: "RO",
       streetAddress: String((prof as { adresa_publica?: string | null }).adresa_publica ?? "")
     },
-    telephone: telefon,
+    telephone: telefon || undefined,
     url: `https://ocupaloc.ro/${slug}`
   };
 

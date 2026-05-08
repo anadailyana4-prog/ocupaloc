@@ -10,6 +10,33 @@ type PageProps = { params: Promise<{ slug: string }> };
 
 const STATIC_SLUGS: ComparisonSlug[] = ["fresha", "treatwell", "booksy", "stailer"];
 
+const COMPETITOR_META: Record<ComparisonSlug, { title: string; description: string; h1: string }> = {
+  fresha: {
+    title: "Alternativă Fresha România fără comision | OcupaLoc 59,99 RON",
+    description:
+      "Compară OcupaLoc cu Fresha: preț fix 59,99 RON/lună, zero comision per programare, suport în română. Migrează simplu azi.",
+    h1: "OcupaLoc vs Fresha – De ce saloanele din România aleg 59,99 RON fără comision"
+  },
+  treatwell: {
+    title: "Alternativă Treatwell România | 0% comision | OcupaLoc",
+    description:
+      "Compară OcupaLoc cu Treatwell: evită comisionul de 25-30%, plătește fix 59,99 RON/lună și păstrează controlul clienților.",
+    h1: "OcupaLoc vs Treatwell – Fără comision 25% per programare"
+  },
+  booksy: {
+    title: "Alternativă Booksy România | Mai ieftin 59,99 RON | OcupaLoc",
+    description:
+      "Compară OcupaLoc cu Booksy: preț mai mic, setup simplu în 5 minute, plată în RON și suport local pentru saloane beauty.",
+    h1: "OcupaLoc vs Booksy – Programări mai ieftine pentru saloane din România"
+  },
+  stailer: {
+    title: "Alternativă Stailer România | Software programări salon | OcupaLoc",
+    description:
+      "Compară OcupaLoc cu Stailer: mai ieftin, fără comision, cu funcții complete de booking și suport în limba română.",
+    h1: "OcupaLoc vs Stailer – Alternativă completă pentru saloane beauty"
+  }
+};
+
 export function generateStaticParams() {
   return STATIC_SLUGS.map((slug) => ({ slug }));
 }
@@ -19,9 +46,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!STATIC_SLUGS.includes(slug as ComparisonSlug)) {
     return { title: "Comparativ" };
   }
+  const meta = COMPETITOR_META[slug as ComparisonSlug];
   return {
-    title: "Comparativ platforme cu comision | OcupaLoc",
-    description: "Vezi de ce saloanele aleg OcupaLoc: preț fix, zero comision și setup rapid."
+    title: meta.title,
+    description: meta.description,
+    alternates: { canonical: `https://ocupaloc.ro/comparativ/${slug}` }
   };
 }
 
@@ -31,6 +60,7 @@ export default async function ComparativPage({ params }: PageProps) {
 
   const key = slug as ComparisonSlug;
   const competitor = comparisons[key];
+  const meta = COMPETITOR_META[key];
 
   const faqItems = [
     {
@@ -65,7 +95,7 @@ export default async function ComparativPage({ params }: PageProps) {
       <Script id={`faq-schema-comparativ-${slug}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <div className="mx-auto max-w-5xl space-y-8">
         <header className="space-y-3">
-          <h1 className="text-4xl font-bold tracking-tight">De ce saloanele aleg OcupaLoc</h1>
+          <h1 className="text-4xl font-bold tracking-tight">{meta.h1}</h1>
           <p className="text-zinc-400">Comparativ simplu pentru saloane care vor cost predictibil și zero comision.</p>
         </header>
 

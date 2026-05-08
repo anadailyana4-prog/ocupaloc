@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import Script from "next/script";
 
 type Post = {
   slug: string;
   title: string;
   description: string;
   content: string;
+  publishedDate: string;
   relatedLandingLinks: Array<{ href: string; label: string }>;
 };
 
@@ -15,6 +17,7 @@ const POSTS: Post[] = [
     slug: "fresha-cat-costa-romania",
     title: "Cât te costă platformele cu comision și ce variantă e mai sănătoasă",
     description: "Analiză de cost, marjă și profit pentru saloane care folosesc programari online.",
+    publishedDate: "2025-03-10",
     relatedLandingLinks: [
       { href: "/preturi", label: "Prețuri OcupaLoc" },
       { href: "/programari-online-salon", label: "Programări online salon" }
@@ -45,6 +48,7 @@ Alegerea platformei nu este doar o decizie tehnică. Este o alegere de model eco
     slug: "cum-sa-reduci-anularile",
     title: "Cum să reduci anulările și no-show-urile în salon",
     description: "Ghid practic pentru reducerea no-show-urilor cu programari online.",
+    publishedDate: "2025-03-24",
     relatedLandingLinks: [
       { href: "/programari-online-salon", label: "Programări online salon" },
       { href: "/programari-online-cosmetica", label: "Programări online cosmetică" }
@@ -75,6 +79,7 @@ Reducerea anulărilor este un sistem, nu o setare: servicii clare, confirmări, 
     slug: "telefon-vs-programari-online",
     title: "Telefon vs programări online: ce aduce mai multe încasări",
     description: "Comparație între modelul clasic pe telefon și modelul digital.",
+    publishedDate: "2025-04-07",
     relatedLandingLinks: [
       { href: "/aplicatie-programari-frizerie", label: "Aplicație programări frizerie" },
       { href: "/software-programari-manichiura", label: "Software programări manichiură" }
@@ -111,7 +116,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const post = POSTS.find((item) => item.slug === slug);
   if (!post) return { title: "Blog" };
-  return { title: post.title, description: post.description };
+  return {
+    title: post.title,
+    description: post.description,
+    alternates: { canonical: `https://ocupaloc.ro/blog/${post.slug}` },
+    openGraph: {
+      type: "article",
+      title: post.title,
+      description: post.description,
+      url: `https://ocupaloc.ro/blog/${post.slug}`,
+      publishedTime: post.publishedDate,
+      authors: ["OcupaLoc"]
+    }
+  };
 }
 
 export default async function BlogPostPage({ params }: PageProps) {
@@ -121,12 +138,32 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   const paragraphs = post.content.trim().split("\n\n");
 
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.description,
+    datePublished: post.publishedDate,
+    dateModified: post.publishedDate,
+    author: { "@type": "Organization", name: "OcupaLoc", url: "https://ocupaloc.ro" },
+    publisher: {
+      "@type": "Organization",
+      name: "OcupaLoc",
+      logo: { "@type": "ImageObject", url: "https://ocupaloc.ro/og-image.png" }
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": `https://ocupaloc.ro/blog/${post.slug}` }
+  };
+
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-14 text-zinc-100">
+      <Script id={`article-schema-${post.slug}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
       <article className="mx-auto max-w-3xl space-y-8">
         <header className="space-y-3">
           <h1 className="text-4xl font-bold tracking-tight">{post.title}</h1>
           <p className="text-zinc-400">{post.description}</p>
+          <time dateTime={post.publishedDate} className="text-sm text-zinc-500">
+            {new Date(post.publishedDate).toLocaleDateString("ro-RO", { year: "numeric", month: "long", day: "numeric" })}
+          </time>
         </header>
 
         <section className="space-y-4">

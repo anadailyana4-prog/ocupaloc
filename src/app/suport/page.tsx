@@ -4,8 +4,8 @@ import Link from "next/link";
 import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
 
 export const metadata: Metadata = {
-  title: "Suport",
-  description: "Centrul public de suport OcupaLoc: onboarding, billing, probleme tehnice și solicitări privind datele."
+  title: "Suport OcupaLoc - Ajutor Programări Online",
+  description: "Centrul de suport OcupaLoc: ghid de pornire, billing, probleme tehnice și întrebări despre software-ul de programări pentru saloane."
 };
 
 const supportCards = [

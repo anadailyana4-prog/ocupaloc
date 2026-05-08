@@ -6,7 +6,18 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/demo/", "/api/", "/dashboard/", "/auth/"]
+        disallow: [
+          "/demo/",
+          "/api/",
+          "/dashboard/",
+          "/auth/",
+          "/billing/",
+          "/onboarding/",
+          "/programare/",
+          "/status/",
+          "/s/",
+          "/admin/"
+        ]
       }
     ],
     sitemap: "https://ocupaloc.ro/sitemap.xml"

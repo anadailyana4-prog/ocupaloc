@@ -3,9 +3,10 @@ import Link from "next/link";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Comparație Costuri Programări | Fără Comision 59,99 RON",
+  title: "Alternativă Fresha România | 59,99 RON Fără Comision | OcupaLoc",
   description:
-    "Descoperă de ce OcupaLoc este alegerea potrivită pentru saloane din România: software în română, fără comision, la 59,99 RON pe lună."
+    "Cauti alternativă la Fresha în România? OcupaLoc: software programări în română, fără comision, preț fix 59,99 RON/lună. Migrează azi în 5 minute.",
+  alternates: { canonical: "https://ocupaloc.ro/alternativa-fresha-romania" }
 };
 
 const faqItems = [
@@ -62,7 +63,7 @@ export default function ComparatieCosturiProgramariPage() {
       <Script id="faq-schema-alternativa-fresha" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <div className="mx-auto max-w-5xl space-y-10">
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
-          <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Comparație costuri: platforme cu comision vs OcupaLoc</h1>
+          <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Alternativă Fresha România: programări fără comision la 59,99 RON</h1>
           <p className="mt-4 text-lg leading-relaxed text-zinc-300">
             Dacă vrei programari online fără comision, suport local și cost clar de 59,99 RON, OcupaLoc este software salon construit pentru piața din România.
           </p>

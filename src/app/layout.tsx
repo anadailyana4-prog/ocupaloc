@@ -24,12 +24,23 @@ const cormorant = Cormorant_Garamond({
 export const metadata: Metadata = {
   metadataBase: new URL("https://ocupaloc.ro"),
   title: {
-    default: "OcupaLoc - Programări online pentru orice business",
+    default: "OcupaLoc - Programări Online pentru Saloane, Clinici și Servicii",
     template: "%s | OcupaLoc"
   },
   description:
-    "Creează linkul tău de programare online în 2 minute. Potrivit pentru saloane, clinici, consultanți, studiouri și orice business bazat pe programări.",
-  keywords: ["programare online", "booking", "programari", "rezervari", "software programari", "business"],
+    "Software programări online pentru saloane beauty, frizerii, clinici și servicii. Preț fix 59,99 RON/lună, zero comision. Rezervări online în 30 de secunde.",
+  keywords: [
+    "programări online salon",
+    "programari online saloane",
+    "software programari salon",
+    "rezervari online salon beauty",
+    "sistem booking Romania",
+    "aplicatie programari frizerie",
+    "software programari manichiura",
+    "programari online cosmetica",
+    "booking online Romania",
+    "programare online frizer"
+  ],
   authors: [{ name: "OcupaLoc" }],
   creator: "OcupaLoc",
   openGraph: {
@@ -37,15 +48,15 @@ export const metadata: Metadata = {
     locale: "ro_RO",
     url: "https://ocupaloc.ro",
     siteName: "OcupaLoc",
-    title: "OcupaLoc - Programări online pentru orice business",
-    description: "Link de programare pentru servicii, clinici, saloane și profesioniști independenți",
-    images: [{ url: "/og-image.svg", width: 1200, height: 630 }]
+    title: "OcupaLoc - Programări Online pentru Saloane, Clinici și Servicii",
+    description: "Sistem de rezervări online pentru saloane beauty, frizerii, clinici și profesioniști independenți. Fără comision, 59,99 RON/lună.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "OcupaLoc - Programări online pentru saloane" }]
   },
   twitter: {
     card: "summary_large_image",
-    title: "OcupaLoc",
-    description: "Programări online pentru orice business",
-    images: ["/og-image.svg"]
+    title: "OcupaLoc - Programări Online Saloane",
+    description: "Programări online pentru saloane beauty fără comision. Preț fix 59,99 RON/lună.",
+    images: ["/og-image.png"]
   },
   robots: {
     index: true,
@@ -68,10 +79,35 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     "@type": "Organization",
     name: "OcupaLoc",
     url: "https://ocupaloc.ro",
+    logo: "https://ocupaloc.ro/og-image.png",
+    description: "Software programări online pentru saloane beauty, frizerii, manichiură și clinici din România.",
+    areaServed: "RO",
+    contactPoint: {
+      "@type": "ContactPoint",
+      contactType: "customer service",
+      availableLanguage: "Romanian"
+    },
+    sameAs: ["https://www.facebook.com/ocupaloc", "https://www.instagram.com/ocupaloc"],
     offers: {
       "@type": "Offer",
       price: "59.99",
-      priceCurrency: "RON"
+      priceCurrency: "RON",
+      description: "Abonament lunar programări online"
+    }
+  };
+
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "OcupaLoc",
+    url: "https://ocupaloc.ro",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: "https://ocupaloc.ro/bucuresti/salon?q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
     }
   };
 
@@ -79,6 +115,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ro" className="dark" suppressHydrationWarning>
       <head>
         <Script id="organization-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
+        <Script id="website-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
         {gaId ? <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" /> : null}
         {gaId ? (
           <Script

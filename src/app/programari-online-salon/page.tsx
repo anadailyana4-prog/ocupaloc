@@ -5,7 +5,8 @@ import Script from "next/script";
 export const metadata: Metadata = {
   title: "Programări Online Salon | Software 59,99 RON/lună Fără Comision",
   description:
-    "Software românesc de programări pentru saloane beauty. Frizerie, manichiură, cosmetică. Fără comision, la 59,99 RON/lună."
+    "Software românesc de programări pentru saloane beauty. Frizerie, manichiură, cosmetică. Fără comision, la 59,99 RON/lună.",
+  alternates: { canonical: "https://ocupaloc.ro/programari-online-salon" }
 };
 
 const faqItems = [

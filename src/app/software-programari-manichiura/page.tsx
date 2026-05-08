@@ -3,9 +3,10 @@ import Link from "next/link";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Software Programări Manichiură | 59,99 RON/lună",
+  title: "Software Programări Manichiură | 59,99 RON/lună Fără Comision",
   description:
-    "Programari online pentru manichiură și pedichiură: software salon fără comision, preț fix 59,99 RON și proces simplu pentru cliente."
+    "Programari online pentru manichiură și pedichiură: software salon fără comision, preț fix 59,99 RON și proces simplu pentru cliente.",
+  alternates: { canonical: "https://ocupaloc.ro/software-programari-manichiura" }
 };
 
 const faqItems = [

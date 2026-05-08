@@ -7,9 +7,10 @@ import { getUser } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "59,99 RON/lună pentru saloane beauty",
+  title: "Prețuri Software Programări Salon | 59,99 RON/lună Fără Comision",
   description:
-    "59,99 RON pe lună, fără comisioane ascunse. Vezi cât economisești față de platformele cu comision și compară OcupaLoc cu alternativele."
+    "Software programări online salon la 59,99 RON/lună, fără comision. Compară cu Fresha, Treatwell și Booksy și vezi cât economisești pe an.",
+  alternates: { canonical: "https://ocupaloc.ro/preturi" }
 };
 
 const comparisonRows = [
