@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { Eye, EyeOff } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -161,7 +163,7 @@ export default function ResetPasswordForm() {
                   onClick={() => setShowPassword((prev) => !prev)}
                   aria-label={showPassword ? "Ascunde parola" : "Arată parola"}
                 >
-                  {showPassword ? "👁" : "🙈"}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
@@ -188,7 +190,7 @@ export default function ResetPasswordForm() {
                   onClick={() => setShowConfirmPassword((prev) => !prev)}
                   aria-label={showConfirmPassword ? "Ascunde parola" : "Arată parola"}
                 >
-                  {showConfirmPassword ? "👁" : "🙈"}
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
             </div>

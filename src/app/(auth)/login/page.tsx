@@ -7,6 +7,8 @@ import { Suspense, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
+import { Eye, EyeOff } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -207,7 +209,7 @@ function LoginForm() {
                           onClick={() => setShowPassword((prev) => !prev)}
                           aria-label={showPassword ? "Ascunde parola" : "Arată parola"}
                         >
-                          {showPassword ? "👁" : "🙈"}
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
                       </div>
                     </FormControl>
