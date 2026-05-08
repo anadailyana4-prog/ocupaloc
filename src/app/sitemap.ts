@@ -27,6 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/software-programari-manichiura",
     "/aplicatie-programari-frizerie",
     "/programari-online-cosmetica",
+    "/programari-online-psiholog",
     ...COMPARATIV_SLUGS.map((slug) => `/comparativ/${slug}`),
     ...ORASE_LOCALE.flatMap((oras) => SERVICII_LOCALE.map((serviciu) => `/${oras}/${serviciu}`)),
     ...BLOG_SLUGS.map((slug) => `/blog/${slug}`),
@@ -43,7 +44,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
               "/alternativa-fresha-romania",
               "/software-programari-manichiura",
               "/aplicatie-programari-frizerie",
-              "/programari-online-cosmetica"
+              "/programari-online-cosmetica",
+              "/programari-online-psiholog"
             ].includes(route)
           ? 0.9
           : 0.8
