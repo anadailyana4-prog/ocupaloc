@@ -111,6 +111,16 @@
   }
 }
 
+/* Prevent browser autofill from overriding text color in dark theme */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: hsl(var(--foreground)) !important;
+  -webkit-box-shadow: 0 0 0px 1000px hsl(var(--card)) inset !important;
+  caret-color: hsl(var(--foreground));
+}
+
 /* Force readable Sonner toasts in dark UI */
 [data-sonner-toaster] [data-sonner-toast] {
   background: #09090b !important;
