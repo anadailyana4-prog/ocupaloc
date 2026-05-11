@@ -1,0 +1,163 @@
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/admin";
+
+export type OwnerAdminUser = {
+  id: string;
+  user_id: string;
+  role: "owner" | "admin" | "viewer";
+  is_active: boolean;
+  created_at: string;
+};
+
+/**
+ * Check if current user is owner or admin
+ * Server-side verification via owner_admin_users table
+ */
+export async function isOwnerAdmin(): Promise<boolean> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    if (!user) return false;
+
+    const { data, error } = await supabase
+      .from("owner_admin_users")
+      .select("id, role, is_active")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .in("role", ["owner", "admin"])
+      .single();
+
+    return !error && data !== null;
+  } catch (e) {
+    console.error("Error checking owner admin status:", e);
+    return false;
+  }
+}
+
+/**
+ * Get current owner admin user details
+ */
+export async function getOwnerAdminUser(): Promise<OwnerAdminUser | null> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from("owner_admin_users")
+      .select("id, user_id, role, is_active, created_at")
+      .eq("user_id", user.id)
+      .single();
+
+    if (error || !data) return null;
+
+    return data as OwnerAdminUser;
+  } catch (e) {
+    console.error("Error fetching owner admin user:", e);
+    return null;
+  }
+}
+
+/**
+ * Verify owner admin access server-side
+ * Throws if not authorized
+ */
+export async function requireOwnerAdmin(): Promise<OwnerAdminUser> {
+  const admin = await getOwnerAdminUser();
+  
+  if (!admin || !admin.is_active || !["owner", "admin"].includes(admin.role)) {
+    throw new Error("Unauthorized: owner admin access required");
+  }
+
+  return admin;
+}
+
+/**
+ * Log owner action to audit trail
+ */
+export async function logOwnerAction(
+  action: string,
+  resourceType?: string,
+  resourceId?: string,
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const isAdmin = await isOwnerAdmin();
+    if (!isAdmin) return;
+
+    await supabase.from("owner_audit_logs").insert({
+      user_id: user.id,
+      action,
+      resource_type: resourceType || null,
+      resource_id: resourceId || null,
+      metadata: metadata || null,
+      ip_address: null, // Could extract from headers if needed
+      user_agent: null
+    });
+  } catch (e) {
+    console.error("Error logging owner action:", e);
+    // Don't throw, audit logging is non-critical
+  }
+}
+
+/**
+ * Track business activity event (used by business and owner portal)
+ */
+export async function trackBusinessActivity(
+  profesionistId: string,
+  eventType: string,
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  try {
+    const admin = createSupabaseServiceClient();
+    
+    await admin.from("business_activity_events").insert({
+      profesionist_id: profesionistId,
+      event_type: eventType,
+      metadata: metadata || null
+    });
+  } catch (e) {
+    console.error("Error tracking business activity:", e);
+    // Non-critical
+  }
+}
+
+/**
+ * Log cron job execution
+ */
+export async function logCronExecution(
+  jobName: string,
+  status: "success" | "failed" | "partial",
+  durationMs?: number,
+  itemsProcessed?: number,
+  itemsFailed?: number,
+  errorMessage?: string
+): Promise<void> {
+  try {
+    const admin = createSupabaseServiceClient();
+    
+    await admin.from("cron_job_runs").insert({
+      job_name: jobName,
+      status,
+      duration_ms: durationMs || null,
+      items_processed: itemsProcessed || 0,
+      items_failed: itemsFailed || 0,
+      error_message: errorMessage || null
+    });
+  } catch (e) {
+    console.error("Error logging cron execution:", e);
+  }
+}
