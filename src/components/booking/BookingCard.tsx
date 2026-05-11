@@ -44,10 +44,10 @@ export function BookingCard(props: BookingCardProps) {
 
 function BookingCardDemo() {
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 md:p-5">
+    <div className="oc-bg border oc-border rounded-2xl p-4 md:p-5">
       <div className="flex items-center justify-between mb-4">
-        <div className="text-xs md:text-sm text-zinc-400">ocupaloc.ro/business-demo</div>
-        <div className="flex items-center gap-1 text-xs md:text-sm text-emerald-400">
+        <div className="text-xs md:text-sm oc-secondary-text">ocupaloc.ro/business-demo</div>
+        <div className="flex items-center gap-1 text-xs md:text-sm oc-accent">
           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
             <path
               fillRule="evenodd"
@@ -60,58 +60,58 @@ function BookingCardDemo() {
       </div>
       <div className="space-y-5">
         <div>
-          <div className="text-xs md:text-sm font-medium text-zinc-500 mb-2">1. Serviciu</div>
-          <div className="rounded-lg border border-[#1d4ed8]/25 bg-[#1d4ed8]/10 px-3 py-2.5">
-            <div className="text-sm md:text-base font-semibold text-white">Serviciu principal</div>
-            <div className="text-sm md:text-base text-zinc-400 mt-0.5">45 min • 80 lei</div>
+          <div className="text-xs md:text-sm font-medium oc-secondary-text mb-2">1. Serviciu</div>
+          <div className="rounded-lg border oc-border oc-badge-bg px-3 py-2.5">
+            <div className="text-sm md:text-base font-semibold oc-text">Serviciu principal</div>
+            <div className="text-sm md:text-base oc-secondary-text mt-0.5">45 min • 80 lei</div>
           </div>
         </div>
         <div>
-          <div className="text-xs md:text-sm font-medium text-zinc-500 mb-2">2. Data</div>
-          <div className="text-sm md:text-base text-zinc-500 mb-2">Aprilie 2025</div>
+          <div className="text-xs md:text-sm font-medium oc-secondary-text mb-2">2. Data</div>
+          <div className="text-sm md:text-base oc-secondary-text mb-2">Aprilie 2025</div>
           <div className="grid grid-cols-7 gap-1 md:gap-2 text-center text-xs md:text-sm">
-            <div className="text-zinc-600 py-2">L</div>
-            <div className="text-zinc-600 py-2">M</div>
-            <div className="text-zinc-600 py-2">M</div>
-            <div className="text-zinc-600 py-2">J</div>
-            <div className="text-zinc-600 py-2">V</div>
-            <div className="text-zinc-600 py-2">S</div>
-            <div className="text-zinc-600 py-2">D</div>
-            <div className="aspect-square flex items-center justify-center text-zinc-700">7</div>
-            <div className="aspect-square flex items-center justify-center text-zinc-700">8</div>
-            <div className="aspect-square flex items-center justify-center text-zinc-700">9</div>
-            <div className="aspect-square flex items-center justify-center text-zinc-700">10</div>
-            <div className="aspect-square flex items-center justify-center text-zinc-700">11</div>
-            <div className="aspect-square flex items-center justify-center text-zinc-700">12</div>
-            <div className="aspect-square flex items-center justify-center text-zinc-700">13</div>
-            <div className="aspect-square rounded bg-zinc-800 text-zinc-300 flex items-center justify-center">14</div>
-            <div className="aspect-square rounded bg-[#1d4ed8] text-white font-semibold flex items-center justify-center">15</div>
-            <div className="aspect-square rounded bg-zinc-800 text-zinc-300 flex items-center justify-center">16</div>
-            <div className="aspect-square rounded bg-zinc-800 text-zinc-300 flex items-center justify-center">17</div>
-            <div className="aspect-square flex items-center justify-center text-zinc-700">18</div>
-            <div className="aspect-square flex items-center justify-center text-zinc-700">19</div>
-            <div className="aspect-square flex items-center justify-center text-zinc-700">20</div>
+            <div className="oc-secondary-text py-2">L</div>
+            <div className="oc-secondary-text py-2">M</div>
+            <div className="oc-secondary-text py-2">M</div>
+            <div className="oc-secondary-text py-2">J</div>
+            <div className="oc-secondary-text py-2">V</div>
+            <div className="oc-secondary-text py-2">S</div>
+            <div className="oc-secondary-text py-2">D</div>
+            <div className="aspect-square flex items-center justify-center oc-text">7</div>
+            <div className="aspect-square flex items-center justify-center oc-text">8</div>
+            <div className="aspect-square flex items-center justify-center oc-text">9</div>
+            <div className="aspect-square flex items-center justify-center oc-text">10</div>
+            <div className="aspect-square flex items-center justify-center oc-text">11</div>
+            <div className="aspect-square flex items-center justify-center oc-text">12</div>
+            <div className="aspect-square flex items-center justify-center oc-text">13</div>
+            <div className="aspect-square rounded oc-border bg-white oc-text flex items-center justify-center">14</div>
+            <div className="aspect-square rounded oc-primary oc-text font-semibold flex items-center justify-center">15</div>
+            <div className="aspect-square rounded oc-border bg-white oc-text flex items-center justify-center">16</div>
+            <div className="aspect-square rounded oc-border bg-white oc-text flex items-center justify-center">17</div>
+            <div className="aspect-square flex items-center justify-center oc-text">18</div>
+            <div className="aspect-square flex items-center justify-center oc-text">19</div>
+            <div className="aspect-square flex items-center justify-center oc-text">20</div>
           </div>
         </div>
         <div>
-          <div className="text-xs md:text-sm font-medium text-zinc-500 mb-2">3. Ora</div>
+          <div className="text-xs md:text-sm font-medium oc-secondary-text mb-2">3. Ora</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            <div className="py-2.5 text-sm md:text-base rounded-lg bg-zinc-950 text-center font-medium text-zinc-500">10:00</div>
-            <div className="py-2.5 text-sm md:text-base rounded-lg bg-zinc-950 text-center font-medium text-zinc-500">11:00</div>
-            <div className="py-2.5 text-sm md:text-base rounded-lg bg-[#1d4ed8] text-center font-bold text-white">14:00</div>
-            <div className="py-2.5 text-sm md:text-base rounded-lg bg-zinc-800 text-center font-medium text-zinc-400">15:00</div>
-            <div className="py-2.5 text-sm md:text-base rounded-lg bg-zinc-800 text-center font-medium text-zinc-400">16:00</div>
-            <div className="py-2.5 text-sm md:text-base rounded-lg bg-zinc-950 text-center font-medium text-zinc-500">17:00</div>
+            <div className="py-2.5 text-sm md:text-base rounded-lg border oc-border bg-white text-center font-medium oc-text">10:00</div>
+            <div className="py-2.5 text-sm md:text-base rounded-lg border oc-border bg-white text-center font-medium oc-text">11:00</div>
+            <div className="py-2.5 text-sm md:text-base rounded-lg oc-primary text-center font-bold oc-text">14:00</div>
+            <div className="py-2.5 text-sm md:text-base rounded-lg border oc-border bg-white text-center font-medium oc-secondary-text">15:00</div>
+            <div className="py-2.5 text-sm md:text-base rounded-lg border oc-border bg-white text-center font-medium oc-secondary-text">16:00</div>
+            <div className="py-2.5 text-sm md:text-base rounded-lg border oc-border bg-white text-center font-medium oc-text">17:00</div>
           </div>
-          <p className="mt-2 text-xs md:text-sm text-zinc-500">Gri = ocupat</p>
+          <p className="mt-2 text-xs md:text-sm oc-secondary-text">Alb = ocupat</p>
         </div>
-        <div className="pt-4 border-t border-zinc-800">
-          <div className="text-xs md:text-sm font-medium text-zinc-500 mb-3">4. Confirmare</div>
-          <div className="text-sm md:text-base font-semibold text-white">Serviciu principal</div>
-          <div className="mt-1 text-sm md:text-base text-zinc-400">Marți, 15 aprilie • 14:00 - 14:45</div>
-          <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 mb-4 mt-4">
-            <p className="font-bold text-center text-black">⚠️ Acesta este un DEMO</p>
-            <p className="text-sm text-center text-black">Rezervarea nu este reală. Creează-ți propriul business mai jos.</p>
+        <div className="pt-4 border-t oc-border">
+          <div className="text-xs md:text-sm font-medium oc-secondary-text mb-3">4. Confirmare</div>
+          <div className="text-sm md:text-base font-semibold oc-text">Serviciu principal</div>
+          <div className="mt-1 text-sm md:text-base oc-secondary-text">Marți, 15 aprilie • 14:00 - 14:45</div>
+          <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-4 mt-4">
+            <p className="font-bold text-center text-amber-900">⚠️ Acesta este un DEMO</p>
+            <p className="text-sm text-center text-amber-800">Rezervarea nu este reală. Creează-ți propriul business mai jos.</p>
           </div>
           <Button disabled className="w-full opacity-50 cursor-not-allowed">
             Demo - Rezervare indisponibilă
