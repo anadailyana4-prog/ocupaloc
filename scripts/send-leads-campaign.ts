@@ -1,9 +1,23 @@
 import { readFileSync } from "node:fs";
 import { basename } from "node:path";
-import { config as loadEnv } from "dotenv";
 
-loadEnv({ path: ".env.local" });
-loadEnv({ path: ".env" });
+// Load .env.local then .env manually (no dotenv dependency)
+for (const envFile of [".env.local", ".env"]) {
+  try {
+    const lines = readFileSync(envFile, "utf-8").split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const idx = trimmed.indexOf("=");
+      if (idx < 0) continue;
+      const key = trimmed.slice(0, idx).trim();
+      const val = trimmed.slice(idx + 1).trim().replace(/^["']|["']$/g, "");
+      if (key && !(key in process.env)) process.env[key] = val;
+    }
+  } catch {
+    // file not present — skip
+  }
+}
 
 type LeadRow = Record<string, string>;
 
