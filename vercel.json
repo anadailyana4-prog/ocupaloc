@@ -54,6 +54,10 @@
       "schedule": "0 8 * * 1"
     },
     {
+      "path": "/api/jobs/send-review-followups",
+      "schedule": "0 20 * * *"
+    },
+    {
       "path": "/api/jobs/trial-expiry-warning",
       "schedule": "15 10 * * *"
     }

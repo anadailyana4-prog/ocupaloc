@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 
 import { SmartRulesForm } from "../smart-rules-form";
-import { updatePublicBusinessFields, updatePauzeSettings } from "../actions";
+import { updateCommunicationSettings, updatePublicBusinessFields, updatePauzeSettings } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,11 @@ type SettingsProfile = {
   smart_cancel_window_days?: number | null;
   smart_min_notice_minutes?: number | null;
   pauza_intre_clienti?: number | null;
+  sms_reminders_enabled?: boolean | null;
+  sms_provider?: "twilio" | "messagebird" | null;
+  sms_sender?: string | null;
+  sms_fallback_email?: boolean | null;
+  google_review_url?: string | null;
   program?: unknown;
 };
 
@@ -40,8 +45,8 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
 
   const { data: prof, error: profErr } = await selectWithTelefonFallback<SettingsProfile>(
     async (columns) => await supabase.from("profesionisti").select(columns).eq("user_id", user.id).maybeSingle(),
-    "id, slug, telefon, description, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes, pauza_intre_clienti, program",
-    "id, slug, description, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes, pauza_intre_clienti, program"
+    "id, slug, telefon, description, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes, pauza_intre_clienti, sms_reminders_enabled, sms_provider, sms_sender, sms_fallback_email, google_review_url, program",
+    "id, slug, description, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes, pauza_intre_clienti, sms_reminders_enabled, sms_provider, sms_sender, sms_fallback_email, google_review_url, program"
   );
 
   if (profErr || !prof?.id) {
@@ -196,6 +201,84 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
         clientCancelThreshold={prof.smart_client_cancel_threshold ?? 0}
         cancelWindowDays={prof.smart_cancel_window_days ?? 60}
       />
+
+      <section className="lux-card space-y-4 p-6">
+        <div>
+          <h2 className="font-display text-xl font-semibold tracking-wide text-amber-100">SMS & review</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Activează reminder-ele SMS și configurează link-ul Google review trimis după finalizarea programării.</p>
+        </div>
+
+        <form action={updateCommunicationSettings} className="space-y-4">
+          <div className="flex items-center gap-3 rounded-xl border border-zinc-700/70 bg-zinc-900/60 p-3">
+            <input
+              id="sms_reminders_enabled"
+              name="sms_reminders_enabled"
+              type="checkbox"
+              defaultChecked={Boolean(prof.sms_reminders_enabled)}
+              className="h-4 w-4 rounded border-zinc-600 bg-zinc-900"
+            />
+            <Label htmlFor="sms_reminders_enabled" className="cursor-pointer">Activează reminder SMS pentru clienți</Label>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="sms_provider">Provider SMS</Label>
+            <select
+              id="sms_provider"
+              name="sms_provider"
+              defaultValue={prof.sms_provider ?? ""}
+              className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 text-sm"
+            >
+              <option value="">Dezactivat</option>
+              <option value="twilio">Twilio</option>
+              <option value="messagebird">MessageBird</option>
+            </select>
+            <p className="text-xs text-muted-foreground">Cheile API se configurează în env (server-side), nu în dashboard.</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="sms_sender">Sender/Originator (opțional)</Label>
+            <Input
+              id="sms_sender"
+              name="sms_sender"
+              type="text"
+              maxLength={50}
+              defaultValue={prof.sms_sender ?? ""}
+              className="border-zinc-700 bg-zinc-900"
+              placeholder="ex. OCUPALOC"
+            />
+          </div>
+
+          <div className="flex items-center gap-3 rounded-xl border border-zinc-700/70 bg-zinc-900/60 p-3">
+            <input
+              id="sms_fallback_email"
+              name="sms_fallback_email"
+              type="checkbox"
+              defaultChecked={prof.sms_fallback_email !== false}
+              className="h-4 w-4 rounded border-zinc-600 bg-zinc-900"
+            />
+            <Label htmlFor="sms_fallback_email" className="cursor-pointer">Trimite email fallback dacă SMS eșuează</Label>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="google_review_url">Link Google review (post-programare)</Label>
+            <Input
+              id="google_review_url"
+              name="google_review_url"
+              type="url"
+              defaultValue={prof.google_review_url ?? ""}
+              className="border-zinc-700 bg-zinc-900"
+              placeholder="https://g.page/r/.../review"
+            />
+          </div>
+
+          <Button
+            type="submit"
+            className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105"
+          >
+            Salvează SMS & review
+          </Button>
+        </form>
+      </section>
     </div>
   );
 }

@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { mock } from "node:test";
 
-import { notifyProfesionistNewProgramare } from "../src/lib/email/programare-notify";
+import { buildPostCompletionEmail, notifyProfesionistNewProgramare } from "../src/lib/email/programare-notify";
 
 type FetchCall = {
   url: string;
@@ -189,4 +189,29 @@ test("notifyProfesionistNewProgramare: appointment date appears in text body", a
   const text = calls[0]!.body.text;
   assert.ok(text.includes("02.11.2026"), `text should include date, got: ${text}`);
   assert.ok(text.includes("09:00"), `text should include time, got: ${text}`);
+});
+
+test("buildPostCompletionEmail: includes Google review CTA when URL is provided", () => {
+  const built = buildPostCompletionEmail({
+    clientName: "Ana",
+    salonName: "Salon Test",
+    serviceName: "Tuns",
+    googleReviewUrl: "https://g.page/r/CQ123/review",
+    rebookUrl: "https://ocupaloc.ro/s/salon-test"
+  });
+
+  assert.match(built.text, /review google/i);
+  assert.match(built.html, /Lasă review pe Google/i);
+  assert.match(built.html, /Rezervă din nou/i);
+});
+
+test("buildPostCompletionEmail: omits review CTA when URL is missing", () => {
+  const built = buildPostCompletionEmail({
+    clientName: "Ana",
+    salonName: "Salon Test",
+    serviceName: "Tuns"
+  });
+
+  assert.doesNotMatch(built.text, /review google/i);
+  assert.doesNotMatch(built.html, /Lasă review pe Google/i);
 });

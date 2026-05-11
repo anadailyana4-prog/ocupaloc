@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { sendPostCompletionFollowup } from "@/lib/booking/post-completion-followup";
 import { logBookingStatusEvent } from "@/lib/booking/status-events";
-import { notifyClientBookingCancelledByProvider, notifyClientBookingConfirmation, notifyClientPostCompletion } from "@/lib/email/programare-notify";
+import { notifyClientBookingCancelledByProvider, notifyClientBookingConfirmation } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
 import { withProgramPauza } from "@/lib/program";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
@@ -77,7 +78,7 @@ export async function completeBooking(id: string): Promise<BookingActionResult> 
   }
   await logBookingStatusEvent({ bookingId: parsed.data, status: "finalizat", source: "salon_dashboard" });
   try {
-    await notifyClientPostCompletion(parsed.data);
+    await sendPostCompletionFollowup(parsed.data, "salon_dashboard");
   } catch (err) {
     reportError("email", "notify_client_post_completion_failed", err, { bookingId: parsed.data });
   }
@@ -182,6 +183,19 @@ const smartRulesFields = z.object({
   smart_client_cancel_threshold: z.number().int().min(0).max(10),
   smart_cancel_window_days: z.number().int().min(7).max(365),
   smart_min_notice_minutes: z.number().int().min(0).max(1440)
+});
+
+const communicationSettingsFields = z.object({
+  sms_reminders_enabled: z.boolean(),
+  sms_provider: z.enum(["twilio", "messagebird"]).nullable(),
+  sms_sender: z.string().trim().max(50).nullable(),
+  sms_fallback_email: z.boolean(),
+  google_review_url: z
+    .string()
+    .trim()
+    .url("Link-ul de review nu este valid.")
+    .refine((v) => v.includes("google."), "Te rugăm să folosești un link Google review.")
+    .nullable()
 });
 
 export async function updatePublicBusinessFields(formData: FormData) {
@@ -317,6 +331,53 @@ export async function saveSmartRulesFromClient(data: {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/setari");
   return { ok: true };
+}
+
+export async function updateCommunicationSettings(formData: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/login");
+  }
+
+  const providerRaw = String(formData.get("sms_provider") ?? "").trim();
+  const raw = {
+    sms_reminders_enabled: formData.get("sms_reminders_enabled") === "on",
+    sms_provider: providerRaw === "twilio" || providerRaw === "messagebird" ? providerRaw : null,
+    sms_sender: String(formData.get("sms_sender") ?? "").trim() || null,
+    sms_fallback_email: formData.get("sms_fallback_email") === "on",
+    google_review_url: String(formData.get("google_review_url") ?? "").trim() || null
+  };
+
+  const parsed = communicationSettingsFields.safeParse(raw);
+  if (!parsed.success) {
+    redirect("/dashboard/setari?error=" + encodeURIComponent(parsed.error.issues[0]?.message ?? "Setări de comunicare invalide."));
+  }
+
+  if (parsed.data.sms_reminders_enabled && !parsed.data.sms_provider) {
+    redirect("/dashboard/setari?error=" + encodeURIComponent("Alege providerul SMS când reminder-ele SMS sunt active."));
+  }
+
+  const { error } = await supabase
+    .from("profesionisti")
+    .update({
+      sms_reminders_enabled: parsed.data.sms_reminders_enabled,
+      sms_provider: parsed.data.sms_provider,
+      sms_sender: parsed.data.sms_sender,
+      sms_fallback_email: parsed.data.sms_fallback_email,
+      google_review_url: parsed.data.google_review_url
+    })
+    .eq("user_id", user.id);
+
+  if (error) {
+    redirect("/dashboard/setari?error=" + encodeURIComponent(error.message ?? "Nu am putut salva setările de comunicare."));
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/setari");
+  redirect("/dashboard/setari?saved=1");
 }
 
 // -----------------------------------------------
