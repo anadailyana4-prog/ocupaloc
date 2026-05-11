@@ -214,7 +214,16 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
               defaultChecked={prof.email_reminders_enabled !== false}
               className="h-4 w-4 rounded border-zinc-600 bg-zinc-900"
             />
-            <Label htmlFor="email_reminders_enabled" className="cursor-pointer">Activează reminder-ele pe email pentru clienți</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="email_reminders_enabled" className="cursor-pointer">Activează reminder-ele pe email pentru clienți</Label>
+              <span
+                title="Trimitem 3 tipuri de reminder pe email: 24h (cu linkuri securizate pentru confirmare, reprogramare, anulare), 2h (reconfirmare apropiată), morning (în dimineața programării pentru ziua curentă)."
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-zinc-600 text-[11px] font-semibold text-zinc-300 cursor-help"
+                aria-label="Detalii reminder-e email"
+              >
+                i
+              </span>
+            </div>
           </div>
 
           <div className="space-y-2">
