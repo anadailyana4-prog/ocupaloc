@@ -304,6 +304,7 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
       : "";
 
   const confirmUrl = tip === "24h" ? createBookingConfirmationLink({ bookingId: programareId, action: "confirm" }) : null;
+  const rescheduleUrl = tip === "24h" ? createBookingConfirmationLink({ bookingId: programareId, action: "reschedule" }) : null;
   const cancelUrl = tip === "24h" ? createBookingConfirmationLink({ bookingId: programareId, action: "cancel" }) : null;
 
   const textLines = [
@@ -317,11 +318,12 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
     ...(locationNote ? [locationNote] : [])
   ];
 
-  if (confirmUrl && cancelUrl) {
+  if (confirmUrl && rescheduleUrl && cancelUrl) {
     textLines.push(
       "",
-      "Confirmă sau anulează:",
+      "Confirmă, reprogramează sau anulează:",
       `Confirmă prezența: ${confirmUrl}`,
+      `Reprogramează: ${rescheduleUrl}`,
       `Anulează programarea: ${cancelUrl}`
     );
   }
@@ -329,7 +331,7 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
   const text = textLines.join("\n");
 
   let html: string | undefined;
-  if (confirmUrl && cancelUrl) {
+  if (confirmUrl && rescheduleUrl && cancelUrl) {
     html = `
 <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
   <h2 style="margin:0 0 8px;">Reminder programare 📅</h2>
@@ -346,6 +348,7 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
   <p style="margin:0 0 12px;font-weight:600;">Confirmi că vii?</p>
   <div style="display:flex;gap:12px;flex-wrap:wrap;">
     <a href="${confirmUrl}" style="background:#16a34a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;display:inline-block;margin:0 8px 8px 0;">✓ Confirmă prezența</a>
+    <a href="${rescheduleUrl}" style="background:#2563eb;color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;display:inline-block;margin:0 8px 8px 0;">↻ Reprogramează</a>
     <a href="${cancelUrl}" style="background:#f3f4f6;color:#374151;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 8px;">✗ Anulează programarea</a>
   </div>
 

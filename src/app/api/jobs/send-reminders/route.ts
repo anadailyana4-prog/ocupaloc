@@ -6,7 +6,6 @@ import { notifyClientReminder } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
 import { validateCronSecret } from "@/lib/cron-auth";
 import { getRequestId, recordOperationalEvent } from "@/lib/ops-events";
-import { sendReminderSms, type SmsProvider } from "@/lib/sms/reminders";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 /**
@@ -78,88 +77,18 @@ async function sendReminderWithRetry(programareId: string, type: ReminderType): 
 
 type ReminderDeliveryStats = {
   sent: number;
-  sentSms: number;
-  sentEmail: number;
-  fallbackEmailSent: number;
   failed: number;
 };
-
-function isSmsProvider(value: string | null | undefined): value is SmsProvider {
-  return value === "twilio" || value === "messagebird";
-}
-
-async function deliverReminder(
-  row: {
-    id: string;
-    telefon_client: string | null;
-    email_client: string | null;
-    data_start: string;
-    profesionisti: { nume_business?: string | null; sms_reminders_enabled?: boolean | null; sms_provider?: string | null; sms_sender?: string | null; sms_fallback_email?: boolean | null } | { nume_business?: string | null; sms_reminders_enabled?: boolean | null; sms_provider?: string | null; sms_sender?: string | null; sms_fallback_email?: boolean | null }[] | null;
-    servicii: { nume?: string | null } | { nume?: string | null }[] | null;
-  },
-  type: ReminderType
-): Promise<{ delivered: boolean; usedSms: boolean; usedEmail: boolean; usedFallbackEmail: boolean }> {
-  const relProf = row.profesionisti;
-  const relServ = row.servicii;
-  const profesionist = Array.isArray(relProf) ? relProf[0] ?? null : relProf;
-  const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
-  const provider = profesionist?.sms_provider?.trim();
-  const smsEnabled = Boolean(profesionist?.sms_reminders_enabled) && Boolean(row.telefon_client) && isSmsProvider(provider);
-  const allowFallbackEmail = profesionist?.sms_fallback_email !== false;
-
-  if (smsEnabled) {
-    const smsSent = await sendReminderSms(
-      {
-        clientPhone: row.telefon_client ?? "",
-        salonName: profesionist?.nume_business?.trim() || "acest business",
-        serviceName: serviciu?.nume?.trim() || "serviciu",
-        startsAt: new Date(row.data_start),
-        provider,
-        sender: profesionist?.sms_sender ?? null
-      },
-      type
-    );
-
-    if (smsSent) {
-      return { delivered: true, usedSms: true, usedEmail: false, usedFallbackEmail: false };
-    }
-
-    reportError("cron", "reminder_sms_failed", "SMS reminder failed", {
-      programareId: row.id,
-      type,
-      provider
-    });
-
-    if (!allowFallbackEmail) {
-      return { delivered: false, usedSms: true, usedEmail: false, usedFallbackEmail: false };
-    }
-
-    const emailSent = await sendReminderWithRetry(row.id, type);
-    return {
-      delivered: emailSent,
-      usedSms: true,
-      usedEmail: emailSent,
-      usedFallbackEmail: emailSent
-    };
-  }
-
-  const emailSent = await sendReminderWithRetry(row.id, type);
-  return {
-    delivered: emailSent,
-    usedSms: false,
-    usedEmail: emailSent,
-    usedFallbackEmail: false
-  };
-}
 
 async function sendType(admin: ReturnType<typeof createSupabaseServiceClient>, type: ReminderType): Promise<ReminderDeliveryStats> {
   const { from, to } = getWindow(type);
 
   const { data: rows, error } = await admin
     .from("programari")
-    .select("id, email_client, telefon_client, data_start, profesionist_id, profesionisti(nume_business, sms_reminders_enabled, sms_provider, sms_sender, sms_fallback_email), servicii(nume)")
+    .select("id, profesionist_id")
     .eq("status", "confirmat")
-    .or("email_client.not.is.null,telefon_client.not.is.null")
+    .not("email_client", "is", null)
+    .or("email_reminders_enabled.is.null,email_reminders_enabled.eq.true", { foreignTable: "profesionisti" })
     .gte("data_start", from.toISOString())
     .lte("data_start", to.toISOString())
     .order("data_start", { ascending: true })
@@ -169,7 +98,7 @@ async function sendType(admin: ReturnType<typeof createSupabaseServiceClient>, t
     if (error) {
       reportError("cron", "reminder_query_failed", error, { type });
     }
-    return { sent: 0, sentSms: 0, sentEmail: 0, fallbackEmailSent: 0, failed: 0 };
+    return { sent: 0, failed: 0 };
   }
 
   const ids = rows.map((r) => r.id);
@@ -187,24 +116,18 @@ async function sendType(admin: ReturnType<typeof createSupabaseServiceClient>, t
   const sent = new Set((sentRows ?? []).map((r) => r.programare_id));
   const stats: ReminderDeliveryStats = {
     sent: 0,
-    sentSms: 0,
-    sentEmail: 0,
-    fallbackEmailSent: 0,
     failed: 0
   };
 
   for (const row of rows) {
     if (sent.has(row.id)) continue;
-    const delivered = await deliverReminder(row, type);
-    if (!delivered.delivered) {
+    const delivered = await sendReminderWithRetry(row.id, type);
+    if (!delivered) {
       stats.failed += 1;
       continue;
     }
 
     stats.sent += 1;
-    if (delivered.usedSms) stats.sentSms += 1;
-    if (delivered.usedEmail) stats.sentEmail += 1;
-    if (delivered.usedFallbackEmail) stats.fallbackEmailSent += 1;
 
     if (trackingDisabled) {
       continue;
@@ -252,20 +175,17 @@ export async function GET(req: NextRequest) {
     ? [typeParam as ReminderType]
     : ["24h", "2h"];
 
-  const totals: ReminderDeliveryStats = { sent: 0, sentSms: 0, sentEmail: 0, fallbackEmailSent: 0, failed: 0 };
+  const totals: ReminderDeliveryStats = { sent: 0, failed: 0 };
   const byType: Record<ReminderType, ReminderDeliveryStats> = {
-    "24h": { sent: 0, sentSms: 0, sentEmail: 0, fallbackEmailSent: 0, failed: 0 },
-    "2h": { sent: 0, sentSms: 0, sentEmail: 0, fallbackEmailSent: 0, failed: 0 },
-    "morning": { sent: 0, sentSms: 0, sentEmail: 0, fallbackEmailSent: 0, failed: 0 }
+    "24h": { sent: 0, failed: 0 },
+    "2h": { sent: 0, failed: 0 },
+    "morning": { sent: 0, failed: 0 }
   };
 
   try {
     for (const type of typesToSend) {
       byType[type] = await sendType(admin, type);
       totals.sent += byType[type].sent;
-      totals.sentSms += byType[type].sentSms;
-      totals.sentEmail += byType[type].sentEmail;
-      totals.fallbackEmailSent += byType[type].fallbackEmailSent;
       totals.failed += byType[type].failed;
     }
   } catch (err) {
@@ -278,9 +198,7 @@ export async function GET(req: NextRequest) {
     sent24h: byType["24h"].sent,
     sent2h: byType["2h"].sent,
     sentMorning: byType["morning"].sent,
-    sentSms: totals.sentSms,
-    sentEmail: totals.sentEmail,
-    sentEmailFallback: totals.fallbackEmailSent,
+    sentEmail: totals.sent,
     failed: totals.failed,
     total: totals.sent,
     ranAt: new Date().toISOString(),

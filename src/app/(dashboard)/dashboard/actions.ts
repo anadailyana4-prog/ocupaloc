@@ -186,10 +186,7 @@ const smartRulesFields = z.object({
 });
 
 const communicationSettingsFields = z.object({
-  sms_reminders_enabled: z.boolean(),
-  sms_provider: z.enum(["twilio", "messagebird"]).nullable(),
-  sms_sender: z.string().trim().max(50).nullable(),
-  sms_fallback_email: z.boolean(),
+  email_reminders_enabled: z.boolean(),
   google_review_url: z
     .string()
     .trim()
@@ -342,12 +339,8 @@ export async function updateCommunicationSettings(formData: FormData) {
     redirect("/login");
   }
 
-  const providerRaw = String(formData.get("sms_provider") ?? "").trim();
   const raw = {
-    sms_reminders_enabled: formData.get("sms_reminders_enabled") === "on",
-    sms_provider: providerRaw === "twilio" || providerRaw === "messagebird" ? providerRaw : null,
-    sms_sender: String(formData.get("sms_sender") ?? "").trim() || null,
-    sms_fallback_email: formData.get("sms_fallback_email") === "on",
+    email_reminders_enabled: formData.get("email_reminders_enabled") === "on",
     google_review_url: String(formData.get("google_review_url") ?? "").trim() || null
   };
 
@@ -356,17 +349,10 @@ export async function updateCommunicationSettings(formData: FormData) {
     redirect("/dashboard/setari?error=" + encodeURIComponent(parsed.error.issues[0]?.message ?? "Setări de comunicare invalide."));
   }
 
-  if (parsed.data.sms_reminders_enabled && !parsed.data.sms_provider) {
-    redirect("/dashboard/setari?error=" + encodeURIComponent("Alege providerul SMS când reminder-ele SMS sunt active."));
-  }
-
   const { error } = await supabase
     .from("profesionisti")
     .update({
-      sms_reminders_enabled: parsed.data.sms_reminders_enabled,
-      sms_provider: parsed.data.sms_provider,
-      sms_sender: parsed.data.sms_sender,
-      sms_fallback_email: parsed.data.sms_fallback_email,
+      email_reminders_enabled: parsed.data.email_reminders_enabled,
       google_review_url: parsed.data.google_review_url
     })
     .eq("user_id", user.id);

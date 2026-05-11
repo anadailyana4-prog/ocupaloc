@@ -1,18 +1,8 @@
 begin;
 
 alter table public.profesionisti
-  add column if not exists sms_reminders_enabled boolean not null default false,
-  add column if not exists sms_provider text,
-  add column if not exists sms_sender text,
-  add column if not exists sms_fallback_email boolean not null default true,
+  add column if not exists email_reminders_enabled boolean not null default true,
   add column if not exists google_review_url text;
-
-alter table public.profesionisti
-  drop constraint if exists profesionisti_sms_provider_check;
-
-alter table public.profesionisti
-  add constraint profesionisti_sms_provider_check
-  check (sms_provider is null or sms_provider in ('twilio', 'messagebird'));
 
 create table if not exists public.programari_followups (
   id uuid primary key default gen_random_uuid(),
