@@ -46,7 +46,7 @@ function BookingCardDemo() {
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 md:p-5">
       <div className="flex items-center justify-between mb-4">
-        <div className="text-xs md:text-sm text-zinc-400">ocupaloc.ro/salon-elegance</div>
+        <div className="text-xs md:text-sm text-zinc-400">ocupaloc.ro/business-demo</div>
         <div className="flex items-center gap-1 text-xs md:text-sm text-emerald-400">
           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
             <path
@@ -60,14 +60,14 @@ function BookingCardDemo() {
       </div>
       <div className="space-y-5">
         <div>
-          <div className="text-xs md:text-sm font-medium text-zinc-500 mb-2">1. Serviciu ales</div>
+          <div className="text-xs md:text-sm font-medium text-zinc-500 mb-2">1. Serviciu</div>
           <div className="rounded-lg border border-[#1d4ed8]/25 bg-[#1d4ed8]/10 px-3 py-2.5">
-            <div className="text-sm md:text-base font-semibold text-white">Tuns + Spălat</div>
+            <div className="text-sm md:text-base font-semibold text-white">Serviciu principal</div>
             <div className="text-sm md:text-base text-zinc-400 mt-0.5">45 min • 80 lei</div>
           </div>
         </div>
         <div>
-          <div className="text-xs md:text-sm font-medium text-zinc-500 mb-2">2. Alege data</div>
+          <div className="text-xs md:text-sm font-medium text-zinc-500 mb-2">2. Data</div>
           <div className="text-sm md:text-base text-zinc-500 mb-2">Aprilie 2025</div>
           <div className="grid grid-cols-7 gap-1 md:gap-2 text-center text-xs md:text-sm">
             <div className="text-zinc-600 py-2">L</div>
@@ -94,7 +94,7 @@ function BookingCardDemo() {
           </div>
         </div>
         <div>
-          <div className="text-xs md:text-sm font-medium text-zinc-500 mb-2">3. Alege ora</div>
+          <div className="text-xs md:text-sm font-medium text-zinc-500 mb-2">3. Ora</div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             <div className="py-2.5 text-sm md:text-base rounded-lg bg-zinc-950 text-center font-medium text-zinc-500">10:00</div>
             <div className="py-2.5 text-sm md:text-base rounded-lg bg-zinc-950 text-center font-medium text-zinc-500">11:00</div>
@@ -107,11 +107,11 @@ function BookingCardDemo() {
         </div>
         <div className="pt-4 border-t border-zinc-800">
           <div className="text-xs md:text-sm font-medium text-zinc-500 mb-3">4. Confirmare</div>
-          <div className="text-sm md:text-base font-semibold text-white">Tuns + Spălat</div>
+          <div className="text-sm md:text-base font-semibold text-white">Serviciu principal</div>
           <div className="mt-1 text-sm md:text-base text-zinc-400">Marți, 15 aprilie • 14:00 - 14:45</div>
           <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 mb-4 mt-4">
             <p className="font-bold text-center text-black">⚠️ Acesta este un DEMO</p>
-            <p className="text-sm text-center text-black">Rezervarea nu este reală. Creează-ți propriul salon mai jos.</p>
+            <p className="text-sm text-center text-black">Rezervarea nu este reală. Creează-ți propriul business mai jos.</p>
           </div>
           <Button disabled className="w-full opacity-50 cursor-not-allowed">
             Demo - Rezervare indisponibilă
