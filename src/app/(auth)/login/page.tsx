@@ -143,22 +143,22 @@ function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md border-zinc-800 bg-zinc-950">
+    <div className="flex min-h-screen items-center justify-center p-4 oc-bg oc-text">
+      <Card className="w-full max-w-md border oc-border oc-bg">
         <CardHeader>
-          <CardTitle>Autentificare</CardTitle>
-          <CardDescription>Intră în contul OcupaLoc.</CardDescription>
+          <CardTitle className="oc-text">Autentificare</CardTitle>
+          <CardDescription className="oc-secondary-text">Intră în contul OcupaLoc.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {signupConfirmed && (
-            <div className="rounded-md border border-emerald-700 bg-emerald-950 px-4 py-3 text-sm text-emerald-300">
+            <div className="rounded-md border border-emerald-400 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
               ✓ Contul dumneavoastră a fost creat cu succes! Vă puteți autentifica acum.
             </div>
           )}
           {alreadyLoggedIn && (
-            <div className="rounded-md border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-300">
+            <div className="rounded-md border oc-border oc-badge-bg px-4 py-3 text-sm oc-text">
               Ești deja autentificat.{" "}
-              <Link href="/dashboard" className="font-medium text-white underline underline-offset-2">
+              <Link href="/dashboard" className="font-medium oc-accent underline underline-offset-2">
                 Du-te la meniu →
               </Link>
             </div>
@@ -205,7 +205,7 @@ function LoginForm() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-1 top-1 h-8 px-2 text-zinc-400 hover:text-zinc-100"
+                          className="absolute right-1 top-1 h-8 px-2 oc-secondary-text hover:oc-text"
                           onClick={() => setShowPassword((prev) => !prev)}
                           aria-label={showPassword ? "Ascunde parola" : "Arată parola"}
                         >
@@ -223,18 +223,18 @@ function LoginForm() {
               {authError === "auth" && decodedAuthReason && !signupConfirmed ? (
                 <p className="text-sm text-amber-300">Autentificarea anterioară a eșuat: {decodedAuthReason}</p>
               ) : null}
-              {submitError ? <p className="text-sm text-red-400">{submitError}</p> : null}
+              {submitError ? <p className="text-sm text-red-600">{submitError}</p> : null}
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex flex-col gap-3 border-t border-zinc-800 pt-4">
-          <p className="text-sm text-muted-foreground">
+        <CardFooter className="flex flex-col gap-3 border-t oc-border pt-4">
+          <p className="text-sm oc-secondary-text">
             Nu ai cont?{" "}
-            <Link href="/signup?start=1" className="text-primary underline-offset-4 hover:underline">
+            <Link href="/signup?start=1" className="oc-accent underline-offset-4 hover:underline">
               Creează unul
             </Link>
           </p>
-          <Link href="/" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
+          <Link href="/" className="text-sm oc-secondary-text underline-offset-4 hover:underline">
             ← Înapoi la pagina principală
           </Link>
         </CardFooter>

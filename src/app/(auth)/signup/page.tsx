@@ -414,30 +414,30 @@ function SignupPageContent() {
 
   if (emailSent) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4">
-        <Card className="w-full max-w-md border-zinc-800 bg-zinc-950 text-center">
+      <div className="flex min-h-screen items-center justify-center oc-bg oc-text p-4">
+        <Card className="w-full max-w-md border oc-border oc-bg text-center">
           <CardHeader className="space-y-4 pb-2">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-950 text-4xl">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-4xl">
               📧
             </div>
-            <CardTitle className="text-2xl">Verificați emailul</CardTitle>
-            <CardDescription className="text-base text-zinc-300">
+            <CardTitle className="text-2xl oc-text">Verificați emailul</CardTitle>
+            <CardDescription className="text-base oc-secondary-text">
               Vă vom trimite un email de confirmare la adresa{" "}
-              <span className="font-semibold text-white">{email}</span>.
+              <span className="font-semibold oc-text">{email}</span>.
               <br />
-              <span className="mt-2 block text-sm text-zinc-400">
+              <span className="mt-2 block text-sm oc-secondary-text">
                 Accesați linkul din email pentru a activa contul.
               </span>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 pt-4">
-            <div className="rounded-md border border-zinc-800 bg-zinc-900 p-4 text-sm text-zinc-400">
+            <div className="rounded-md border oc-border oc-badge-bg p-4 text-sm oc-text">
               Nu ați primit emailul? Verificați și folderul{" "}
-              <span className="font-medium text-zinc-300">Spam / Junk</span>.
+              <span className="font-medium oc-text">Spam / Junk</span>.
             </div>
           </CardContent>
           <CardFooter className="justify-center">
-            <Link href="/login" className="text-sm text-zinc-400 underline underline-offset-2 hover:text-white">
+            <Link href="/login" className="text-sm oc-secondary-text underline underline-offset-2 hover:oc-text">
               Mergi la autentificare
             </Link>
           </CardFooter>
@@ -447,17 +447,17 @@ function SignupPageContent() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4">
-      <Card className="w-full max-w-3xl border-zinc-800 bg-zinc-950">
+    <div className="flex min-h-screen items-center justify-center oc-bg oc-text p-4">
+      <Card className="w-full max-w-3xl border oc-border oc-bg">
         <CardHeader className="space-y-4">
           <div className="space-y-2">
-            <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-800">
-              <div className="h-full bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
+            <div className="h-2 w-full overflow-hidden rounded-full oc-badge-bg">
+              <div className="h-full oc-primary transition-all duration-300" style={{ width: `${progress}%` }} />
             </div>
-            <p className="text-xs text-zinc-400">Pasul {step} din 3</p>
+            <p className="text-xs oc-secondary-text">Pasul {step} din 3</p>
           </div>
-          <CardTitle>Creează cont OcupaLoc</CardTitle>
-          <CardDescription>
+          <CardTitle className="oc-text">Creează cont OcupaLoc</CardTitle>
+          <CardDescription className="oc-secondary-text">
             Setezi contul în 3 pași și poți începe să primești programări imediat.
           </CardDescription>
         </CardHeader>
@@ -543,22 +543,22 @@ function SignupPageContent() {
               </Dialog>
 
               {importedCount > 0 ? (
-                <p className="text-sm font-medium text-emerald-400">{importedCount} clienți importați cu succes</p>
+                <p className="text-sm font-medium text-emerald-700\">{importedCount} clienți importați cu succes</p>
               ) : null}
             </section>
           ) : null}
 
           {step === 2 ? (
             <section className="space-y-4">
-              <h2 className="text-xl font-semibold">Serviciile tale</h2>
+              <h2 className="text-xl font-semibold oc-text">Serviciile tale</h2>
               <div className="space-y-3">
                 <div className="grid gap-2 px-3 md:grid-cols-3">
-                  <p className="text-xs font-medium text-zinc-400">Serviciul oferit</p>
-                  <p className="text-xs font-medium text-zinc-400">Timp de execuție (min)</p>
-                  <p className="text-xs font-medium text-zinc-400">Prețul (RON)</p>
+                  <p className="text-xs font-medium oc-secondary-text">Serviciul oferit</p>
+                  <p className="text-xs font-medium oc-secondary-text">Timp de execuție (min)</p>
+                  <p className="text-xs font-medium oc-secondary-text">Prețul (RON)</p>
                 </div>
                 {services.map((service, index) => (
-                  <div key={`service-${index + 1}`} className="grid gap-2 rounded-lg border border-zinc-800 p-3 md:grid-cols-3">
+                  <div key={`service-${index + 1}`} className="grid gap-2 rounded-lg border oc-border oc-bg p-3 md:grid-cols-3">
                     <Input
                       placeholder={SERVICE_EXAMPLES[index]?.nume ?? "ex: Serviciu"}
                       value={service.nume}
@@ -605,14 +605,14 @@ function SignupPageContent() {
           {step === 3 ? (
             <section className="space-y-4">
               <div className="flex flex-col gap-1">
-                <h2 className="text-xl font-semibold">Program de lucru</h2>
-                <p className="text-sm text-muted-foreground">Program recomandat automat pentru activitatea selectată.</p>
+                <h2 className="text-xl font-semibold oc-text">Program de lucru</h2>
+                <p className="text-sm oc-secondary-text">Program recomandat automat pentru activitatea selectată.</p>
               </div>
               <div className="space-y-3">
                 {workDays.map((day, index) => (
-                  <div key={day.key} className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 rounded-lg border border-zinc-800 p-3">
+                  <div key={day.key} className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 rounded-lg border oc-border oc-bg p-3">
                     <Checkbox checked={day.active} onCheckedChange={(checked) => updateDay(index, "active", checked === true)} />
-                    <p className="text-sm font-medium">{day.label}</p>
+                    <p className="text-sm font-medium oc-text">{day.label}</p>
                     <Input
                       type="time"
                       className="w-28"
@@ -639,7 +639,7 @@ function SignupPageContent() {
           ) : null}
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-4 border-t border-zinc-800 pt-6">
+        <CardFooter className="flex flex-col gap-4 border-t oc-border pt-6">
           <div className="flex w-full items-center justify-between">
             {step === 1 ? (
               <Button type="button" variant="ghost" onClick={() => router.push("/")}>
@@ -665,9 +665,9 @@ function SignupPageContent() {
               </Button>
             )}
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm oc-secondary-text">
             Ai deja cont?{" "}
-            <Link href="/login" className="text-primary underline-offset-4 hover:underline">
+            <Link href="/login" className="oc-accent underline-offset-4 hover:underline">
               Intră în cont
             </Link>
           </p>

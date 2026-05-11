@@ -317,29 +317,43 @@ export function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t oc-border bg-white py-10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <p className="font-display text-xl font-semibold oc-accent">OcupaLoc</p>
-            <p className="mt-2 text-sm oc-secondary-text">Programări online pentru orice business</p>
+      <footer className="border-t oc-border oc-bg">
+        <div className="mx-auto max-w-6xl px-4 py-12">
+          <div className="grid gap-8 md:grid-cols-4 md:gap-12">
+            <div>
+              <p className="font-display text-lg font-semibold oc-accent">OcupaLoc</p>
+              <p className="mt-2 text-sm oc-secondary-text">Programări online pentru orice business</p>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold oc-text">Produs</p>
+              <ul className="mt-3 space-y-2 text-sm oc-secondary-text">
+                <li><a href="#pret" className="transition-colors hover:oc-text">Prețuri</a></li>
+                <li><a href="#cum-functioneaza" className="transition-colors hover:oc-text">Cum funcționează</a></li>
+                <li><a href="#pentru-cine" className="transition-colors hover:oc-text">Pentru cine</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold oc-text">Legal</p>
+              <ul className="mt-3 space-y-2 text-sm oc-secondary-text">
+                <li><Link href="/gdpr" className="transition-colors hover:oc-text">GDPR</Link></li>
+                <li><Link href="/confidentialitate" className="transition-colors hover:oc-text">Confidențialitate</Link></li>
+                <li><Link href="/termeni" className="transition-colors hover:oc-text">Termeni</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold oc-text">Contact</p>
+              <ul className="mt-3 space-y-2 text-sm">
+                <li><a href={CONTACT_MAILTO} className="font-medium oc-accent transition-colors hover:oc-accent/80">{CONTACT_EMAIL}</a></li>
+                <li><p className="text-xs oc-secondary-text">Suport rapid în limba română</p></li>
+              </ul>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium">
-            <a href="#pret" className="oc-text hover:oc-accent">
-              Prețuri
-            </a>
-            <Link href="/gdpr" className="oc-text hover:oc-accent">
-              GDPR
-            </Link>
-            <a href={CONTACT_MAILTO} className="oc-text hover:oc-accent">
-              Contact
-            </a>
-          </div>
-
-          <div>
-            <a href={CONTACT_MAILTO} className="text-sm font-medium oc-primary-text hover:text-[#115E59]">
-              {CONTACT_EMAIL}
-            </a>
+          <div className="mt-8 border-t oc-border pt-6 text-center">
+            <p className="text-xs oc-secondary-text">© 2024-2026 OcupaLoc. Toate drepturile rezervate.</p>
           </div>
         </div>
       </footer>
@@ -370,25 +384,25 @@ export function DemoLandingPreview({ businessName, city, businessType, services,
   });
 
   return (
-    <section className="mx-auto max-w-5xl space-y-8 px-4 py-10 text-white">
-      <div className="rounded-2xl border border-yellow-500 bg-yellow-400 p-4 text-center text-sm font-bold text-black">
-        DEMO - Acest business nu există, e doar exemplu
+    <section className="mx-auto max-w-5xl space-y-8 px-4 py-10">
+      <div className="rounded-2xl border-2 border-oc-primary bg-oc-primary/10 p-4 text-center">
+        <p className="text-sm font-bold oc-text">🔔 DEMO - Acest business nu există, e doar exemplu pentru a vedea fluxul</p>
       </div>
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-8">
-        <h1 className="text-4xl font-extrabold tracking-tight">
+      <div className="rounded-2xl oc-card border oc-border p-8 shadow-md">
+        <h1 className="text-4xl font-extrabold tracking-tight oc-text">
           {businessName} - {city}
         </h1>
-        <p className="mt-3 text-zinc-300">
+        <p className="mt-3 oc-secondary-text">
           Exemplu de pagină pentru {businessType.toLowerCase()} cu programări online și preț fix 59,99 RON/lună, fără comision.
         </p>
         <div className="mt-6 grid gap-3 md:grid-cols-3">
           {serviceLabels.map((service) => (
-            <div key={service} className="rounded-lg border border-zinc-700 bg-zinc-950 p-4 text-sm">
+            <div key={service} className="rounded-lg oc-card border oc-border p-4 text-sm oc-text shadow-sm">
               {service}
             </div>
           ))}
         </div>
-        <Link href={ctaHref} className="mt-8 inline-flex rounded-lg bg-indigo-600 px-6 py-3 text-base font-semibold text-white hover:bg-indigo-500">
+        <Link href={ctaHref} className="mt-8 inline-flex rounded-lg oc-primary px-6 py-3 text-base font-semibold transition-colors">
           Vreau și eu așa
         </Link>
       </div>
