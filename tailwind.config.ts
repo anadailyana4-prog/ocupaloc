@@ -12,13 +12,13 @@ const config: Config = {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         oc: {
-          primary: "#1E3A5F",
-          accent: "#4A90E2",
-          success: "#2E7D32",
-          warning: "#C62828",
-          bg: "#F8F9FA",
-          text: "#1A1A1A",
-          border: "#E0E0E0"
+          primary: "#F59E0B",
+          accent: "#0F766E",
+          success: "#10B981",
+          warning: "#EF4444",
+          bg: "#F8F6F1",
+          text: "#1E293B",
+          border: "#E2E8F0"
         }
       },
       borderRadius: {

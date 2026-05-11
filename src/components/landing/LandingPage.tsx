@@ -7,23 +7,23 @@ import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
 
 export function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#1E293B] antialiased">
-      <header className="sticky top-0 z-40 border-b border-[#E2E8F0] bg-[#F8F6F1]/95 backdrop-blur">
+    <div className="min-h-screen oc-bg oc-text antialiased">
+      <header className="sticky top-0 z-40 border-b oc-border oc-bg/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-          <Link href="/" className="font-display text-xl font-bold tracking-tight text-[#0F766E] md:text-2xl">
+          <Link href="/" className="font-display text-xl font-bold tracking-tight oc-accent md:text-2xl">
             OcupaLoc
           </Link>
-          <nav className="hidden items-center gap-6 text-sm font-medium text-[#64748B] md:flex">
-            <a href="#cum-functioneaza" className="transition-colors hover:text-[#1E293B]">
+          <nav className="hidden items-center gap-6 text-sm font-medium oc-secondary-text md:flex">
+            <a href="#cum-functioneaza" className="transition-colors hover:oc-text">
               Cum funcționează
             </a>
-            <a href="#pentru-cine" className="transition-colors hover:text-[#1E293B]">
+            <a href="#pentru-cine" className="transition-colors hover:oc-text">
               Pentru cine este
             </a>
-            <a href="#pret" className="transition-colors hover:text-[#1E293B]">
+            <a href="#pret" className="transition-colors hover:oc-text">
               Preț
             </a>
-            <a href="#intrebari" className="transition-colors hover:text-[#1E293B]">
+            <a href="#intrebari" className="transition-colors hover:oc-text">
               Întrebări
             </a>
           </nav>
@@ -31,7 +31,7 @@ export function LandingPage() {
             href="/signup?start=1"
             data-analytics="homepage_cta_signup"
             data-cta-location="homepage_header"
-            className="inline-flex h-10 items-center justify-center rounded-lg bg-[#F59E0B] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#D97706]"
+            className="inline-flex h-10 items-center justify-center rounded-lg oc-primary px-4 text-sm font-semibold transition-colors"
           >
             Încearcă gratuit
           </Link>
@@ -42,22 +42,22 @@ export function LandingPage() {
         <section className="mx-auto max-w-6xl px-4 pb-10 pt-10 md:pb-16 md:pt-14">
           <div className="grid items-start gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
             <div>
-              <p className="inline-flex rounded-full border border-[#E2E8F0] bg-[#EEF7F6] px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-[#0F766E]">
+              <p className="inline-flex rounded-full border oc-border oc-badge-bg px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] oc-accent">
                 Programări online pentru orice business
               </p>
               <h1 className="mt-5 font-display text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
                 Clienții rezervă online. Tu vezi totul clar, într-un singur loc.
               </h1>
-              <p className="mt-5 max-w-2xl text-base leading-relaxed text-[#64748B] md:text-lg">
+              <p className="mt-5 max-w-2xl text-base leading-relaxed oc-secondary-text md:text-lg">
                 OcupaLoc este potrivit pentru saloane, clinici, consultanți, studiouri și alte businessuri bazate pe
                 programări. Clientul își alege serviciul, vede sloturile libere și confirmă din email, iar tu gestionezi
                 totul dintr-un meniu simplu.
               </p>
 
-              <ul className="mt-6 grid gap-2 text-sm font-medium text-[#1E293B] sm:grid-cols-2">
-                <li className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">14 zile gratuite</li>
-                <li className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">59,99 RON/lună, TVA inclus</li>
-                <li className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 sm:col-span-2">Zero comision per programare</li>
+              <ul className="mt-6 grid gap-2 text-sm font-medium oc-text sm:grid-cols-2">
+                <li className="rounded-lg border oc-border bg-white px-3 py-2">14 zile gratuite</li>
+                <li className="rounded-lg border oc-border bg-white px-3 py-2">59,99 RON/lună, TVA inclus</li>
+                <li className="rounded-lg border oc-border bg-white px-3 py-2 sm:col-span-2">Zero comision per programare</li>
               </ul>
 
               <div className="mt-7 flex flex-wrap items-center gap-3">
@@ -65,23 +65,23 @@ export function LandingPage() {
                   href="/signup?start=1"
                   data-analytics="homepage_cta_signup"
                   data-cta-location="homepage_hero"
-                  className="inline-flex h-11 items-center justify-center rounded-lg bg-[#F59E0B] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#D97706]"
+                  className="inline-flex h-11 items-center justify-center rounded-lg oc-primary px-5 text-sm font-semibold transition-colors"
                 >
                   Încearcă gratuit
                 </Link>
                 <a
                   href="#cum-functioneaza"
-                  className="inline-flex h-11 items-center justify-center rounded-lg border border-[#0F766E] bg-white px-5 text-sm font-semibold text-[#0F766E] transition-colors hover:bg-[#EEF7F6]"
+                  className="inline-flex h-11 items-center justify-center rounded-lg border oc-border bg-white px-5 text-sm font-semibold oc-accent transition-colors hover:oc-badge-bg"
                 >
                   Vezi cum funcționează
                 </a>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[#E2E8F0] bg-white p-3 shadow-[0_20px_45px_-30px_rgba(15,118,110,0.35)]">
-              <div className="mb-3 rounded-xl border border-[#E2E8F0] bg-[#EEF7F6] p-3 text-sm text-[#1E293B]">
-                <p className="font-semibold text-[#0F766E]">Flux rezervare</p>
-                <p className="mt-1 text-[#64748B]">Serviciu ales → Dată → Oră → Confirmare</p>
+            <div className="rounded-2xl border oc-border bg-white p-3 shadow-[0_20px_45px_-30px_rgba(15,118,110,0.35)]">
+              <div className="mb-3 rounded-xl border oc-border oc-badge-bg p-3 text-sm oc-text">
+                <p className="font-semibold oc-accent">Flux rezervare</p>
+                <p className="mt-1 oc-secondary-text">Serviciu ales → Dată → Oră → Confirmare</p>
               </div>
               <BookingCard variant="demo" />
             </div>
@@ -89,7 +89,7 @@ export function LandingPage() {
         </section>
 
         <section className="mx-auto max-w-6xl px-4 pb-8">
-          <div className="grid gap-2 rounded-2xl border border-[#E2E8F0] bg-white p-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-2 rounded-2xl border oc-border bg-white p-4 sm:grid-cols-2 lg:grid-cols-5">
             {[
               "Link personalizat de rezervare",
               "Programări nelimitate",
@@ -97,7 +97,7 @@ export function LandingPage() {
               "Import clienți gratuit",
               "Suport rapid în limba română"
             ].map((item) => (
-              <div key={item} className="rounded-lg border border-[#E2E8F0] bg-[#EEF7F6] px-3 py-2 text-sm font-medium text-[#1E293B]">
+              <div key={item} className="rounded-lg border oc-border oc-badge-bg px-3 py-2 text-sm font-medium oc-text">
                 {item}
               </div>
             ))}
@@ -109,7 +109,7 @@ export function LandingPage() {
             <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
               Când programările vin din mai multe locuri, apare haosul.
             </h2>
-            <p className="mt-4 text-base text-[#64748B]">
+            <p className="mt-4 text-base oc-secondary-text">
               Multe businessuri primesc programări prin telefon, mesaje sau canale diferite. Fără o structură clară,
               programul devine greu de urmărit.
             </p>
@@ -122,8 +122,8 @@ export function LandingPage() {
               "Apar apeluri repetitive",
               "Confirmările și schimbările consumă timp"
             ].map((problem) => (
-              <article key={problem} className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
-                <p className="text-sm font-medium text-[#1E293B]">{problem}</p>
+              <article key={problem} className="oc-card p-4 shadow-sm">
+                <p className="text-sm font-medium oc-text">{problem}</p>
               </article>
             ))}
           </div>
@@ -135,20 +135,20 @@ export function LandingPage() {
           </div>
 
           <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <article className="rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#0F766E]">Pasul 1</p>
+            <article className="oc-card p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] oc-accent">Pasul 1</p>
               <h3 className="mt-2 text-xl font-semibold">Primești pagina ta de rezervare</h3>
-              <p className="mt-2 text-sm text-[#64748B]">O poți pune pe Instagram, WhatsApp, site sau Google Maps.</p>
+              <p className="mt-2 text-sm oc-secondary-text">O poți pune pe Instagram, WhatsApp, site sau Google Maps.</p>
             </article>
-            <article className="rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#0F766E]">Pasul 2</p>
+            <article className="oc-card p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] oc-accent">Pasul 2</p>
               <h3 className="mt-2 text-xl font-semibold">Clientul rezervă singur</h3>
-              <p className="mt-2 text-sm text-[#64748B]">Își alege serviciul și vede doar sloturile libere.</p>
+              <p className="mt-2 text-sm oc-secondary-text">Își alege serviciul și vede doar sloturile libere.</p>
             </article>
-            <article className="rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#0F766E]">Pasul 3</p>
+            <article className="oc-card p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] oc-accent">Pasul 3</p>
               <h3 className="mt-2 text-xl font-semibold">Primești confirmări automate</h3>
-              <p className="mt-2 text-sm text-[#64748B]">Status clar în meniu, fără apeluri repetitive.</p>
+              <p className="mt-2 text-sm oc-secondary-text">Status clar în meniu, fără apeluri repetitive.</p>
             </article>
           </div>
         </section>
@@ -158,14 +158,14 @@ export function LandingPage() {
             <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
               Potrivit pentru businessuri bazate pe programări
             </h2>
-            <p className="mt-3 text-base text-[#64748B]">
+            <p className="mt-3 text-base oc-secondary-text">
               Același flux clar de rezervare poate fi folosit în tipuri diferite de business.
             </p>
           </div>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {["Saloane", "Clinici", "Consultanți", "Studiouri", "Beauty", "Servicii locale"].map((item) => (
-              <article key={item} className="rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+              <article key={item} className="oc-card p-5 shadow-sm">
                 <h3 className="text-lg font-semibold">{item}</h3>
               </article>
             ))}
@@ -190,7 +190,7 @@ export function LandingPage() {
               "Confirmări email",
               "Gestionarea zilnică a programărilor"
             ].map((benefit) => (
-              <div key={benefit} className="rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-sm font-medium text-[#1E293B] shadow-sm">
+              <div key={benefit} className="oc-card px-4 py-3 text-sm font-medium oc-text shadow-sm">
                 {benefit}
               </div>
             ))}
@@ -202,13 +202,13 @@ export function LandingPage() {
             <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">Un singur plan. Totul inclus.</h2>
           </div>
 
-          <div className="mt-8 max-w-lg rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-[0_18px_40px_-30px_rgba(15,118,110,0.35)] sm:p-8">
-            <p className="text-4xl font-bold tracking-tight text-[#1E293B]">
-              59,99 RON<span className="text-base font-medium text-[#64748B]">/lună</span>
+          <div className="mt-8 max-w-lg rounded-2xl border oc-border bg-white p-6 shadow-[0_18px_40px_-30px_rgba(15,118,110,0.35)] sm:p-8">
+            <p className="text-4xl font-bold tracking-tight oc-text">
+              59,99 RON<span className="text-base font-medium oc-secondary-text">/lună</span>
             </p>
-            <p className="mt-1 text-sm text-[#64748B]">per locație • TVA inclus</p>
+            <p className="mt-1 text-sm oc-secondary-text">per locație • TVA inclus</p>
 
-            <ul className="mt-6 space-y-2 text-sm text-[#1E293B]">
+            <ul className="mt-6 space-y-2 text-sm oc-text">
               <li>Programări nelimitate</li>
               <li>Zero comision per programare</li>
               <li>Link personalizat de rezervare</li>
@@ -220,12 +220,12 @@ export function LandingPage() {
               href="/signup?start=1"
               data-analytics="homepage_cta_signup"
               data-cta-location="homepage_pricing"
-              className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#F59E0B] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#D97706]"
+              className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-lg oc-primary px-5 text-sm font-semibold transition-colors"
             >
               Încearcă 14 zile gratis
             </Link>
 
-            <p className="mt-3 text-xs text-[#64748B]">Model clar: un abonament lunar fix pentru business-ul tău.</p>
+            <p className="mt-3 text-xs oc-secondary-text">Model clar: un abonament lunar fix pentru business-ul tău.</p>
           </div>
         </section>
 
@@ -235,52 +235,52 @@ export function LandingPage() {
           </div>
 
           <div className="mt-8 space-y-3">
-            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Pentru ce tipuri de business este OcupaLoc?</summary>
-              <p className="mt-3 text-sm text-[#64748B]">
+            <details className="oc-card p-4">
+              <summary className="cursor-pointer text-sm font-semibold oc-text">Pentru ce tipuri de business este OcupaLoc?</summary>
+              <p className="mt-3 text-sm oc-secondary-text">
                 OcupaLoc este potrivit pentru saloane, clinici, consultanți, studiouri și alte businessuri bazate pe programări.
               </p>
             </details>
-            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Cum rezervă clientul?</summary>
-              <p className="mt-3 text-sm text-[#64748B]">
+            <details className="oc-card p-4">
+              <summary className="cursor-pointer text-sm font-semibold oc-text">Cum rezervă clientul?</summary>
+              <p className="mt-3 text-sm oc-secondary-text">
                 Clientul intră pe linkul tău personalizat, își alege serviciul și vede doar sloturile libere.
               </p>
             </details>
-            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Cum confirmă clientul?</summary>
-              <p className="mt-3 text-sm text-[#64748B]">
+            <details className="oc-card p-4">
+              <summary className="cursor-pointer text-sm font-semibold oc-text">Cum confirmă clientul?</summary>
+              <p className="mt-3 text-sm oc-secondary-text">
                 Clientul confirmă din email și poate folosi linkul securizat pentru anulare sau reprogramare.
               </p>
             </details>
-            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Există comision pentru fiecare programare?</summary>
-              <p className="mt-3 text-sm text-[#64748B]">Nu. Planul are zero comision per programare.</p>
+            <details className="oc-card p-4">
+              <summary className="cursor-pointer text-sm font-semibold oc-text">Există comision pentru fiecare programare?</summary>
+              <p className="mt-3 text-sm oc-secondary-text">Nu. Planul are zero comision per programare.</p>
             </details>
-            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Ce include planul?</summary>
-              <p className="mt-3 text-sm text-[#64748B]">
+            <details className="oc-card p-4">
+              <summary className="cursor-pointer text-sm font-semibold oc-text">Ce include planul?</summary>
+              <p className="mt-3 text-sm oc-secondary-text">
                 Planul include programări nelimitate, link personalizat de rezervare, import clienți gratuit, confirmări automate SMS/Email și
                 suport rapid în limba română.
               </p>
             </details>
-            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Pot testa înainte să plătesc?</summary>
-              <p className="mt-3 text-sm text-[#64748B]">Da. Ai 14 zile gratuite pentru testare.</p>
+            <details className="oc-card p-4">
+              <summary className="cursor-pointer text-sm font-semibold oc-text">Pot testa înainte să plătesc?</summary>
+              <p className="mt-3 text-sm oc-secondary-text">Da. Ai 14 zile gratuite pentru testare.</p>
             </details>
-            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Plata online la rezervare este disponibilă?</summary>
-              <p className="mt-3 text-sm text-[#64748B]">Nu, plata online la rezervare nu este integrată în acest moment.</p>
+            <details className="oc-card p-4">
+              <summary className="cursor-pointer text-sm font-semibold oc-text">Plata online la rezervare este disponibilă?</summary>
+              <p className="mt-3 text-sm oc-secondary-text">Nu, plata online la rezervare nu este integrată în acest moment.</p>
             </details>
-            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Se pot anula sau reprograma clienții?</summary>
-              <p className="mt-3 text-sm text-[#64748B]">Da. Clientul poate anula sau reprograma prin link securizat.</p>
+            <details className="oc-card p-4">
+              <summary className="cursor-pointer text-sm font-semibold oc-text">Se pot anula sau reprograma clienții?</summary>
+              <p className="mt-3 text-sm oc-secondary-text">Da. Clientul poate anula sau reprograma prin link securizat.</p>
             </details>
-            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Cum iau legătura cu voi?</summary>
-              <p className="mt-3 text-sm text-[#64748B]">
+            <details className="oc-card p-4">
+              <summary className="cursor-pointer text-sm font-semibold oc-text">Cum iau legătura cu voi?</summary>
+              <p className="mt-3 text-sm oc-secondary-text">
                 Ne poți scrie la{" "}
-                <a href={CONTACT_MAILTO} className="font-semibold text-[#0F766E] underline decoration-[#0F766E]/40 underline-offset-2">
+                <a href={CONTACT_MAILTO} className="font-semibold oc-accent underline decoration-[#0F766E]/40 underline-offset-2">
                   {CONTACT_EMAIL}
                 </a>
                 .
@@ -290,11 +290,11 @@ export function LandingPage() {
         </section>
 
         <section className="mx-auto max-w-6xl px-4 pb-12 md:pb-16">
-          <div className="rounded-2xl border border-[#E2E8F0] bg-[#EEF7F6] p-6 text-center sm:p-10">
+          <div className="rounded-2xl border oc-border oc-badge-bg p-6 text-center sm:p-10">
             <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
               Încearcă varianta clară pentru programări online.
             </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-base text-[#64748B]">
+            <p className="mx-auto mt-3 max-w-2xl text-base oc-secondary-text">
               Testezi gratuit și vezi dacă fluxul se potrivește businessului tău.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
@@ -302,13 +302,13 @@ export function LandingPage() {
                 href="/signup?start=1"
                 data-analytics="homepage_cta_signup"
                 data-cta-location="homepage_final_cta"
-                className="inline-flex h-11 items-center justify-center rounded-lg bg-[#F59E0B] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#D97706]"
+                className="inline-flex h-11 items-center justify-center rounded-lg oc-primary px-5 text-sm font-semibold transition-colors"
               >
                 Încearcă gratuit
               </Link>
               <a
                 href="#pret"
-                className="inline-flex h-11 items-center justify-center rounded-lg border border-[#0F766E] bg-white px-5 text-sm font-semibold text-[#0F766E] transition-colors hover:bg-[#EEF7F6]"
+                className="inline-flex h-11 items-center justify-center rounded-lg border oc-border bg-white px-5 text-sm font-semibold oc-accent transition-colors hover:oc-badge-bg"
               >
                 Vezi prețul
               </a>
@@ -317,27 +317,27 @@ export function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-[#E2E8F0] bg-white py-10">
+      <footer className="border-t oc-border bg-white py-10">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="font-display text-xl font-semibold text-[#0F766E]">OcupaLoc</p>
-            <p className="mt-2 text-sm text-[#64748B]">Programări online pentru orice business</p>
+            <p className="font-display text-xl font-semibold oc-accent">OcupaLoc</p>
+            <p className="mt-2 text-sm oc-secondary-text">Programări online pentru orice business</p>
           </div>
 
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium">
-            <a href="#pret" className="text-[#1E293B] hover:text-[#0F766E]">
+            <a href="#pret" className="oc-text hover:oc-accent">
               Prețuri
             </a>
-            <Link href="/gdpr" className="text-[#1E293B] hover:text-[#0F766E]">
+            <Link href="/gdpr" className="oc-text hover:oc-accent">
               GDPR
             </Link>
-            <a href={CONTACT_MAILTO} className="text-[#1E293B] hover:text-[#0F766E]">
+            <a href={CONTACT_MAILTO} className="oc-text hover:oc-accent">
               Contact
             </a>
           </div>
 
           <div>
-            <a href={CONTACT_MAILTO} className="text-sm font-medium text-[#0F766E] hover:text-[#115E59]">
+            <a href={CONTACT_MAILTO} className="text-sm font-medium oc-primary-text hover:text-[#115E59]">
               {CONTACT_EMAIL}
             </a>
           </div>
