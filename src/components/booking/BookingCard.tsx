@@ -149,6 +149,44 @@ function isValidRoPhone(value: string): boolean {
 
 type SlotPick = { start: Date; staffId?: string };
 
+function toCalendarUtc(date: Date): string {
+  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+
+function escIcs(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
+}
+
+function buildGoogleCalendarUrl({ title, details, start, end }: { title: string; details: string; start: Date; end: Date }): string {
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: title,
+    details,
+    dates: `${toCalendarUtc(start)}/${toCalendarUtc(end)}`
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+function buildIcsHref({ title, description, start, end }: { title: string; description: string; start: Date; end: Date }): string {
+  const uid = `${start.getTime()}@ocupaloc.ro`;
+  const lines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//OcupaLoc//Booking//RO",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    `UID:${uid}`,
+    `DTSTAMP:${toCalendarUtc(new Date())}`,
+    `DTSTART:${toCalendarUtc(start)}`,
+    `DTEND:${toCalendarUtc(end)}`,
+    `SUMMARY:${escIcs(title)}`,
+    `DESCRIPTION:${escIcs(description)}`,
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].join("\r\n");
+  return `data:text/calendar;charset=utf-8,${encodeURIComponent(lines)}`;
+}
+
 function BookingCardLive(props: LiveProps) {
   const { slug, publicBase, businessName, services, publicPageLayout = false } = props;
   const tenant = isTenantLive(props);
@@ -179,10 +217,14 @@ function BookingCardLive(props: LiveProps) {
   const [nume, setNume] = useState("");
   const [telefon, setTelefon] = useState("");
   const [email, setEmail] = useState("");
+  const [clientNotes, setClientNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [successSummary, setSuccessSummary] = useState<{
     clientName: string;
     timeLabel: string;
+    serviceName: string;
+    startIso: string;
+    endIso: string;
     emailNotification: "queued" | "failed";
   } | null>(null);
 
@@ -229,6 +271,14 @@ function BookingCardLive(props: LiveProps) {
     return tenant ? (s as TenantService).duration_min : (s as LegacyService).durata_minute;
   };
   const servicePrice = (s: LegacyService | TenantService) => (tenant ? (s as TenantService).price : (s as LegacyService).pret);
+
+  const flowStep = useMemo(() => {
+    if (successSummary) return 4;
+    if (selectedPick) return 3;
+    if (selectedDay) return 2;
+    if (selectedServiceId) return 1;
+    return 1;
+  }, [selectedDay, selectedPick, selectedServiceId, successSummary]);
 
   const monthDays = useMemo(() => {
     const start = startOfMonth(month);
@@ -298,6 +348,7 @@ function BookingCardLive(props: LiveProps) {
       const cleanName = nume.trim();
       const cleanPhone = normalizePhone(telefon);
       const cleanEmail = email.trim().toLowerCase();
+      const cleanNotes = clientNotes.trim();
       if (!cleanName || !cleanPhone || !cleanEmail) {
         toast.error("Completează numele, telefonul și emailul.");
         return;
@@ -329,7 +380,8 @@ function BookingCardLive(props: LiveProps) {
             startTime: selectedPick.start.toISOString(),
             clientName: cleanName,
             clientPhone: cleanPhone,
-            clientEmail: cleanEmail
+            clientEmail: cleanEmail,
+            clientNotes: cleanNotes || null
           })
         });
         const j = (await res.json()) as { success?: boolean; error?: string | Record<string, unknown> };
@@ -356,12 +408,16 @@ function BookingCardLive(props: LiveProps) {
         setSuccessSummary({
           clientName: cleanName,
           timeLabel: formatSlotLabel(selectedPick.start),
+          serviceName: serviceTitle(selectedService),
+          startIso: selectedPick.start.toISOString(),
+          endIso: new Date(selectedPick.start.getTime() + serviceDurationMin(selectedService) * 60_000).toISOString(),
           emailNotification: "queued"
         });
         setModalOpen(false);
         setNume("");
         setTelefon("");
         setEmail("");
+        setClientNotes("");
         void loadSlots();
         setSelectedPick(null);
       } finally {
@@ -372,6 +428,7 @@ function BookingCardLive(props: LiveProps) {
     const cleanName = nume.trim();
     const cleanPhone = normalizePhone(telefon);
     const cleanEmail = email.trim().toLowerCase();
+    const cleanNotes = clientNotes.trim();
     if (!cleanName || !cleanPhone || !cleanEmail) {
       toast.error("Completează numele, telefonul și emailul.");
       return;
@@ -400,7 +457,8 @@ function BookingCardLive(props: LiveProps) {
         slotIso: selectedPick.start.toISOString(),
         numeClient: cleanName,
         telefonClient: cleanPhone,
-        emailClient: cleanEmail
+        emailClient: cleanEmail,
+        observatiiClient: cleanNotes || null
       });
       if (!res.ok) {
         const reason = "message" in res && typeof res.message === "string" ? res.message : "validation_failed";
@@ -430,6 +488,9 @@ function BookingCardLive(props: LiveProps) {
       setSuccessSummary({
         clientName: cleanName,
         timeLabel: formatSlotLabel(selectedPick.start),
+        serviceName: serviceTitle(selectedService),
+        startIso: selectedPick.start.toISOString(),
+        endIso: new Date(selectedPick.start.getTime() + serviceDurationMin(selectedService) * 60_000).toISOString(),
         emailNotification
       });
       setModalOpen(false);
@@ -437,6 +498,7 @@ function BookingCardLive(props: LiveProps) {
       setNume("");
       setTelefon("");
       setEmail("");
+      setClientNotes("");
       setSelectedPick(null);
       void loadSlots();
     } finally {
@@ -499,6 +561,33 @@ function BookingCardLive(props: LiveProps) {
               ? "Emailul de confirmare a fost pus la trimis către adresa introdusă."
               : "Programarea a fost făcută, dar emailul nu a putut fi trimis acum. Te rugăm încearcă din nou."}
           </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <a
+              href={buildGoogleCalendarUrl({
+                title: `${successSummary.serviceName} - ${businessName}`,
+                details: `Programare confirmata la ${businessName}.`,
+                start: new Date(successSummary.startIso),
+                end: new Date(successSummary.endIso)
+              })}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-900/50 px-4 py-2 text-xs font-medium text-zinc-200 hover:bg-zinc-800"
+            >
+              Adaugă în Google Calendar
+            </a>
+            <a
+              href={buildIcsHref({
+                title: `${successSummary.serviceName} - ${businessName}`,
+                description: `Programare confirmata la ${businessName}.`,
+                start: new Date(successSummary.startIso),
+                end: new Date(successSummary.endIso)
+              })}
+              download="programare-ocupaloc.ics"
+              className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-900/50 px-4 py-2 text-xs font-medium text-zinc-200 hover:bg-zinc-800"
+            >
+              Descarcă .ics
+            </a>
+          </div>
           <Button
             type="button"
             variant="secondary"
@@ -510,6 +599,7 @@ function BookingCardLive(props: LiveProps) {
               setNume("");
               setTelefon("");
               setEmail("");
+              setClientNotes("");
             }}
           >
             Altă programare
@@ -517,6 +607,27 @@ function BookingCardLive(props: LiveProps) {
         </div>
       ) : (
         <div className={sectionGap}>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
+            <div className="mb-2 text-xs font-medium uppercase tracking-wider text-zinc-400">Pași rezervare</div>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { label: "Serviciu", index: 1 },
+                { label: "Data", index: 2 },
+                { label: "Ora", index: 3 },
+                { label: "Confirmat", index: 4 }
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className={`rounded-md px-2 py-1.5 text-center text-[11px] font-semibold ${
+                    flowStep >= item.index ? "bg-emerald-700/40 text-emerald-200" : "bg-zinc-800 text-zinc-400"
+                  }`}
+                >
+                  {item.label}
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div>
             <div className={`mb-3 font-medium text-zinc-500 ${publicPageLayout ? "text-xs uppercase tracking-wider" : "text-xs md:text-sm"}`}>
               {publicPageLayout ? "Servicii" : "1. Serviciu ales"}
@@ -867,6 +978,25 @@ function BookingCardLive(props: LiveProps) {
                 />
                 <p className="mt-1 text-xs text-zinc-500">Fără cont. Emailul e folosit doar pentru confirmare sau anulare.</p>
               </div>
+              <div>
+                <Label htmlFor="notes">Observații (opțional)</Label>
+                <textarea
+                  id="notes"
+                  value={clientNotes}
+                  onChange={(e) => setClientNotes(e.target.value)}
+                  maxLength={500}
+                  placeholder="Ex: vin cu 5 minute întârziere"
+                  className="mt-1 min-h-20 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-zinc-600"
+                />
+                <p className="mt-1 text-[11px] text-zinc-500">Maxim 500 caractere.</p>
+              </div>
+              {selectedService && selectedPick && selectedDay ? (
+                <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 text-xs text-zinc-300">
+                  <p className="font-semibold text-zinc-200">Rezumat înainte de trimitere</p>
+                  <p className="mt-1">{serviceTitle(selectedService)}</p>
+                  <p>{format(selectedDay, "EEEE, d MMMM yyyy", { locale: ro })} · {formatSlotLabel(selectedPick.start)}</p>
+                </div>
+              ) : null}
               <DialogFooter>
                 <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>
                   Anulează
@@ -925,6 +1055,25 @@ function BookingCardLive(props: LiveProps) {
                     />
                     <p className="mt-1 text-xs text-zinc-500">Fără cont. Emailul e folosit doar pentru confirmare sau anulare.</p>
                   </div>
+                  <div>
+                    <Label htmlFor="notes-public">Observații (opțional)</Label>
+                    <textarea
+                      id="notes-public"
+                      value={clientNotes}
+                      onChange={(e) => setClientNotes(e.target.value)}
+                      maxLength={500}
+                      placeholder="Ex: prefer să fiu sunat(ă) la sosire"
+                      className="mt-1 min-h-20 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-zinc-600"
+                    />
+                    <p className="mt-1 text-[11px] text-zinc-500">Maxim 500 caractere.</p>
+                  </div>
+                  {selectedService && selectedPick && selectedDay ? (
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 text-xs text-zinc-300">
+                      <p className="font-semibold text-zinc-200">Rezumat înainte de trimitere</p>
+                      <p className="mt-1">{serviceTitle(selectedService)}</p>
+                      <p>{format(selectedDay, "EEEE, d MMMM yyyy", { locale: ro })} · {formatSlotLabel(selectedPick.start)}</p>
+                    </div>
+                  ) : null}
                   <DialogFooter>
                     <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>
                       Înapoi

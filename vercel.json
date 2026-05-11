@@ -2,8 +2,24 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     {
+      "path": "/api/jobs/send-emails",
+      "schedule": "*/30 * * * *"
+    },
+    {
       "path": "/api/jobs/send-reminders",
       "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/jobs/send-reminders?type=morning",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/jobs/billing-reconciliation",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/jobs/revenue-report",
+      "schedule": "0 18 * * 0"
     },
     {
       "path": "/api/jobs/synthetic-monitor",
@@ -28,6 +44,10 @@
     {
       "path": "/api/jobs/quiet-business-rescue",
       "schedule": "30 9 * * *"
+    },
+    {
+      "path": "/api/jobs/quiet-salon-rescue",
+      "schedule": "0 19 * * *"
     },
     {
       "path": "/api/jobs/founder-fleet-digest",

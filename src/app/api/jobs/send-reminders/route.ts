@@ -23,7 +23,7 @@ import { createSupabaseServiceClient } from "@/lib/supabase/admin";
  * @returns 200 with `{ sent, skipped, errors }` counts, or 401/500.
  */
 
-type ReminderType = "24h" | "2h";
+type ReminderType = "24h" | "2h" | "morning";
 const TZ = "Europe/Bucharest";
 
 function isMissingProgramariRemindersTable(error: { message?: string; code?: string } | null | undefined): boolean {
@@ -40,6 +40,14 @@ function getWindow(type: ReminderType): { from: Date; to: Date } {
     return {
       from: toDate(`${nextDay}T00:00:00`, { timeZone: TZ }),
       to: toDate(`${nextDay}T23:59:59`, { timeZone: TZ })
+    };
+  }
+  if (type === "morning") {
+    // Morning at 8-9 AM: target bookings for today (Europe/Bucharest)
+    const today = formatInTimeZone(now, TZ, "yyyy-MM-dd");
+    return {
+      from: toDate(`${today}T00:00:00`, { timeZone: TZ }),
+      to: toDate(`${today}T23:59:59`, { timeZone: TZ })
     };
   }
   // 2h reminder: same cadence/tolerance approach as 24h.
@@ -151,12 +159,22 @@ export async function GET(req: NextRequest) {
   const admin = createSupabaseServiceClient();
   let cronError: unknown = null;
 
-  let sent24h = 0;
-  let sent2h = 0;
+  // Determine which reminder types to send
+  const typeParam = req.nextUrl.searchParams.get("type");
+  const typesToSend: ReminderType[] = typeParam
+    ? [typeParam as ReminderType]
+    : ["24h", "2h"];
+
+  const results: Record<ReminderType, number> = {
+    "24h": 0,
+    "2h": 0,
+    "morning": 0
+  };
 
   try {
-    sent24h = await sendType(admin, "24h");
-    sent2h = await sendType(admin, "2h");
+    for (const type of typesToSend) {
+      results[type] = await sendType(admin, type);
+    }
   } catch (err) {
     cronError = err;
     reportError("cron", "send_reminders_fatal", err, { phase: "sendType", requestId });
@@ -164,10 +182,10 @@ export async function GET(req: NextRequest) {
 
   const result = {
     ok: cronError === null,
-    sent24h,
-    sent2h,
-    sent2hDelivery: "best_effort" as const,
-    total: sent24h + sent2h,
+    sent24h: results["24h"],
+    sent2h: results["2h"],
+    sentMorning: results["morning"],
+    total: results["24h"] + results["2h"] + results["morning"],
     ranAt: new Date().toISOString(),
     ...(cronError ? { error: String(cronError) } : {})
   };
@@ -179,7 +197,7 @@ export async function GET(req: NextRequest) {
     requestId,
     statusCode: cronError ? 500 : 200,
     latencyMs: Date.now() - startedAt,
-    metadata: { sent24h, sent2h, sent2hDelivery: "best_effort", total: sent24h + sent2h }
+    metadata: result
   });
 
   // Machine-parseable single-line summary for log scraping / uptime monitors.

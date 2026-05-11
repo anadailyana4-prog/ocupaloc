@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-type ConfirmationAction = "confirm" | "cancel";
+type ConfirmationAction = "confirm" | "cancel" | "reschedule";
 
 type ConfirmationPayload = {
   bookingId: string;
@@ -45,7 +45,7 @@ export function verifyBookingConfirmationLink(input: {
   exp: string;
   sig: string;
 }): { ok: true; action: ConfirmationAction } | { ok: false; message: string } {
-  const action = input.action === "confirm" || input.action === "cancel" ? input.action : null;
+  const action = input.action === "confirm" || input.action === "cancel" || input.action === "reschedule" ? input.action : null;
   if (!action) {
     return { ok: false, message: "Acțiune invalidă." };
   }

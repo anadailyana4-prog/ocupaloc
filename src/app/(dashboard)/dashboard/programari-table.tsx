@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { type BookingActionResult, cancelBooking, completeBooking, markNoShow } from "./actions";
+import { type BookingActionResult, cancelBooking, completeBooking, markNoShow, updateBookingNotes } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
@@ -16,6 +16,7 @@ export type ProgramareRow = {
   clientPhone: string;
   serviceName: string;
   status: string;
+  notes?: string | null;
   /** Number of prior completed bookings for the same phone number */
   priorVisits?: number;
   /** Number of times this phone has been marked noaparit — for repeat no-show warning */
@@ -53,6 +54,8 @@ export function ProgramariTable({ rows }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [cancelTarget, setCancelTarget] = useState<{ id: string; clientName: string } | null>(null);
+  const [notesTarget, setNotesTarget] = useState<{ id: string; clientName: string } | null>(null);
+  const [notesDraft, setNotesDraft] = useState("");
 
   async function run(label: string, fn: () => Promise<BookingActionResult>) {
     startTransition(async () => {
@@ -93,6 +96,26 @@ export function ProgramariTable({ rows }: Props) {
         return;
       }
       toast.success("Marcat ca neprezent.");
+      router.refresh();
+    });
+  }
+
+  function openNotes(row: ProgramareRow) {
+    setNotesTarget({ id: row.id, clientName: row.clientName });
+    setNotesDraft(row.notes ?? "");
+  }
+
+  async function saveNotes() {
+    if (!notesTarget) return;
+    startTransition(async () => {
+      const res = await updateBookingNotes(notesTarget.id, notesDraft);
+      if (!res.success) {
+        toast.error(res.message);
+        return;
+      }
+      setNotesTarget(null);
+      setNotesDraft("");
+      toast.success("Notiță salvată.");
       router.refresh();
     });
   }
@@ -147,6 +170,7 @@ export function ProgramariTable({ rows }: Props) {
                     </a>
                   ) : null}
                 </div>
+                {r.notes ? <p className="text-xs text-zinc-400">Notă: {r.notes}</p> : null}
                 {canAct ? (
                   <div className="flex gap-2 pt-1">
                     <Button
@@ -178,6 +202,16 @@ export function ProgramariTable({ rows }: Props) {
                     >
                       Neprezent
                     </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full border-zinc-600 text-zinc-200 hover:bg-zinc-900/60"
+                      disabled={pending}
+                      onClick={() => openNotes(r)}
+                    >
+                      Notițe
+                    </Button>
                   </div>
                 ) : null}
               </div>
@@ -196,6 +230,7 @@ export function ProgramariTable({ rows }: Props) {
               <th className="px-4 py-3 text-left font-medium">Client</th>
               <th className="px-4 py-3 text-left font-medium">Telefon</th>
               <th className="px-4 py-3 text-left font-medium">Serviciu</th>
+              <th className="px-4 py-3 text-left font-medium">Notițe</th>
               <th className="px-4 py-3 text-left font-medium">Status</th>
               <th className="px-4 py-3 text-right font-medium">Acțiuni</th>
             </tr>
@@ -203,7 +238,7 @@ export function ProgramariTable({ rows }: Props) {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center">
+                <td colSpan={8} className="px-4 py-12 text-center">
                   <p className="text-sm font-medium text-amber-100/70">Nicio programare în intervalul ales.</p>
                   <p className="mt-1 text-xs text-zinc-500">
                     Copiază link-ul paginii tale publice și trimite-l clienților pentru a primi primele rezervări.
@@ -234,6 +269,7 @@ export function ProgramariTable({ rows }: Props) {
                     </td>
                     <td className="px-4 py-3 font-mono text-xs">{r.clientPhone || "—"}</td>
                     <td className="px-4 py-3">{r.serviceName}</td>
+                    <td className="px-4 py-3 text-xs text-zinc-300">{r.notes?.trim() ? r.notes : "—"}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadgeClass(r.status)}`}>
                         {STATUS_LABEL[r.status] ?? r.status}
@@ -272,9 +308,28 @@ export function ProgramariTable({ rows }: Props) {
                             >
                               Neprezent
                             </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="rounded-full border-zinc-600 text-zinc-200 hover:bg-zinc-900/60"
+                              disabled={pending}
+                              onClick={() => openNotes(r)}
+                            >
+                              Notițe
+                            </Button>
                           </>
                         ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full border-zinc-600 text-zinc-200 hover:bg-zinc-900/60"
+                            disabled={pending}
+                            onClick={() => openNotes(r)}
+                          >
+                            Notițe
+                          </Button>
                         )}
                       </div>
                     </td>
@@ -305,6 +360,50 @@ export function ProgramariTable({ rows }: Props) {
               onClick={() => void executeCancel()}
             >
               Da, anulează
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={notesTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setNotesTarget(null);
+            setNotesDraft("");
+          }
+        }}
+      >
+        <DialogContent className="border-zinc-800 bg-zinc-950 text-white sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Notițe interne</DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              Note private pentru programarea lui <span className="font-semibold text-white">{notesTarget?.clientName}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <div>
+            <textarea
+              value={notesDraft}
+              onChange={(event) => setNotesDraft(event.target.value)}
+              maxLength={1000}
+              placeholder="Ex: client preferă contact telefonic înainte de sosire"
+              className="min-h-28 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-zinc-600"
+            />
+            <p className="mt-1 text-[11px] text-zinc-500">Maxim 1000 caractere.</p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => {
+                setNotesTarget(null);
+                setNotesDraft("");
+              }}
+            >
+              Înapoi
+            </Button>
+            <Button type="button" disabled={pending} onClick={() => void saveNotes()}>
+              Salvează
             </Button>
           </DialogFooter>
         </DialogContent>

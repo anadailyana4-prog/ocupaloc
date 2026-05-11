@@ -163,3 +163,18 @@ test("handleBookRequest passes requestId to insertBooking", async () => {
   assert.equal(result.body.success, true);
   assert.equal(capturedRequestId, "my-request-id-456");
 });
+
+test("handleBookRequest passes optional clientNotes to insertBooking", async () => {
+  let capturedClientNotes: string | null | undefined = "SENTINEL";
+  const deps = makeDeps({
+    insertBooking: async (_admin, input) => {
+      capturedClientNotes = input.observatiiClient;
+      return { ok: true, programareId: "p-1" };
+    }
+  });
+
+  const result = await handleBookRequest({ ...validPayload, clientNotes: "Sun la interfon" }, "127.0.0.1", deps);
+  assert.equal(result.status, 200);
+  assert.equal(result.body.success, true);
+  assert.equal(capturedClientNotes, "Sun la interfon");
+});

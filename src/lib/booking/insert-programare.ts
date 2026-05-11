@@ -17,6 +17,7 @@ export type InsertProgramareInput = {
   numeClient: string;
   telefonClient: string;
   emailClient?: string | null;
+  observatiiClient?: string | null;
   idempotencyKey?: string;
   requestId?: string;
 };
@@ -129,6 +130,18 @@ export async function insertProgramareForProfSlug(
     const result = data[0];
 
     if (result.success) {
+      const notes = input.observatiiClient?.trim();
+      if (notes) {
+        const { error: notesError } = await admin
+          .from("programari")
+          .update({ observatii: notes })
+          .eq("id", result.programare_id);
+
+        if (notesError) {
+          logWarn("[booking] could not save client notes", { programareId: result.programare_id, slug: input.slug });
+        }
+      }
+
       logInfo(
         "[booking] appointment created successfully via atomic RPC",
         { slug: input.slug, programareId: result.programare_id, requestId: input.requestId }

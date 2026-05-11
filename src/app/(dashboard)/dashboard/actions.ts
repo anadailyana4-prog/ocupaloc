@@ -109,6 +109,39 @@ export async function markNoShow(id: string): Promise<BookingActionResult> {
   return { success: true };
 }
 
+const notesSchema = z.string().trim().max(1000, "Notițele sunt prea lungi.").optional();
+
+export async function updateBookingNotes(id: string, notes: string): Promise<BookingActionResult> {
+  const parsedId = idSchema.safeParse(id);
+  if (!parsedId.success) {
+    return { success: false, message: "ID invalid." };
+  }
+
+  const parsedNotes = notesSchema.safeParse(notes);
+  if (!parsedNotes.success) {
+    return { success: false, message: "Notiță invalidă." };
+  }
+
+  const ctx = await getProfIdForUser();
+  if (!ctx) {
+    return { success: false, message: "Nu ești autentificat sau lipsește profilul." };
+  }
+
+  const admin = createSupabaseServiceClient();
+  const { error } = await admin
+    .from("programari")
+    .update({ observatii: parsedNotes.data && parsedNotes.data.length > 0 ? parsedNotes.data : null })
+    .eq("id", parsedId.data)
+    .eq("profesionist_id", ctx.profId);
+
+  if (error) {
+    return { success: false, message: error.message };
+  }
+
+  revalidatePath("/dashboard");
+  return { success: true };
+}
+
 const publicFields = z.object({
   telefon: z.string().trim().max(50).optional().transform((s) => (s === "" ? null : s)),
   description: z.string().trim().max(2000).optional().transform((s) => (s === "" ? null : s))

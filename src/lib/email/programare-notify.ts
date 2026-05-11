@@ -1,6 +1,7 @@
 import { formatInTimeZone } from "date-fns-tz";
 
 import { createBookingConfirmationLink } from "@/lib/booking/confirmation-link";
+import { generateCancellationPolicy } from "@/lib/booking/cancellation-policy";
 import { enqueueEmail } from "@/lib/email/email-queue";
 import { sendResendEmail } from "@/lib/email/resend";
 import { reportError } from "@/lib/observability";
@@ -127,6 +128,7 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
   const timeStr = formatInTimeZone(startsAt, TZ, "HH:mm");
   const confirmLink = createBookingConfirmationLink({ bookingId: row.id, action: "confirm" });
   const cancelLink = createBookingConfirmationLink({ bookingId: row.id, action: "cancel" });
+  const cancellationPolicy = generateCancellationPolicy(60); // Default 60 days
 
   const subject = `Rezervare confirmată la ${salonName}`;
   const text = [
@@ -137,6 +139,8 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
     "Poți confirma sau anula direct din linkurile de mai jos:",
     `Confirmă prezența: ${confirmLink}`,
     `Anulează programarea: ${cancelLink}`,
+    "",
+    cancellationPolicy,
     "",
     "Dacă nu ai făcut tu această rezervare, poți ignora acest email."
   ].join("\n");
@@ -151,6 +155,7 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
       <a href="${confirmLink}" style="background:#16a34a;color:#ffffff;text-decoration:none;padding:10px 16px;border-radius:999px;font-weight:700;display:inline-block;">Confirmă prezența</a>
       <a href="${cancelLink}" style="background:#f3f4f6;color:#374151;text-decoration:none;padding:10px 16px;border-radius:999px;font-weight:700;display:inline-block;">Anulează programarea</a>
     </div>
+    <p style="margin:0 0 12px;color:#6b7280;font-size:13px;border-top:1px solid #e5e7eb;padding-top:12px;"><em>${escapeHtml(cancellationPolicy)}</em></p>
     <p style="margin:0;color:#6b7280;font-size:13px;">Dacă nu ai făcut tu această rezervare, poți ignora acest email. Reminderul automat rămâne activ înainte de programare.</p>
   </div>`;
 
@@ -264,7 +269,7 @@ export async function notifyClientBookingRescheduledByProvider(programareId: str
   });
 }
 
-export async function notifyClientReminder(programareId: string, tip: "24h" | "2h"): Promise<boolean> {
+export async function notifyClientReminder(programareId: string, tip: "24h" | "2h" | "morning"): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   if (!apiKey) return false;
 
@@ -463,5 +468,41 @@ export async function notifyProfesionistClientResponse(programareId: string, sta
     text,
     event: "notify_profesionist_client_response_failed",
     context: { programareId, status, to }
+  });
+}
+
+export async function notifyClientBookingRescheduled(programareId: string): Promise<void> {
+  const admin = createSupabaseServiceClient();
+  const { data: row, error } = await admin
+    .from("programari")
+    .select("email_client, nume_client, data_start, servicii(nume)")
+    .eq("id", programareId)
+    .maybeSingle();
+
+  if (error || !row?.email_client) {
+    reportError("email", "notify_client_rescheduled_fetch_failed", error, { programareId });
+    return;
+  }
+
+  const serviciu = Array.isArray(row.servicii) ? row.servicii[0] ?? null : row.servicii;
+  const dataStr = formatInTimeZone(new Date(row.data_start), TZ, "dd.MM.yyyy");
+  const timeStr = formatInTimeZone(new Date(row.data_start), TZ, "HH:mm");
+  const subject = "Programarea ta a fost reprogramată ✓";
+  const text = [
+    `Salut ${row.nume_client},`,
+    "",
+    `Programarea pentru ${serviciu?.nume ?? "Serviciu"} a fost reprogramată cu succes.`,
+    "",
+    `Noua dată și oră: ${dataStr}, ora ${timeStr}`,
+    "",
+    "Mulțumim!"
+  ].join("\n");
+
+  await sendResendEmail({
+    to: [row.email_client],
+    subject,
+    text,
+    event: "notify_client_rescheduled_failed",
+    context: { programareId, to: row.email_client }
   });
 }

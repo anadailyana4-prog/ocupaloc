@@ -39,7 +39,14 @@ const bodySchema = z.object({
     .email("Email invalid.")
     .optional()
     .nullable()
-    .transform((v) => v ?? null)
+    .transform((v) => v ?? null),
+  clientNotes: z
+    .string()
+    .trim()
+    .max(500, "Observațiile sunt prea lungi.")
+    .optional()
+    .nullable()
+    .transform((v) => (v ? v : null))
 });
 
 type BookRequestPayload = z.infer<typeof bodySchema>;
@@ -134,6 +141,7 @@ export async function handleBookRequest(
       numeClient: requestData.clientName.trim(),
       telefonClient: requestData.clientPhone.trim(),
       emailClient: requestData.clientEmail ?? null,
+      observatiiClient: requestData.clientNotes ?? null,
       idempotencyKey,
       requestId
     });

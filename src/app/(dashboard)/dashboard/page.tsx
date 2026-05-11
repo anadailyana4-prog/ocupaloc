@@ -17,7 +17,17 @@ import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
 
 type PageProps = {
-  searchParams?: Promise<{ saved?: string; error?: string; filter?: string; info?: string; activated?: string; canceled?: string }>;
+  searchParams?: Promise<{
+    saved?: string;
+    error?: string;
+    filter?: string;
+    info?: string;
+    activated?: string;
+    canceled?: string;
+    status?: string;
+    serviciu?: string;
+    q?: string;
+  }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -29,11 +39,13 @@ function relOne<T>(x: T | T[] | null | undefined): T | null {
 
 type ProgRow = {
   id: string;
+  serviciu_id: string;
   data_start: string;
   data_final: string;
   status: string;
   nume_client: string;
   telefon_client: string;
+  observatii: string | null;
   servicii: { nume: string } | { nume: string }[] | null;
 };
 
@@ -152,6 +164,11 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   const sp = searchParams ? await searchParams : {};
   const isPostCancelState = sp.canceled === "1";
   const filter = sp.filter === "azi" || sp.filter === "toate" ? sp.filter : "viitoare";
+  const statusFilter = ["all", "confirmat", "in_asteptare", "anulat", "finalizat", "noaparit"].includes(sp.status ?? "")
+    ? (sp.status as "all" | "confirmat" | "in_asteptare" | "anulat" | "finalizat" | "noaparit")
+    : "all";
+  const serviceFilter = typeof sp.serviciu === "string" ? sp.serviciu : "all";
+  const queryFilter = (sp.q ?? "").trim().toLowerCase();
 
   const { count: serviciiCount } = await supabase
     .from("servicii")
@@ -183,10 +200,18 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   let progQuery = supabase
     .from("programari")
-    .select("id, data_start, data_final, status, nume_client, telefon_client, servicii(nume)")
+    .select("id, serviciu_id, data_start, data_final, status, nume_client, telefon_client, observatii, servicii(nume)")
     .eq("profesionist_id", prof.id)
     .order("data_start", { ascending: filter !== "toate" })
     .limit(100);
+
+  if (statusFilter !== "all") {
+    progQuery = progQuery.eq("status", statusFilter);
+  }
+
+  if (serviceFilter !== "all") {
+    progQuery = progQuery.eq("serviciu_id", serviceFilter);
+  }
 
   if (filter === "azi") {
     progQuery = progQuery.gte("data_start", dayStartIso).lte("data_start", dayEndIso);
@@ -444,11 +469,19 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
             clientPhone: p.telefon_client ?? "",
             serviceName: svc?.nume ?? "—",
             status: p.status,
+            notes: p.observatii,
             priorVisits: p.telefon_client ? (phoneVisitCount.get(p.telefon_client) ?? 0) : 0,
             repeatNoShows: p.telefon_client ? (phoneNoShowCount.get(p.telefon_client) ?? 0) : 0
           };
         })
       : [];
+
+  const filteredProgramari = queryFilter
+    ? programari.filter((row) => {
+        const haystack = `${row.clientName} ${row.clientPhone} ${row.serviceName} ${row.notes ?? ""}`.toLowerCase();
+        return haystack.includes(queryFilter);
+      })
+    : programari;
 
   // Derive today's upcoming confirmed bookings from already-fetched data
   const todayUpcomingRows = programari.filter(
@@ -807,10 +840,68 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
             </a>
           </div>
         </div>
+
+        <form className="grid gap-2 rounded-xl border border-zinc-800 bg-zinc-900/40 p-3 sm:grid-cols-4" method="get" action="/dashboard">
+          <input type="hidden" name="filter" value={filter} />
+          <div className="sm:col-span-2">
+            <label htmlFor="q" className="mb-1 block text-xs text-zinc-400">Caută client / telefon / serviciu</label>
+            <input
+              id="q"
+              name="q"
+              defaultValue={queryFilter}
+              placeholder="ex: Maria, 07..., Tuns"
+              className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-100 outline-none focus-visible:ring-2 focus-visible:ring-zinc-600"
+            />
+          </div>
+          <div>
+            <label htmlFor="status" className="mb-1 block text-xs text-zinc-400">Status</label>
+            <select
+              id="status"
+              name="status"
+              defaultValue={statusFilter}
+              className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-100 outline-none focus-visible:ring-2 focus-visible:ring-zinc-600"
+            >
+              <option value="all">Toate</option>
+              <option value="confirmat">Confirmate</option>
+              <option value="in_asteptare">În așteptare</option>
+              <option value="anulat">Anulate</option>
+              <option value="finalizat">Finalizate</option>
+              <option value="noaparit">Neprezent</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="serviciu" className="mb-1 block text-xs text-zinc-400">Serviciu</label>
+            <select
+              id="serviciu"
+              name="serviciu"
+              defaultValue={serviceFilter}
+              className="h-10 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-100 outline-none focus-visible:ring-2 focus-visible:ring-zinc-600"
+            >
+              <option value="all">Toate serviciile</option>
+              {serviciiOptions.map((service) => (
+                <option key={service.id} value={service.id}>{service.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="sm:col-span-4 flex items-center justify-end gap-2">
+            <Link
+              href={`/dashboard?filter=${filter}`}
+              className="rounded-full border border-zinc-700 px-4 py-1.5 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-zinc-100"
+            >
+              Resetează filtrele
+            </Link>
+            <button
+              type="submit"
+              className="rounded-full bg-amber-300 px-4 py-1.5 text-sm font-medium text-slate-900 transition hover:bg-amber-200"
+            >
+              Aplică filtrele
+            </button>
+          </div>
+        </form>
         {progErr ? (
           <div className="rounded-lg border border-destructive/50 p-4 text-sm text-destructive">{progErr.message}</div>
         ) : (
-          <ProgramariTable rows={programari} />
+          <ProgramariTable rows={filteredProgramari} />
         )}
       </section>
 

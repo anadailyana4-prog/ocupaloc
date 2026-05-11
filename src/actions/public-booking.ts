@@ -17,7 +17,8 @@ const schema = z.object({
   slotIso: z.string(),
   numeClient: z.string().min(2, "Numele e prea scurt."),
   telefonClient: z.string().min(8, "Introdu un număr de telefon valid."),
-  emailClient: z.string().trim().email("Introdu un email valid.")
+  emailClient: z.string().trim().email("Introdu un email valid."),
+  observatiiClient: z.string().trim().max(500, "Observațiile sunt prea lungi.").optional().nullable()
 });
 
 export async function createPublicBooking(raw: z.infer<typeof schema>) {
@@ -25,7 +26,7 @@ export async function createPublicBooking(raw: z.infer<typeof schema>) {
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.flatten().fieldErrors };
   }
-  const { slug, serviciuId, dateStr, slotIso, numeClient, telefonClient, emailClient } = parsed.data;
+  const { slug, serviciuId, dateStr, slotIso, numeClient, telefonClient, emailClient, observatiiClient } = parsed.data;
   const normalizedSlug = normalizeBookingSlug(slug);
 
   try {
@@ -44,7 +45,8 @@ export async function createPublicBooking(raw: z.infer<typeof schema>) {
       slotIso,
       numeClient,
       telefonClient,
-      emailClient: emailClient.trim()
+      emailClient: emailClient.trim(),
+      observatiiClient: observatiiClient?.trim() || null
     });
     if (!res.ok) {
       return { ok: false as const, message: res.message };
