@@ -33,15 +33,15 @@ const STATUS_LABEL: Record<string, string> = {
 function statusBadgeClass(s: string) {
   switch (s) {
     case "confirmat":
-      return "border-emerald-500/40 bg-emerald-950/50 text-emerald-300";
+      return "border-emerald-400/60 bg-emerald-50/80 text-emerald-700";
     case "anulat":
-      return "border-red-500/40 bg-red-950/40 text-red-300";
+      return "border-red-400/60 bg-red-50/80 text-red-700";
     case "finalizat":
-      return "border-zinc-600 bg-zinc-800/80 text-zinc-300";
+      return "border-slate-300 bg-slate-100/80 text-slate-700";
     case "noaparit":
-      return "border-orange-500/40 bg-orange-950/40 text-orange-300";
+      return "border-orange-400/60 bg-orange-50/80 text-orange-700";
     default:
-      return "border-zinc-700 bg-zinc-900 text-zinc-400";
+      return "border-slate-300 bg-slate-100 text-slate-600";
   }
 }
 
