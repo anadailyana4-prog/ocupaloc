@@ -260,7 +260,7 @@ export function LandingPage() {
             <details className="oc-card p-4">
               <summary className="cursor-pointer text-sm font-semibold oc-text">Ce include planul?</summary>
               <p className="mt-3 text-sm oc-secondary-text">
-                Planul include programări nelimitate, link personalizat de rezervare, import clienți gratuit, confirmări automate SMS/Email și
+                Planul include programări nelimitate, link personalizat de rezervare, import clienți gratuit, confirmări automate email și
                 suport rapid în limba română.
               </p>
             </details>
