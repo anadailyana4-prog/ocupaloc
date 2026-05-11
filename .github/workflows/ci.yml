@@ -53,7 +53,10 @@ jobs:
           E2E_EMAIL: ${{ secrets.PLAYWRIGHT_LOGIN_EMAIL }}
           E2E_PASS: ${{ secrets.PLAYWRIGHT_LOGIN_PASSWORD }}
         run: |
-          if [ "${{ vars.ENABLE_E2E }}" = "true" ] && [ -n "$E2E_EMAIL" ] && [ -n "$E2E_PASS" ]; then
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "e2e_ready=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping E2E on push events. E2E runs on pull_request only."
+          elif [ "${{ vars.ENABLE_E2E }}" = "true" ] && [ -n "$E2E_EMAIL" ] && [ -n "$E2E_PASS" ]; then
             echo "e2e_ready=true" >> "$GITHUB_OUTPUT"
             echo "✓ E2E secrets validated."
           else
