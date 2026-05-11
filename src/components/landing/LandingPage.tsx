@@ -27,14 +27,22 @@ export function LandingPage() {
               Întrebări
             </a>
           </nav>
-          <Link
-            href="/signup?start=1"
-            data-analytics="homepage_cta_signup"
-            data-cta-location="homepage_header"
-            className="inline-flex h-10 items-center justify-center rounded-lg oc-primary px-4 text-sm font-semibold transition-colors"
-          >
-            Încearcă gratuit
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/login"
+              className="inline-flex h-10 items-center justify-center rounded-lg border oc-border bg-white px-4 text-sm font-semibold oc-accent transition-colors hover:oc-badge-bg"
+            >
+              Intră în cont
+            </Link>
+            <Link
+              href="/signup?start=1"
+              data-analytics="homepage_cta_signup"
+              data-cta-location="homepage_header"
+              className="inline-flex h-10 items-center justify-center rounded-lg oc-primary px-4 text-sm font-semibold transition-colors"
+            >
+              Încearcă gratuit
+            </Link>
+          </div>
         </div>
       </header>
 
