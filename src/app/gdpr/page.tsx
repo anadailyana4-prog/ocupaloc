@@ -44,14 +44,21 @@ const sections = [
     ]
   },
   {
-    title: "5. Transferuri și furnizori",
+    title: "5. Linkuri securizate de reschedulare",
+    paragraphs: [
+      "Programele rescheduluri sau anulate prin linkuri securizate din email-urile de confirmare sunt procesate printr-un mecanism criptat cu HMAC-SHA256. Datele din link sunt folosite exclusiv pentru modificarea programării respective.",
+      "Linkurile expiră după 14 zile pentru motive de securitate. După expirare, clientul trebuie să contacteze businessul pentru a modifica programarea."
+    ]
+  },
+  {
+    title: "6. Transferuri și furnizori",
     paragraphs: [
       "Datele pot fi procesate prin furnizori tehnici folosiți pentru hosting, baze de date, email tranzacțional, plăți și observabilitate. Selectăm furnizori potriviți pentru un serviciu online modern și implementăm măsuri contractuale și tehnice rezonabile.",
       "Dacă apar transferuri internaționale, acestea trebuie să se bazeze pe mecanisme adecvate conform legislației aplicabile."
     ]
   },
   {
-    title: "6. Minimarea datelor",
+    title: "7. Minimarea datelor",
     paragraphs: [
       "Concepem produsul astfel încât business-urile să colecteze în mod normal doar informațiile necesare pentru programare, comunicare operațională și administrarea relației cu clientul.",
       "Recomandăm utilizatorilor platformei să evite introducerea în mod inutil a unor categorii speciale de date sau a unor informații excesive."

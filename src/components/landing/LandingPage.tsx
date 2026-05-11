@@ -93,7 +93,7 @@ export function LandingPage() {
             {[
               "Link personalizat de rezervare",
               "Programări nelimitate",
-              "Confirmări automate SMS/Email",
+              "Confirmări automate email",
               "Import clienți gratuit",
               "Suport rapid în limba română"
             ].map((item) => (

@@ -49,35 +49,42 @@ const sections = [
     ]
   },
   {
-    title: "6. Datele și conținutul tău",
+    title: "6. Reschedulare și modificarea programărilor",
+    paragraphs: [
+      "Clienții primesc în confirmarea de rezervare un link securizat care le permite să rescheduleze sau să anuleze programarea direct. Linkul este criptat cu HMAC-SHA256 și expiră după 14 zile.",
+      "Modificările efectuate prin linkul securizat sunt imediate; platforma trimite confirmări actualizate atât clientului cât și businessului."
+    ]
+  },
+  {
+    title: "7. Datele și conținutul tău",
     paragraphs: [
       "Tu rămâi responsabil pentru datele și conținutul pe care le introduci în platformă, inclusiv exactitatea informațiilor despre servicii, programări, prețuri și clienți.",
       "Ne acorzi dreptul necesar de a prelucra aceste date exclusiv pentru furnizarea, securizarea și îmbunătățirea serviciului, conform documentelor noastre de confidențialitate."
     ]
   },
   {
-    title: "7. Proprietate intelectuală",
+    title: "8. Proprietate intelectuală",
     paragraphs: [
       "Codul, designul, textele, marca și elementele vizuale ale produsului OcupaLoc rămân proprietatea noastră sau a licențiatorilor noștri, cu excepția conținutului pe care îl adaugi tu în contul tău.",
       "Nu poți copia, revinde, decompila, reproduce sau exploata comercial platforma în afara limitelor permise de lege și de acești termeni."
     ]
   },
   {
-    title: "8. Limitarea răspunderii",
+    title: "9. Limitarea răspunderii",
     paragraphs: [
       "În măsura permisă de lege, OcupaLoc nu răspunde pentru pierderi indirecte, pierderi de profit, pierderi de date sau prejudicii rezultate din utilizarea sau imposibilitatea utilizării serviciului.",
       "Răspunderea noastră totală, dacă există, se limitează la valoarea sumelor achitate efectiv pentru serviciu în perioada relevantă, cu excepția cazurilor în care legea prevede altfel."
     ]
   },
   {
-    title: "9. Suspendare și încetare",
+    title: "10. Suspendare și încetare",
     paragraphs: [
       "Putem suspenda temporar sau definitiv accesul la cont dacă există suspiciuni rezonabile de fraudă, abuz, încălcarea termenilor, riscuri de securitate sau neplată.",
       "Poți înceta utilizarea serviciului în orice moment, iar anumite obligații care prin natura lor trebuie să supraviețuiască încetării vor rămâne aplicabile."
     ]
   },
   {
-    title: "10. Contact",
+    title: "11. Contact",
     paragraphs: [
       `Pentru întrebări comerciale, juridice sau operaționale legate de acești termeni, ne poți scrie la ${CONTACT_EMAIL}.`,
       "Continuarea utilizării produsului după publicarea unei versiuni actualizate a termenilor reprezintă acceptarea versiunii noi, în măsura permisă de lege."
