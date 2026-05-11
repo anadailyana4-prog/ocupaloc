@@ -1,6 +1,6 @@
 import { execSync } from "node:child_process";
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 type CheckResult = {
   name: string;
@@ -8,21 +8,12 @@ type CheckResult = {
   details?: string;
 };
 
-const SECRET_KEYS = ["SUPABASE_SERVICE_ROLE_KEY", "RESEND_API_KEY"] as const;
-const IGNORE_PATHS = [
-  "node_modules",
-  ".git",
-  ".next",
-  ".open-next",
-  ".wrangler",
-  "dist",
-  "build",
-  "coverage",
-  "logs",
-  "*.log",
-  "package-lock.json",
-  "pnpm-lock.yaml"
-] as const;
+const SUSPICIOUS_VALUE_PATTERNS: Array<{ key: string; regex: RegExp }> = [
+  // Supabase service role is a JWT that should never be committed.
+  { key: "SUPABASE_SERVICE_ROLE_KEY", regex: /eyJ[\w-]+\.[\w-]+\.[\w-]+/g },
+  // Resend keys start with re_.
+  { key: "RESEND_API_KEY", regex: /\bre_[A-Za-z0-9]{20,}\b/g }
+];
 
 function logResult(result: CheckResult) {
   const icon = result.ok ? "✅" : "❌";
@@ -30,37 +21,28 @@ function logResult(result: CheckResult) {
   console.log(`${icon} ${result.name}${extra}`);
 }
 
-function shouldIgnorePath(path: string): boolean {
-  return IGNORE_PATHS.some((pattern) => {
-    if (pattern === "*.log") {
-      return path.endsWith(".log");
-    }
-    return path.includes(pattern);
-  });
-}
-
-function walkFiles(baseDir: string, currentDir: string, files: string[]) {
-  const entries = readdirSync(currentDir);
-  for (const entry of entries) {
-    const fullPath = join(currentDir, entry);
-    const relPath = relative(baseDir, fullPath);
-    if (!relPath) continue;
-    if (shouldIgnorePath(relPath)) continue;
-    const stats = statSync(fullPath);
-    if (stats.isDirectory()) {
-      walkFiles(baseDir, fullPath, files);
-    } else if (stats.isFile()) {
-      files.push(fullPath);
-    }
+function getTrackedFiles(repoRoot: string): string[] {
+  try {
+    const output = execSync("git ls-files", {
+      cwd: repoRoot,
+      stdio: ["ignore", "pipe", "pipe"],
+      encoding: "utf8"
+    });
+    return output
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  } catch {
+    return [];
   }
 }
 
 function getOccurrences(repoRoot: string) {
-  const files: string[] = [];
-  walkFiles(repoRoot, repoRoot, files);
+  const trackedFiles = getTrackedFiles(repoRoot);
   const occurrences: Array<{ file: string; key: string; line: number; content: string }> = [];
 
-  for (const file of files) {
+  for (const relFile of trackedFiles) {
+    const file = join(repoRoot, relFile);
     let content = "";
     try {
       content = readFileSync(file, "utf8");
@@ -69,27 +51,21 @@ function getOccurrences(repoRoot: string) {
     }
     const lines = content.split(/\r?\n/);
     lines.forEach((line, idx) => {
-      for (const key of SECRET_KEYS) {
-        if (line.includes(key)) {
+      for (const pattern of SUSPICIOUS_VALUE_PATTERNS) {
+        if (pattern.regex.test(line)) {
           occurrences.push({
-            file: relative(repoRoot, file),
-            key,
+            file: relFile,
+            key: pattern.key,
             line: idx + 1,
             content: line.trim()
           });
         }
+        pattern.regex.lastIndex = 0;
       }
     });
   }
 
   return occurrences;
-}
-
-function isEnvExamplePlaceholder(content: string): boolean {
-  if (!content.includes("=")) return false;
-  if (content.includes("re_")) return false;
-  if (content.includes("cfut_")) return false;
-  return true;
 }
 
 async function run() {
@@ -98,13 +74,10 @@ async function run() {
 
   try {
     const occurrences = getOccurrences(repoRoot);
-    const invalid = occurrences.filter((entry) => {
-      if (entry.file !== ".env.example") return true;
-      return !isEnvExamplePlaceholder(entry.content);
-    });
+    const invalid = occurrences.filter((entry) => entry.file !== ".env.example");
 
     results.push({
-      name: "Secret tokens appear only as placeholders in .env.example",
+      name: "Tracked files do not contain secret-like values",
       ok: invalid.length === 0,
       details: invalid.length
         ? invalid.map((entry) => `${entry.file}:${entry.line} (${entry.key})`).join(", ")
@@ -139,14 +112,17 @@ async function run() {
   }
 
   try {
-    const output = execSync("git log -p | grep SUPABASE_SERVICE_ROLE_KEY", {
+    const output = execSync(
+      "git log -G 're_[A-Za-z0-9]{20,}|eyJ[[:alnum:]_-]+\\.[[:alnum:]_-]+\\.[[:alnum:]_-]+' --pretty=format:%H --all",
+      {
       cwd: repoRoot,
       stdio: ["ignore", "pipe", "pipe"],
       encoding: "utf8"
-    }).trim();
+      }
+    ).trim();
     const hasHistoryLeak = output.length > 0;
     results.push({
-      name: "Git history scan for SUPABASE_SERVICE_ROLE_KEY",
+      name: "Git history scan for secret-like values",
       ok: !hasHistoryLeak,
       details: hasHistoryLeak ? "❌ CRITICAL: ROTEȘTE CHEIA IMEDIAT" : undefined
     });
@@ -160,17 +136,17 @@ async function run() {
         "⚠️ WARNING: Nu e repository git sau istoric indisponibil. Verifică manual că .env.local nu a fost commitat."
       );
       results.push({
-        name: "Git history scan for SUPABASE_SERVICE_ROLE_KEY",
+        name: "Git history scan for secret-like values",
         ok: true
       });
     } else if (stdout.trim().length === 0) {
       results.push({
-        name: "Git history scan for SUPABASE_SERVICE_ROLE_KEY",
+        name: "Git history scan for secret-like values",
         ok: true
       });
     } else {
       results.push({
-        name: "Git history scan for SUPABASE_SERVICE_ROLE_KEY",
+        name: "Git history scan for secret-like values",
         ok: false,
         details: "❌ CRITICAL: ROTEȘTE CHEIA IMEDIAT"
       });

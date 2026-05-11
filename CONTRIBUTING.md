@@ -8,6 +8,11 @@ Please be respectful and constructive in all interactions with other contributor
 
 ## Getting Started
 
+Before coding, review the project operating map:
+- `docs/PROJECT_OPERATING_GUIDE.md`
+- `docs/A_TO_Z_MASTER_INDEX.md`
+- `docs/FEATURE_IMPLEMENTATION_CHECKLIST.md`
+
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
@@ -45,7 +50,7 @@ pnpm run check:all
 
 - **Unit tests** go in `tests/*.test.ts` files
 - **E2E tests** go in `tests/e2e/*.spec.ts` files
-- Target at least 80% code coverage for business-logic files
+- Coverage is enforced by `pnpm run test:coverage:check` thresholds defined in `package.json`
 - Use Vitest for unit tests, Playwright for E2E tests
 
 Example unit test:

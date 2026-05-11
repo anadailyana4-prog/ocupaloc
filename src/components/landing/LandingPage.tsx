@@ -1,390 +1,345 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
 import { BookingCard } from "@/components/booking/BookingCard";
 import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
 
 export function LandingPage() {
-  const [isWalkthroughOpen, setIsWalkthroughOpen] = useState(false);
-
-  useEffect(() => {
-    if (!isWalkthroughOpen) {
-      return;
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setIsWalkthroughOpen(false);
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isWalkthroughOpen]);
-
-  const walkthroughSteps = [
-    {
-      title: "Clientul rezervă în sub 1 minut",
-      detail: "Alege serviciul și intervalul disponibil direct din linkul tău public."
-    },
-    {
-      title: "Confirmare automată pe email",
-      detail: "Clientul primește imediat confirmare și link pentru confirmare/anulare."
-    },
-    {
-      title: "Tu vezi totul în meniu",
-      detail: "Programări, status, KPI și modificări în același loc, fără haos în mesaje."
-    },
-    {
-      title: "Reminder util cu o zi înainte",
-      detail: "Sistemul trimite reminderul de 24h cu acțiuni clare de confirmare sau anulare."
-    }
-  ];
-
   return (
-    <div className="relative overflow-hidden bg-transparent text-white antialiased">
-      <div className="pointer-events-none absolute -left-16 top-24 h-64 w-64 rounded-full bg-amber-300/10 blur-3xl" />
-      <div className="pointer-events-none absolute -right-20 top-10 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
-      <header className="sticky top-0 z-40 border-b border-amber-200/15 bg-slate-950/70 backdrop-blur-xl">
+    <div className="min-h-screen bg-[#F8F6F1] text-[#1E293B] antialiased">
+      <header className="sticky top-0 z-40 border-b border-[#E2E8F0] bg-[#F8F6F1]/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-          <div className="font-display text-2xl font-semibold tracking-wide text-amber-100">ocupaloc.ro</div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/login"
-              className="inline-flex h-9 items-center justify-center rounded-full border border-amber-200/25 bg-slate-900/50 px-3 text-xs font-medium text-amber-50 hover:bg-slate-800/70 sm:px-4 sm:text-sm"
-            >
-              Intră în cont
-            </Link>
-            <Link
-              href="/signup?start=1"
-              className="inline-flex h-9 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 px-3 text-xs font-semibold text-slate-900 hover:brightness-105 sm:px-4 sm:text-sm"
-            >
-              Creează cont
-            </Link>
-          </div>
+          <Link href="/" className="font-display text-xl font-bold tracking-tight text-[#0F766E] md:text-2xl">
+            OcupaLoc
+          </Link>
+          <nav className="hidden items-center gap-6 text-sm font-medium text-[#64748B] md:flex">
+            <a href="#cum-functioneaza" className="transition-colors hover:text-[#1E293B]">
+              Cum funcționează
+            </a>
+            <a href="#pentru-cine" className="transition-colors hover:text-[#1E293B]">
+              Pentru cine este
+            </a>
+            <a href="#pret" className="transition-colors hover:text-[#1E293B]">
+              Preț
+            </a>
+            <a href="#intrebari" className="transition-colors hover:text-[#1E293B]">
+              Întrebări
+            </a>
+          </nav>
+          <Link
+            href="/signup?start=1"
+            data-analytics="homepage_cta_signup"
+            data-cta-location="homepage_header"
+            className="inline-flex h-10 items-center justify-center rounded-lg bg-[#F59E0B] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#D97706]"
+          >
+            Încearcă gratuit
+          </Link>
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 pb-14 pt-14 section-reveal">
-        <div className="grid items-start gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-          <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-cyan-200/80">Rezolvă haosul din programări</p>
-            <h1 className="mt-3 font-display text-5xl font-semibold leading-[0.98] tracking-tight text-amber-50 md:text-7xl">
-              Pierzi timp și programări în telefoane, mesaje și anulări de ultim moment?
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg text-amber-100/70">
-              OcupaLoc îți organizează programările într-un flux clar: clientul rezervă online, confirmă din email, iar tu vezi totul într-un meniu simplu.
-            </p>
-
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link href="/signup?start=1" data-analytics="homepage_cta_signup" data-cta-location="homepage_hero" className="lux-cta">
-                Încearcă 14 zile gratis
-              </Link>
-              <button type="button" className="lux-outline" onClick={() => setIsWalkthroughOpen(true)}>
-                Vezi fluxul complet
-              </button>
-            </div>
-
-            <div className="mt-6 grid gap-2 text-sm text-amber-100/85 sm:grid-cols-2">
-              <div className="rounded-lg border border-amber-100/15 bg-slate-950/60 px-3 py-2">Mai puține no-show-uri prin confirmări automate</div>
-              <div className="rounded-lg border border-amber-100/15 bg-slate-950/60 px-3 py-2">Mai puține întreruperi în timpul programului</div>
-              <div className="rounded-lg border border-amber-100/15 bg-slate-950/60 px-3 py-2">Fără suprapuneri de sloturi active</div>
-              <div className="rounded-lg border border-amber-100/15 bg-slate-950/60 px-3 py-2">Mai mult timp pentru lucru, nu pentru administrare</div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-amber-200/20 bg-slate-950/65 p-3 shadow-xl shadow-cyan-400/5">
-            <BookingCard variant="demo" />
-          </div>
-        </div>
-      </section>
-
-      <section id="probleme" className="mx-auto max-w-6xl px-4 pb-12">
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="lux-card p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-amber-100/55">Acum</p>
-            <h3 className="mt-2 text-lg font-semibold text-amber-50">Programări ratate în WhatsApp</h3>
-            <p className="mt-2 text-sm text-amber-100/70">Centralizezi cererile într-un singur loc, cu disponibilitate în timp real.</p>
-          </div>
-          <div className="lux-card p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-amber-100/55">Cost ascuns</p>
-            <h3 className="mt-2 text-lg font-semibold text-amber-50">Goluri în program din anulări</h3>
-            <p className="mt-2 text-sm text-amber-100/70">Confirmări și reminderul de 24h ca să reduci absențele.</p>
-          </div>
-          <div className="lux-card p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-amber-100/55">Rezultat</p>
-            <h3 className="mt-2 text-lg font-semibold text-amber-50">Zi consumată pe administrare</h3>
-            <p className="mt-2 text-sm text-amber-100/70">Meniu clar pentru statusuri, modificări și calendar.</p>
-          </div>
-        </div>
-      </section>
-
-      {isWalkthroughOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 backdrop-blur-md" onClick={() => setIsWalkthroughOpen(false)}>
-          <div className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-amber-200/20 bg-slate-950 shadow-2xl shadow-cyan-500/10" onClick={(event) => event.stopPropagation()}>
-            <div className="pointer-events-none absolute -left-16 top-0 h-56 w-56 rounded-full bg-amber-300/20 blur-3xl" />
-            <div className="pointer-events-none absolute -right-16 bottom-0 h-56 w-56 rounded-full bg-cyan-300/20 blur-3xl" />
-
-            <button
-              type="button"
-              onClick={() => setIsWalkthroughOpen(false)}
-              className="absolute right-4 top-4 z-10 rounded-full border border-amber-200/30 bg-slate-900/80 px-3 py-1 text-sm text-amber-100 hover:bg-slate-800"
-            >
-              Închide
-            </button>
-
-            <div className="relative px-6 pb-6 pt-12 md:px-10 md:pt-10">
-              <p className="text-xs uppercase tracking-[0.22em] text-amber-200/70">Walkthrough live</p>
-              <h3 className="mt-2 font-display text-4xl font-semibold leading-tight text-amber-50 md:text-5xl">Așa curge fluxul real în OcupaLoc</h3>
-              <p className="mt-3 max-w-2xl text-sm text-amber-50/75 md:text-base">
-                Fără promisiuni false: acesta este exact traseul implementat acum în platformă, de la rezervare până la reminder.
+      <main>
+        <section className="mx-auto max-w-6xl px-4 pb-10 pt-10 md:pb-16 md:pt-14">
+          <div className="grid items-start gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
+            <div>
+              <p className="inline-flex rounded-full border border-[#E2E8F0] bg-[#EEF7F6] px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-[#0F766E]">
+                Programări online pentru orice business
+              </p>
+              <h1 className="mt-5 font-display text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+                Clienții rezervă online. Tu vezi totul clar, într-un singur loc.
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-relaxed text-[#64748B] md:text-lg">
+                OcupaLoc este potrivit pentru saloane, clinici, consultanți, studiouri și alte businessuri bazate pe
+                programări. Clientul își alege serviciul, vede sloturile libere și confirmă din email, iar tu gestionezi
+                totul dintr-un meniu simplu.
               </p>
 
-              <div className="mt-7 grid gap-3 md:grid-cols-2">
-                {walkthroughSteps.map((step, index) => (
-                  <div key={step.title} className="rounded-2xl border border-amber-200/20 bg-slate-900/65 p-4 transition hover:border-cyan-300/40 hover:bg-slate-900">
-                    <div className="mb-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-amber-200 to-cyan-200 text-sm font-bold text-slate-900">
-                      {index + 1}
-                    </div>
-                    <h4 className="text-base font-semibold text-amber-50">{step.title}</h4>
-                    <p className="mt-1 text-sm text-amber-50/70">{step.detail}</p>
-                  </div>
-                ))}
-              </div>
+              <ul className="mt-6 grid gap-2 text-sm font-medium text-[#1E293B] sm:grid-cols-2">
+                <li className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">14 zile gratuite</li>
+                <li className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2">59,99 RON/lună, TVA inclus</li>
+                <li className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 sm:col-span-2">Zero comision per programare</li>
+              </ul>
 
-              <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-amber-200/15 pt-5">
-                <Link href="/signup?start=1" className="lux-cta" data-cta-location="homepage_walkthrough_modal">
-                  Încearcă 14 zile gratis
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <Link
+                  href="/signup?start=1"
+                  data-analytics="homepage_cta_signup"
+                  data-cta-location="homepage_hero"
+                  className="inline-flex h-11 items-center justify-center rounded-lg bg-[#F59E0B] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#D97706]"
+                >
+                  Încearcă gratuit
                 </Link>
-                <a href="#pricing" className="lux-outline" onClick={() => setIsWalkthroughOpen(false)}>
-                  Vezi prețurile
+                <a
+                  href="#cum-functioneaza"
+                  className="inline-flex h-11 items-center justify-center rounded-lg border border-[#0F766E] bg-white px-5 text-sm font-semibold text-[#0F766E] transition-colors hover:bg-[#EEF7F6]"
+                >
+                  Vezi cum funcționează
                 </a>
               </div>
             </div>
-          </div>
-        </div>
-      ) : null}
 
-      <section id="verticale" className="max-w-6xl mx-auto px-4 pb-12">
-        <div className="lux-card p-4 md:p-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-amber-100/55">Dovadă socială</p>
-              <h2 className="mt-1 font-display text-2xl md:text-3xl font-semibold text-amber-100">
-                Folosit de business-uri de servicii din România
-              </h2>
+            <div className="rounded-2xl border border-[#E2E8F0] bg-white p-3 shadow-[0_20px_45px_-30px_rgba(15,118,110,0.35)]">
+              <div className="mb-3 rounded-xl border border-[#E2E8F0] bg-[#EEF7F6] p-3 text-sm text-[#1E293B]">
+                <p className="font-semibold text-[#0F766E]">Flux rezervare</p>
+                <p className="mt-1 text-[#64748B]">Serviciu ales → Dată → Oră → Confirmare</p>
+              </div>
+              <BookingCard variant="demo" />
             </div>
-            <div className="rounded-lg border border-cyan-300/25 bg-cyan-400/10 px-3 py-2 text-left md:min-w-[230px]">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-cyan-200/80">Volum lunar</p>
-              <p className="mt-1 text-sm font-semibold text-cyan-100">Mii de programări procesate în fiecare lună</p>
-            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 pb-8">
+          <div className="grid gap-2 rounded-2xl border border-[#E2E8F0] bg-white p-4 sm:grid-cols-2 lg:grid-cols-5">
+            {[
+              "Link personalizat de rezervare",
+              "Programări nelimitate",
+              "Confirmări automate SMS/Email",
+              "Import clienți gratuit",
+              "Suport rapid în limba română"
+            ].map((item) => (
+              <div key={item} className="rounded-lg border border-[#E2E8F0] bg-[#EEF7F6] px-3 py-2 text-sm font-medium text-[#1E293B]">
+                {item}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+          <div className="max-w-3xl">
+            <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+              Când programările vin din mai multe locuri, apare haosul.
+            </h2>
+            <p className="mt-4 text-base text-[#64748B]">
+              Multe businessuri primesc programări prin telefon, mesaje sau canale diferite. Fără o structură clară,
+              programul devine greu de urmărit.
+            </p>
           </div>
 
-          <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-lg border border-amber-100/15 bg-slate-950/65 p-3">
-              <p className="text-xs text-amber-100/60">Clinică</p>
-              <p className="mt-1 text-sm font-medium text-amber-50">Clinica Nova, București</p>
-            </div>
-            <div className="rounded-lg border border-amber-100/15 bg-slate-950/65 p-3">
-              <p className="text-xs text-amber-100/60">Manichiură</p>
-              <p className="mt-1 text-sm font-medium text-amber-50">Nails Atelier, Cluj</p>
-            </div>
-            <div className="rounded-lg border border-amber-100/15 bg-slate-950/65 p-3">
-              <p className="text-xs text-amber-100/60">Frizerie</p>
-              <p className="mt-1 text-sm font-medium text-amber-50">Barber District, Iași</p>
-            </div>
-            <div className="rounded-lg border border-amber-100/15 bg-slate-950/65 p-3">
-              <p className="text-xs text-amber-100/60">Consultanță</p>
-              <p className="mt-1 text-sm font-medium text-amber-50">Consult Expert, Timișoara</p>
-            </div>
+          <div className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+            {[
+              "Programările vin din mai multe locuri",
+              "Orele trebuie urmărite manual",
+              "Apar apeluri repetitive",
+              "Confirmările și schimbările consumă timp"
+            ].map((problem) => (
+              <article key={problem} className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+                <p className="text-sm font-medium text-[#1E293B]">{problem}</p>
+              </article>
+            ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section id="features" className="max-w-6xl mx-auto px-4 py-14 border-t border-amber-200/15">
-        <div className="mb-10 text-center">
-          <h2 className="font-display text-4xl md:text-5xl font-semibold tracking-wide text-amber-100">Cum funcționează, simplu</h2>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="lux-card p-5">
-            <div className="mb-2 text-sm font-semibold text-cyan-200">Pasul 1</div>
-            <h3 className="text-xl font-semibold text-amber-50">Primești pagina ta de rezervare</h3>
-            <p className="mt-2 text-sm text-amber-100/70">O pui pe Instagram, WhatsApp, site sau Google Maps.</p>
+        <section id="cum-functioneaza" className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+          <div className="max-w-3xl">
+            <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">Un flux simplu, ușor de urmărit</h2>
           </div>
-          <div className="lux-card p-5">
-            <div className="mb-2 text-sm font-semibold text-cyan-200">Pasul 2</div>
-            <h3 className="text-xl font-semibold text-amber-50">Clientul rezervă singur</h3>
-            <p className="mt-2 text-sm text-amber-100/70">Alege serviciul și vede doar sloturile libere.</p>
-          </div>
-          <div className="lux-card p-5">
-            <div className="mb-2 text-sm font-semibold text-cyan-200">Pasul 3</div>
-            <h3 className="text-xl font-semibold text-amber-50">Tu primești confirmări automate</h3>
-            <p className="mt-2 text-sm text-amber-100/70">Status clar în meniu, fără apeluri repetitive.</p>
-          </div>
-        </div>
-      </section>
 
-      <section id="pricing" className="max-w-6xl mx-auto px-4 py-16 border-t border-amber-200/15">
-        <div className="text-center mb-12">
-          <h2 className="font-display text-4xl md:text-5xl font-semibold tracking-wide text-amber-100">Un singur plan. Totul inclus.</h2>
-        </div>
-        <div className="max-w-md mx-auto lux-card p-8">
-          <div className="text-center mb-6">
-            <div className="text-3xl font-extrabold">
-              59,99 lei<span className="text-lg text-amber-100/50 font-normal">/lună</span>
-            </div>
-            <div className="text-sm text-amber-100/50 mt-1">per locație • TVA inclus</div>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <article className="rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#0F766E]">Pasul 1</p>
+              <h3 className="mt-2 text-xl font-semibold">Primești pagina ta de rezervare</h3>
+              <p className="mt-2 text-sm text-[#64748B]">O poți pune pe Instagram, WhatsApp, site sau Google Maps.</p>
+            </article>
+            <article className="rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#0F766E]">Pasul 2</p>
+              <h3 className="mt-2 text-xl font-semibold">Clientul rezervă singur</h3>
+              <p className="mt-2 text-sm text-[#64748B]">Își alege serviciul și vede doar sloturile libere.</p>
+            </article>
+            <article className="rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#0F766E]">Pasul 3</p>
+              <h3 className="mt-2 text-xl font-semibold">Primești confirmări automate</h3>
+              <p className="mt-2 text-sm text-[#64748B]">Status clar în meniu, fără apeluri repetitive.</p>
+            </article>
           </div>
-          <ul className="space-y-3 mb-8 text-base">
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-400">✓</span>
-              <span>Link personalizat de rezervare</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-400">✓</span>
-              <span>Programări nelimitate</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-400">✓</span>
-              <span>Confirmări automate SMS/Email</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-emerald-400">✓</span>
-              <span>Suport pe email</span>
-            </li>
-          </ul>
-          <Link href="/signup?start=1" data-analytics="homepage_cta_signup" data-cta-location="homepage_pricing" className="block w-full text-center lux-cta">
-            Începe gratuit
-          </Link>
-        </div>
-      </section>
+        </section>
 
-      <section id="faq" className="max-w-3xl mx-auto px-4 py-16 border-t border-amber-200/15">
-        <div className="text-center mb-12">
-          <h2 className="font-display text-4xl md:text-5xl font-semibold tracking-wide text-amber-100">Întrebări frecvente</h2>
-        </div>
-        <div className="space-y-4">
-          <details className="rounded-xl border border-zinc-800 bg-zinc-900 px-6 py-4 text-base text-zinc-300">
-            <summary className="cursor-pointer list-none font-semibold text-white">Cum gestionez plățile pentru serviciile mele?</summary>
-            <p className="mt-3 text-zinc-400">OcupaLoc se concentrează acum pe programări, confirmări, remindere și organizarea agendei. Plata online la rezervare nu este integrată în acest moment.</p>
-          </details>
-          <details className="rounded-xl border border-zinc-800 bg-zinc-900 px-6 py-4 text-base text-zinc-300">
-            <summary className="cursor-pointer list-none font-semibold text-white">Se pot anula sau reprograma clienții?</summary>
-            <p className="mt-3 text-zinc-400">Da. Clientul primește link securizat și poate modifica rezervarea fără apel.</p>
-          </details>
-        </div>
-      </section>
+        <section id="pentru-cine" className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+          <div className="max-w-3xl">
+            <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+              Potrivit pentru businessuri bazate pe programări
+            </h2>
+            <p className="mt-3 text-base text-[#64748B]">
+              Același flux clar de rezervare poate fi folosit în tipuri diferite de business.
+            </p>
+          </div>
 
-      <section className="mx-auto max-w-4xl px-4 pb-16 pt-4 text-center">
-        <div className="lux-card p-8">
-          <h3 className="font-display text-3xl font-semibold text-amber-50 md:text-4xl">Dacă programările sunt haotice, soluția poate fi simplă.</h3>
-          <p className="mt-3 text-base text-amber-100/70">Pornire rapidă, fără implementări complicate. Primești acces instant și poți testa complet 14 zile.</p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/signup?start=1" data-analytics="homepage_cta_signup" data-cta-location="homepage_final_cta" className="lux-cta">
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {["Saloane", "Clinici", "Consultanți", "Studiouri", "Beauty", "Servicii locale"].map((item) => (
+              <article key={item} className="rounded-xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+                <h3 className="text-lg font-semibold">{item}</h3>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+          <div className="max-w-3xl">
+            <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">Totul inclus într-un plan clar</h2>
+          </div>
+
+          <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            {[
+              "Preț fix: 59,99 RON/lună",
+              "TVA inclus",
+              "Zero comision per programare",
+              "Link personalizat de rezervare",
+              "Programări nelimitate",
+              "Import clienți gratuit",
+              "Suport rapid în limba română",
+              "Meniu de administrare",
+              "Confirmări email",
+              "Gestionarea zilnică a programărilor"
+            ].map((benefit) => (
+              <div key={benefit} className="rounded-xl border border-[#E2E8F0] bg-white px-4 py-3 text-sm font-medium text-[#1E293B] shadow-sm">
+                {benefit}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section id="pret" className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+          <div className="max-w-3xl">
+            <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">Un singur plan. Totul inclus.</h2>
+          </div>
+
+          <div className="mt-8 max-w-lg rounded-2xl border border-[#E2E8F0] bg-white p-6 shadow-[0_18px_40px_-30px_rgba(15,118,110,0.35)] sm:p-8">
+            <p className="text-4xl font-bold tracking-tight text-[#1E293B]">
+              59,99 RON<span className="text-base font-medium text-[#64748B]">/lună</span>
+            </p>
+            <p className="mt-1 text-sm text-[#64748B]">per locație • TVA inclus</p>
+
+            <ul className="mt-6 space-y-2 text-sm text-[#1E293B]">
+              <li>Programări nelimitate</li>
+              <li>Zero comision per programare</li>
+              <li>Link personalizat de rezervare</li>
+              <li>Import clienți gratuit</li>
+              <li>Suport rapid în limba română</li>
+            </ul>
+
+            <Link
+              href="/signup?start=1"
+              data-analytics="homepage_cta_signup"
+              data-cta-location="homepage_pricing"
+              className="mt-7 inline-flex h-11 w-full items-center justify-center rounded-lg bg-[#F59E0B] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#D97706]"
+            >
               Încearcă 14 zile gratis
             </Link>
-            <button type="button" className="lux-outline" onClick={() => setIsWalkthroughOpen(true)}>
-              Vezi fluxul complet
-            </button>
-          </div>
-        </div>
-      </section>
 
-      <footer className="border-t border-zinc-900 py-12 mt-16">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-10 text-sm">
-            <div>
-              <div className="font-semibold mb-3 text-white">Produs</div>
-              <ul className="space-y-2 text-zinc-500">
-                <li>
-                  <a href="#features" className="hover:text-zinc-300">
-                    Funcționalități
-                  </a>
-                </li>
-                <li>
-                  <a href="#pricing" className="hover:text-zinc-300">
-                    Prețuri
-                  </a>
-                </li>
-                <li>
-                  <a href="#faq" className="hover:text-zinc-300">
-                    Întrebări frecvente
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <div className="font-semibold mb-3 text-white">Suport</div>
-              <ul className="space-y-2 text-zinc-500">
-                <li>
-                  <a
-                    href={CONTACT_MAILTO}
-                    aria-label={`Trimite email către ${CONTACT_EMAIL}`}
-                    className="inline-flex rounded-sm text-zinc-300 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-                  >
-                    Contact
-                  </a>
-                </li>
-                <li>
-                  <Link href="/suport" className="hover:text-zinc-300">
-                    Centru suport
-                  </Link>
-                </li>
-                <li className="text-zinc-400">{CONTACT_EMAIL}</li>
-                <li>
-                  <Link href="/status" className="hover:text-zinc-300">
-                    Status sistem
-                  </Link>
-                </li>
-                <li>
-                  <a href="https://wa.me/40700000000" target="_blank" className="hover:text-zinc-300" rel="noreferrer">
-                    WhatsApp
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <div className="font-semibold mb-3 text-white">Legal</div>
-              <ul className="space-y-2 text-zinc-500">
-                <li>
-                  <Link href="/termeni" className="hover:text-zinc-300">
-                    Termeni și condiții
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/confidentialitate" className="hover:text-zinc-300">
-                    Politica de confidențialitate
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/gdpr" className="hover:text-zinc-300">
-                    Informare GDPR
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/cookies" className="hover:text-zinc-300">
-                    Politica de cookies
-                  </Link>
-                </li>
-              </ul>
-            </div>
+            <p className="mt-3 text-xs text-[#64748B]">Model clar: un abonament lunar fix pentru business-ul tău.</p>
           </div>
-          <div className="pt-8 border-t border-zinc-900 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-zinc-600">
-            <div>© 2026 ocupaloc.ro. Toate drepturile rezervate.</div>
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-              <span>Date găzduite în UE. Conform GDPR.</span>
-              <a
-                href={CONTACT_MAILTO}
-                aria-label={`Contactează OcupaLoc la ${CONTACT_EMAIL}`}
-                className="rounded-sm text-zinc-400 underline decoration-zinc-700 underline-offset-4 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+        </section>
+
+        <section id="intrebari" className="mx-auto max-w-4xl px-4 py-12 md:py-16">
+          <div className="max-w-3xl">
+            <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">Întrebări frecvente</h2>
+          </div>
+
+          <div className="mt-8 space-y-3">
+            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Pentru ce tipuri de business este OcupaLoc?</summary>
+              <p className="mt-3 text-sm text-[#64748B]">
+                OcupaLoc este potrivit pentru saloane, clinici, consultanți, studiouri și alte businessuri bazate pe programări.
+              </p>
+            </details>
+            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Cum rezervă clientul?</summary>
+              <p className="mt-3 text-sm text-[#64748B]">
+                Clientul intră pe linkul tău personalizat, își alege serviciul și vede doar sloturile libere.
+              </p>
+            </details>
+            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Cum confirmă clientul?</summary>
+              <p className="mt-3 text-sm text-[#64748B]">
+                Clientul confirmă din email și poate folosi linkul securizat pentru anulare sau reprogramare.
+              </p>
+            </details>
+            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Există comision pentru fiecare programare?</summary>
+              <p className="mt-3 text-sm text-[#64748B]">Nu. Planul are zero comision per programare.</p>
+            </details>
+            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Ce include planul?</summary>
+              <p className="mt-3 text-sm text-[#64748B]">
+                Planul include programări nelimitate, link personalizat de rezervare, import clienți gratuit, confirmări automate SMS/Email și
+                suport rapid în limba română.
+              </p>
+            </details>
+            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Pot testa înainte să plătesc?</summary>
+              <p className="mt-3 text-sm text-[#64748B]">Da. Ai 14 zile gratuite pentru testare.</p>
+            </details>
+            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Plata online la rezervare este disponibilă?</summary>
+              <p className="mt-3 text-sm text-[#64748B]">Nu, plata online la rezervare nu este integrată în acest moment.</p>
+            </details>
+            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Se pot anula sau reprograma clienții?</summary>
+              <p className="mt-3 text-sm text-[#64748B]">Da. Clientul poate anula sau reprograma prin link securizat.</p>
+            </details>
+            <details className="rounded-xl border border-[#E2E8F0] bg-white p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-[#1E293B]">Cum iau legătura cu voi?</summary>
+              <p className="mt-3 text-sm text-[#64748B]">
+                Ne poți scrie la{" "}
+                <a href={CONTACT_MAILTO} className="font-semibold text-[#0F766E] underline decoration-[#0F766E]/40 underline-offset-2">
+                  {CONTACT_EMAIL}
+                </a>
+                .
+              </p>
+            </details>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 pb-12 md:pb-16">
+          <div className="rounded-2xl border border-[#E2E8F0] bg-[#EEF7F6] p-6 text-center sm:p-10">
+            <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">
+              Încearcă varianta clară pentru programări online.
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-base text-[#64748B]">
+              Testezi gratuit și vezi dacă fluxul se potrivește businessului tău.
+            </p>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/signup?start=1"
+                data-analytics="homepage_cta_signup"
+                data-cta-location="homepage_final_cta"
+                className="inline-flex h-11 items-center justify-center rounded-lg bg-[#F59E0B] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#D97706]"
               >
-                {CONTACT_EMAIL}
+                Încearcă gratuit
+              </Link>
+              <a
+                href="#pret"
+                className="inline-flex h-11 items-center justify-center rounded-lg border border-[#0F766E] bg-white px-5 text-sm font-semibold text-[#0F766E] transition-colors hover:bg-[#EEF7F6]"
+              >
+                Vezi prețul
               </a>
             </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-[#E2E8F0] bg-white py-10">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="font-display text-xl font-semibold text-[#0F766E]">OcupaLoc</p>
+            <p className="mt-2 text-sm text-[#64748B]">Programări online pentru orice business</p>
+          </div>
+
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-medium">
+            <a href="#pret" className="text-[#1E293B] hover:text-[#0F766E]">
+              Prețuri
+            </a>
+            <Link href="/gdpr" className="text-[#1E293B] hover:text-[#0F766E]">
+              GDPR
+            </Link>
+            <a href={CONTACT_MAILTO} className="text-[#1E293B] hover:text-[#0F766E]">
+              Contact
+            </a>
+          </div>
+
+          <div>
+            <a href={CONTACT_MAILTO} className="text-sm font-medium text-[#0F766E] hover:text-[#115E59]">
+              {CONTACT_EMAIL}
+            </a>
           </div>
         </div>
       </footer>
@@ -420,7 +375,9 @@ export function DemoLandingPreview({ businessName, city, businessType, services,
         DEMO - Acest business nu există, e doar exemplu
       </div>
       <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-8">
-        <h1 className="text-4xl font-extrabold tracking-tight">{businessName} - {city}</h1>
+        <h1 className="text-4xl font-extrabold tracking-tight">
+          {businessName} - {city}
+        </h1>
         <p className="mt-3 text-zinc-300">
           Exemplu de pagină pentru {businessType.toLowerCase()} cu programări online și preț fix 59,99 RON/lună, fără comision.
         </p>
@@ -431,10 +388,7 @@ export function DemoLandingPreview({ businessName, city, businessType, services,
             </div>
           ))}
         </div>
-        <Link
-          href={ctaHref}
-          className="mt-8 inline-flex rounded-lg bg-indigo-600 px-6 py-3 text-base font-semibold text-white hover:bg-indigo-500"
-        >
+        <Link href={ctaHref} className="mt-8 inline-flex rounded-lg bg-indigo-600 px-6 py-3 text-base font-semibold text-white hover:bg-indigo-500">
           Vreau și eu așa
         </Link>
       </div>

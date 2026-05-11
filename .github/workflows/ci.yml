@@ -94,7 +94,7 @@ jobs:
       - name: Unit tests, types, lint, audit
         run: pnpm run check:all
 
-      - name: "✅ Enforce test coverage (70% minimum)"
+      - name: "✅ Enforce test coverage thresholds"
         run: pnpm run test:coverage:check
 
       - name: Build

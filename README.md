@@ -2,6 +2,25 @@
 
 Multi-tenant pentru profesioniști beauty: frizerii, manichiură, gene, pensat, tatuaje, estetică. Stack: **Next.js 15 (App Router)**, **TypeScript**, **Supabase** (Auth + Postgres + RLS), **Tailwind**, **shadcn/ui**, **React Hook Form** (parțial), **Zod**, **Sonner**.
 
+## Operare rapidă (single entrypoint)
+
+Pentru structură, schimbări sigure și operare zilnică, folosește:
+- `docs/00_START_HERE_60_SEC.md`
+- `docs/DOCS_INDEX.md`
+- `docs/PROJECT_OPERATING_GUIDE.md`
+- `docs/A_TO_Z_MASTER_INDEX.md`
+- `docs/FEATURE_IMPLEMENTATION_CHECKLIST.md`
+
+Comenzi rapide:
+- `pnpm run dev` -> start local
+- `pnpm run check:local` -> lint + tests + typecheck
+- `pnpm run check:all` -> gate local complet
+- `pnpm run verify:secrets` -> secret hygiene
+- `pnpm run verify:db` -> readiness DB
+- `pnpm run verify:billing` -> readiness billing
+- `pnpm run ops:synthetic` -> synthetic monitor
+- `pnpm run ops:slo` -> release gate SLO
+
 ## Cerințe
 
 - Node.js 22+

@@ -27,6 +27,8 @@
     "verify:db": "tsx scripts/verify-production-readiness.ts",
     "verify:billing": "tsx scripts/verify-billing-readiness.ts",
     "verify:secrets": "tsx scripts/check-secrets.ts",
+    "leads:dry": "tsx scripts/send-leads-campaign.ts",
+    "leads:send": "tsx scripts/send-leads-campaign.ts --send",
     "ops:synthetic": "tsx scripts/run-synthetic-monitor.ts",
     "ops:slo": "tsx scripts/check-slo-release-gate.ts",
     "diagnose:business": "tsx scripts/diagnose-business.ts",
