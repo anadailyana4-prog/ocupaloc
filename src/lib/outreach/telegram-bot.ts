@@ -193,6 +193,13 @@ function parseCommand(text: string) {
   return command.toLowerCase().replace(/_/g, "-");
 }
 
+function parseCommandInput(text: string) {
+  const tokens = text.trim().split(/\s+/).filter(Boolean);
+  const command = (tokens[0] ?? "").toLowerCase().replace(/_/g, "-");
+  const args = tokens.slice(1);
+  return { command, args };
+}
+
 function formatStatusText(snapshot: Awaited<ReturnType<typeof getOperationalSnapshot>> | null) {
   if (!snapshot) {
     return "Nu exista inca o nisa si o zona activa configurata.";
@@ -310,6 +317,152 @@ async function formatDeliveryStatusText() {
   ].join("\n");
 }
 
+async function formatStatsText() {
+  const snapshot = await getOperationalSnapshot();
+  if (!snapshot) {
+    return "Nu exista inca o nisa si o zona activa configurata.";
+  }
+
+  const admin = createSupabaseServiceClient();
+  const campaignResult = await admin
+    .from("outreach_campaigns")
+    .select("id")
+    .eq("coverage_zone_id", snapshot.zone.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (campaignResult.error) throw campaignResult.error;
+  if (!campaignResult.data) return "Nu exista inca o campanie de outreach pentru zona activa.";
+
+  const now = Date.now();
+  const startTodayIso = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
+  const sevenDaysIso = new Date(now - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [todayMessages, sevenDayMessages] = await Promise.all([
+    admin
+      .from("outreach_messages")
+      .select("status")
+      .eq("campaign_id", (campaignResult.data as { id: string }).id)
+      .gte("created_at", startTodayIso)
+      .limit(5000),
+    admin
+      .from("outreach_messages")
+      .select("status")
+      .eq("campaign_id", (campaignResult.data as { id: string }).id)
+      .gte("created_at", sevenDaysIso)
+      .limit(10000)
+  ]);
+
+  if (todayMessages.error) throw todayMessages.error;
+  if (sevenDayMessages.error) throw sevenDayMessages.error;
+
+  const summarize = (rows: Array<{ status: string }> | null | undefined) => {
+    const stats = { sent: 0, bounced: 0, failed: 0, replied: 0 };
+    for (const row of rows ?? []) {
+      if (row.status === "sent") stats.sent += 1;
+      if (row.status === "bounced") stats.bounced += 1;
+      if (row.status === "failed") stats.failed += 1;
+      if (row.status === "replied") stats.replied += 1;
+    }
+    const delivered = stats.sent + stats.replied;
+    const undelivered = stats.bounced + stats.failed;
+    const total = delivered + undelivered;
+    const deliveryRate = total > 0 ? ((delivered / total) * 100).toFixed(1) : "0.0";
+    const replyRate = delivered > 0 ? ((stats.replied / delivered) * 100).toFixed(1) : "0.0";
+    return { ...stats, delivered, undelivered, total, deliveryRate, replyRate };
+  };
+
+  const today = summarize(todayMessages.data as Array<{ status: string }> | null);
+  const last7 = summarize(sevenDayMessages.data as Array<{ status: string }> | null);
+
+  return [
+    "📊 OUTREACH STATS",
+    `Nisa: ${snapshot.niche.slug}`,
+    `Zona: ${snapshot.zone.display_name}`,
+    "",
+    "Azi:",
+    `Trimise: ${today.sent}`,
+    `Livrate: ${today.delivered}`,
+    `Nelivrate: ${today.undelivered}`,
+    `Reply: ${today.replied}`,
+    `Delivery rate: ${today.deliveryRate}%`,
+    `Reply rate: ${today.replyRate}%`,
+    "",
+    "Ultimele 7 zile:",
+    `Trimise: ${last7.sent}`,
+    `Livrate: ${last7.delivered}`,
+    `Nelivrate: ${last7.undelivered}`,
+    `Reply: ${last7.replied}`,
+    `Delivery rate: ${last7.deliveryRate}%`,
+    `Reply rate: ${last7.replyRate}%`
+  ].join("\n");
+}
+
+async function formatQueueText() {
+  const snapshot = await getOperationalSnapshot();
+  if (!snapshot) {
+    return "Nu exista inca o nisa si o zona activa configurata.";
+  }
+
+  const admin = createSupabaseServiceClient();
+  const zoneId = snapshot.zone.id;
+
+  const [leadRows, campaignResult] = await Promise.all([
+    admin
+      .from("leads")
+      .select("qualification_status")
+      .eq("coverage_zone_id", zoneId)
+      .in("qualification_status", ["qualified", "review", "suppressed", "contacted"])
+      .limit(10000),
+    admin
+      .from("outreach_campaigns")
+      .select("id")
+      .eq("coverage_zone_id", zoneId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+  ]);
+
+  if (leadRows.error) throw leadRows.error;
+  if (campaignResult.error) throw campaignResult.error;
+
+  const leadCounts = { qualified: 0, review: 0, suppressed: 0, contacted: 0 };
+  for (const row of leadRows.data ?? []) {
+    const status = (row as { qualification_status: string }).qualification_status;
+    if (status in leadCounts) {
+      leadCounts[status as keyof typeof leadCounts] += 1;
+    }
+  }
+
+  let dueToday = 0;
+  if (campaignResult.data) {
+    const endToday = new Date();
+    endToday.setHours(23, 59, 59, 999);
+    const followups = await admin
+      .from("outreach_followups")
+      .select("id")
+      .eq("campaign_id", (campaignResult.data as { id: string }).id)
+      .eq("status", "scheduled")
+      .lte("due_at", endToday.toISOString())
+      .limit(10000);
+    if (followups.error) throw followups.error;
+    dueToday = followups.data?.length ?? 0;
+  }
+
+  return [
+    "🧰 OUTREACH QUEUE",
+    `Nisa: ${snapshot.niche.slug}`,
+    `Zona: ${snapshot.zone.display_name}`,
+    "",
+    `Qualified: ${leadCounts.qualified}`,
+    `Review: ${leadCounts.review}`,
+    `Suppressed: ${leadCounts.suppressed}`,
+    `Contacted: ${leadCounts.contacted}`,
+    `Follow-up due azi: ${dueToday}`
+  ].join("\n");
+}
+
 export async function notifyAdmins(text: string) {
   const admin = createSupabaseServiceClient();
   const adminsResult = await admin.from("telegram_admins").select("chat_id").eq("is_active", true);
@@ -342,7 +495,7 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
     telegramAdminId: actor.id
   };
 
-  const command = parseCommand(text);
+  const { command, args } = parseCommandInput(text);
   let responseText = "Comanda nu este recunoscuta. Foloseste /help pentru lista completa.";
 
   try { switch (command) {
@@ -351,12 +504,20 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
       responseText = [
         "Botul de outreach este pregatit.",
         "Fluxul este secvential: o singura nisa activa si o singura zona activa.",
-        "Foloseste /status, /coverage, /pause, /resume, /approve-next, /report sau /replies."
+        "Foloseste /status, /stats, /queue, /coverage, /pause, /resume, /approve-next, /report sau /replies."
       ].join("\n");
       break;
     }
     case "/status": {
       responseText = formatStatusText(await getOperationalSnapshot());
+      break;
+    }
+    case "/stats": {
+      responseText = await formatStatsText();
+      break;
+    }
+    case "/queue": {
+      responseText = await formatQueueText();
       break;
     }
     case "/scrape": {
@@ -378,10 +539,15 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
       break;
     }
     case "/send": {
-      const result = await runOutreachScheduler({ forceStart: true });
+      const parsedBatch = args[0] ? Number(args[0]) : null;
+      const maxBatchSizeOverride = parsedBatch && Number.isInteger(parsedBatch) && parsedBatch > 0
+        ? Math.min(parsedBatch, 100)
+        : undefined;
+      const result = await runOutreachScheduler({ forceStart: true, maxBatchSizeOverride });
       responseText = result.ok
         ? [
             "📤 Trimitere manuala executata.",
+            maxBatchSizeOverride ? `Batch cerut: ${maxBatchSizeOverride}` : null,
             result.reason ? `Detalii: ${result.reason}` : null,
             result.sent !== undefined ? `Trimise: ${result.sent}` : null,
             result.failed !== undefined ? `Esuate: ${result.failed}` : null

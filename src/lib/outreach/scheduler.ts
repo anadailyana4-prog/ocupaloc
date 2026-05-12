@@ -444,7 +444,7 @@ async function createBatch(campaignId: string, targetMessageCount: number) {
   return (insert.data as { id: string }).id;
 }
 
-export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRun?: boolean }) {
+export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRun?: boolean; maxBatchSizeOverride?: number }) {
   const snapshot = await getOperationalSnapshot();
   if (!snapshot) {
     return { ok: true, reason: "Nu exista nisa/zona activa." };
@@ -479,7 +479,7 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
     computeBatchCapacity({
       perHourLimit: limits.perHour,
       perDayLimit: limits.perDay,
-      maxBatchSize: limits.maxBatchSize,
+      maxBatchSize: input?.maxBatchSizeOverride ?? limits.maxBatchSize,
       sentLastHour: counts.lastHour,
       sentToday: counts.today
     })
