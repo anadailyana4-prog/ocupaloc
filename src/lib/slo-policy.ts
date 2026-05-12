@@ -66,10 +66,13 @@ function classifyLatency(valueMs: number, t: LatencyThreshold): SloLevel {
   return "critical";
 }
 
+const MIN_BOOKING_SAMPLES = 5;
+
 export function buildSloSnapshotFromRows(rows: SloEventRow[], windowMinutes = 60): SloSnapshot {
   const bookingRows = rows.filter((r) => r.event_type === "booking_created" || r.event_type === "booking_failed");
   const bookingSuccess = bookingRows.filter((r) => r.outcome === "success").length;
-  const bookingSuccessRate = safeRate(bookingSuccess, bookingRows.length);
+  // Require a minimum sample size before penalising; sparse traffic should not block releases.
+  const bookingSuccessRate = bookingRows.length < MIN_BOOKING_SAMPLES ? 100 : safeRate(bookingSuccess, bookingRows.length);
 
   const loginRows = rows.filter((r) => r.event_type === "login_success" || r.event_type === "login_failed");
   const loginSuccess = loginRows.filter((r) => r.outcome === "success").length;
