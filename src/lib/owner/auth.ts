@@ -85,7 +85,8 @@ export async function logOwnerAction(
   action: string,
   resourceType?: string,
   resourceId?: string,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
+  requestContext?: { ipAddress?: string | null; userAgent?: string | null }
 ): Promise<void> {
   try {
     const supabase = await createSupabaseServerClient();
@@ -104,13 +105,33 @@ export async function logOwnerAction(
       resource_type: resourceType || null,
       resource_id: resourceId || null,
       metadata: metadata || null,
-      ip_address: null, // Could extract from headers if needed
-      user_agent: null
+      ip_address: requestContext?.ipAddress || null,
+      user_agent: requestContext?.userAgent || null
     });
   } catch (e) {
     console.error("Error logging owner action:", e);
     // Don't throw, audit logging is non-critical
   }
+}
+
+/**
+ * Verify owner admin access from an API Request (bearer token or cookie session)
+ */
+export async function requireOwnerAdminFromRequest(
+  request: Request
+): Promise<{ admin: OwnerAdminUser; ipAddress: string | null; userAgent: string | null }> {
+  const ipAddress =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    request.headers.get("x-real-ip") ||
+    null;
+  const userAgent = request.headers.get("user-agent") || null;
+
+  const admin = await getOwnerAdminUser();
+  if (!admin || !admin.is_active || !("owner" === admin.role || "admin" === admin.role)) {
+    throw new Error("Forbidden");
+  }
+
+  return { admin, ipAddress, userAgent };
 }
 
 /**

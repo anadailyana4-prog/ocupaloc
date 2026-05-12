@@ -6,7 +6,19 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-export function OwnerLayout({ children }: { children: React.ReactNode }) {
+type BillingStatus = {
+  connected: boolean;
+  mode: "test" | "live" | "unknown";
+  issues: string[];
+};
+
+export function OwnerLayout({
+  children,
+  billingStatus
+}: {
+  children: React.ReactNode;
+  billingStatus?: BillingStatus;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [email, setEmail] = useState<string | null>(null);
@@ -63,8 +75,9 @@ export function OwnerLayout({ children }: { children: React.ReactNode }) {
     { label: "Subscriptions", href: "/owner/subscriptions", icon: "💳" },
     { label: "Trials", href: "/owner/trials", icon: "⏳" },
     { label: "Activity", href: "/owner/activity", icon: "📈" },
+    { label: "Revenue", href: "/owner/revenue", icon: "💰" },
     { label: "Errors", href: "/owner/errors", icon: "⚠️" },
-    { label: "Operations", href: "/owner/operations", icon: "⚙️" },
+    { label: "Operations", href: "/owner/operations", icon: "🔧" },
     { label: "Settings", href: "/owner/settings", icon: "⚙️" }
   ];
 
@@ -100,6 +113,12 @@ export function OwnerLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="mt-8 border-t border-slate-700 pt-4">
+          {billingStatus && (
+            <div className="mb-3 flex items-center gap-1.5 text-xs">
+              <span className={`h-1.5 w-1.5 rounded-full ${billingStatus.connected ? "bg-emerald-400" : "bg-rose-400"}`} />
+              <span className="text-slate-400">Stripe {billingStatus.connected ? billingStatus.mode : "not configured"}</span>
+            </div>
+          )}
           <p className="text-xs text-slate-400 truncate">{email}</p>
           <Button
             onClick={() => void handleLogout()}
