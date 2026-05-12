@@ -16,7 +16,11 @@ export type EnvKey =
   | "REMINDERS_CRON_SECRET"
   | "STRIPE_PRICE_ID"
   | "NEXT_PUBLIC_SITE_URL"
-  | "BILLING_ENABLED";
+  | "BILLING_ENABLED"
+  | "OUTREACH_CRON_SECRET"
+  | "OUTREACH_SIGNING_SECRET"
+  | "APIFY_WEBHOOK_SECRET"
+  | "APIFY_TOKEN";
 
 function readRaw(key: string): string | undefined {
   const value = process.env[key];
