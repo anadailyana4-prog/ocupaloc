@@ -24,6 +24,7 @@ export function OwnerLayout({
   const isLoginRoute = pathname === "/owner/login";
   const [email, setEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
     if (isLoginRoute) {
@@ -62,9 +63,23 @@ export function OwnerLayout({
   }, [router, isLoginRoute]);
 
   async function handleLogout() {
-    const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    router.push("/owner/login");
+    setIsSigningOut(true);
+    try {
+      const res = await fetch("/api/auth/signout?all=true", {
+        method: "POST",
+        credentials: "include"
+      });
+
+      if (!res.ok) {
+        await createSupabaseBrowserClient().auth.signOut();
+      }
+    } catch {
+      await createSupabaseBrowserClient().auth.signOut();
+    } finally {
+      setIsSigningOut(false);
+    }
+
+    window.location.replace("/owner/login");
   }
 
   if (isLoading) {
@@ -134,9 +149,10 @@ export function OwnerLayout({
             onClick={() => void handleLogout()}
             variant="outline"
             size="sm"
+            disabled={isSigningOut}
             className="mt-2 w-full bg-slate-800 border-slate-700 text-slate-100 hover:bg-slate-700"
           >
-            Logout
+            {isSigningOut ? "Signing out..." : "Logout"}
           </Button>
         </div>
       </aside>

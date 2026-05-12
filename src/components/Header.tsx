@@ -18,6 +18,7 @@ export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const isHomepage = pathname === "/";
   const isAuthPage = pathname === "/login" || pathname === "/signup";
   const isDashboard = pathname.startsWith("/dashboard") || pathname.startsWith("/onboarding");
@@ -57,10 +58,23 @@ export function Header() {
   }, [router]);
 
   async function handleSignOut() {
-    const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+    setIsSigningOut(true);
+    try {
+      const res = await fetch("/api/auth/signout?all=true", {
+        method: "POST",
+        credentials: "include"
+      });
+
+      if (!res.ok) {
+        await createSupabaseBrowserClient().auth.signOut();
+      }
+    } catch {
+      await createSupabaseBrowserClient().auth.signOut();
+    } finally {
+      setIsSigningOut(false);
+    }
+
+    window.location.replace("/");
   }
 
   if (isHomepage || isDashboard) {
@@ -94,8 +108,9 @@ export function Header() {
               size="sm"
               className="rounded-full border-amber-200/25 bg-slate-900/50 text-amber-50 hover:bg-slate-800/70"
               onClick={() => void handleSignOut()}
+              disabled={isSigningOut}
             >
-              Ieși din cont
+              {isSigningOut ? "Se iese..." : "Ieși din cont"}
             </Button>
           </div>
         )}
