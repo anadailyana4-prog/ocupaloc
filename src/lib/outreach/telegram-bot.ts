@@ -13,6 +13,8 @@ import {
 import { buildDailyReports } from "@/lib/outreach/reporting-service";
 import { listRecentReplyEvents } from "@/lib/outreach/reply-events";
 import { getDeliverabilityReport } from "@/lib/outreach/deliverability-service";
+import { runQualificationPipeline } from "@/lib/outreach/qualification-service";
+import { runScraperOrchestration } from "@/lib/outreach/scraper-orchestrator";
 import { runOutreachScheduler } from "@/lib/outreach/scheduler";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
@@ -129,6 +131,9 @@ export function buildHelpMessage() {
     OUTREACH_COMMANDS.map((item) => `/${item.command} - ${item.description}`).join("\n"),
     "",
     "Comenzi operationale rapide:",
+    "/scrape - porneste scraping + calificare pe zona activa",
+    "/send - trimite imediat batch-ul curent",
+    "/delivery - arata livrate vs nelivrate",
     "/pause - opreste temporar trimiterea",
     "/resume - reia trimiterea controlata",
     "/approve-next - confirma trecerea la urmatoarea zona sau nisa"
@@ -235,6 +240,76 @@ function formatCoverageText(coverage: Awaited<ReturnType<typeof getCoverageSnaps
   ].join("\n");
 }
 
+async function formatDeliveryStatusText() {
+  const snapshot = await getOperationalSnapshot();
+  if (!snapshot) {
+    return "Nu exista inca o nisa si o zona activa configurata.";
+  }
+
+  const admin = createSupabaseServiceClient();
+  const campaignResult = await admin
+    .from("outreach_campaigns")
+    .select("id, status")
+    .eq("coverage_zone_id", snapshot.zone.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (campaignResult.error) {
+    throw campaignResult.error;
+  }
+
+  if (!campaignResult.data) {
+    return "Nu exista inca o campanie de outreach pentru zona activa.";
+  }
+
+  const messagesResult = await admin
+    .from("outreach_messages")
+    .select("status")
+    .eq("campaign_id", (campaignResult.data as { id: string }).id)
+    .limit(5000);
+
+  if (messagesResult.error) {
+    throw messagesResult.error;
+  }
+
+  const counts = {
+    queued: 0,
+    sent: 0,
+    opened: 0,
+    replied: 0,
+    failed: 0,
+    bounced: 0
+  };
+
+  for (const row of messagesResult.data ?? []) {
+    const status = (row as { status: string }).status;
+    if (status in counts) {
+      counts[status as keyof typeof counts] += 1;
+    }
+  }
+
+  const delivered = counts.sent + counts.opened + counts.replied;
+  const notDelivered = counts.failed + counts.bounced;
+  const total = delivered + notDelivered + counts.queued;
+  const deliveryRate = total > 0 ? ((delivered / total) * 100).toFixed(1) : "0.0";
+
+  return [
+    "📦 STATUS LIVRARE",
+    `Nisa: ${snapshot.niche.slug}`,
+    `Zona: ${snapshot.zone.display_name}`,
+    `Campanie status: ${(campaignResult.data as { status: string }).status}`,
+    "",
+    `Total mesaje: ${total}`,
+    `Livrate/acceptate: ${delivered}`,
+    `Nelivrate: ${notDelivered}`,
+    `In coada: ${counts.queued}`,
+    `Open: ${counts.opened}`,
+    `Reply: ${counts.replied}`,
+    `Delivery rate: ${deliveryRate}%`
+  ].join("\n");
+}
+
 export async function notifyAdmins(text: string) {
   const admin = createSupabaseServiceClient();
   const adminsResult = await admin.from("telegram_admins").select("chat_id").eq("is_active", true);
@@ -282,6 +357,40 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
     }
     case "/status": {
       responseText = formatStatusText(await getOperationalSnapshot());
+      break;
+    }
+    case "/scrape": {
+      const scrapeResult = await runScraperOrchestration();
+      const qualificationResult = await runQualificationPipeline({ zoneId: scrapeResult.zoneId });
+      responseText = [
+        "🔎 Scrape pornit cu succes.",
+        `Localitati procesate: ${scrapeResult.localitiesProcessed}`,
+        `Lead-uri descoperite: ${scrapeResult.discovered}`,
+        `Lead-uri inserate: ${scrapeResult.inserted}`,
+        "",
+        "✅ Calificare finalizata:",
+        `Qualified: ${qualificationResult.qualified}`,
+        `Review: ${qualificationResult.review}`,
+        `Rejected: ${qualificationResult.rejected}`,
+        `Suppressed: ${qualificationResult.suppressed}`,
+        `Contacted: ${qualificationResult.contacted}`
+      ].join("\n");
+      break;
+    }
+    case "/send": {
+      const result = await runOutreachScheduler({ forceStart: true });
+      responseText = result.ok
+        ? [
+            "📤 Trimitere manuala executata.",
+            result.reason ? `Detalii: ${result.reason}` : null,
+            result.sent !== undefined ? `Trimise: ${result.sent}` : null,
+            result.failed !== undefined ? `Esuate: ${result.failed}` : null
+          ].filter(Boolean).join("\n")
+        : "Trimiterea nu a putut fi pornita acum.";
+      break;
+    }
+    case "/delivery": {
+      responseText = await formatDeliveryStatusText();
       break;
     }
     case "/coverage": {

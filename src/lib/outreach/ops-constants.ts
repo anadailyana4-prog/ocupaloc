@@ -21,6 +21,9 @@ export const TELEGRAM_ADMIN_ROLES = ["owner", "admin", "operator"] as const;
 export const OUTREACH_COMMANDS = [
   { command: "start", description: "Porneste interactiunea cu botul" },
   { command: "status", description: "Arata statusul operational curent" },
+  { command: "scrape", description: "Porneste scraping + calificare pentru zona activa" },
+  { command: "send", description: "Porneste trimiterea imediat pentru zona activa" },
+  { command: "delivery", description: "Arata livrate vs nelivrate in campania activa" },
   { command: "coverage", description: "Arata progresul national pe nisa activa" },
   { command: "next", description: "Arata urmatoarea zona planificata" },
   { command: "exhaustion", description: "Explica daca zona este aproape epuizata" },
