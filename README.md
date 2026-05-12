@@ -175,6 +175,59 @@ Fișierul `index.html` din rădăcină rămâne ca referință statică; aplica�
 
 Consultă [RUNBOOK.md](RUNBOOK.md) pentru guid și instrucțiuni urgente (CI/CD verde, re-run E2E, troubleshooting).
 
+## Outreach B2B Romania
+
+Sistemul B2B de outreach pentru business-uri pe baza de programari are acum o fundatie separata peste outreach-ul existent:
+
+- migrari noi: `043_outreach_ops_foundation.sql` si `044_outreach_ops_seed.sql`
+- coverage map national initial pe nise + zone prioritare
+- state machine pentru zone: `planned -> scraping -> qualifying -> ready -> sending -> cooldown -> exhausted`, cu `paused`
+- Telegram bot in romana pe webhook: `/api/telegram/outreach`
+- orchestrare operationala: `/api/jobs/outreach-automation?action=scrape|qualify|send|report|sync-replies|cycle`
+
+Ordinea initiala seed-uita:
+
+- nise: `barber`, `frizerii`, `saloane`, `clinici-estetice`
+- zone: `Bucuresti + Ilfov`, `Cluj-Napoca`, `Timisoara`, `Iasi`, `Constanta`, `Brasov`
+
+Configurare minima suplimentara in `.env.local` / productie:
+
+- `OUTREACH_CRON_SECRET`
+- `OUTREACH_SIGNING_SECRET`
+- `OUTREACH_SEND_LIMIT_PER_HOUR=10`
+- `OUTREACH_SEND_LIMIT_PER_DAY=50`
+- `OUTREACH_FOLLOW_UP_DELAY_DAYS=4`
+- `OUTREACH_BATCH_SIZE=10`
+- `OUTREACH_SENDER_NAME`
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_WEBHOOK_SECRET`
+- `TELEGRAM_OWNER_IDS`
+- optional: `TELEGRAM_ADMIN_IDS`, `TELEGRAM_OPERATOR_IDS`
+
+Pornire operationala recomandata:
+
+1. Rulezi migrarile Supabase (`pnpm dlx supabase db push --linked` sau SQL editor in ordinea fisierelor).
+2. Configurezi webhook-ul Telegram spre `/api/telegram/outreach` si setezi acelasi `TELEGRAM_WEBHOOK_SECRET`.
+3. Verifici `/start`, `/status`, `/coverage` in Telegram.
+4. Rulezi `/approve-next` doar cand vrei trecerea reala la urmatoarea zona sau nisa.
+5. Pentru batch-uri controlate, pornesti cu `/resume`, iar schedulerul ruleaza prin `/api/jobs/outreach-automation?action=send`.
+
+Nota operationala: repo-ul a avut deja constrangeri de cron pe Vercel Hobby. Rutele si serviciile pentru scheduler exista, dar pentru executie orara stabila poate fi necesar un scheduler extern sau alt runtime care suporta cron orar.
+
+Checklist executabil complet: [docs/OUTREACH_DEPLOY_CHECKLIST.md](docs/OUTREACH_DEPLOY_CHECKLIST.md)
+
+Setup rapid Telegram:
+
+1. Setezi `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `TELEGRAM_OWNER_IDS`.
+2. Rulezi `pnpm run outreach:telegram:setup`.
+3. Verifici in Telegram `/start` si `/help`.
+
+Scheduler recomandat pentru setup-ul curent (Vercel Hobby):
+
+- foloseste workflow-ul GitHub Actions din `.github/workflows/outreach-automation.yml`
+- setezi secretele `OUTREACH_AUTOMATION_URL` si `OUTREACH_CRON_SECRET`
+- job-ul ruleaza `action=cycle` la 15 minute si `action=report` zilnic
+
 ## Billing Status
 
 Stripe subscription billing is active and part of the production path. See [RELEASE_RUNBOOK.md](RELEASE_RUNBOOK.md#stripe-integration-status) and [RELEASE_RUNBOOK.md](RELEASE_RUNBOOK.md#billing-validation-checklist-production) for validation and operational steps.

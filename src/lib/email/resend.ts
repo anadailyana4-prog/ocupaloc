@@ -2,6 +2,7 @@ import { env } from "@/lib/config/env";
 
 export async function sendResendEmail(input: {
   to: string[];
+  bcc?: string[];
   subject: string;
   text: string;
   html?: string;
@@ -20,6 +21,7 @@ export async function sendResendEmail(input: {
     body: JSON.stringify({
       from,
       to: input.to,
+      bcc: input.bcc,
       subject: input.subject,
       text: input.text,
       html: input.html

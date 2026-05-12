@@ -1,62 +1,50 @@
 /**
  * POST /api/jobs/import-apify-run
- * Fetches a completed Apify dataset and upserts results into outreach_leads.
+ * Backward-compatible route name, now powered by a free OSM Overpass scraper.
  * Protected by OUTREACH_CRON_SECRET.
  *
- * Body: { runId: string; datasetId: string }
+ * Body: { city?: string; bbox?: [south,west,north,east]; limit?: number; runId?: string }
  */
 import { NextRequest, NextResponse } from "next/server";
 
 import { env } from "@/lib/config/env";
 import { validateCronSecret } from "@/lib/cron-auth";
+import { scrapeFreeLeads } from "@/lib/outreach/free-scraper";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { reportError } from "@/lib/observability";
 
 export const dynamic = "force-dynamic";
 
-interface ApifyPlace {
-  title?: string;
-  phone?: string;
-  website?: string;
-  street?: string;
-  city?: string;
-  categoryName?: string;
-  url?: string;
-  email?: string;
-}
-
 export async function POST(req: NextRequest) {
-  const secret = env.optional("OUTREACH_CRON_SECRET");
+  const secret = env.optional("OUTREACH_CRON_SECRET") ?? env.optional("CRON_SECRET");
   if (!validateCronSecret(req.headers, secret)) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  let body: { runId?: string; datasetId?: string };
+  let body: {
+    runId?: string;
+    city?: string;
+    bbox?: [number, number, number, number];
+    limit?: number;
+  };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { runId, datasetId } = body;
-  if (!datasetId || !runId) {
-    return NextResponse.json({ ok: false, error: "Missing runId or datasetId" }, { status: 400 });
-  }
+  const runId = body.runId?.trim() || `free-${new Date().toISOString()}`;
 
-  const apifyToken = env.optional("APIFY_TOKEN");
-  const tokenParam = apifyToken ? `&token=${encodeURIComponent(apifyToken)}` : "";
-  const url = `https://api.apify.com/v2/datasets/${encodeURIComponent(datasetId)}/items?format=json&clean=true&limit=1000${tokenParam}`;
-
-  let places: ApifyPlace[];
+  let places: Awaited<ReturnType<typeof scrapeFreeLeads>>;
   try {
-    const resp = await fetch(url);
-    if (!resp.ok) {
-      throw new Error(`Apify API returned ${resp.status}`);
-    }
-    places = (await resp.json()) as ApifyPlace[];
+    places = await scrapeFreeLeads({
+      city: body.city,
+      bbox: body.bbox,
+      limit: body.limit
+    });
   } catch (err) {
-    reportError("cron", "apify_fetch_failed", err);
-    return NextResponse.json({ ok: false, error: "Failed to fetch Apify dataset" }, { status: 502 });
+    reportError("cron", "free_scraper_fetch_failed", err);
+    return NextResponse.json({ ok: false, error: "Failed to fetch free dataset" }, { status: 502 });
   }
 
   const admin = createSupabaseServiceClient();
@@ -64,7 +52,7 @@ export async function POST(req: NextRequest) {
   let skipped = 0;
 
   for (const place of places) {
-    const businessName = place.title?.trim();
+    const businessName = place.businessName?.trim();
     if (!businessName) {
       skipped++;
       continue;
@@ -85,8 +73,8 @@ export async function POST(req: NextRequest) {
       website,
       street: place.street?.trim() || null,
       city: place.city?.trim() || null,
-      category: place.categoryName?.trim() || null,
-      google_maps_url: place.url?.trim() || null,
+      category: place.category?.trim() || null,
+      google_maps_url: place.googleMapsUrl?.trim() || null,
       apify_run_id: runId,
       status: "pending" as const
     };
@@ -105,6 +93,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({
     ok: true,
+    source: "overpass-osm",
     total: places.length,
     inserted,
     skipped

@@ -8,13 +8,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { env } from "@/lib/config/env";
 import { validateCronSecret } from "@/lib/cron-auth";
-import { sendResendEmail } from "@/lib/email/resend";
+import { extractFirstValidEmail, normalizeEmailCandidate } from "@/lib/outreach/email-filter";
+import { sendOutreachMailboxEmail } from "@/lib/outreach/mailbox-send";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { reportError } from "@/lib/observability";
 
 export const dynamic = "force-dynamic";
 
 const BATCH_SIZE = 10;
+const OUTREACH_COPY_TO = "contact@ocupaloc.ro";
 
 export async function GET(req: NextRequest) {
   const secret = env.optional("OUTREACH_CRON_SECRET");
@@ -53,7 +55,7 @@ export async function GET(req: NextRequest) {
   let skippedNoEmail = 0;
 
   for (const lead of leads) {
-    let email = lead.email ?? null;
+    let email = normalizeEmailCandidate(lead.email);
     if (!email && lead.website) {
       email = await findEmailFromWebsite(lead.website);
       if (email) {
@@ -63,6 +65,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (!email) {
+      await admin.from("outreach_leads").update({ status: "no_email" }).eq("id", lead.id);
       skippedNoEmail += 1;
       continue;
     }
@@ -79,12 +82,12 @@ export async function GET(req: NextRequest) {
     });
 
     try {
-      await sendResendEmail({
+      await sendOutreachMailboxEmail({
         to: [email],
+        bcc: [OUTREACH_COPY_TO],
         subject,
         text,
-        html,
-        event: "outreach_barber_campaign"
+        html
       });
 
       await admin
@@ -156,12 +159,7 @@ function buildCandidateUrls(website: string): string[] {
 }
 
 function extractEmail(source: string): string | null {
-  const matches = source.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi);
-  if (!matches || matches.length === 0) {
-    return null;
-  }
-
-  return matches[0].toLowerCase();
+  return extractFirstValidEmail(source);
 }
 
 interface EmailVars {

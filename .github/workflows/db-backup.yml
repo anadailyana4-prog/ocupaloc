@@ -34,26 +34,7 @@ jobs:
 
           case "$DB_URL" in
             *pooler.supabase.com:6543*)
-              NORMALIZED_DB_URL=$(DB_URL="$DB_URL" python3 -c 'import os
-from urllib.parse import quote, urlsplit, urlunsplit
-
-db_url = os.environ["DB_URL"]
-parts = urlsplit(db_url)
-
-username = parts.username or ""
-password = parts.password or ""
-
-project_ref = ""
-if username.startswith("postgres."):
-    project_ref = username.split(".", 1)[1]
-
-if project_ref:
-    user_enc = quote("postgres", safe="")
-    pass_enc = quote(password, safe="")
-    netloc = f"{user_enc}:{pass_enc}@db.{project_ref}.supabase.co:5432"
-    print(urlunsplit((parts.scheme, netloc, parts.path or "/postgres", parts.query, parts.fragment)))
-else:
-    print(db_url)')
+              NORMALIZED_DB_URL=$(python3 scripts/normalize-supabase-db-url.py "$DB_URL")
               DB_URL="$NORMALIZED_DB_URL"
               ;;
           esac
