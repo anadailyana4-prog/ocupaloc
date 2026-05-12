@@ -24,6 +24,8 @@ interface EligibleLead {
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const MIN_QUALIFIED_LEADS_TO_SEND = 5;
+const MIN_CONTACTABLE_LEADS_TO_SEND = 3;
 
 function randomIntInclusive(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -448,6 +450,13 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
   const snapshot = await getOperationalSnapshot();
   if (!snapshot) {
     return { ok: true, reason: "Nu exista nisa/zona activa." };
+  }
+
+  if (snapshot.zone.qualified_leads_count < MIN_QUALIFIED_LEADS_TO_SEND || snapshot.zone.remaining_leads_count < MIN_CONTACTABLE_LEADS_TO_SEND) {
+    return {
+      ok: true,
+      reason: `Zona nu are suficiente lead-uri bune pentru trimitere (qualified=${snapshot.zone.qualified_leads_count}, remaining=${snapshot.zone.remaining_leads_count}).`
+    };
   }
 
   const admin = createSupabaseServiceClient();

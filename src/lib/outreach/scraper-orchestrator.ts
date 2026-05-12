@@ -3,6 +3,10 @@ import { scrapeFreeLeads } from "@/lib/outreach/free-scraper";
 import { transitionCoverageZoneStatus } from "@/lib/outreach/coverage-service";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
+function escapePostgrestValue(value: string) {
+  return value.replace(/"/g, '""');
+}
+
 function normalizePhone(raw: string | null | undefined) {
   return raw ? raw.replace(/[^+\d]/g, "") : null;
 }
@@ -15,6 +19,28 @@ function normalizeWebsite(raw: string | null | undefined) {
   } catch {
     return null;
   }
+}
+
+async function notifyTelegramAdmins(text: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return;
+
+  const admin = createSupabaseServiceClient();
+  const adminsResult = await admin.from("telegram_admins").select("chat_id").eq("is_active", true);
+  if (adminsResult.error) {
+    throw adminsResult.error;
+  }
+
+  await Promise.all((adminsResult.data ?? []).map(async (row) => {
+    const chatId = Number((row as { chat_id: number }).chat_id);
+    if (!Number.isFinite(chatId)) return;
+
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text })
+    });
+  }));
 }
 
 function matchesNiche(nicheSlug: string, input: { businessName: string; category: string | null }) {
@@ -138,18 +164,25 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
         continue;
       }
 
-      const dedupeKey = `${candidate.businessName.toLowerCase()}|${normalizePhone(candidate.phone)}|${normalizeWebsite(candidate.website)}`;
+      const normalizedPhone = normalizePhone(candidate.phone);
+      const normalizedWebsite = normalizeWebsite(candidate.website);
+      const normalizedGoogleMapsUrl = candidate.googleMapsUrl?.trim().toLowerCase() ?? null;
+      const dedupeKey = `${candidate.businessName.toLowerCase()}|${normalizedPhone ?? ""}|${normalizedWebsite ?? ""}|${normalizedGoogleMapsUrl ?? ""}`;
       if (seen.has(dedupeKey)) {
         continue;
       }
       seen.add(dedupeKey);
       discovered += 1;
 
+      const nameFilter = `business_name.eq."${escapePostgrestValue(candidate.businessName)}"`;
+      const websiteFilter = normalizedWebsite ? `website.eq."${escapePostgrestValue(normalizedWebsite)}"` : null;
+      const phoneFilter = normalizedPhone ? `primary_phone.eq."${escapePostgrestValue(normalizedPhone)}"` : null;
+      const mapsFilter = normalizedGoogleMapsUrl ? `google_maps_url.eq."${escapePostgrestValue(normalizedGoogleMapsUrl)}"` : null;
       const existingLead = await admin
         .from("leads")
         .select("id")
         .eq("coverage_zone_id", zone.id)
-        .eq("business_name", candidate.businessName)
+        .or([nameFilter, websiteFilter, phoneFilter, mapsFilter].filter(Boolean).join(","))
         .limit(1)
         .maybeSingle();
 
@@ -264,6 +297,17 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
 
   if (update.error) {
     throw update.error;
+  }
+
+  if (inserted < 5) {
+    await notifyTelegramAdmins([
+      "⚠️ Scrape cu yield mic",
+      `Zona: ${zone.id}`,
+      `Nisa: ${nicheSlug}`,
+      `Lead-uri noi descoperite: ${discovered}`,
+      `Lead-uri inserate: ${inserted}`,
+      "Recomandare: re-scrape, extindere pe localitati vecine sau trecere la urmatoarea zona."
+    ].join("\n"));
   }
 
   await transitionCoverageZoneStatus({
