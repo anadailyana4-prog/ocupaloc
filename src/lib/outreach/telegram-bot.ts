@@ -486,15 +486,21 @@ async function formatQueueText() {
   ].join("\n");
 }
 
-export async function notifyAdmins(text: string) {
+export async function notifyAdmins(text: string, options?: { excludeChatIds?: number[] }) {
   const admin = createSupabaseServiceClient();
   const adminsResult = await admin.from("telegram_admins").select("chat_id").eq("is_active", true);
   if (adminsResult.error) throw adminsResult.error;
 
+  const excluded = new Set((options?.excludeChatIds ?? []).filter((id) => Number.isFinite(id)));
+
   for (const row of adminsResult.data ?? []) {
     const chatId = Number((row as { chat_id: number }).chat_id);
-    if (Number.isFinite(chatId)) {
+    if (!Number.isFinite(chatId) || excluded.has(chatId)) continue;
+
+    try {
       await sendTelegramMessage(chatId, text);
+    } catch {
+      // Continue notifying other admins even if one chat fails.
     }
   }
 }
@@ -511,7 +517,15 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
     return { ok: true, ignored: true };
   }
 
-  const actor = await upsertTelegramAdmin(from, chat.id);
+  let actor: { id: string; role: "owner" | "admin" | "operator" };
+  try {
+    actor = await upsertTelegramAdmin(from, chat.id);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Nu te pot autentifica in acest moment.";
+    await sendTelegramMessage(chat.id, message);
+    return { ok: true, unauthorized: true };
+  }
+
   const actorContext = {
     role: actor.role,
     actorLabel: from.username ?? from.first_name ?? String(from.id),
@@ -669,7 +683,7 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
           "",
           reports.efficiency
         ].join("\n");
-        await notifyAdmins(responseText);
+        await notifyAdmins(responseText, { excludeChatIds: [chat.id] });
       } catch (error) {
         responseText = `Eroare la generarea raportului: ${error instanceof Error ? error.message : "unknown"}`;
       }
@@ -693,13 +707,17 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
   } } catch (cmdError) {
     responseText = `Eroare la executia comenzii ${command}: ${cmdError instanceof Error ? cmdError.message : "eroare necunoscuta"}`;
   }
-  await recordOperatorAction({
-    actionType: command.replace(/^\//, "") || "unknown_command",
-    actor: actorContext,
-    targetType: "telegram_command",
-    notes: `Comanda executata: ${command}`,
-    payload: { command }
-  });
+  try {
+    await recordOperatorAction({
+      actionType: command.replace(/^\//, "") || "unknown_command",
+      actor: actorContext,
+      targetType: "telegram_command",
+      notes: `Comanda executata: ${command}`,
+      payload: { command }
+    });
+  } catch {
+    // Bot response should still be delivered even if audit logging fails.
+  }
 
   await sendTelegramMessage(chat.id, responseText);
   return { ok: true };
