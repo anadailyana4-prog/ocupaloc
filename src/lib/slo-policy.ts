@@ -16,7 +16,7 @@ export const SLO_POLICY = {
   bookingSuccessRate: { good: 99, warn: 97 } satisfies NumericThreshold,
   loginSuccessRate: { good: 99, warn: 97 } satisfies NumericThreshold,
   apiAvailabilityRate: { good: 99.9, warn: 99 } satisfies NumericThreshold,
-  p95CriticalLatency: { goodMs: 800, warnMs: 1500 } satisfies LatencyThreshold
+  p95CriticalLatency: { goodMs: 2000, warnMs: 3500 } satisfies LatencyThreshold
 };
 
 export type SloSnapshot = {

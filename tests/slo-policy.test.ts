@@ -23,14 +23,14 @@ test("SLO snapshot marks GO when all indicators are healthy", () => {
 test("SLO snapshot marks NO-GO on severe booking/login/api degradation", () => {
   const rows = [
     // 5 booking rows so the minimum-sample guard is satisfied, all failures
-    { event_type: "booking_failed", outcome: "failure", status_code: 500, latency_ms: 2200 },
-    { event_type: "booking_failed", outcome: "failure", status_code: 500, latency_ms: 2100 },
-    { event_type: "booking_failed", outcome: "failure", status_code: 500, latency_ms: 2300 },
-    { event_type: "booking_failed", outcome: "failure", status_code: 500, latency_ms: 2000 },
-    { event_type: "booking_failed", outcome: "failure", status_code: 500, latency_ms: 2400 },
-    { event_type: "login_failed", outcome: "failure", status_code: 401, latency_ms: 1700 },
-    { event_type: "api_probe", outcome: "failure", status_code: 503, latency_ms: 2000 },
-    { event_type: "api_probe", outcome: "failure", status_code: 502, latency_ms: 1800 }
+    { event_type: "booking_failed", outcome: "failure", status_code: 500, latency_ms: 4500 },
+    { event_type: "booking_failed", outcome: "failure", status_code: 500, latency_ms: 4200 },
+    { event_type: "booking_failed", outcome: "failure", status_code: 500, latency_ms: 4800 },
+    { event_type: "booking_failed", outcome: "failure", status_code: 500, latency_ms: 4000 },
+    { event_type: "booking_failed", outcome: "failure", status_code: 500, latency_ms: 5000 },
+    { event_type: "login_failed", outcome: "failure", status_code: 401, latency_ms: 4200 },
+    { event_type: "api_probe", outcome: "failure", status_code: 503, latency_ms: 4500 },
+    { event_type: "api_probe", outcome: "failure", status_code: 502, latency_ms: 4000 }
   ];
 
   const snapshot = buildSloSnapshotFromRows(rows, 60);
