@@ -370,7 +370,7 @@ export async function resumeActiveOutreach(actor: ActorContext) {
   }
 
   if (snapshot.zone.status !== "paused") {
-    throw new Error("Zona activa nu este pe pauza.");
+    throw new Error(`Zona activa nu este pe pauza (status curent: ${snapshot.zone.status}). Foloseste /pause intai.`);
   }
 
   const nextStatus = getResumeStatus(snapshot.zone.paused_from_status);

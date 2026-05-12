@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     reportError("cron", "telegram_outreach_webhook_failed", error);
-    return NextResponse.json({ ok: false, error: "Telegram webhook failed" }, { status: 500 });
+    // Always return 200 to Telegram — a non-200 causes infinite retries
+    return NextResponse.json({ ok: true, error: "internal error logged" });
   }
 }

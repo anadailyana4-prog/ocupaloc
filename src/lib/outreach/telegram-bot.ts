@@ -270,7 +270,7 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
   const command = parseCommand(text);
   let responseText = "Comanda nu este recunoscuta. Foloseste /help pentru lista completa.";
 
-  switch (command) {
+  try { switch (command) {
     case "/start": {
       await setTelegramCommands();
       responseText = [
@@ -388,6 +388,8 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
     }
     default:
       break;
+  } } catch (cmdError) {
+    responseText = `Eroare la executia comenzii ${command}: ${cmdError instanceof Error ? cmdError.message : "eroare necunoscuta"}`;
   }
   await recordOperatorAction({
     actionType: command.replace(/^\//, "") || "unknown_command",
