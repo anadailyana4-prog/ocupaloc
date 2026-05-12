@@ -19,6 +19,22 @@ interface EligibleLead {
   city: string;
   website: string | null;
   observableSignals: Record<string, boolean | string | number | null>;
+  commercialCategory?: string | null;
+  commercialScore?: number | null;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function randomIntInclusive(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function buildDueAt(baseDays: number, jitterDays: number) {
+  const safeBase = Math.max(1, Math.round(baseDays));
+  const safeJitter = Math.max(0, Math.round(jitterDays));
+  const jitter = safeJitter > 0 ? randomIntInclusive(-safeJitter, safeJitter) : 0;
+  const days = Math.max(1, safeBase + jitter);
+  return new Date(Date.now() + days * DAY_MS).toISOString();
 }
 
 export function computeBatchCapacity(input: {
@@ -53,8 +69,31 @@ function getCampaignLimits() {
     perHour: Number(env.optional("OUTREACH_SEND_LIMIT_PER_HOUR") ?? DEFAULT_OUTREACH_LIMITS.perHour),
     perDay: Number(env.optional("OUTREACH_SEND_LIMIT_PER_DAY") ?? DEFAULT_OUTREACH_LIMITS.perDay),
     followUpDelayDays: Number(env.optional("OUTREACH_FOLLOW_UP_DELAY_DAYS") ?? DEFAULT_OUTREACH_LIMITS.followUpDelayDays),
-    maxBatchSize: Number(env.optional("OUTREACH_BATCH_SIZE") ?? DEFAULT_OUTREACH_LIMITS.maxBatchSize)
+    maxBatchSize: Number(env.optional("OUTREACH_BATCH_SIZE") ?? DEFAULT_OUTREACH_LIMITS.maxBatchSize),
+    followUpStep2DelayDays: Number(env.optional("OUTREACH_FOLLOW_UP_STEP2_DELAY_DAYS") ?? DEFAULT_OUTREACH_LIMITS.followUpStep2DelayDays),
+    followUpStep3DelayDays: Number(env.optional("OUTREACH_FOLLOW_UP_STEP3_DELAY_DAYS") ?? DEFAULT_OUTREACH_LIMITS.followUpStep3DelayDays),
+    followUpJitterDays: Number(env.optional("OUTREACH_FOLLOW_UP_JITTER_DAYS") ?? DEFAULT_OUTREACH_LIMITS.followUpJitterDays),
+    maxDailyBreakupMessages: Number(env.optional("OUTREACH_MAX_DAILY_BREAKUP_MESSAGES") ?? DEFAULT_OUTREACH_LIMITS.maxDailyBreakupMessages),
+    breakUpMinCommercialScore: Number(env.optional("OUTREACH_BREAKUP_MIN_COMMERCIAL_SCORE") ?? DEFAULT_OUTREACH_LIMITS.breakUpMinCommercialScore)
   };
+}
+
+async function countSentBreakupsToday(campaignId: string) {
+  const admin = createSupabaseServiceClient();
+  const startOfDayIso = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
+  const result = await admin
+    .from("outreach_messages")
+    .select("personalization_payload")
+    .eq("campaign_id", campaignId)
+    .eq("status", "sent")
+    .eq("message_kind", "follow_up")
+    .gte("sent_at", startOfDayIso);
+  if (result.error) throw result.error;
+
+  return (result.data ?? []).filter((row) => {
+    const payload = (row as { personalization_payload?: Record<string, unknown> | null }).personalization_payload;
+    return payload && payload.stepNumber === 3;
+  }).length;
 }
 
 async function ensureCampaignForZone(input: { nicheId: string; nicheSlug: string; zoneId: string; zoneName: string }) {
@@ -166,7 +205,9 @@ async function getEligibleInitialLeads(zoneId: string, campaignId: string, limit
       businessName: lead.business_name,
       city: "zona activa",
       website: lead.website,
-      observableSignals: lead.observable_signals ?? {}
+      observableSignals: lead.observable_signals ?? {},
+      commercialCategory: null,
+      commercialScore: null
     });
     if (eligible.length >= limit) break;
   }
@@ -315,7 +356,7 @@ async function getFollowUpLead(leadId: string) {
   const admin = createSupabaseServiceClient();
   const leadResult = await admin
     .from("leads")
-    .select("id, business_name, website, observable_signals, qualification_status")
+    .select("id, business_name, website, observable_signals, qualification_status, commercial_category, commercial_score")
     .eq("id", leadId)
     .single();
   if (leadResult.error) throw leadResult.error;
@@ -356,6 +397,8 @@ async function getFollowUpLead(leadId: string) {
     website: string | null;
     observable_signals: Record<string, boolean | string | number | null>;
     qualification_status: string;
+    commercial_category: string | null;
+    commercial_score: number | null;
   };
   const contact = contactResult.data as { id: string; normalized_value: string };
 
@@ -376,7 +419,9 @@ async function getFollowUpLead(leadId: string) {
     businessName: lead.business_name,
     city: "zona activa",
     website: lead.website,
-    observableSignals: lead.observable_signals ?? {}
+    observableSignals: lead.observable_signals ?? {},
+    commercialCategory: lead.commercial_category,
+    commercialScore: lead.commercial_score
   } satisfies EligibleLead;
 }
 
@@ -473,6 +518,7 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
   const optOutBase = `${siteUrl}/api/leads/unsubscribe?lead=`;
 
   const initialTargets = initialLeads.slice(0, Math.max(0, capacity - followUps.length));
+  let sentBreakupsToday = await countSentBreakupsToday(campaign.id);
 
   for (const row of followUps.slice(0, capacity)) {
     const followUp = row as { id: string; lead_id: string; initial_message_id: string; step_number: number };
@@ -501,6 +547,19 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
     const stepSubject = stepNumber === 3 ? email.breakUpSubject : stepNumber === 2 ? email.followUp2Subject : email.followUpSubject;
     const stepText    = stepNumber === 3 ? email.breakUpText   : stepNumber === 2 ? email.followUp2Text   : email.followUpText;
     const stepHtml    = stepNumber === 3 ? email.breakUpHtml   : stepNumber === 2 ? email.followUp2Html   : email.followUpHtml;
+
+    // Deliverability guardrails: cap daily break-up volume and only send to high-intent leads
+    if (stepNumber === 3) {
+      const score = target.commercialScore ?? 0;
+      if (score < limits.breakUpMinCommercialScore) {
+        await admin.from("outreach_followups").update({ status: "skipped", cancellation_reason: "Break-up evitat pentru scor comercial scazut" }).eq("id", followUp.id);
+        continue;
+      }
+      if (sentBreakupsToday >= limits.maxDailyBreakupMessages) {
+        await admin.from("outreach_followups").update({ due_at: buildDueAt(1, limits.followUpJitterDays), updated_at: new Date().toISOString() }).eq("id", followUp.id);
+        continue;
+      }
+    }
 
     previews.push({ to: target.email, subject: stepSubject });
     if (input?.dryRun) {
@@ -545,6 +604,10 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
         .update({ status: "sent", provider_message_id: sendResult.messageId, sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("id", messageId);
       await admin
+        .from("leads")
+        .update({ last_contacted_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("id", target.leadId);
+      await admin
         .from("outreach_followups")
         .update({ status: "sent", sent_message_id: messageId, updated_at: new Date().toISOString() })
         .eq("id", followUp.id);
@@ -552,18 +615,19 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
       // Schedule next step (step 2 at +7d, step 3 at +7d after step 2)
       if (stepNumber < 3) {
         const nextStep = stepNumber + 1;
-        const delayDays = nextStep === 2 ? 7 : 7;
+        const delayDays = nextStep === 2 ? limits.followUpStep2DelayDays : limits.followUpStep3DelayDays;
         await admin.from("outreach_followups").upsert({
           campaign_id: campaign.id,
           lead_id: target.leadId,
           initial_message_id: followUp.initial_message_id,
           step_number: nextStep,
           status: "scheduled",
-          due_at: new Date(Date.now() + delayDays * 24 * 60 * 60 * 1000).toISOString()
+          due_at: buildDueAt(delayDays, limits.followUpJitterDays)
         }, { onConflict: "initial_message_id,step_number", ignoreDuplicates: true });
       } else {
         // Step 3 (break-up) sent — mark lead as reactivation eligible
         await admin.from("leads").update({ reactivation_eligible: true, updated_at: new Date().toISOString() }).eq("id", target.leadId);
+        sentBreakupsToday += 1;
       }
 
       sent += 1;
@@ -649,7 +713,7 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
         initial_message_id: messageId,
         step_number: 1,
         status: "scheduled",
-        due_at: new Date(Date.now() + limits.followUpDelayDays * 24 * 60 * 60 * 1000).toISOString()
+        due_at: buildDueAt(limits.followUpDelayDays, limits.followUpJitterDays)
       });
       sent += 1;
     } catch (error) {

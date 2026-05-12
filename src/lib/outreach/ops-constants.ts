@@ -37,7 +37,12 @@ export const DEFAULT_OUTREACH_LIMITS = {
   perHour: 10,
   perDay: 50,
   followUpDelayDays: 4,
-  maxBatchSize: 10
+  maxBatchSize: 10,
+  followUpStep2DelayDays: 7,
+  followUpStep3DelayDays: 9,
+  followUpJitterDays: 1,
+  maxDailyBreakupMessages: 6,
+  breakUpMinCommercialScore: 75
 } as const;
 
 export type OutreachZoneStatus = (typeof OUTREACH_ZONE_STATUSES)[number];
