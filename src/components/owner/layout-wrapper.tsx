@@ -21,10 +21,16 @@ export function OwnerLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const isLoginRoute = pathname === "/owner/login";
   const [email, setEmail] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    if (isLoginRoute) {
+      setIsLoading(false);
+      return;
+    }
+
     const checkAuth = async () => {
       const supabase = createSupabaseBrowserClient();
       const {
@@ -53,7 +59,7 @@ export function OwnerLayout({
     };
 
     checkAuth();
-  }, [router]);
+  }, [router, isLoginRoute]);
 
   async function handleLogout() {
     const supabase = createSupabaseBrowserClient();
@@ -67,6 +73,10 @@ export function OwnerLayout({
         <div className="text-center text-slate-300">Loading...</div>
       </div>
     );
+  }
+
+  if (isLoginRoute) {
+    return <>{children}</>;
   }
 
   const navItems = [
