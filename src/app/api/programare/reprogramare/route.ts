@@ -7,8 +7,6 @@ import { reportError } from "@/lib/observability";
 import { getRequestId, recordOperationalEvent } from "@/lib/ops-events";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
-const TZ = "Europe/Bucharest";
-
 const requestBodySchema = z.object({
   booking: z.string().uuid(),
   action: z.literal("reschedule"),

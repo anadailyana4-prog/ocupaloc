@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
     // Fallback: if RPC doesn't exist, try direct query
     let deletedCount = 0;
     if (!data) {
-      const { data: deleteResult, error: deleteError } = await admin
+      const { error: deleteError } = await admin
         .from("idempotencykeys")
         .delete()
         .lt("expiresat", new Date().toISOString());
