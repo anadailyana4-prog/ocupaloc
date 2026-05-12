@@ -6,6 +6,60 @@ import { env } from "@/lib/config/env";
 import { normalizeEmailCandidate } from "@/lib/outreach/email-filter";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
+const POSITIVE_REPLY_KEYWORDS = [
+  "interesat", "interesata", "da, ", "da.", "da!", "vreau", "cum functioneaza",
+  "spune-mi", "spune mi", "detalii", "cand", "când", "cum putem", "sa discutam",
+  "să discutăm", "hai sa", "hai să", "te sun", "suna-ma", "sunati", "sunați",
+  "ma intereseaza", "mă interesează", "mai multe informatii", "mai multe informații"
+];
+
+function isPositiveReply(text: string | null | undefined): boolean {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  return POSITIVE_REPLY_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+async function notifyTelegramPositiveReply(input: {
+  businessName: string | null;
+  fromEmail: string;
+  leadId: string | null;
+  snippet: string;
+}): Promise<void> {
+  const token = env.optional("TELEGRAM_BOT_TOKEN");
+  if (!token) return;
+
+  const admin = createSupabaseServiceClient();
+  const adminsResult = await admin
+    .from("telegram_admins")
+    .select("chat_id")
+    .eq("is_active", true)
+    .limit(5);
+  if (adminsResult.error || !adminsResult.data?.length) return;
+
+  const name = input.businessName ?? input.fromEmail;
+  const snippet = input.snippet.slice(0, 200).replace(/\n+/g, " ").trim();
+  const message =
+    `🔔 *Reply pozitiv primit!*\n\n` +
+    `🏢 *${name}*\n` +
+    `📧 ${input.fromEmail}\n\n` +
+    `💬 _"${snippet}"_\n\n` +
+    `👉 Raspunde acum cat e cald!`;
+
+  await Promise.allSettled(
+    adminsResult.data.map((row) =>
+      fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          chat_id: (row as { chat_id: number }).chat_id,
+          text: message,
+          parse_mode: "Markdown"
+        })
+      })
+    )
+  );
+}
+
 export interface ReplySyncResult {
   imported: number;
   linked: number;
@@ -119,6 +173,19 @@ export async function syncOutreachReplies(maxMessages = 100): Promise<ReplySyncR
       if (leadLookup.data?.id) {
         await admin.from("outreach_leads").update({ status: "replied" }).eq("id", leadLookup.data.id);
         result.linked += 1;
+      }
+
+      // Fire-and-forget Telegram alert for positive (non-auto) replies
+      if (!autoReply && isPositiveReply(parsed.text)) {
+        const leadNameResult = leadLookup.data?.id
+          ? await admin.from("outreach_leads").select("business_name").eq("id", leadLookup.data.id).maybeSingle()
+          : null;
+        notifyTelegramPositiveReply({
+          businessName: (leadNameResult?.data as { business_name: string } | null)?.business_name ?? null,
+          fromEmail,
+          leadId: leadLookup.data?.id ?? null,
+          snippet: parsed.text ?? ""
+        }).catch(() => undefined); // fire-and-forget, never block import
       }
     }
   } finally {

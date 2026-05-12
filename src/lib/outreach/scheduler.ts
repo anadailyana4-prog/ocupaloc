@@ -178,7 +178,7 @@ async function getDueFollowUps(campaignId: string, limit: number) {
   const admin = createSupabaseServiceClient();
   const result = await admin
     .from("outreach_followups")
-    .select("id, lead_id, initial_message_id, due_at")
+    .select("id, lead_id, initial_message_id, due_at, step_number")
     .eq("campaign_id", campaignId)
     .eq("status", "scheduled")
     .lte("due_at", new Date().toISOString())
@@ -187,6 +187,128 @@ async function getDueFollowUps(campaignId: string, limit: number) {
 
   if (result.error) throw result.error;
   return result.data ?? [];
+}
+
+/**
+ * Re-activates leads that completed the full 3-step sequence without a reply,
+ * and whose last contact was >= 45 days ago.
+ */
+export async function runReactivationBatch(input?: { dryRun?: boolean }) {
+  const admin = createSupabaseServiceClient();
+  const cutoff = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString();
+
+  // Find reactivation-eligible leads not already replied/suppressed
+  const leadsResult = await admin
+    .from("leads")
+    .select("id, business_name, website, observable_signals, coverage_zone_id")
+    .eq("reactivation_eligible", true)
+    .lte("last_contacted_at", cutoff)
+    .is("last_reactivation_at", null)
+    .limit(20);
+  if (leadsResult.error) throw leadsResult.error;
+  if (!leadsResult.data?.length) return { reactivated: 0 };
+
+  const leadIds = leadsResult.data.map((r) => (r as { id: string }).id);
+
+  // Skip leads with any reply events
+  const repliesResult = await admin
+    .from("reply_events")
+    .select("lead_id")
+    .in("lead_id", leadIds)
+    .in("event_type", ["reply", "positive_reply", "booking_intent", "opt_out"]);
+  if (repliesResult.error) throw repliesResult.error;
+  const repliedIds = new Set((repliesResult.data ?? []).map((r) => (r as { lead_id: string }).lead_id));
+
+  const suppressionResult = await admin.from("suppression_list").select("normalized_value").eq("channel", "email");
+  if (suppressionResult.error) throw suppressionResult.error;
+  const suppressedEmails = new Set((suppressionResult.data ?? []).map((r) => (r as { normalized_value: string }).normalized_value));
+
+  const snapshot = await getOperationalSnapshot();
+  if (!snapshot) return { reactivated: 0 };
+
+  const campaign = await ensureCampaignForZone({
+    nicheId: snapshot.niche.id,
+    nicheSlug: snapshot.niche.slug,
+    zoneId: snapshot.zone.id,
+    zoneName: snapshot.zone.display_name
+  });
+
+  const senderName = env.optional("OUTREACH_SENDER_NAME") ?? "Echipa OcupaLoc.ro";
+  const siteUrl = env.optional("NEXT_PUBLIC_SITE_URL") ?? "https://ocupaloc.ro";
+  const optOutBase = `${siteUrl}/api/leads/unsubscribe?lead=`;
+  let reactivated = 0;
+
+  for (const row of leadsResult.data) {
+    const lead = row as { id: string; business_name: string; website: string | null; observable_signals: Record<string, boolean | string | number | null>; coverage_zone_id: string };
+    if (repliedIds.has(lead.id)) continue;
+
+    const contactResult = await admin
+      .from("lead_contacts")
+      .select("id, normalized_value")
+      .eq("lead_id", lead.id)
+      .eq("channel", "email")
+      .eq("is_valid", true)
+      .order("is_primary", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (contactResult.error || !contactResult.data) continue;
+    const contact = contactResult.data as { id: string; normalized_value: string };
+    if (suppressedEmails.has(contact.normalized_value)) continue;
+
+    const email = generatePersonalizedOutreach({
+      nicheSlug: snapshot.niche.slug,
+      businessName: lead.business_name,
+      city: "zona activa",
+      website: lead.website ?? undefined,
+      observableSignals: {
+        bookingLinkDetected: Boolean(lead.observable_signals?.bookingLinkDetected),
+        instagramDetected: Boolean(lead.observable_signals?.instagramDetected),
+        hasServiceMenu: Boolean(lead.observable_signals?.hasServiceMenu)
+      },
+      optOutUrl: `${optOutBase}${lead.id}`,
+      senderName
+    });
+
+    if (input?.dryRun) {
+      reactivated += 1;
+      continue;
+    }
+
+    const msgInsert = await admin
+      .from("outreach_messages")
+      .insert({
+        campaign_id: campaign.id,
+        lead_id: lead.id,
+        lead_contact_id: contact.id,
+        message_kind: "reactivation",
+        status: "queued",
+        subject: email.reactivationSubject,
+        body_text: email.reactivationText,
+        body_html: email.reactivationHtml,
+        personalization_payload: { businessName: lead.business_name, reactivation: true },
+        opt_out_text: `Raspunde cu stop sau foloseste ${optOutBase}${lead.id}`
+      })
+      .select("id")
+      .single();
+    if (msgInsert.error) continue;
+    const msgId = (msgInsert.data as { id: string }).id;
+
+    try {
+      const sendResult = await sendOutreachMailboxEmail({
+        to: [contact.normalized_value],
+        subject: email.reactivationSubject,
+        text: email.reactivationText,
+        html: email.reactivationHtml
+      });
+      await admin.from("outreach_messages").update({ status: "sent", provider_message_id: sendResult.messageId, sent_at: new Date().toISOString() }).eq("id", msgId);
+      await admin.from("leads").update({ last_reactivation_at: new Date().toISOString(), last_contacted_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", lead.id);
+      reactivated += 1;
+    } catch {
+      await admin.from("outreach_messages").update({ status: "failed", failed_at: new Date().toISOString() }).eq("id", msgId);
+    }
+  }
+
+  return { reactivated };
 }
 
 async function getFollowUpLead(leadId: string) {
@@ -353,7 +475,8 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
   const initialTargets = initialLeads.slice(0, Math.max(0, capacity - followUps.length));
 
   for (const row of followUps.slice(0, capacity)) {
-    const followUp = row as { id: string; lead_id: string; initial_message_id: string };
+    const followUp = row as { id: string; lead_id: string; initial_message_id: string; step_number: number };
+    const stepNumber = followUp.step_number ?? 1;
     const target = await getFollowUpLead(followUp.lead_id);
     if (!target) {
       await admin.from("outreach_followups").update({ status: "skipped", cancellation_reason: "Nu mai exista email valid" }).eq("id", followUp.id);
@@ -374,7 +497,12 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
       senderName
     });
 
-    previews.push({ to: target.email, subject: email.followUpSubject });
+    // Pick the right subject/body for this step
+    const stepSubject = stepNumber === 3 ? email.breakUpSubject : stepNumber === 2 ? email.followUp2Subject : email.followUpSubject;
+    const stepText    = stepNumber === 3 ? email.breakUpText   : stepNumber === 2 ? email.followUp2Text   : email.followUpText;
+    const stepHtml    = stepNumber === 3 ? email.breakUpHtml   : stepNumber === 2 ? email.followUp2Html   : email.followUpHtml;
+
+    previews.push({ to: target.email, subject: stepSubject });
     if (input?.dryRun) {
       continue;
     }
@@ -388,14 +516,15 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
         lead_contact_id: target.contactId,
         message_kind: "follow_up",
         status: "queued",
-        subject: email.followUpSubject,
-        body_text: email.followUpText,
-        body_html: email.followUpHtml,
+        subject: stepSubject,
+        body_text: stepText,
+        body_html: stepHtml,
         personalization_payload: {
           businessName: target.businessName,
           city: target.city,
           website: target.website,
-          followUpFor: followUp.initial_message_id
+          followUpFor: followUp.initial_message_id,
+          stepNumber
         },
         opt_out_text: `Raspunde cu stop sau foloseste ${optOutBase}${target.leadId}`
       })
@@ -407,23 +536,36 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
     try {
       const sendResult = await sendOutreachMailboxEmail({
         to: [target.email],
-        subject: email.followUpSubject,
-        text: email.followUpText,
-        html: email.followUpHtml
+        subject: stepSubject,
+        text: stepText,
+        html: stepHtml
       });
       await admin
         .from("outreach_messages")
-        .update({
-          status: "sent",
-          provider_message_id: sendResult.messageId,
-          sent_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .update({ status: "sent", provider_message_id: sendResult.messageId, sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq("id", messageId);
       await admin
         .from("outreach_followups")
         .update({ status: "sent", sent_message_id: messageId, updated_at: new Date().toISOString() })
         .eq("id", followUp.id);
+
+      // Schedule next step (step 2 at +7d, step 3 at +7d after step 2)
+      if (stepNumber < 3) {
+        const nextStep = stepNumber + 1;
+        const delayDays = nextStep === 2 ? 7 : 7;
+        await admin.from("outreach_followups").upsert({
+          campaign_id: campaign.id,
+          lead_id: target.leadId,
+          initial_message_id: followUp.initial_message_id,
+          step_number: nextStep,
+          status: "scheduled",
+          due_at: new Date(Date.now() + delayDays * 24 * 60 * 60 * 1000).toISOString()
+        }, { onConflict: "initial_message_id,step_number", ignoreDuplicates: true });
+      } else {
+        // Step 3 (break-up) sent — mark lead as reactivation eligible
+        await admin.from("leads").update({ reactivation_eligible: true, updated_at: new Date().toISOString() }).eq("id", target.leadId);
+      }
+
       sent += 1;
     } catch (error) {
       failed += 1;
@@ -505,6 +647,7 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
         campaign_id: campaign.id,
         lead_id: target.leadId,
         initial_message_id: messageId,
+        step_number: 1,
         status: "scheduled",
         due_at: new Date(Date.now() + limits.followUpDelayDays * 24 * 60 * 60 * 1000).toISOString()
       });

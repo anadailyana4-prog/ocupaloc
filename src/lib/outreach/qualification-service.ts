@@ -1,6 +1,7 @@
 import { normalizeEmailCandidate } from "@/lib/outreach/email-filter";
 import { transitionCoverageZoneStatus } from "@/lib/outreach/coverage-service";
 import { computeCommercialScore } from "@/lib/outreach/commercial-scoring";
+import { detectBookingSystemFromUrl } from "@/lib/outreach/free-scraper";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 function normalizeWebsite(raw: string | null | undefined) {
@@ -143,6 +144,23 @@ export async function runQualificationPipeline(input?: { zoneId?: string }) {
       (leadWebsite ? suppressedWebsites.has(leadWebsite) : false);
     const alreadySent = (messageMap.get(lead.id) ?? []).some((status) => ["sent", "replied", "bounced"].includes(status));
 
+    const signals = (lead.observable_signals ?? {}) as Record<string, unknown>;
+    if (lead.website && !("has_booking_system" in signals)) {
+      signals["has_booking_system"] = detectBookingSystemFromUrl(lead.website);
+    }
+    const commercial = computeCommercialScore({
+      hasEmail,
+      hasPhone,
+      hasWebsite,
+      reviewCount: typeof signals["review_count"] === "number" ? (signals["review_count"] as number) : null,
+      reviewScore: typeof signals["review_score"] === "number" ? (signals["review_score"] as number) : null,
+      category: lead.category,
+      businessName: lead.business_name,
+      locality: null,
+      observableSignals: signals
+    });
+
+    // Determine qualification status
     let nextStatus = "review";
     let reason = "Lead-ul necesita verificare manuala.";
     const score = scoreLead({ hasEmail, hasWebsite, hasPhone, category: lead.category });
@@ -173,18 +191,13 @@ export async function runQualificationPipeline(input?: { zoneId?: string }) {
       rejected += 1;
     }
 
-    const signals = (lead.observable_signals ?? {}) as Record<string, unknown>;
-    const commercial = computeCommercialScore({
-      hasEmail,
-      hasPhone,
-      hasWebsite,
-      reviewCount: typeof signals["review_count"] === "number" ? signals["review_count"] as number : null,
-      reviewScore: typeof signals["review_score"] === "number" ? signals["review_score"] as number : null,
-      category: lead.category,
-      businessName: lead.business_name,
-      locality: null,
-      observableSignals: signals
-    });
+    // Auto-promote: easy_close leads with commercial score >=75 skip manual review
+    if (nextStatus === "review" && commercial.category === "easy_close" && commercial.score >= 75 && hasEmail) {
+      nextStatus = "qualified";
+      reason = "Auto-aprobat: easy_close cu scor comercial ridicat (>=75) si email valid.";
+      qualified += 1;
+      review = Math.max(0, review - 1);
+    }
 
     const update = await admin
       .from("leads")

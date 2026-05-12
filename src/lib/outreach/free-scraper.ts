@@ -20,6 +20,30 @@ export interface FreeLeadCandidate {
   city: string | null;
   category: string | null;
   googleMapsUrl: string | null;
+  hasBookingSystem: boolean;
+}
+
+/**
+ * Known booking/scheduling platform domains.
+ * If a business website IS one of these, they already have a booking system.
+ */
+export const BOOKING_PLATFORM_DOMAINS = [
+  "fresha.com", "treatwell.com", "booksy.com", "calendly.com",
+  "simplybook.me", "setmore.com", "acuityscheduling.com",
+  "vagaro.com", "mindbodyonline.com", "genbook.com",
+  "schedulicity.com", "timely.com", "youcanbook.me",
+  "clinicminds.com", "mediportal.ro", "programari.ro",
+  "doctorlink.ro", "robomed.ro", "docbook.ro", "doctoranytime.ro"
+];
+
+/**
+ * Returns true if the website URL belongs to a known booking platform,
+ * meaning the business already uses a competitor/equivalent service.
+ */
+export function detectBookingSystemFromUrl(website: string | null): boolean {
+  if (!website) return false;
+  const lower = website.toLowerCase();
+  return BOOKING_PLATFORM_DOMAINS.some((domain) => lower.includes(domain));
 }
 
 const OVERPASS_ENDPOINT = "https://overpass-api.de/api/interpreter";
@@ -80,15 +104,17 @@ function toCandidate(element: OverpassElement): FreeLeadCandidate | null {
   const lat = element.lat ?? element.center?.lat;
   const lon = element.lon ?? element.center?.lon;
 
+  const website = normalizeWebsite(tags.website ?? tags["contact:website"]);
   return {
     businessName,
     phone: normalizePhone(tags.phone ?? tags["contact:phone"]),
-    website: normalizeWebsite(tags.website ?? tags["contact:website"]),
+    website,
     email: normalizeEmail(tags.email ?? tags["contact:email"]),
     street: readStreet(tags),
     city: tags["addr:city"]?.trim() ?? null,
-    category: tags.shop?.trim() ?? tags.amenity?.trim() ?? null,
-    googleMapsUrl: lat && lon ? `https://maps.google.com/?q=${lat},${lon}` : null
+    category: tags.shop?.trim() ?? tags.amenity?.trim() ?? tags.healthcare?.trim() ?? tags.leisure?.trim() ?? null,
+    googleMapsUrl: lat && lon ? `https://maps.google.com/?q=${lat},${lon}` : null,
+    hasBookingSystem: detectBookingSystemFromUrl(website)
   };
 }
 
@@ -142,8 +168,23 @@ export async function scrapeFreeLeads(input: {
   city?: string;
   bbox?: [number, number, number, number];
   limit?: number;
+  /** Filter to specific OSM tags, or use default expanded set */
+  tags?: string[];
 }): Promise<FreeLeadCandidate[]> {
-  const tags = ["shop=hairdresser", "shop=barber", "shop=beauty", "amenity=beauty_salon"];
+  const tags = input.tags ?? [
+    // Beauty & hair
+    "shop=hairdresser", "shop=barber", "shop=beauty", "amenity=beauty_salon",
+    "shop=cosmetics", "shop=tattoo",
+    // Health & wellness
+    "amenity=dentist", "amenity=physiotherapist",
+    "amenity=massage", "amenity=spa", "leisure=spa",
+    "amenity=psychologist", "healthcare=psychotherapist",
+    "healthcare=nutritionist", "healthcare=physiotherapist",
+    // Fitness & sport
+    "leisure=fitness_centre", "leisure=yoga", "leisure=dance",
+    // Opticians
+    "shop=optician"
+  ];
 
   const fallbackCity = input.city ? DEFAULT_CITY_BBOX[cityKey(input.city)] : undefined;
   const bbox = input.bbox ?? fallbackCity ?? DEFAULT_CITY_BBOX.bucuresti;
