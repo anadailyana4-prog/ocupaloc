@@ -131,6 +131,7 @@ export function buildHelpMessage() {
     OUTREACH_COMMANDS.map((item) => `/${item.command} - ${item.description}`).join("\n"),
     "",
     "Comenzi operationale rapide:",
+    "/health - arata webhook + deliverability + starea zonei",
     "/scrape - porneste scraping + calificare pe zona activa",
     "/send - trimite imediat batch-ul curent",
     "/delivery - arata livrate vs nelivrate",
@@ -186,11 +187,6 @@ async function upsertTelegramAdmin(user: TelegramUser, chatId: number) {
   }
 
   return result.data as { id: string; role: "owner" | "admin" | "operator" };
-}
-
-function parseCommand(text: string) {
-  const [command] = text.trim().split(/\s+/);
-  return command.toLowerCase().replace(/_/g, "-");
 }
 
 function parseCommandInput(text: string) {
@@ -315,6 +311,33 @@ async function formatDeliveryStatusText() {
     `Reply: ${counts.replied}`,
     `Delivery rate: ${deliveryRate}%`
   ].join("\n");
+}
+
+async function formatHealthText() {
+  const [snapshot, deliverability, webhookResponse] = await Promise.all([
+    getOperationalSnapshot(),
+    getDeliverabilityReport(),
+    fetch(`${getTelegramApiBase()}/getWebhookInfo`).then((response) => response.json() as Promise<{ ok: boolean; result?: { pending_update_count?: number; last_error_message?: string | null } }>)
+  ]);
+
+  const webhook = webhookResponse.result ?? {};
+  const pendingUpdates = webhook.pending_update_count ?? 0;
+  const lastWebhookError = webhook.last_error_message ?? null;
+
+  const lines = [
+    "🩺 HEALTH CHECK",
+    snapshot ? `Zona: ${snapshot.zone.display_name} (${snapshot.zone.status})` : "Zona: nu exista inca una activa",
+    `Pending updates: ${pendingUpdates}`,
+    `Webhook last error: ${lastWebhookError ?? "none"}`,
+    "",
+    deliverability.formattedText
+  ];
+
+  if (pendingUpdates > 0 || lastWebhookError) {
+    lines.push("", "⚠️ Recomandare: verifica webhook-ul si mesajele recente din Telegram.");
+  }
+
+  return lines.join("\n");
 }
 
 async function formatStatsText() {
@@ -504,12 +527,16 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
       responseText = [
         "Botul de outreach este pregatit.",
         "Fluxul este secvential: o singura nisa activa si o singura zona activa.",
-        "Foloseste /status, /stats, /queue, /coverage, /pause, /resume, /approve-next, /report sau /replies."
+        "Foloseste /status, /health, /stats, /queue, /coverage, /pause, /resume, /approve-next, /report sau /replies."
       ].join("\n");
       break;
     }
     case "/status": {
       responseText = formatStatusText(await getOperationalSnapshot());
+      break;
+    }
+    case "/health": {
+      responseText = await formatHealthText();
       break;
     }
     case "/stats": {

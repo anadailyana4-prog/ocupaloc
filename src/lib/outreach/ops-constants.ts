@@ -23,6 +23,7 @@ export const OUTREACH_COMMANDS = [
   { command: "status", description: "Arata statusul operational curent" },
   { command: "stats", description: "Arata KPI azi + ultimele 7 zile" },
   { command: "queue", description: "Arata coada de lucru (lead-uri + follow-up due)" },
+  { command: "health", description: "Arata starea webhook-ului si a deliverability-ului" },
   { command: "scrape", description: "Porneste scraping + calificare pentru zona activa" },
   { command: "send", description: "Porneste trimiterea imediat (optional: /send N)" },
   { command: "delivery", description: "Arata livrate vs nelivrate in campania activa" },
@@ -48,6 +49,14 @@ export const DEFAULT_OUTREACH_LIMITS = {
   followUpJitterDays: 1,
   maxDailyBreakupMessages: 6,
   breakUpMinCommercialScore: 75
+} as const;
+
+export const DEFAULT_OUTREACH_HEALTH_THRESHOLDS = {
+  minQualifiedLeadsToSend: 5,
+  minContactableLeadsToSend: 3,
+  lowYieldMinInsertedLeads: 5,
+  bounceAlertRate: 0.05,
+  bounceCriticalRate: 0.1
 } as const;
 
 export type OutreachZoneStatus = (typeof OUTREACH_ZONE_STATUSES)[number];

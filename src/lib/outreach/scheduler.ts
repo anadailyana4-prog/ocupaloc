@@ -1,8 +1,9 @@
 import { env } from "@/lib/config/env";
 import { evaluateZoneExhaustion } from "@/lib/outreach/exhaustion";
-import { DEFAULT_OUTREACH_LIMITS } from "@/lib/outreach/ops-constants";
+import { DEFAULT_OUTREACH_HEALTH_THRESHOLDS, DEFAULT_OUTREACH_LIMITS } from "@/lib/outreach/ops-constants";
 import { generatePersonalizedOutreach } from "@/lib/outreach/personalization-engine";
 import { listRecentReplyEvents } from "@/lib/outreach/reply-events";
+import { getBounceMetrics } from "@/lib/outreach/deliverability-service";
 import { sendOutreachMailboxEmail } from "@/lib/outreach/mailbox-send";
 import {
   getOperationalSnapshot,
@@ -24,8 +25,6 @@ interface EligibleLead {
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const MIN_QUALIFIED_LEADS_TO_SEND = 5;
-const MIN_CONTACTABLE_LEADS_TO_SEND = 3;
 
 function randomIntInclusive(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -78,6 +77,38 @@ function getCampaignLimits() {
     maxDailyBreakupMessages: Number(env.optional("OUTREACH_MAX_DAILY_BREAKUP_MESSAGES") ?? DEFAULT_OUTREACH_LIMITS.maxDailyBreakupMessages),
     breakUpMinCommercialScore: Number(env.optional("OUTREACH_BREAKUP_MIN_COMMERCIAL_SCORE") ?? DEFAULT_OUTREACH_LIMITS.breakUpMinCommercialScore)
   };
+}
+
+function getHealthThresholds() {
+  return {
+    minQualifiedLeadsToSend: Number(process.env.OUTREACH_MIN_QUALIFIED_LEADS_TO_SEND ?? DEFAULT_OUTREACH_HEALTH_THRESHOLDS.minQualifiedLeadsToSend),
+    minContactableLeadsToSend: Number(process.env.OUTREACH_MIN_CONTACTABLE_LEADS_TO_SEND ?? DEFAULT_OUTREACH_HEALTH_THRESHOLDS.minContactableLeadsToSend),
+    lowYieldMinInsertedLeads: Number(process.env.OUTREACH_LOW_YIELD_MIN_INSERTED_LEADS ?? DEFAULT_OUTREACH_HEALTH_THRESHOLDS.lowYieldMinInsertedLeads),
+    bounceAlertRate: Number(process.env.OUTREACH_BOUNCE_ALERT_RATE ?? DEFAULT_OUTREACH_HEALTH_THRESHOLDS.bounceAlertRate),
+    bounceCriticalRate: Number(process.env.OUTREACH_BOUNCE_CRITICAL_RATE ?? DEFAULT_OUTREACH_HEALTH_THRESHOLDS.bounceCriticalRate)
+  };
+}
+
+async function notifyTelegramAdmins(text: string) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) return;
+
+  const admin = createSupabaseServiceClient();
+  const adminsResult = await admin.from("telegram_admins").select("chat_id").eq("is_active", true);
+  if (adminsResult.error) {
+    throw adminsResult.error;
+  }
+
+  await Promise.all((adminsResult.data ?? []).map(async (row) => {
+    const chatId = Number((row as { chat_id: number }).chat_id);
+    if (!Number.isFinite(chatId)) return;
+
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text })
+    });
+  }));
 }
 
 async function countSentBreakupsToday(campaignId: string) {
@@ -452,7 +483,8 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
     return { ok: true, reason: "Nu exista nisa/zona activa." };
   }
 
-  if (snapshot.zone.qualified_leads_count < MIN_QUALIFIED_LEADS_TO_SEND || snapshot.zone.remaining_leads_count < MIN_CONTACTABLE_LEADS_TO_SEND) {
+  const healthThresholds = getHealthThresholds();
+  if (snapshot.zone.qualified_leads_count < healthThresholds.minQualifiedLeadsToSend || snapshot.zone.remaining_leads_count < healthThresholds.minContactableLeadsToSend) {
     return {
       ok: true,
       reason: `Zona nu are suficiente lead-uri bune pentru trimitere (qualified=${snapshot.zone.qualified_leads_count}, remaining=${snapshot.zone.remaining_leads_count}).`
@@ -781,6 +813,19 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
       reason: exhaustion.reasons.join(" "),
       changedByType: "cron"
     });
+  }
+
+  const bounceMetrics = await getBounceMetrics();
+  if (bounceMetrics.last7DaysBounceRate >= healthThresholds.bounceAlertRate) {
+    await notifyTelegramAdmins([
+      "⚠️ Bounce rate alert",
+      `Last 7 days bounce rate: ${(bounceMetrics.last7DaysBounceRate * 100).toFixed(1)}%`,
+      `Critical threshold: ${(healthThresholds.bounceCriticalRate * 100).toFixed(1)}%`,
+      `Total bounced: ${bounceMetrics.last7DaysBounced}/${bounceMetrics.last7DaysTotal}`,
+      bounceMetrics.last7DaysBounceRate >= healthThresholds.bounceCriticalRate
+        ? "Actiune: opreste trimiterea si curata lista imediat."
+        : "Actiune: monitorizeaza si redu volumul pana scade sub prag."
+    ].join("\n"));
   }
 
   return {

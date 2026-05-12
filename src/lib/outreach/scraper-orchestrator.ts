@@ -1,6 +1,7 @@
 import { normalizeEmailCandidate } from "@/lib/outreach/email-filter";
 import { scrapeFreeLeads } from "@/lib/outreach/free-scraper";
 import { transitionCoverageZoneStatus } from "@/lib/outreach/coverage-service";
+import { DEFAULT_OUTREACH_HEALTH_THRESHOLDS } from "@/lib/outreach/ops-constants";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 function escapePostgrestValue(value: string) {
@@ -41,6 +42,12 @@ async function notifyTelegramAdmins(text: string) {
       body: JSON.stringify({ chat_id: chatId, text })
     });
   }));
+}
+
+function getHealthThresholds() {
+  return {
+    lowYieldMinInsertedLeads: Number(process.env.OUTREACH_LOW_YIELD_MIN_INSERTED_LEADS ?? DEFAULT_OUTREACH_HEALTH_THRESHOLDS.lowYieldMinInsertedLeads)
+  };
 }
 
 function matchesNiche(nicheSlug: string, input: { businessName: string; category: string | null }) {
@@ -299,7 +306,7 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
     throw update.error;
   }
 
-  if (inserted < 5) {
+  if (inserted < getHealthThresholds().lowYieldMinInsertedLeads) {
     await notifyTelegramAdmins([
       "⚠️ Scrape cu yield mic",
       `Zona: ${zone.id}`,
