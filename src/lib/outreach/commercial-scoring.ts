@@ -115,9 +115,24 @@ export function computeCommercialScore(signals: LeadSignals): CommercialScore {
   if (signals.observableSignals && typeof signals.observableSignals === "object") {
     const obs = signals.observableSignals;
     if (obs["has_booking_system"] || obs["has_online_booking"]) {
-      scores.premium_setup += 20;
-      reasons.premium_setup.push("sistem de programari existent — familiar cu tools digitale");
+      // Already has a booking system — less need for OcupaLoc; penalize all categories
+      scores.easy_close   = Math.max(0, scores.easy_close   - 40);
+      scores.premium_setup = Math.max(0, scores.premium_setup - 40);
+      scores.testimonial  = Math.max(0, scores.testimonial  - 40);
+      scores.reseller     = Math.max(0, scores.reseller     - 40);
+      reasons.easy_close.push("are deja sistem de programari — interes redus");
+      reasons.premium_setup.push("are deja sistem de programari — interes redus");
+      reasons.testimonial.push("are deja sistem de programari — interes redus");
+      reasons.reseller.push("are deja sistem de programari — interes redus");
+    } else {
+      // No booking system — prime OcupaLoc prospect
+      scores.easy_close += 20;
+      reasons.easy_close.push("nu are sistem de programari — nevoia noastra principala");
     }
+  } else {
+    // Signal absent — assume no booking system (positive for easy_close)
+    scores.easy_close += 10;
+    reasons.easy_close.push("nicio dovada de sistem de programari");
   }
 
   // --- testimonial: nisa responsiva, review bun, rezultate vizibile
