@@ -299,7 +299,7 @@ async function handleEmailSendCommand(text: string) {
 
 /** @deprecated Kept for backward compatibility with existing tests. */
 export function buildHelpMessage() {
-  return "Comenzi disponibile: /scrape /send /report /emailpreview /emailsend";
+  return "Comenzi disponibile: /scrape /send /report /emailpreview /emailsend. Sau trimite direct email@domeniu.ro pentru trimitere automata.";
 }
 
 export async function handleTelegramUpdate(update: TelegramUpdate) {
@@ -312,7 +312,11 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
     return { ok: true, ignored: true };
   }
 
-  if (!text.startsWith("/")) {
+  const directEmail = normalizeEmail(text);
+  const isCommand = text.startsWith("/");
+  const isDirectEmailMessage = SIMPLE_EMAIL_REGEX.test(directEmail);
+
+  if (!isCommand && !isDirectEmailMessage) {
     return { ok: true, ignored: true };
   }
 
@@ -332,7 +336,8 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
     return { ok: true, unauthorized: true };
   }
 
-  const command = parseCommand(text);
+  const command = isCommand ? parseCommand(text) : "/emailsend";
+  const effectiveText = isDirectEmailMessage ? `/emailsend ${directEmail}` : text;
   let responseText: string;
 
   try {
@@ -393,17 +398,18 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
       }
 
       case "/emailpreview": {
-        responseText = await handleEmailPreviewCommand(text);
+        responseText = await handleEmailPreviewCommand(effectiveText);
         break;
       }
 
       case "/emailsend": {
-        responseText = await handleEmailSendCommand(text);
+        responseText = await handleEmailSendCommand(effectiveText);
         break;
       }
 
       default: {
-        responseText = "Comenzi disponibile: /scrape /send /report /emailpreview /emailsend";
+        responseText =
+          "Comenzi disponibile: /scrape /send /report /emailpreview /emailsend. Sau trimite direct email@domeniu.ro pentru trimitere automata.";
         break;
       }
     }
