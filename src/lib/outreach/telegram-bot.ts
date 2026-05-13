@@ -1,5 +1,6 @@
 import { env } from "@/lib/config/env";
 import { OUTREACH_COMMANDS } from "@/lib/outreach/ops-constants";
+import { reportError } from "@/lib/observability";
 import { buildDailyReports } from "@/lib/outreach/reporting-service";
 import { runQualificationPipeline } from "@/lib/outreach/qualification-service";
 import { runScraperOrchestration } from "@/lib/outreach/scraper-orchestrator";
@@ -245,8 +246,13 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
 
   try {
     await sendTelegramMessage(chat.id, responseText);
-  } catch {
+  } catch (error) {
     // Keep webhook stable even if Telegram rejects the response.
+    reportError("cron", "telegram_outreach_send_failed", error, {
+      command,
+      chatId: chat.id,
+      userId: from.id
+    });
   }
 
   return { ok: true };
