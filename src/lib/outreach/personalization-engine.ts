@@ -227,8 +227,8 @@ export function generatePersonalizedOutreach(input: PersonalizationInput & { opt
   const parsed = personalizationInputSchema.parse(input);
   const nicheCopy = NICHE_COPY[parsed.nicheSlug] ?? NICHE_COPY.saloane;
 
-  const subject = parsed.nicheSlug === "beauty-independent" 
-    ? `${parsed.businessName}: elimina mesajele repetate`
+  const subject = parsed.nicheSlug === "beauty-independent"
+    ? "Îți pierzi cliente din cauza programărilor pe WhatsApp?"
     : `${parsed.businessName}: programari mai simple`;
     
   const optOutText = `Stop: ${input.optOutUrl}`;
@@ -237,12 +237,24 @@ export function generatePersonalizedOutreach(input: PersonalizationInput & { opt
   let text = "";
   if (parsed.nicheSlug === "beauty-independent") {
     text = [
-      `Salut ${parsed.businessName},`,
+      "Bună! 👋",
       "",
-      `Problema: programarile sunt confirmate si mutate din WhatsApp/Instagram, ceea ce inseamna multe mesaje zilnic.`,
-      `Solutie: o pagina simpla de programari online, unde clientele se pot reprograma singure.`,
+      "Dacă faci programările manual pe WhatsApp sau telefon, probabil ai trecut deja prin asta:",
+      "• cliente care uită de programare",
+      "• ore suprapuse",
+      "• mesaje la 11 noaptea",
+      "• timp pierdut zilnic doar ca să răspunzi",
       "",
-      `${OCUPALOC_SITE_URL}`,
+      "Cu ocupaloc.ro, clientele își fac singure programarea online, exact pe orele libere.",
+      "Tu primești: ✔ programări automate 24/7",
+      "✔ confirmări și remindere automate",
+      "✔ mai puține absențe",
+      "✔ mai mult timp pentru tine și cliente",
+      "",
+      "Îți creezi pagina în doar câteva minute și ai 14 zile test gratuit.",
+      "",
+      `Vezi aici: ${OCUPALOC_SITE_URL}`,
+      "Poate fi exact schimbarea de care ai nevoie.",
       `Stop: ${input.optOutUrl}`,
       `- Echipa ocupaloc.ro`
     ].join("\n");
@@ -263,12 +275,21 @@ export function generatePersonalizedOutreach(input: PersonalizationInput & { opt
     ? `<!DOCTYPE html>
 <html lang="ro">
   <body style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a;max-width:600px;margin:0 auto;padding:20px;">
-    <p><strong>Salut ${escapeHtml(parsed.businessName)},</strong></p>
-    <p><strong>Problema:</strong> programarile sunt confirmate si mutate din WhatsApp/Instagram, ceea ce inseamna multe mesaje zilnic.</p>
-    <p><strong>Solutie:</strong> o pagina simpla de programari online, unde clientele se pot reprograma singure.</p>
+    <p><strong>Bună! 👋</strong></p>
+    <p>Dacă faci programările manual pe WhatsApp sau telefon, probabil ai trecut deja prin asta:</p>
+    <ul style="margin:0 0 12px 20px;padding:0;">
+      <li>cliente care uită de programare</li>
+      <li>ore suprapuse</li>
+      <li>mesaje la 11 noaptea</li>
+      <li>timp pierdut zilnic doar ca să răspunzi</li>
+    </ul>
+    <p>Cu ocupaloc.ro, clientele își fac singure programarea online, exact pe orele libere.</p>
+    <p>Tu primești: ✔ programări automate 24/7<br>✔ confirmări și remindere automate<br>✔ mai puține absențe<br>✔ mai mult timp pentru tine și cliente</p>
+    <p>Îți creezi pagina în doar câteva minute și ai 14 zile test gratuit.</p>
     <p style="margin-top:20px;text-align:center;">
       <a href="${OCUPALOC_SITE_URL}" style="display:inline-block;background:#3b82f6;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Vezi aici</a>
     </p>
+    <p style="text-align:center;margin-top:10px;">Poate fi exact schimbarea de care ai nevoie.</p>
     <p style="font-size:12px;color:#64748b;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:12px;text-align:center;">
       <a href="${input.optOutUrl}" style="color:#64748b;text-decoration:underline;">Sterge-ma din lista</a><br>
       - Echipa ocupaloc.ro
