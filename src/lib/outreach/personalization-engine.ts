@@ -42,9 +42,9 @@ const NICHE_COPY: Record<string, { label: string; problem: string; benefit: stri
   },
   "beauty-independent": {
     label: "servicii de beauty independente (ex. manichiura)",
-    problem: "cand programarile vin din mesaje, apeluri si social media, confirmarile si reprogramarile consuma mult timp",
-    benefit: "un flux simplu de rezervare online reduce munca administrativa si lasa mai mult timp pentru clienti",
-    cta: "Daca vrei, iti trimit un exemplu scurt pentru profesioniste care lucreaza pe cont propriu."
+    problem: "din mesajele de WhatsApp, apeluri, SMS si Instagram reiese rapid ca organizarea se face manual — clientele trebuie confirmate, reschedule-urile se pierd, orele se dublează",
+    benefit: "cu o pagina simpla de programare online, elimini cea mai mare parte din munca asta si clientele se pot reschedula singure, fara sa-ti scrie mesaje",
+    cta: "Pot sa-ti arat cum arata fluxul in 5 minute — cred ca te-ar ajuta."
   },
   "clinici-estetice": {
     label: "clinica estetica",
@@ -109,6 +109,10 @@ const NICHE_COPY: Record<string, { label: string; problem: string; benefit: stri
 };
 
 function buildObservation(input: PersonalizationInput) {
+  if (input.nicheSlug === "beauty-independent") {
+    return `Salut ${input.businessName}, am vazut activitatea ta si mi-a venit ideea sa-ti scriu — pare ca majoritate clientelor iti scriu pe multiple canale (WhatsApp, Instagram, SMS, apeluri).`;
+  }
+
   if (!input.website) {
     return `Am vazut ${input.businessName} in ${input.city} si pare ca prezenta online se bazeaza mai ales pe Google, telefon sau social media.`;
   }
@@ -223,13 +227,20 @@ export function generatePersonalizedOutreach(input: PersonalizationInput & { opt
   const parsed = personalizationInputSchema.parse(input);
   const nicheCopy = NICHE_COPY[parsed.nicheSlug] ?? NICHE_COPY.saloane;
   const observation = buildObservation(parsed);
-  const signalNote = parsed.observableSignals.instagramDetected
-    ? "Se vede ca inbound-ul poate veni si din Instagram, iar acolo raspunsurile se fragmenteaza usor."
-    : parsed.observableSignals.hasServiceMenu
-      ? "Faptul ca aveti deja serviciile vizibile ajuta, dar rezervarea poate fi facuta si mai simpla."
-      : "Ideea nu este sa schimbati tot, ci doar sa faceti programarea mai simpla pentru clientii potriviti.";
+  
+  let signalNote = "Ideea nu este sa schimbati tot, ci doar sa faceti programarea mai simpla pentru clientii potriviti.";
+  if (parsed.nicheSlug === "beauty-independent") {
+    signalNote = "Cea mai mare parte din clientele mele spun ca s-au uitat la cinci lucruri: daca e asa de greu sa imi fac programarea, why bother.";
+  } else if (parsed.observableSignals.instagramDetected) {
+    signalNote = "Se vede ca inbound-ul poate veni si din Instagram, iar acolo raspunsurile se fragmenteaza usor.";
+  } else if (parsed.observableSignals.hasServiceMenu) {
+    signalNote = "Faptul ca aveti deja serviciile vizibile ajuta, dar rezervarea poate fi facuta si mai simpla.";
+  }
 
-  const subject = `${parsed.businessName}: o propunere scurta pentru programari mai simple`;
+  const subject = parsed.nicheSlug === "beauty-independent" 
+    ? `${parsed.businessName}: 5 minute care s-ar putea sa te salveze din mesaje`
+    : `${parsed.businessName}: o propunere scurta pentru programari mai simple`;
+    
   const optOutText = `Daca nu vrei sa mai primesti mesaje de acest tip, raspunde cu "stop" sau foloseste linkul de opozitie: ${input.optOutUrl}`;
   const text = [
     `Salut,`,
@@ -256,9 +267,13 @@ export function generatePersonalizedOutreach(input: PersonalizationInput & { opt
     <p>${escapeHtml(nicheCopy.benefit)}.</p>
     <p>${escapeHtml(signalNote)}</p>
     <p>${escapeHtml(nicheCopy.cta)}</p>
-    <p>Website: <a href="${OCUPALOC_SITE_URL}">ocupaloc.ro</a></p>
-    <p>Cu bine,<br>${escapeHtml(input.senderName)}</p>
-    <p style="font-size:12px;color:#64748b;">${escapeHtml(optOutText)}</p>
+    <p style="margin-top:20px;border-top:1px solid #e2e8f0;padding-top:16px;">
+      <strong>Link util:</strong> <a href="${OCUPALOC_SITE_URL}">ocupaloc.ro</a>
+    </p>
+    <p>Cu bine,<br><strong>${escapeHtml(input.senderName)}</strong></p>
+    <p style="font-size:12px;color:#64748b;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:12px;">
+      ${escapeHtml(optOutText)}
+    </p>
   </body>
 </html>`;
 
