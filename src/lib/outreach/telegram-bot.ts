@@ -1,4 +1,5 @@
 import { env } from "@/lib/config/env";
+import { OUTREACH_COMMANDS } from "@/lib/outreach/ops-constants";
 import { buildDailyReports } from "@/lib/outreach/reporting-service";
 import { runQualificationPipeline } from "@/lib/outreach/qualification-service";
 import { runScraperOrchestration } from "@/lib/outreach/scraper-orchestrator";
@@ -49,6 +50,10 @@ export async function setTelegramWebhook(webhookUrl: string, secretToken: string
     drop_pending_updates: false,
     allowed_updates: ["message"]
   });
+}
+
+export async function setTelegramCommands() {
+  await sendTelegramRequest("setMyCommands", { commands: OUTREACH_COMMANDS });
 }
 
 function splitMessage(text: string): string[] {

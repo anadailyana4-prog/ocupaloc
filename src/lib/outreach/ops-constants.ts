@@ -19,14 +19,9 @@ export const EXHAUSTION_STAGES = [
 export const TELEGRAM_ADMIN_ROLES = ["owner", "admin", "operator"] as const;
 
 export const OUTREACH_COMMANDS = [
-  { command: "start", description: "Porneste interactiunea cu botul" },
-  { command: "status", description: "Arata statusul operational curent" },
-  { command: "queue", description: "Arata coada de lucru (lead-uri + follow-up due)" },
-  { command: "scrape", description: "Porneste scraping + calificare pentru zona activa" },
-  { command: "send", description: "Porneste trimiterea imediat (optional: /send N)" },
-  { command: "approve_next", description: "Confirma trecerea la urmatoarea zona sau nisa" },
-  { command: "report", description: "Trimite raportul zilei" },
-  { command: "help", description: "Ajutor si lista comenzilor" }
+  { command: "scrape", description: "Scraping + calificare lead-uri" },
+  { command: "send", description: "Trimite urmatoarele 10 lead-uri" },
+  { command: "report", description: "Raport zilnic" }
 ] as const;
 
 export const DEFAULT_OUTREACH_LIMITS = {
