@@ -39,6 +39,15 @@ interface SingleEmailCommandInput {
 }
 
 const SIMPLE_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
+const SIMPLE_PHONE_REGEX = /^\+?[0-9][0-9\s().-]{6,20}$/;
+
+const WHATSAPP_OUTREACH_MESSAGE = [
+  "Bună 😊",
+  "Am văzut că faci programări pentru cliente și m-am gândit că poate te-ar ajuta ceva simplu.",
+  "Cu ocupaloc.ro clientele își fac singure programările online, iar tu vezi doar orele ocupate. Fără zeci de mesaje și fără suprapuneri.",
+  "Ai și remindere automate pentru cliente + 14 zile test gratuit.",
+  "https://ocupaloc.ro"
+].join("\n");
 
 function getTelegramApiBase() {
   return `https://api.telegram.org/bot${env.get("TELEGRAM_BOT_TOKEN")}`;
@@ -160,6 +169,45 @@ function parseCommand(text: string): string {
 
 function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
+}
+
+function normalizePhone(value: string) {
+  return value.trim();
+}
+
+function normalizeWhatsappPhone(value: string) {
+  let digits = value.replace(/\D/g, "");
+
+  if (digits.startsWith("00")) {
+    digits = digits.slice(2);
+  }
+
+  // Local RO format (07xxxxxxxx) -> international format (40xxxxxxxxx)
+  if (digits.length === 10 && digits.startsWith("0")) {
+    digits = `40${digits.slice(1)}`;
+  }
+
+  if (digits.length < 8 || digits.length > 15) {
+    throw new Error("Numar de telefon invalid.");
+  }
+
+  return digits;
+}
+
+function buildWhatsAppLinkFromPhone(rawPhone: string) {
+  const normalized = normalizeWhatsappPhone(rawPhone);
+  const encodedText = encodeURIComponent(WHATSAPP_OUTREACH_MESSAGE);
+  return `https://wa.me/${normalized}?text=${encodedText}`;
+}
+
+function handleWhatsAppLinkForPhone(rawPhone: string) {
+  const cleanedPhone = normalizePhone(rawPhone);
+  if (!SIMPLE_PHONE_REGEX.test(cleanedPhone)) {
+    throw new Error("Numar de telefon invalid.");
+  }
+
+  const whatsappLink = buildWhatsAppLinkFromPhone(cleanedPhone);
+  return ["Link WhatsApp generat:", whatsappLink].join("\n");
 }
 
 function inferBusinessNameFromEmail(email: string) {
@@ -307,7 +355,7 @@ async function handleEmailSendCommand(text: string) {
 
 /** @deprecated Kept for backward compatibility with existing tests. */
 export function buildHelpMessage() {
-  return "Comenzi disponibile: /scrape /send /report /emailpreview /emailsend. Sau trimite direct email@domeniu.ro pentru trimitere automata.";
+  return "Comenzi disponibile: /scrape /send /report /emailpreview /emailsend. Sau trimite direct email@domeniu.ro pentru trimitere automata ori un numar de telefon pentru link WhatsApp.";
 }
 
 export async function handleTelegramUpdate(update: TelegramUpdate) {
@@ -321,10 +369,12 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
   }
 
   const directEmail = normalizeEmail(text);
+  const directPhone = normalizePhone(text);
   const isCommand = text.startsWith("/");
   const isDirectEmailMessage = SIMPLE_EMAIL_REGEX.test(directEmail);
+  const isDirectPhoneMessage = SIMPLE_PHONE_REGEX.test(directPhone);
 
-  if (!isCommand && !isDirectEmailMessage) {
+  if (!isCommand && !isDirectEmailMessage && !isDirectPhoneMessage) {
     return { ok: true, ignored: true };
   }
 
@@ -344,8 +394,8 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
     return { ok: true, unauthorized: true };
   }
 
-  const command = isCommand ? parseCommand(text) : "/emailsend";
-  const effectiveText = isDirectEmailMessage ? `/emailsend ${directEmail}` : text;
+  const command = isCommand ? parseCommand(text) : isDirectPhoneMessage ? "/whatsapp" : "/emailsend";
+  const effectiveText = isDirectEmailMessage ? `/emailsend ${directEmail}` : isDirectPhoneMessage ? directPhone : text;
   let responseText: string;
 
   try {
@@ -415,9 +465,14 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
         break;
       }
 
+      case "/whatsapp": {
+        responseText = handleWhatsAppLinkForPhone(effectiveText);
+        break;
+      }
+
       default: {
         responseText =
-          "Comenzi disponibile: /scrape /send /report /emailpreview /emailsend. Sau trimite direct email@domeniu.ro pentru trimitere automata.";
+          "Comenzi disponibile: /scrape /send /report /emailpreview /emailsend. Sau trimite direct email@domeniu.ro pentru trimitere automata ori un numar de telefon pentru link WhatsApp.";
         break;
       }
     }
