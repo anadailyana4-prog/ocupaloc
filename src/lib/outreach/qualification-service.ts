@@ -249,12 +249,19 @@ export async function runQualificationPipeline(input?: { zoneId?: string }) {
     })
     .eq("id", zone.id);
 
-  await transitionCoverageZoneStatus({
-    zoneId: zone.id,
-    toStatus: "ready",
-    reason: "Calificarea s-a incheiat, zona este gata pentru batch-uri controlate",
-    changedByType: "cron"
-  });
+  const zoneAfterQualification = await admin.from("coverage_zones").select("status").eq("id", zone.id).single();
+  if (zoneAfterQualification.error) {
+    throw zoneAfterQualification.error;
+  }
+
+  if ((zoneAfterQualification.data as { status: string }).status === "qualifying") {
+    await transitionCoverageZoneStatus({
+      zoneId: zone.id,
+      toStatus: "ready",
+      reason: "Calificarea s-a incheiat, zona este gata pentru batch-uri controlate",
+      changedByType: "cron"
+    });
+  }
 
   return { zoneId: zone.id, qualified, review, rejected, suppressed, contacted };
 }

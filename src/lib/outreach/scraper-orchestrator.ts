@@ -327,20 +327,31 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
   }
 
   if (scrapeIssues.length > 0) {
+    const shownIssues = scrapeIssues.slice(0, 5);
+    const omitted = scrapeIssues.length - shownIssues.length;
     await notifyTelegramAdmins([
       "⚠️ Unele localitati nu au putut fi procesate",
       `Zona: ${zone.id}`,
       `Nisa: ${nicheSlug}`,
-      ...scrapeIssues.slice(0, 5)
-    ].join("\n"));
+      `Localitati esuate: ${scrapeIssues.length}/${localities.length}`,
+      ...shownIssues,
+      omitted > 0 ? `...si inca ${omitted} localitati.` : null
+    ].filter(Boolean).join("\n"));
   }
 
-  await transitionCoverageZoneStatus({
-    zoneId: zone.id,
-    toStatus: "qualifying",
-    reason: "Scraping complet, trecere in etapa de calificare",
-    changedByType: "cron"
-  });
+  const zoneAfterScrape = await admin.from("coverage_zones").select("status").eq("id", zone.id).single();
+  if (zoneAfterScrape.error) {
+    throw zoneAfterScrape.error;
+  }
+
+  if ((zoneAfterScrape.data as { status: string }).status === "scraping") {
+    await transitionCoverageZoneStatus({
+      zoneId: zone.id,
+      toStatus: "qualifying",
+      reason: "Scraping complet, trecere in etapa de calificare",
+      changedByType: "cron"
+    });
+  }
 
   return {
     zoneId: zone.id,
