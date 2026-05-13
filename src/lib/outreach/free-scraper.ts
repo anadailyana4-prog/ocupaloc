@@ -46,7 +46,11 @@ export function detectBookingSystemFromUrl(website: string | null): boolean {
   return BOOKING_PLATFORM_DOMAINS.some((domain) => lower.includes(domain));
 }
 
-const OVERPASS_ENDPOINT = "https://overpass-api.de/api/interpreter";
+const OVERPASS_ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter"
+] as const;
 const DEFAULT_TIMEOUT_MS = 25_000;
 
 const DEFAULT_CITY_BBOX: Record<string, [number, number, number, number]> = {
@@ -132,31 +136,33 @@ function buildOverpassQuery(bbox: [number, number, number, number], tags: string
 
 async function fetchOverpassWithRetry(query: string, retries = 2): Promise<OverpassResponse> {
   let lastError: unknown;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
-    try {
-      const response = await fetch(OVERPASS_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-          "user-agent": "OcupaLocFreeScraper/1.0 (+https://ocupaloc.ro)"
-        },
-        body: new URLSearchParams({ data: query }),
-        signal: controller.signal
-      });
-      clearTimeout(timer);
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+            "user-agent": "OcupaLocFreeScraper/1.0 (+https://ocupaloc.ro)"
+          },
+          body: new URLSearchParams({ data: query }),
+          signal: controller.signal
+        });
+        clearTimeout(timer);
 
-      if (!response.ok) {
-        throw new Error(`Overpass returned ${response.status}`);
-      }
+        if (!response.ok) {
+          throw new Error(`Overpass endpoint ${endpoint} returned ${response.status}`);
+        }
 
-      return (await response.json()) as OverpassResponse;
-    } catch (error) {
-      clearTimeout(timer);
-      lastError = error;
-      if (attempt < retries) {
-        await new Promise((resolve) => setTimeout(resolve, 1200 * (attempt + 1)));
+        return (await response.json()) as OverpassResponse;
+      } catch (error) {
+        clearTimeout(timer);
+        lastError = error;
+        if (attempt < retries) {
+          await new Promise((resolve) => setTimeout(resolve, 1200 * (attempt + 1)));
+        }
       }
     }
   }
