@@ -20,6 +20,11 @@ function isValidTelegramSecret(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  logInfo("[telegram-outreach] POST received", {
+    method: "POST",
+    url: request.url
+  });
+
   if (!isValidTelegramSecret(request)) {
     logWarn("[telegram-outreach] invalid webhook secret", {
       route: "/api/telegram/outreach"
@@ -30,18 +35,29 @@ export async function POST(request: NextRequest) {
   let payload: unknown;
   try {
     payload = await request.json();
-  } catch {
+  } catch (e) {
+    logWarn("[telegram-outreach] json parse failed", { error: String(e) });
     return NextResponse.json({ ok: true });
   }
+
+  logInfo("[telegram-outreach] parsed payload", {
+    hasMessage: (payload as Record<string, unknown>)?.message !== undefined,
+    hasText: ((payload as Record<string, unknown>)?.message as Record<string, unknown>)?.text !== undefined
+  });
 
   const update = payload as Parameters<typeof handleTelegramUpdate>[0];
   const text = update.message?.text?.trim() ?? "";
   const command = text.split(/\s+/)[0]?.split("@")[0]?.toLowerCase() ?? "";
 
+  logInfo("[telegram-outreach] command detected", { command, text });
+
   if (command !== "/scrape") {
+    logInfo("[telegram-outreach] running command sync", { command });
     try {
       await handleTelegramUpdate(update);
+      logInfo("[telegram-outreach] command completed", { command });
     } catch (error) {
+      logWarn("[telegram-outreach] command failed", { command, error: String(error) });
       reportError("cron", "telegram_outreach_webhook_failed", error);
     }
     return NextResponse.json({ ok: true });
