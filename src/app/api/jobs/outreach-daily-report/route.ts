@@ -5,12 +5,13 @@ import { validateCronSecret } from "@/lib/cron-auth";
 import { reportError } from "@/lib/observability";
 import { buildDailyReports } from "@/lib/outreach/reporting-service";
 import { notifyAdmins } from "@/lib/outreach/telegram-bot";
+import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const REPORT_TIMEZONE = "Europe/Bucharest";
-const REPORT_HOUR_LOCAL = 9;
+const REPORT_HOUR_LOCAL = Number(process.env.OUTREACH_DAILY_REPORT_HOUR ?? 21);
 
 function getBucharestHour(now: Date) {
   const hour = new Intl.DateTimeFormat("en-GB", {
@@ -30,6 +31,12 @@ export async function GET(request: NextRequest) {
   const force = request.nextUrl.searchParams.get("force") === "true";
   const now = new Date();
   const localHour = getBucharestHour(now);
+  const reportDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone: REPORT_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(now);
 
   if (!force && localHour !== REPORT_HOUR_LOCAL) {
     return NextResponse.json({
@@ -41,6 +48,32 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    if (!force) {
+      const admin = createSupabaseServiceClient();
+      const existing = await admin
+        .from("daily_reports")
+        .select("id")
+        .eq("report_date", reportDate)
+        .eq("report_type", "operational")
+        .limit(1)
+        .maybeSingle();
+
+      if (existing.error) {
+        throw existing.error;
+      }
+
+      if (existing.data) {
+        return NextResponse.json({
+          ok: true,
+          skipped: true,
+          reason: "Report already sent for today",
+          reportDate,
+          localHour,
+          timezone: REPORT_TIMEZONE
+        });
+      }
+    }
+
     const report = await buildDailyReports();
     const message = [
       "📊 RAPORT ZILNIC OUTREACH",

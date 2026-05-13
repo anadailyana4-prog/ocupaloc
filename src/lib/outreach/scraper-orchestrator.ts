@@ -50,6 +50,10 @@ function getHealthThresholds() {
   };
 }
 
+function shouldSendVerboseTelegramAlerts() {
+  return (process.env.OUTREACH_TELEGRAM_VERBOSE_ALERTS ?? "false").toLowerCase() === "true";
+}
+
 function matchesNiche(nicheSlug: string, input: { businessName: string; category: string | null }) {
   const haystack = `${input.businessName} ${input.category ?? ""}`.toLowerCase();
   switch (nicheSlug) {
@@ -127,7 +131,7 @@ async function getZoneLocalities(zoneId: string) {
   });
 }
 
-export async function runScraperOrchestration(input?: { zoneId?: string; limitPerLocality?: number }) {
+export async function runScraperOrchestration(input?: { zoneId?: string; limitPerLocality?: number; notifyAlerts?: boolean }) {
   const admin = createSupabaseServiceClient();
   const zoneResult = input?.zoneId
     ? await admin.from("coverage_zones").select("id, niche_id, status, rerun_history, scrape_runs_count").eq("id", input.zoneId).single()
@@ -165,6 +169,7 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
   const limitPerLocality = input?.limitPerLocality;
   const seen = new Set<string>();
   const scrapeIssues: string[] = [];
+  const notifyAlerts = input?.notifyAlerts ?? shouldSendVerboseTelegramAlerts();
 
   let discovered = 0;
   let inserted = 0;
@@ -350,7 +355,9 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
     throw update.error;
   }
 
-  if (inserted < getHealthThresholds().lowYieldMinInsertedLeads) {
+  const lowYield = inserted < getHealthThresholds().lowYieldMinInsertedLeads;
+
+  if (notifyAlerts && lowYield) {
     await notifyTelegramAdmins([
       "⚠️ Scrape cu yield mic",
       `Zona: ${zone.id}`,
@@ -361,7 +368,7 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
     ].join("\n"));
   }
 
-  if (scrapeIssues.length > 0) {
+  if (notifyAlerts && scrapeIssues.length > 0) {
     const shownIssues = scrapeIssues.slice(0, 5);
     const omitted = scrapeIssues.length - shownIssues.length;
     await notifyTelegramAdmins([
@@ -393,6 +400,8 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
     localitiesProcessed: localities.length,
     discovered,
     inserted,
-    rerunHistory
+    rerunHistory,
+    lowYield,
+    scrapeIssuesCount: scrapeIssues.length
   };
 }

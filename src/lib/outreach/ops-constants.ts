@@ -41,7 +41,7 @@ export const OUTREACH_COMMANDS = [
 
 export const DEFAULT_OUTREACH_LIMITS = {
   perHour: 10,
-  perDay: 50,
+  perDay: 240,
   followUpDelayDays: 4,
   maxBatchSize: 10,
   followUpStep2DelayDays: 7,

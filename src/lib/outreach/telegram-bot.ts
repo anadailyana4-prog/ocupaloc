@@ -562,13 +562,15 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
       break;
     }
     case "/scrape": {
-      const scrapeResult = await runScraperOrchestration();
+      const scrapeResult = await runScraperOrchestration({ notifyAlerts: false });
       const qualificationResult = await runQualificationPipeline({ zoneId: scrapeResult.zoneId });
       responseText = [
-        "🔎 Scrape pornit cu succes.",
+        "🔎 Scrape profesional finalizat.",
         `Localitati procesate: ${scrapeResult.localitiesProcessed}`,
         `Lead-uri descoperite: ${scrapeResult.discovered}`,
         `Lead-uri inserate: ${scrapeResult.inserted}`,
+        scrapeResult.scrapeIssuesCount > 0 ? `Localitati cu erori de scraping: ${scrapeResult.scrapeIssuesCount}` : null,
+        scrapeResult.lowYield ? "Avertizare: yield mic pe rularea curenta." : null,
         "",
         "✅ Calificare finalizata:",
         `Qualified: ${qualificationResult.qualified}`,
@@ -576,7 +578,7 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
         `Rejected: ${qualificationResult.rejected}`,
         `Suppressed: ${qualificationResult.suppressed}`,
         `Contacted: ${qualificationResult.contacted}`
-      ].join("\n");
+      ].filter(Boolean).join("\n");
       break;
     }
     case "/send": {
@@ -674,6 +676,7 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
     case "/report": {
       try {
         const reports = await buildDailyReports();
+        const broadcast = args.some((arg) => ["all", "broadcast", "team"].includes(arg.toLowerCase()));
         responseText = [
           "📊 RAPORT ZILEI",
           "",
@@ -683,7 +686,9 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
           "",
           reports.efficiency
         ].join("\n");
-        await notifyAdmins(responseText, { excludeChatIds: [chat.id] });
+        if (broadcast) {
+          await notifyAdmins(responseText, { excludeChatIds: [chat.id] });
+        }
       } catch (error) {
         responseText = `Eroare la generarea raportului: ${error instanceof Error ? error.message : "unknown"}`;
       }

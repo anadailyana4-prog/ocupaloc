@@ -89,6 +89,10 @@ function getHealthThresholds() {
   };
 }
 
+function shouldSendVerboseTelegramAlerts() {
+  return (process.env.OUTREACH_TELEGRAM_VERBOSE_ALERTS ?? "false").toLowerCase() === "true";
+}
+
 async function notifyTelegramAdmins(text: string) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) return;
@@ -827,7 +831,7 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
   }
 
   const bounceMetrics = await getBounceMetrics();
-  if (bounceMetrics.last7DaysBounceRate >= healthThresholds.bounceAlertRate) {
+  if (shouldSendVerboseTelegramAlerts() && bounceMetrics.last7DaysBounceRate >= healthThresholds.bounceAlertRate) {
     await notifyTelegramAdmins([
       "⚠️ Bounce rate alert",
       `Last 7 days bounce rate: ${(bounceMetrics.last7DaysBounceRate * 100).toFixed(1)}%`,
