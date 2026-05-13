@@ -21,7 +21,9 @@ export const TELEGRAM_ADMIN_ROLES = ["owner", "admin", "operator"] as const;
 export const OUTREACH_COMMANDS = [
   { command: "scrape", description: "Scraping + calificare lead-uri" },
   { command: "send", description: "Trimite urmatoarele 10 lead-uri" },
-  { command: "report", description: "Raport zilnic" }
+  { command: "report", description: "Raport zilnic" },
+  { command: "emailpreview", description: "Preview email 1:1 personalizat" },
+  { command: "emailsend", description: "Trimite email 1:1 personalizat" }
 ] as const;
 
 export const DEFAULT_OUTREACH_LIMITS = {

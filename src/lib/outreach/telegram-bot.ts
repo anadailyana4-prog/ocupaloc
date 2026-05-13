@@ -1,5 +1,7 @@
 import { env } from "@/lib/config/env";
+import { sendOutreachMailboxEmail } from "@/lib/outreach/mailbox-send";
 import { OUTREACH_COMMANDS } from "@/lib/outreach/ops-constants";
+import { generatePersonalizedOutreach } from "@/lib/outreach/personalization-engine";
 import { reportError } from "@/lib/observability";
 import { buildDailyReports } from "@/lib/outreach/reporting-service";
 import { runQualificationPipeline } from "@/lib/outreach/qualification-service";
@@ -27,6 +29,16 @@ interface TelegramUpdate {
 }
 
 const TELEGRAM_MAX_MESSAGE_LENGTH = 3500;
+
+interface SingleEmailCommandInput {
+  email: string;
+  businessName: string;
+  city: string;
+  nicheSlug: string;
+  website?: string;
+}
+
+const SIMPLE_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
 function getTelegramApiBase() {
   return `https://api.telegram.org/bot${env.get("TELEGRAM_BOT_TOKEN")}`;
@@ -146,9 +158,124 @@ function parseCommand(text: string): string {
   return first.split("@")[0]!.toLowerCase();
 }
 
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function parseSingleEmailCommandInput(text: string): SingleEmailCommandInput {
+  const parts = text
+    .replace(/^\/\w+(@\w+)?\s*/i, "")
+    .split("|")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length < 4) {
+    throw new Error("Format: /emailsend email | business | oras | niche | website(optional)");
+  }
+
+  const email = normalizeEmail(parts[0] ?? "");
+  if (!SIMPLE_EMAIL_REGEX.test(email)) {
+    throw new Error("Email invalid.");
+  }
+
+  const businessName = parts[1] ?? "";
+  const city = parts[2] ?? "";
+  const nicheSlug = (parts[3] ?? "saloane").toLowerCase().replace(/\s+/g, "-");
+  const website = parts[4] ? parts[4].trim() : undefined;
+
+  if (!businessName || !city || !nicheSlug) {
+    throw new Error("Campuri lipsa: business, oras sau niche.");
+  }
+
+  return { email, businessName, city, nicheSlug, website };
+}
+
+async function isSuppressedEmail(email: string): Promise<boolean> {
+  const adminClient = createSupabaseServiceClient();
+  const { data, error } = await adminClient
+    .from("suppression_list")
+    .select("id")
+    .eq("channel", "email")
+    .eq("normalized_value", normalizeEmail(email))
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data !== null;
+}
+
+function buildSingleEmailPreview(input: SingleEmailCommandInput) {
+  const personalized = generatePersonalizedOutreach({
+    nicheSlug: input.nicheSlug,
+    businessName: input.businessName,
+    city: input.city,
+    website: input.website,
+    observableSignals: {
+      bookingLinkDetected: false,
+      instagramDetected: Boolean(input.website?.includes("instagram.com")),
+      hasServiceMenu: false,
+      reviewsMentionQueue: false
+    },
+    optOutUrl: "https://ocupaloc.ro/contact",
+    senderName: "Echipa ocupaloc.ro"
+  });
+
+  return personalized;
+}
+
+async function handleEmailPreviewCommand(text: string) {
+  const input = parseSingleEmailCommandInput(text);
+  const suppressed = await isSuppressedEmail(input.email);
+  if (suppressed) {
+    throw new Error("Email blocat (suppression_list). Nu trimit.");
+  }
+
+  const personalized = buildSingleEmailPreview(input);
+  return [
+    "Preview email personalizat:",
+    `To: ${input.email}`,
+    `Business: ${input.businessName}`,
+    `City: ${input.city}`,
+    `Niche: ${input.nicheSlug}`,
+    "",
+    `Subject: ${personalized.subject}`,
+    "",
+    personalized.text,
+    "",
+    "Pentru trimitere: /emailsend email | business | oras | niche | website(optional)"
+  ].join("\n");
+}
+
+async function handleEmailSendCommand(text: string) {
+  const input = parseSingleEmailCommandInput(text);
+  const suppressed = await isSuppressedEmail(input.email);
+  if (suppressed) {
+    throw new Error("Email blocat (suppression_list). Nu trimit.");
+  }
+
+  const personalized = buildSingleEmailPreview(input);
+  const sent = await sendOutreachMailboxEmail({
+    to: [input.email],
+    subject: personalized.subject,
+    text: personalized.text,
+    html: personalized.html,
+    replyTo: ["contact@ocupaloc.ro"]
+  });
+
+  return [
+    "Email trimis.",
+    `To: ${input.email}`,
+    `Subject: ${personalized.subject}`,
+    `Message-ID: ${sent.messageId ?? "n/a"}`
+  ].join("\n");
+}
+
 /** @deprecated Kept for backward compatibility with existing tests. */
 export function buildHelpMessage() {
-  return "Comenzi disponibile: /scrape /send /report";
+  return "Comenzi disponibile: /scrape /send /report /emailpreview /emailsend";
 }
 
 export async function handleTelegramUpdate(update: TelegramUpdate) {
@@ -241,8 +368,18 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
         break;
       }
 
+      case "/emailpreview": {
+        responseText = await handleEmailPreviewCommand(text);
+        break;
+      }
+
+      case "/emailsend": {
+        responseText = await handleEmailSendCommand(text);
+        break;
+      }
+
       default: {
-        responseText = "Comenzi disponibile: /scrape /send /report";
+        responseText = "Comenzi disponibile: /scrape /send /report /emailpreview /emailsend";
         break;
       }
     }
