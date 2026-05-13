@@ -16,6 +16,7 @@ interface EligibleLead {
   leadId: string;
   contactId: string;
   email: string;
+  qualificationStatus: string;
   businessName: string;
   city: string;
   website: string | null;
@@ -189,15 +190,13 @@ async function countRecentMessages(campaignId: string) {
   };
 }
 
-async function getEligibleInitialLeads(zoneId: string, campaignId: string, limit: number): Promise<EligibleLead[]> {
+async function getEligibleInitialLeads(zoneId: string, limit: number): Promise<EligibleLead[]> {
   const admin = createSupabaseServiceClient();
   const leadsResult = await admin
     .from("leads")
-    .select("id, business_name, website, observable_signals, commercial_score, created_at")
+    .select("id, business_name, website, observable_signals, commercial_score, qualification_status, created_at")
     .eq("coverage_zone_id", zoneId)
     .in("qualification_status", ["qualified", "review"])
-    .order("commercial_score", { ascending: false, nullsFirst: false })
-    .order("created_at", { ascending: true })
     .limit(Math.max(200, limit * 20));
   if (leadsResult.error) throw leadsResult.error;
 
@@ -206,9 +205,21 @@ async function getEligibleInitialLeads(zoneId: string, campaignId: string, limit
     return [];
   }
 
-  const sentResult = await admin.from("outreach_messages").select("lead_id").eq("campaign_id", campaignId).in("lead_id", leadIds);
+  const sentResult = await admin
+    .from("outreach_messages")
+    .select("lead_id")
+    .in("lead_id", leadIds)
+    .in("status", ["queued", "sent", "replied"]);
   if (sentResult.error) throw sentResult.error;
   const sentLeadIds = new Set((sentResult.data ?? []).map((row) => (row as { lead_id: string }).lead_id));
+
+  const repliedResult = await admin
+    .from("reply_events")
+    .select("lead_id")
+    .in("lead_id", leadIds)
+    .in("event_type", ["reply", "positive_reply", "booking_intent", "opt_out"]);
+  if (repliedResult.error) throw repliedResult.error;
+  const repliedLeadIds = new Set((repliedResult.data ?? []).map((row) => (row as { lead_id: string }).lead_id));
 
   const contactsResult = await admin
     .from("lead_contacts")
@@ -232,24 +243,51 @@ async function getEligibleInitialLeads(zoneId: string, campaignId: string, limit
       website: string | null;
       observable_signals: Record<string, boolean | string | number | null>;
       commercial_score: number | null;
+      qualification_status: "qualified" | "review";
+      created_at: string;
     }
   ]));
 
-  const eligible: EligibleLead[] = [];
+  const contactByLead = new Map<string, { id: string; normalized_value: string; is_primary: boolean }>();
   for (const row of contactsResult.data ?? []) {
     const contact = row as { id: string; lead_id: string; normalized_value: string; is_primary: boolean };
-    if (sentLeadIds.has(contact.lead_id)) {
-      continue;
-    }
     if (suppressedEmails.has(contact.normalized_value)) {
       continue;
     }
-    const lead = byLead.get(contact.lead_id);
-    if (!lead) continue;
+    const existing = contactByLead.get(contact.lead_id);
+    if (!existing || (!existing.is_primary && contact.is_primary)) {
+      contactByLead.set(contact.lead_id, contact);
+    }
+  }
+
+  const orderedLeads = Array.from(byLead.values()).sort((a, b) => {
+    const aPriority = a.qualification_status === "qualified" ? 0 : 1;
+    const bPriority = b.qualification_status === "qualified" ? 0 : 1;
+    if (aPriority !== bPriority) return aPriority - bPriority;
+    const aScore = a.commercial_score ?? -1;
+    const bScore = b.commercial_score ?? -1;
+    if (aScore !== bScore) return bScore - aScore;
+    return a.created_at.localeCompare(b.created_at);
+  });
+
+  const eligible: EligibleLead[] = [];
+  for (const lead of orderedLeads) {
+    if (sentLeadIds.has(lead.id)) {
+      continue;
+    }
+    if (repliedLeadIds.has(lead.id)) {
+      continue;
+    }
+    const contact = contactByLead.get(lead.id);
+    if (!contact) {
+      continue;
+    }
+
     eligible.push({
       leadId: lead.id,
       contactId: contact.id,
       email: contact.normalized_value,
+      qualificationStatus: lead.qualification_status,
       businessName: lead.business_name,
       city: "zona activa",
       website: lead.website,
@@ -464,6 +502,7 @@ async function getFollowUpLead(leadId: string) {
     leadId: lead.id,
     contactId: contact.id,
     email: contact.normalized_value,
+    qualificationStatus: lead.qualification_status,
     businessName: lead.business_name,
     city: "zona activa",
     website: lead.website,
@@ -499,12 +538,6 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
   }
 
   const healthThresholds = getHealthThresholds();
-  if (snapshot.zone.qualified_leads_count < healthThresholds.minQualifiedLeadsToSend || snapshot.zone.remaining_leads_count < healthThresholds.minContactableLeadsToSend) {
-    return {
-      ok: true,
-      reason: `Zona nu are suficiente lead-uri bune pentru trimitere (qualified=${snapshot.zone.qualified_leads_count}, remaining=${snapshot.zone.remaining_leads_count}).`
-    };
-  }
 
   const admin = createSupabaseServiceClient();
   const campaign = await ensureCampaignForZone({
@@ -563,7 +596,18 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
   }
 
   const followUps = await getDueFollowUps(campaign.id, capacity);
-  const initialLeads = await getEligibleInitialLeads(snapshot.zone.id, campaign.id, capacity);
+  const initialLeads = await getEligibleInitialLeads(snapshot.zone.id, capacity);
+
+  if (followUps.length === 0 && initialLeads.length === 0) {
+    return {
+      ok: true,
+      reason: "Nu exista lead-uri eligibile pentru trimitere (qualified/review cu email valid).",
+      counts
+    };
+  }
+
+  const qualifiedInBatch = initialLeads.filter((lead) => lead.qualificationStatus === "qualified").length;
+  const reviewInBatch = initialLeads.length - qualifiedInBatch;
   const batchId = await createBatch(campaign.id, Math.min(capacity, followUps.length + initialLeads.length));
 
   let sent = 0;
@@ -847,6 +891,8 @@ export async function runOutreachScheduler(input?: { forceStart?: boolean; dryRu
     ok: true,
     sent,
     failed,
+    selectedQualified: qualifiedInBatch,
+    selectedReviewFallback: reviewInBatch,
     replies: replies.length,
     exhaustion,
     previews,

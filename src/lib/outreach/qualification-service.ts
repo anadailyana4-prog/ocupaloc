@@ -241,7 +241,7 @@ export async function runQualificationPipeline(input?: { zoneId?: string }) {
     .from("coverage_zones")
     .update({
       qualified_leads_count: qualified,
-      remaining_leads_count: qualified,
+      remaining_leads_count: qualified + review,
       uncontactable_leads_count: rejected,
       suppressed_leads_count: suppressed,
       already_contacted_leads_count: contacted,
