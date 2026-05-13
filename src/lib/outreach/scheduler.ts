@@ -189,10 +189,12 @@ async function getEligibleInitialLeads(zoneId: string, campaignId: string, limit
   const admin = createSupabaseServiceClient();
   const leadsResult = await admin
     .from("leads")
-    .select("id, business_name, website, observable_signals")
+    .select("id, business_name, website, observable_signals, commercial_score, created_at")
     .eq("coverage_zone_id", zoneId)
     .eq("qualification_status", "qualified")
-    .limit(100);
+    .order("commercial_score", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: true })
+    .limit(Math.max(200, limit * 20));
   if (leadsResult.error) throw leadsResult.error;
 
   const leadIds = (leadsResult.data ?? []).map((row) => (row as { id: string }).id);
@@ -218,7 +220,16 @@ async function getEligibleInitialLeads(zoneId: string, campaignId: string, limit
     (suppressionResult.data ?? []).map((row) => (row as { normalized_value: string }).normalized_value)
   );
 
-  const byLead = new Map((leadsResult.data ?? []).map((row) => [(row as { id: string }).id, row as { id: string; business_name: string; website: string | null; observable_signals: Record<string, boolean | string | number | null> }]));
+  const byLead = new Map((leadsResult.data ?? []).map((row) => [
+    (row as { id: string }).id,
+    row as {
+      id: string;
+      business_name: string;
+      website: string | null;
+      observable_signals: Record<string, boolean | string | number | null>;
+      commercial_score: number | null;
+    }
+  ]));
 
   const eligible: EligibleLead[] = [];
   for (const row of contactsResult.data ?? []) {
@@ -240,7 +251,7 @@ async function getEligibleInitialLeads(zoneId: string, campaignId: string, limit
       website: lead.website,
       observableSignals: lead.observable_signals ?? {},
       commercialCategory: null,
-      commercialScore: null
+      commercialScore: lead.commercial_score ?? null
     });
     if (eligible.length >= limit) break;
   }

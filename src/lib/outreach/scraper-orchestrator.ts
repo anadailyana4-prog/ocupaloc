@@ -188,6 +188,7 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
 
       const normalizedPhone = normalizePhone(candidate.phone);
       const normalizedWebsite = normalizeWebsite(candidate.website);
+      const normalizedEmail = normalizeEmailCandidate(candidate.email) ?? candidate.email?.toLowerCase() ?? null;
       const normalizedGoogleMapsUrl = candidate.googleMapsUrl?.trim().toLowerCase() ?? null;
       const dedupeKey = `${candidate.businessName.toLowerCase()}|${normalizedPhone ?? ""}|${normalizedWebsite ?? ""}|${normalizedGoogleMapsUrl ?? ""}`;
       if (seen.has(dedupeKey)) {
@@ -214,6 +215,29 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
 
       if (existingLead.data) {
         continue;
+      }
+
+      const contactFilters = [
+        normalizedEmail ? `and(channel.eq.email,normalized_value.eq."${escapePostgrestValue(normalizedEmail)}")` : null,
+        normalizedPhone ? `and(channel.eq.phone,normalized_value.eq."${escapePostgrestValue(normalizedPhone)}")` : null,
+        normalizedWebsite ? `and(channel.eq.website,normalized_value.eq."${escapePostgrestValue(normalizedWebsite)}")` : null
+      ].filter(Boolean);
+
+      if (contactFilters.length > 0) {
+        const existingContact = await admin
+          .from("lead_contacts")
+          .select("lead_id")
+          .or(contactFilters.join(","))
+          .limit(1)
+          .maybeSingle();
+
+        if (existingContact.error) {
+          throw existingContact.error;
+        }
+
+        if (existingContact.data) {
+          continue;
+        }
       }
 
       const leadInsert = await admin
@@ -282,6 +306,11 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
           }))
         );
         if (contactInsert.error) {
+          if ((contactInsert.error as { code?: string }).code === "23505") {
+            await admin.from("leads").delete().eq("id", leadId);
+            inserted = Math.max(0, inserted - 1);
+            continue;
+          }
           throw contactInsert.error;
         }
       }
