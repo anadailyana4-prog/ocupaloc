@@ -39,6 +39,8 @@ interface TelegramUpdate {
 
 let validatedRoleConfig = false;
 
+const TELEGRAM_MAX_MESSAGE_LENGTH = 3500;
+
 function getTelegramApiBase() {
   return `https://api.telegram.org/bot${env.get("TELEGRAM_BOT_TOKEN")}`;
 }
@@ -70,7 +72,7 @@ function validateTelegramRoleConfig() {
 
   const invalid = [...owner.invalid, ...admin.invalid, ...operator.invalid];
   if (invalid.length > 0) {
-    throw new Error(`TELEGRAM_*_IDS contine valori invalide: ${invalid.join(", ")}`);
+    console.warn(`TELEGRAM_*_IDS contine valori invalide: ${invalid.join(", ")}`);
   }
 
   const overlapOwnerAdmin = [...owner.values].filter((id) => admin.values.has(id));
@@ -78,7 +80,7 @@ function validateTelegramRoleConfig() {
   const overlapAdminOperator = [...admin.values].filter((id) => operator.values.has(id));
 
   if (overlapOwnerAdmin.length || overlapOwnerOperator.length || overlapAdminOperator.length) {
-    throw new Error("TELEGRAM_OWNER_IDS, TELEGRAM_ADMIN_IDS si TELEGRAM_OPERATOR_IDS nu trebuie sa contina ID-uri suprapuse.");
+    console.warn("TELEGRAM_OWNER_IDS, TELEGRAM_ADMIN_IDS si TELEGRAM_OPERATOR_IDS contin ID-uri suprapuse.");
   }
 
   validatedRoleConfig = true;
@@ -127,22 +129,34 @@ export async function setTelegramWebhook(webhookUrl: string, secretToken: string
 
 export function buildHelpMessage() {
   return [
-    "Comenzi disponibile:",
+    "Comenzi disponibile (mod simplificat):",
     OUTREACH_COMMANDS.map((item) => `/${item.command} - ${item.description}`).join("\n"),
     "",
-    "Comenzi operationale rapide:",
-    "/health - arata webhook + deliverability + starea zonei",
+    "Flux recomandat:",
     "/scrape - porneste scraping + calificare pe zona activa",
-    "/send - trimite imediat batch-ul curent",
-    "/delivery - arata livrate vs nelivrate",
-    "/pause - opreste temporar trimiterea",
-    "/resume - reia trimiterea controlata",
+    "/queue - vezi cate lead-uri qualified sunt gata",
+    "/send - trimite batch controlat (10/ora)",
     "/approve-next - confirma trecerea la urmatoarea zona sau nisa"
   ].join("\n");
 }
 
+function splitTelegramMessage(text: string) {
+  if (text.length <= TELEGRAM_MAX_MESSAGE_LENGTH) return [text];
+  const chunks: string[] = [];
+  let start = 0;
+  while (start < text.length) {
+    const end = Math.min(start + TELEGRAM_MAX_MESSAGE_LENGTH, text.length);
+    chunks.push(text.slice(start, end));
+    start = end;
+  }
+  return chunks;
+}
+
 export async function sendTelegramMessage(chatId: number, text: string) {
-  await sendTelegramRequest("sendMessage", { chat_id: chatId, text });
+  const chunks = splitTelegramMessage(text);
+  for (const chunk of chunks) {
+    await sendTelegramRequest("sendMessage", { chat_id: chatId, text: chunk });
+  }
 }
 
 async function upsertTelegramAdmin(user: TelegramUser, chatId: number) {
@@ -506,7 +520,11 @@ export async function notifyAdmins(text: string, options?: { excludeChatIds?: nu
 }
 
 export async function handleTelegramUpdate(update: TelegramUpdate) {
-  validateTelegramRoleConfig();
+  try {
+    validateTelegramRoleConfig();
+  } catch {
+    // Never block command handling because of role config validation.
+  }
 
   const message = update.message;
   const text = message?.text?.trim();
@@ -724,6 +742,10 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
     // Bot response should still be delivered even if audit logging fails.
   }
 
-  await sendTelegramMessage(chat.id, responseText);
+  try {
+    await sendTelegramMessage(chat.id, responseText);
+  } catch {
+    // Keep webhook stable even if Telegram API rejects a response.
+  }
   return { ok: true };
 }

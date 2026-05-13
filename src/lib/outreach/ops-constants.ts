@@ -21,21 +21,11 @@ export const TELEGRAM_ADMIN_ROLES = ["owner", "admin", "operator"] as const;
 export const OUTREACH_COMMANDS = [
   { command: "start", description: "Porneste interactiunea cu botul" },
   { command: "status", description: "Arata statusul operational curent" },
-  { command: "stats", description: "Arata KPI azi + ultimele 7 zile" },
   { command: "queue", description: "Arata coada de lucru (lead-uri + follow-up due)" },
-  { command: "health", description: "Arata starea webhook-ului si a deliverability-ului" },
   { command: "scrape", description: "Porneste scraping + calificare pentru zona activa" },
   { command: "send", description: "Porneste trimiterea imediat (optional: /send N)" },
-  { command: "delivery", description: "Arata livrate vs nelivrate in campania activa" },
-  { command: "coverage", description: "Arata progresul national pe nisa activa" },
-  { command: "next", description: "Arata urmatoarea zona planificata" },
-  { command: "exhaustion", description: "Explica daca zona este aproape epuizata" },
-  { command: "pause", description: "Opreste temporar trimiterea" },
-  { command: "resume", description: "Reia trimiterea" },
   { command: "approve_next", description: "Confirma trecerea la urmatoarea zona sau nisa" },
-  { command: "replies", description: "Arata reply-urile noi si drafturile sugerate" },
   { command: "report", description: "Trimite raportul zilei" },
-  { command: "deliverability", description: "Status SPF/DKIM/DMARC si bounce rate" },
   { command: "help", description: "Ajutor si lista comenzilor" }
 ] as const;
 
