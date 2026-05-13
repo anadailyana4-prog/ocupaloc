@@ -307,6 +307,7 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
             value: contact.value,
             normalized_value: contact.normalized_value,
             is_primary: contact.is_primary,
+            is_valid: true,
             source: "free_scraper"
           }))
         );
