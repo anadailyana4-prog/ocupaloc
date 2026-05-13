@@ -256,6 +256,8 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
           primary_phone: normalizePhone(candidate.phone),
           category: candidate.category,
           source_quality: candidate.email ? 0.9 : candidate.website ? 0.7 : 0.5,
+          qualification_status: "qualified",
+          qualification_reason: "Auto-qualified din free scraper.",
           observable_signals: {
             hasWebsite: Boolean(candidate.website),
             hasPhone: Boolean(candidate.phone),
