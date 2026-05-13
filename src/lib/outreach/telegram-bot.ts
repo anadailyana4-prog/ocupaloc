@@ -205,7 +205,10 @@ async function upsertTelegramAdmin(user: TelegramUser, chatId: number) {
 
 function parseCommandInput(text: string) {
   const tokens = text.trim().split(/\s+/).filter(Boolean);
-  const command = (tokens[0] ?? "").toLowerCase().replace(/_/g, "-");
+  const raw = (tokens[0] ?? "").toLowerCase();
+  // Telegram can send commands as /command@botname in groups.
+  const withoutBotMention = raw.split("@")[0] ?? raw;
+  const command = withoutBotMention.replace(/_/g, "-");
   const args = tokens.slice(1);
   return { command, args };
 }
@@ -579,7 +582,8 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
       responseText = await formatQueueText();
       break;
     }
-    case "/scrape": {
+    case "/scrape":
+    case "/scrap": {
       const scrapeResult = await runScraperOrchestration({ notifyAlerts: false });
       const qualificationResult = await runQualificationPipeline({ zoneId: scrapeResult.zoneId });
       responseText = [
