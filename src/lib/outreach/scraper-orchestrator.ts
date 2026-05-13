@@ -158,6 +158,7 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
   const localities = await getZoneLocalities(zone.id);
   const limitPerLocality = input?.limitPerLocality ?? 150;
   const seen = new Set<string>();
+  const scrapeIssues: string[] = [];
 
   let discovered = 0;
   let inserted = 0;
@@ -165,7 +166,15 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
   for (const locality of localities) {
     if (!locality.name) continue;
 
-    const candidates = await scrapeFreeLeads({ city: locality.name, limit: limitPerLocality });
+    let candidates;
+    try {
+      candidates = await scrapeFreeLeads({ city: locality.name, limit: limitPerLocality });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown scraping error";
+      scrapeIssues.push(`${locality.name}: ${message}`);
+      continue;
+    }
+
     for (const candidate of candidates) {
       if (!matchesNiche(nicheSlug, { businessName: candidate.businessName, category: candidate.category })) {
         continue;
@@ -314,6 +323,15 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
       `Lead-uri noi descoperite: ${discovered}`,
       `Lead-uri inserate: ${inserted}`,
       "Recomandare: re-scrape, extindere pe localitati vecine sau trecere la urmatoarea zona."
+    ].join("\n"));
+  }
+
+  if (scrapeIssues.length > 0) {
+    await notifyTelegramAdmins([
+      "⚠️ Unele localitati nu au putut fi procesate",
+      `Zona: ${zone.id}`,
+      `Nisa: ${nicheSlug}`,
+      ...scrapeIssues.slice(0, 5)
     ].join("\n"));
   }
 
