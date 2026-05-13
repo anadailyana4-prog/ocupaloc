@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://tffwoljimpdckvlogyqu.supabase.co';
-const serviceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmZndvbGppbXBkY2t2bG9neXF1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjA5NjUyOSwiZXhwIjoyMDkxNjcyNTI5fQ.yQMzQ3gcvd5PBaQPcp9XMHIBRFqihGXfgg2qB1Kkyp0';
+const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !serviceRoleKey) {
+  throw new Error('Missing SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY.');
+}
 
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 
