@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import { NextRequest, NextResponse } from "next/server";
 
 import { env } from "@/lib/config/env";
@@ -51,32 +50,14 @@ export async function POST(request: NextRequest) {
 
   logInfo("[telegram-outreach] command detected", { command, text });
 
-  if (command !== "/scrape") {
-    logInfo("[telegram-outreach] running command sync", { command });
-    try {
-      await handleTelegramUpdate(update);
-      logInfo("[telegram-outreach] command completed", { command });
-    } catch (error) {
-      logWarn("[telegram-outreach] command failed", { command, error: String(error) });
-      reportError("cron", "telegram_outreach_webhook_failed", error);
-    }
-    return NextResponse.json({ ok: true });
+  logInfo("[telegram-outreach] running command sync", { command });
+  try {
+    await handleTelegramUpdate(update);
+    logInfo("[telegram-outreach] command completed", { command });
+  } catch (error) {
+    logWarn("[telegram-outreach] command failed", { command, error: String(error) });
+    reportError("cron", "telegram_outreach_webhook_failed", error);
   }
-
-  logInfo("[telegram-outreach] scheduling scrape in after()", {
-    route: "/api/telegram/outreach"
-  });
-
-  // after() runs AFTER the response is sent to Telegram.
-  // This means Telegram gets 200 immediately and never retries,
-  // while the slow /scrape handler still completes.
-  after(async () => {
-    try {
-      await handleTelegramUpdate(update);
-    } catch (error) {
-      reportError("cron", "telegram_outreach_webhook_failed", error);
-    }
-  });
 
   return NextResponse.json({ ok: true });
 }
