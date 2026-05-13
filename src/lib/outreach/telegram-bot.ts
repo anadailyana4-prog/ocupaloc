@@ -162,6 +162,21 @@ function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
+function inferBusinessNameFromEmail(email: string) {
+  const localPart = (email.split("@")[0] ?? "").trim();
+  const firstToken = localPart
+    .split(/[._\-+\d]+/)
+    .map((token) => token.trim())
+    .find((token) => token.length >= 2);
+
+  if (!firstToken) {
+    return "activitatea ta";
+  }
+
+  const normalized = firstToken.toLowerCase();
+  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)} - activitate independenta`;
+}
+
 function parseSingleEmailCommandInput(text: string): SingleEmailCommandInput {
   const cleaned = text.replace(/^\/\w+(@\w+)?\s*/i, "").trim();
 
@@ -174,9 +189,9 @@ function parseSingleEmailCommandInput(text: string): SingleEmailCommandInput {
 
     return {
       email,
-      businessName: "afacerea ta",
+      businessName: inferBusinessNameFromEmail(email),
       city: "Romania",
-      nicheSlug: "saloane"
+      nicheSlug: "beauty-independent"
     };
   }
 

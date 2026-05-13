@@ -40,6 +40,12 @@ const NICHE_COPY: Record<string, { label: string; problem: string; benefit: stri
     benefit: "un flux simplu de rezervare ajuta mai ales la servicii recurente si confirmari",
     cta: "Daca vrei, iti trimit un exemplu concret pentru saloane din aceeasi zona."
   },
+  "beauty-independent": {
+    label: "servicii de beauty independente (ex. manichiura)",
+    problem: "cand programarile vin din mesaje, apeluri si social media, confirmarile si reprogramarile consuma mult timp",
+    benefit: "un flux simplu de rezervare online reduce munca administrativa si lasa mai mult timp pentru clienti",
+    cta: "Daca vrei, iti trimit un exemplu scurt pentru profesioniste care lucreaza pe cont propriu."
+  },
   "clinici-estetice": {
     label: "clinica estetica",
     problem: "solicitarile initiale se strang in prea multe canale, iar trierea devine greoaie",
