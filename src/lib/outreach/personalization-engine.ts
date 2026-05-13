@@ -19,6 +19,8 @@ interface PersonalizationOutput {
   reactivationHtml: string;
 }
 
+const OCUPALOC_SITE_URL = "https://ocupaloc.ro";
+
 const NICHE_COPY: Record<string, { label: string; problem: string; benefit: string; cta: string }> = {
   barber: {
     label: "barbershop",
@@ -117,6 +119,7 @@ function buildFollowUp(input: PersonalizationInput, optOutText: string) {
   const text = [
     `Salut, revin foarte scurt legat de ${input.businessName}.`,
     "Daca programarile online sau confirmarile automate sunt o prioritate acum, pot trimite un exemplu foarte scurt si aplicat.",
+    `Detalii rapide: ${OCUPALOC_SITE_URL}`,
     "Daca nu e momentul potrivit, spune-mi si opresc aici.",
     "",
     optOutText
@@ -124,6 +127,7 @@ function buildFollowUp(input: PersonalizationInput, optOutText: string) {
 
   const html = `<p>Salut, revin foarte scurt legat de <strong>${escapeHtml(input.businessName)}</strong>.</p>
 <p>Daca programarile online sau confirmarile automate sunt o prioritate acum, pot trimite un exemplu foarte scurt si aplicat.</p>
+<p>Detalii rapide: <a href="${OCUPALOC_SITE_URL}">ocupaloc.ro</a></p>
 <p>Daca nu e momentul potrivit, spune-mi si opresc aici.</p>
 <p style="font-size:12px;color:#64748b;">${escapeHtml(optOutText)}</p>`;
 
@@ -137,6 +141,7 @@ function buildFollowUp2(input: PersonalizationInput, optOutText: string) {
     "",
     `Am trimis doua mesaje anterioare despre programari online pentru ${input.businessName} si inteleg daca nu e prioritatea ta acum.`,
     "Voiam sa las totusi un singur lucru concret: in general, afacerile similare care trec la programari online economisesc intre 30 si 60 de minute pe zi din confirmari si reprogramari manuale.",
+    `Poti vedea platforma aici: ${OCUPALOC_SITE_URL}`,
     "Daca vrei sa vedem daca si la voi e cazul, un apel de 10 minute e tot ce e nevoie.",
     "Daca nu, nicio problema.",
     "",
@@ -146,6 +151,7 @@ function buildFollowUp2(input: PersonalizationInput, optOutText: string) {
   const html = `<p>Salut,</p>
 <p>Am trimis doua mesaje anterioare despre programari online pentru <strong>${escapeHtml(input.businessName)}</strong> si inteleg daca nu e prioritatea ta acum.</p>
 <p>Voiam sa las totusi un singur lucru concret: in general, afacerile similare care trec la programari online economisesc intre 30 si 60 de minute pe zi din confirmari si reprogramari manuale.</p>
+<p>Poti vedea platforma aici: <a href="${OCUPALOC_SITE_URL}">ocupaloc.ro</a></p>
 <p>Daca vrei sa vedem daca si la voi e cazul, un apel de 10 minute e tot ce e nevoie. Daca nu, nicio problema.</p>
 <p style="font-size:12px;color:#64748b;">${escapeHtml(optOutText)}</p>`;
 
@@ -183,6 +189,7 @@ function buildReactivation(input: PersonalizationInput, optOutText: string) {
     "",
     `Am mai vorbit acum cateva luni legat de ${input.businessName}. Nu revin cu acelasi pitch.`,
     "Am vrut doar sa impartasesc ca am adaugat cateva lucruri pe care le-am construit pentru afaceri similare din Romania: confirmari automate, dashboard de programari si reminder-e personalizate.",
+    `Platforma: ${OCUPALOC_SITE_URL}`,
     "Daca e un moment mai bun acum, iti trimit un exemplu in cateva minute. Daca nu, e in regula.",
     "",
     optOutText
@@ -191,6 +198,7 @@ function buildReactivation(input: PersonalizationInput, optOutText: string) {
   const html = `<p>Salut,</p>
 <p>Am mai vorbit acum cateva luni legat de <strong>${escapeHtml(input.businessName)}</strong>. Nu revin cu acelasi pitch.</p>
 <p>Am vrut doar sa impartasesc ca am adaugat cateva lucruri noi: confirmari automate, dashboard de programari si reminder-e personalizate.</p>
+<p>Platforma: <a href="${OCUPALOC_SITE_URL}">ocupaloc.ro</a></p>
 <p>Daca e un moment mai bun acum, iti trimit un exemplu in cateva minute. Daca nu, e in regula.</p>
 <p style="font-size:12px;color:#64748b;">${escapeHtml(optOutText)}</p>`;
 
@@ -225,6 +233,7 @@ export function generatePersonalizedOutreach(input: PersonalizationInput & { opt
     `${nicheCopy.benefit}.`,
     signalNote,
     nicheCopy.cta,
+    `Website: ${OCUPALOC_SITE_URL}`,
     "",
     `Cu bine,`,
     input.senderName,
@@ -241,6 +250,7 @@ export function generatePersonalizedOutreach(input: PersonalizationInput & { opt
     <p>${escapeHtml(nicheCopy.benefit)}.</p>
     <p>${escapeHtml(signalNote)}</p>
     <p>${escapeHtml(nicheCopy.cta)}</p>
+    <p>Website: <a href="${OCUPALOC_SITE_URL}">ocupaloc.ro</a></p>
     <p>Cu bine,<br>${escapeHtml(input.senderName)}</p>
     <p style="font-size:12px;color:#64748b;">${escapeHtml(optOutText)}</p>
   </body>
