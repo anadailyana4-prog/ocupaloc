@@ -239,11 +239,11 @@ export function generatePersonalizedOutreach(input: PersonalizationInput & { opt
     text = [
       `Salut ${parsed.businessName},`,
       "",
-      `Problema: clientele confirma si rescheduleaza pe WhatsApp/Instagram — zeci de mesaje pe zi.`,
-      `Solutie: pagina de programare online — clientele se rescheduleaza singure.`,
+      `Problema: programarile sunt confirmate si mutate din WhatsApp/Instagram, ceea ce inseamna multe mesaje zilnic.`,
+      `Solutie: o pagina simpla de programari online, unde clientele se pot reprograma singure.`,
       "",
       `${OCUPALOC_SITE_URL}`,
-      `Stop anumit: ${input.optOutUrl}`,
+      `Stop: ${input.optOutUrl}`,
       `- Echipa ocupaloc.ro`
     ].join("\n");
   } else {
@@ -264,10 +264,10 @@ export function generatePersonalizedOutreach(input: PersonalizationInput & { opt
 <html lang="ro">
   <body style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a;max-width:600px;margin:0 auto;padding:20px;">
     <p><strong>Salut ${escapeHtml(parsed.businessName)},</strong></p>
-    <p><strong>Problema:</strong> clientele confirma si rescheduleaza pe WhatsApp/Instagram — zeci de mesaje pe zi.</p>
-    <p><strong>Solutie:</strong> pagina de programare online — clientele se rescheduleaza singure.</p>
+    <p><strong>Problema:</strong> programarile sunt confirmate si mutate din WhatsApp/Instagram, ceea ce inseamna multe mesaje zilnic.</p>
+    <p><strong>Solutie:</strong> o pagina simpla de programari online, unde clientele se pot reprograma singure.</p>
     <p style="margin-top:20px;text-align:center;">
-      <a href="${OCUPALOC_SITE_URL}" style="display:inline-block;background:#3b82f6;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Vede aici</a>
+      <a href="${OCUPALOC_SITE_URL}" style="display:inline-block;background:#3b82f6;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Vezi aici</a>
     </p>
     <p style="font-size:12px;color:#64748b;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:12px;text-align:center;">
       <a href="${input.optOutUrl}" style="color:#64748b;text-decoration:underline;">Sterge-ma din lista</a><br>
@@ -283,7 +283,7 @@ export function generatePersonalizedOutreach(input: PersonalizationInput & { opt
     <p>${escapeHtml(nicheCopy.benefit)}.</p>
     <p>${escapeHtml(nicheCopy.cta)}</p>
     <p style="margin-top:20px;text-align:center;">
-      <a href="${OCUPALOC_SITE_URL}" style="display:inline-block;background:#3b82f6;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Vede mai mult</a>
+      <a href="${OCUPALOC_SITE_URL}" style="display:inline-block;background:#3b82f6;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Vezi aici</a>
     </p>
     <p style="font-size:12px;color:#64748b;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:12px;">
       <a href="${input.optOutUrl}" style="color:#64748b;text-decoration:underline;">Sterge-ma din lista</a>
