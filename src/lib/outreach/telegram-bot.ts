@@ -187,6 +187,12 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
   try {
     switch (command) {
       case "/scrape": {
+        try {
+          await sendTelegramMessage(chat.id, "Pornesc scrape + calificare. Poate dura 1-5 minute, revin cu raport.");
+        } catch {
+          // Continue even if the acknowledgement cannot be delivered.
+        }
+
         const scrapeResult = await runScraperOrchestration({ notifyAlerts: false });
         const qualResult = await runQualificationPipeline({ zoneId: scrapeResult.zoneId });
         responseText = [
