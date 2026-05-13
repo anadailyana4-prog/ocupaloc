@@ -226,53 +226,67 @@ function escapeHtml(value: string) {
 export function generatePersonalizedOutreach(input: PersonalizationInput & { optOutUrl: string; senderName: string }): PersonalizationOutput {
   const parsed = personalizationInputSchema.parse(input);
   const nicheCopy = NICHE_COPY[parsed.nicheSlug] ?? NICHE_COPY.saloane;
-  const observation = buildObservation(parsed);
-  
-  let signalNote = "Ideea nu este sa schimbati tot, ci doar sa faceti programarea mai simpla pentru clientii potriviti.";
-  if (parsed.nicheSlug === "beauty-independent") {
-    signalNote = "Cea mai mare parte din clientele mele spun ca s-au uitat la cinci lucruri: daca e asa de greu sa imi fac programarea, why bother.";
-  } else if (parsed.observableSignals.instagramDetected) {
-    signalNote = "Se vede ca inbound-ul poate veni si din Instagram, iar acolo raspunsurile se fragmenteaza usor.";
-  } else if (parsed.observableSignals.hasServiceMenu) {
-    signalNote = "Faptul ca aveti deja serviciile vizibile ajuta, dar rezervarea poate fi facuta si mai simpla.";
-  }
 
   const subject = parsed.nicheSlug === "beauty-independent" 
-    ? `${parsed.businessName}: 5 minute care s-ar putea sa te salveze din mesaje`
-    : `${parsed.businessName}: o propunere scurta pentru programari mai simple`;
+    ? `${parsed.businessName}: elimina mesajele repetate`
+    : `${parsed.businessName}: programari mai simple`;
     
-  const optOutText = `Daca nu vrei sa mai primesti mesaje de acest tip, raspunde cu "stop" sau foloseste linkul de opozitie: ${input.optOutUrl}`;
-  const text = [
-    `Salut,`,
-    "",
-    observation,
-    `In zona de ${nicheCopy.label}, ${nicheCopy.problem}.`,
-    `${nicheCopy.benefit}.`,
-    signalNote,
-    nicheCopy.cta,
-    `Website: ${OCUPALOC_SITE_URL}`,
-    "",
-    `Cu bine,`,
-    input.senderName,
-    "",
-    optOutText
-  ].join("\n");
+  const optOutText = `Stop: ${input.optOutUrl}`;
+  
+  // For beauty-independent, use ultra-short format
+  let text = "";
+  if (parsed.nicheSlug === "beauty-independent") {
+    text = [
+      `Salut ${parsed.businessName},`,
+      "",
+      `Problema: clientele confirma si rescheduleaza pe WhatsApp/Instagram — zeci de mesaje pe zi.`,
+      `Solutie: pagina de programare online — clientele se rescheduleaza singure.`,
+      "",
+      `${OCUPALOC_SITE_URL}`,
+      `Stop anumit: ${input.optOutUrl}`,
+      `- Echipa ocupaloc.ro`
+    ].join("\n");
+  } else {
+    text = [
+      `Salut,`,
+      "",
+      `${nicheCopy.problem}`,
+      `${nicheCopy.benefit}`,
+      "",
+      `${nicheCopy.cta}`,
+      `${OCUPALOC_SITE_URL}`,
+      `Stop: ${input.optOutUrl}`
+    ].join("\n");
+  }
 
-  const html = `<!DOCTYPE html>
+  const html = parsed.nicheSlug === "beauty-independent"
+    ? `<!DOCTYPE html>
 <html lang="ro">
-  <body style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;max-width:640px;margin:0 auto;padding:24px;">
-    <p>Salut,</p>
-    <p>${escapeHtml(observation)}</p>
-    <p>In zona de <strong>${escapeHtml(nicheCopy.label)}</strong>, ${escapeHtml(nicheCopy.problem)}.</p>
-    <p>${escapeHtml(nicheCopy.benefit)}.</p>
-    <p>${escapeHtml(signalNote)}</p>
-    <p>${escapeHtml(nicheCopy.cta)}</p>
-    <p style="margin-top:20px;border-top:1px solid #e2e8f0;padding-top:16px;">
-      <strong>Link util:</strong> <a href="${OCUPALOC_SITE_URL}">ocupaloc.ro</a>
+  <body style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a;max-width:600px;margin:0 auto;padding:20px;">
+    <p><strong>Salut ${escapeHtml(parsed.businessName)},</strong></p>
+    <p><strong>Problema:</strong> clientele confirma si rescheduleaza pe WhatsApp/Instagram — zeci de mesaje pe zi.</p>
+    <p><strong>Solutie:</strong> pagina de programare online — clientele se rescheduleaza singure.</p>
+    <p style="margin-top:20px;text-align:center;">
+      <a href="${OCUPALOC_SITE_URL}" style="display:inline-block;background:#3b82f6;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Vede aici</a>
     </p>
-    <p>Cu bine,<br><strong>${escapeHtml(input.senderName)}</strong></p>
+    <p style="font-size:12px;color:#64748b;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:12px;text-align:center;">
+      <a href="${input.optOutUrl}" style="color:#64748b;text-decoration:underline;">Sterge-ma din lista</a><br>
+      - Echipa ocupaloc.ro
+    </p>
+  </body>
+</html>`
+    : `<!DOCTYPE html>
+<html lang="ro">
+  <body style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a;max-width:600px;margin:0 auto;padding:20px;">
+    <p>Salut,</p>
+    <p><strong>${escapeHtml(nicheCopy.problem)}</strong></p>
+    <p>${escapeHtml(nicheCopy.benefit)}.</p>
+    <p>${escapeHtml(nicheCopy.cta)}</p>
+    <p style="margin-top:20px;text-align:center;">
+      <a href="${OCUPALOC_SITE_URL}" style="display:inline-block;background:#3b82f6;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Vede mai mult</a>
+    </p>
     <p style="font-size:12px;color:#64748b;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:12px;">
-      ${escapeHtml(optOutText)}
+      <a href="${input.optOutUrl}" style="color:#64748b;text-decoration:underline;">Sterge-ma din lista</a>
     </p>
   </body>
 </html>`;
