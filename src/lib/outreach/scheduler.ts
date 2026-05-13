@@ -195,7 +195,7 @@ async function getEligibleInitialLeads(zoneId: string, campaignId: string, limit
     .from("leads")
     .select("id, business_name, website, observable_signals, commercial_score, created_at")
     .eq("coverage_zone_id", zoneId)
-    .eq("qualification_status", "qualified")
+    .in("qualification_status", ["qualified", "review"])
     .order("commercial_score", { ascending: false, nullsFirst: false })
     .order("created_at", { ascending: true })
     .limit(Math.max(200, limit * 20));
