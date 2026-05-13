@@ -54,7 +54,12 @@ function matchesNiche(nicheSlug: string, input: { businessName: string; category
   const haystack = `${input.businessName} ${input.category ?? ""}`.toLowerCase();
   switch (nicheSlug) {
     case "barber":
-      return haystack.includes("barber");
+      return (
+        haystack.includes("barber")
+        || haystack.includes("frizer")
+        || haystack.includes("hairdresser")
+        || haystack.includes("coafor")
+      );
     case "frizerii":
       return haystack.includes("frizer") || haystack.includes("hairdresser") || haystack.includes("coafor");
     case "saloane":
