@@ -20,13 +20,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
+  let payload: unknown;
   try {
-    const payload = await request.json();
-    const result = await handleTelegramUpdate(payload);
-    return NextResponse.json(result);
-  } catch (error) {
-    reportError("cron", "telegram_outreach_webhook_failed", error);
-    // Always return 200 to Telegram — a non-200 causes infinite retries
-    return NextResponse.json({ ok: true, error: "internal error logged" });
+    payload = await request.json();
+  } catch {
+    return NextResponse.json({ ok: true });
   }
+
+  // Respond immediately with 200 so Telegram doesn't retry.
+  // Run the handler in the background (waitUntil keeps the function alive on Vercel).
+  const handler = handleTelegramUpdate(payload as Parameters<typeof handleTelegramUpdate>[0])
+    .catch((error) => {
+      reportError("cron", "telegram_outreach_webhook_failed", error);
+    });
+
+  // @ts-expect-error waitUntil is available on Vercel Edge/Node runtimes via globalThis
+  if (typeof globalThis.waitUntil === "function") {
+    (globalThis as unknown as { waitUntil: (p: Promise<unknown>) => void }).waitUntil(handler);
+  } else {
+    // Fallback: fire-and-forget (Vercel Fluid/Lambda keeps alive long enough)
+    void handler;
+  }
+
+  return NextResponse.json({ ok: true });
 }
