@@ -163,8 +163,31 @@ function normalizeEmail(value: string) {
 }
 
 function parseSingleEmailCommandInput(text: string): SingleEmailCommandInput {
-  const parts = text
-    .replace(/^\/\w+(@\w+)?\s*/i, "")
+  const cleaned = text.replace(/^\/\w+(@\w+)?\s*/i, "").trim();
+
+  // Simple mode: /emailsend email@domeniu.ro
+  if (cleaned && !cleaned.includes("|")) {
+    const email = normalizeEmail(cleaned);
+    if (!SIMPLE_EMAIL_REGEX.test(email)) {
+      throw new Error("Email invalid.");
+    }
+
+    const domain = email.split("@")[1] ?? "business";
+    const businessSeed = domain.split(".")[0] ?? "business";
+    const businessName = businessSeed
+      .replace(/[-_]+/g, " ")
+      .replace(/\b\w/g, (m) => m.toUpperCase())
+      .trim() || "Business";
+
+    return {
+      email,
+      businessName,
+      city: "Romania",
+      nicheSlug: "saloane"
+    };
+  }
+
+  const parts = cleaned
     .split("|")
     .map((part) => part.trim())
     .filter(Boolean);
@@ -245,7 +268,8 @@ async function handleEmailPreviewCommand(text: string) {
     "",
     personalized.text,
     "",
-    "Pentru trimitere: /emailsend email | business | oras | niche | website(optional)"
+    "Pentru trimitere: /emailsend email@domeniu.ro",
+    "Optional (manual): /emailsend email | business | oras | niche | website(optional)"
   ].join("\n");
 }
 
