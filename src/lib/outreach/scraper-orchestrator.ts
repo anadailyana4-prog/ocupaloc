@@ -161,7 +161,8 @@ export async function runScraperOrchestration(input?: { zoneId?: string; limitPe
 
   const nicheSlug = (nicheResult.data as { slug: string }).slug;
   const localities = await getZoneLocalities(zone.id);
-  const limitPerLocality = input?.limitPerLocality ?? 150;
+  // No default cap: scrape all available candidates unless an explicit test cap is provided.
+  const limitPerLocality = input?.limitPerLocality;
   const seen = new Set<string>();
   const scrapeIssues: string[] = [];
 
