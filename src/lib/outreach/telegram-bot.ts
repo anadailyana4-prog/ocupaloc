@@ -172,16 +172,9 @@ function parseSingleEmailCommandInput(text: string): SingleEmailCommandInput {
       throw new Error("Email invalid.");
     }
 
-    const domain = email.split("@")[1] ?? "business";
-    const businessSeed = domain.split(".")[0] ?? "business";
-    const businessName = businessSeed
-      .replace(/[-_]+/g, " ")
-      .replace(/\b\w/g, (m) => m.toUpperCase())
-      .trim() || "Business";
-
     return {
       email,
-      businessName,
+      businessName: "afacerea ta",
       city: "Romania",
       nicheSlug: "saloane"
     };
