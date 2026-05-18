@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import Script from "next/script";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { DEFAULT_OG_IMAGE, absoluteUrl, canonical, noIndexRobots } from "@/lib/seo";
 
 type PageProps = { params: Promise<{ slug: string; serviciu: string }> };
 
@@ -67,12 +70,35 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug, serviciu } = await params;
+  if (!orase.includes(slug as (typeof orase)[number]) || !servicii.includes(serviciu as (typeof servicii)[number])) {
+    return {
+      title: "Pagină indisponibilă",
+      robots: noIndexRobots
+    };
+  }
+
   const orasTitle = cityDisplay(slug);
   const serviciuTitle = serviceDisplay(serviciu);
+  const title = `Programări online ${serviciuTitle} ${orasTitle}`;
+  const description = `Programări online pentru ${serviciuTitle} în ${orasTitle}. Preț fix 59,99 RON/lună, fără comision.`;
 
   return {
-    title: `Programări online ${serviciuTitle} ${orasTitle}`,
-    description: `Programări online pentru ${serviciuTitle} în ${orasTitle}. Preț fix 59,99 RON/lună, fără comision.`
+    title,
+    description,
+    alternates: canonical(`/${slug}/${serviciu}`),
+    openGraph: {
+      title,
+      description,
+      url: absoluteUrl(`/${slug}/${serviciu}`),
+      type: "website",
+      images: [DEFAULT_OG_IMAGE]
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [DEFAULT_OG_IMAGE]
+    }
   };
 }
 
@@ -80,7 +106,7 @@ export default async function LocalServicePage({ params }: PageProps) {
   const { slug, serviciu } = await params;
 
   if (!orase.includes(slug as (typeof orase)[number]) || !servicii.includes(serviciu as (typeof servicii)[number])) {
-    return null;
+    notFound();
   }
 
   const orasName = cityDisplay(slug);
@@ -101,8 +127,37 @@ export default async function LocalServicePage({ params }: PageProps) {
     // credentials unavailable (e.g. CI build without secrets); render empty list
   }
 
+  const pageUrl = absoluteUrl(`/${slug}/${serviciu}`);
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "OcupaLoc", item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: orasName, item: absoluteUrl(`/${slug}`) },
+      { "@type": "ListItem", position: 3, name: serviciuName, item: pageUrl }
+    ]
+  };
+  const itemListSchema =
+    salons.length > 0
+      ? {
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          name: `Saloane pentru ${serviciuName} în ${orasName}`,
+          itemListElement: salons.map((salon, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            url: salon.slug ? absoluteUrl(`/${salon.slug}`) : pageUrl,
+            name: salon.business_name ?? "Salon local"
+          }))
+        }
+      : null;
+
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-14 text-zinc-100">
+      <Script id={`breadcrumb-schema-${slug}-${serviciu}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      {itemListSchema ? (
+        <Script id={`item-list-schema-${slug}-${serviciu}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      ) : null}
       <div className="mx-auto max-w-4xl space-y-8">
         <header className="space-y-3">
           <h1 className="text-4xl font-bold tracking-tight">Programări online {serviciuName} {orasName}</h1>

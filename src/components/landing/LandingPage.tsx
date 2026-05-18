@@ -327,7 +327,7 @@ export function LandingPage() {
 
       <footer className="border-t oc-border oc-bg">
         <div className="mx-auto max-w-6xl px-4 py-12">
-          <div className="grid gap-8 md:grid-cols-4 md:gap-12">
+          <div className="grid gap-8 md:grid-cols-5 md:gap-12">
             <div>
               <p className="font-display text-lg font-semibold oc-accent">OcupaLoc</p>
               <p className="mt-2 text-sm oc-secondary-text">Programări online pentru orice business</p>
@@ -336,9 +336,20 @@ export function LandingPage() {
             <div>
               <p className="text-sm font-semibold oc-text">Produs</p>
               <ul className="mt-3 space-y-2 text-sm oc-secondary-text">
-                <li><a href="#pret" className="transition-colors hover:oc-text">Prețuri</a></li>
+                <li><Link href="/preturi" className="transition-colors hover:oc-text">Prețuri</Link></li>
                 <li><a href="#cum-functioneaza" className="transition-colors hover:oc-text">Cum funcționează</a></li>
                 <li><a href="#pentru-cine" className="transition-colors hover:oc-text">Pentru cine</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold oc-text">Resurse SEO</p>
+              <ul className="mt-3 space-y-2 text-sm oc-secondary-text">
+                <li><Link href="/programari-online-salon" className="transition-colors hover:oc-text">Programări online salon</Link></li>
+                <li><Link href="/aplicatie-programari-frizerie" className="transition-colors hover:oc-text">Aplicație frizerie</Link></li>
+                <li><Link href="/software-programari-manichiura" className="transition-colors hover:oc-text">Software manichiură</Link></li>
+                <li><Link href="/alternativa-fresha-romania" className="transition-colors hover:oc-text">Alternativă Fresha</Link></li>
+                <li><Link href="/blog" className="transition-colors hover:oc-text">Blog</Link></li>
               </ul>
             </div>
 
