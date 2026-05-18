@@ -337,7 +337,9 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
             </div>
           )}
           <div className="max-w-xl space-y-5">
-            <h1 className="text-3xl font-bold tracking-tight text-white md:text-4xl">{prof.nume_business}</h1>
+            <h1 data-testid="professional-name" className="text-3xl font-bold tracking-tight text-white md:text-4xl">
+              {prof.nume_business}
+            </h1>
             {tip ? (
               <p className="inline-flex rounded-full border border-zinc-700/90 bg-zinc-900/70 px-5 py-2 text-sm font-medium text-zinc-300">
                 {tip}

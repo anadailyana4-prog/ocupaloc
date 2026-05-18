@@ -554,7 +554,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   }
 
   return (
-    <div className="space-y-12 section-reveal">
+    <div className="space-y-12 section-reveal" data-testid="services-section">
       {sp.info ? (
         <div className="mx-4 mt-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
           ℹ️ {decodeURIComponent(sp.info)}
@@ -588,6 +588,9 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
       <section className="space-y-4">
         <div>
           <h2 className="font-display text-2xl font-semibold tracking-wide text-amber-100">Pulse business</h2>
+          <p data-testid="professional-name" className="text-sm text-amber-100/80">
+            {prof.nume_business ?? prof.slug ?? "Profesionist"}
+          </p>
           <p className="text-sm text-muted-foreground">KPI operaționali pentru ultimele 7 zile.</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">

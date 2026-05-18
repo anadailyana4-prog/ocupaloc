@@ -11,6 +11,16 @@ const COMPARATIV_SLUGS = ["fresha", "treatwell", "booksy", "stailer"] as const;
 const ORASE_LOCALE = ["bucuresti", "cluj-napoca", "timisoara", "iasi", "constanta", "brasov", "oradea", "sibiu"] as const;
 const SERVICII_LOCALE = ["frizerie", "salon", "manichiura", "cosmetica", "barber"] as const;
 
+function isValidHttpUrl(value: string | undefined): boolean {
+  if (!value?.trim()) return false;
+  try {
+    const parsed = new URL(value.trim());
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://ocupaloc.ro";
 
@@ -59,13 +69,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           : 0.8
   }));
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceRole) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!isValidHttpUrl(supabaseUrl) || !serviceRole) {
     return staticPages;
   }
 
-  const supabase = createClient(supabaseUrl, serviceRole, {
+  const supabase = createClient(supabaseUrl!, serviceRole, {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 

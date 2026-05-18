@@ -23,11 +23,11 @@ Before coding, review the project operating map:
    ```bash
    git checkout -b feature/your-feature-name
    ```
-4. **Set up the development environment**:
+4. **Set up the development environment** (see [docs/DEV_SETUP.md](docs/DEV_SETUP.md)):
    ```bash
    pnpm install
    cp .env.example .env.local
-   # Fill in your .env.local with test credentials
+   pnpm run dev:ready
    pnpm run dev
    ```
 

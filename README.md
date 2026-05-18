@@ -29,38 +29,25 @@ Comenzi rapide:
 
 ## Instalare locală
 
+Ghid complet: **[docs/DEV_SETUP.md](docs/DEV_SETUP.md)**.
+
 ```bash
 pnpm install
+cp .env.example .env.local   # completează Supabase + Resend
+pnpm run dev:ready           # verifică variabilele
+pnpm run dev                 # http://127.0.0.1:8788
 ```
 
-1. Creează un proiect nou în Supabase.
-2. În **SQL Editor**, rulează în ordine:
+1. Proiect [Supabase](https://supabase.com) + migrări `supabase/migrations/` (001–046), de ex. `pnpm dlx supabase db push --linked`.
+2. **Authentication → Providers**: Email (și opțional Google); pentru test rapid poți dezactiva confirmarea email.
+3. Variabile în `.env.local` — vezi `.env.example` și `docs/DEV_SETUP.md`. Cu `BILLING_ENABLED=false` nu ai nevoie de Stripe la `pnpm dev`.
 
-   - `supabase/migrations/001_init.sql`
-   - `supabase/migrations/003_storage_logos.sql` (bucket public **logos** pentru upload din Setări)
-   - Opțional demo: creează în **Authentication → Users** utilizator `demo@ocupaloc.ro` cu parola `DemoOcupaloc2026!`, apoi `supabase/migrations/002_demo.sql` (salon + serviciu demo).
-
-3. **Authentication → Providers**: activează Email (și opțional Google). Pentru test rapid, dezactivează confirmarea pe email (Auth → Providers → Email → „Confirm email”).
-4. Copiază `.env.example` → `.env.local` și completează:
-
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY` (doar server — folosit la `/api/public/slots` pentru citire programări fără a expune datele în browser)
-   - `NEXT_PUBLIC_SITE_URL` (ex. `http://localhost:3000` sau `http://127.0.0.1:8788` pentru preview Cloudflare)
-   - `RESEND_API_KEY` + `RESEND_FROM` — pentru trimitere emailuri de confirmare
-   - `REMINDERS_CRON_SECRET` — secret pentru jobul cron `/api/jobs/send-reminders`
-   - `BOOKING_CONFIRMATION_SECRET` — secret opțional pentru confirmare booking
-
-```bash
-pnpm run dev
-```
-
-- Landing: [http://localhost:3000/](http://localhost:3000/)
-- Înscriere: [http://localhost:3000/inscriere](http://localhost:3000/inscriere)
-- Intrare: [http://localhost:3000/intrare](http://localhost:3000/intrare)
-- Pagină publică: `http://localhost:3000/s/<slug>`
-- Admin (necesită login): [http://localhost:3000/admin](http://localhost:3000/admin)
-- Demo (login automat demo → admin): [http://localhost:3000/demo](http://localhost:3000/demo) — necesită user-ul din `002_demo.sql` / Dashboard.
+- Landing: [http://127.0.0.1:8788/](http://127.0.0.1:8788/)
+- Înscriere → `/signup`: [http://127.0.0.1:8788/inscriere](http://127.0.0.1:8788/inscriere)
+- Intrare → `/login`: [http://127.0.0.1:8788/intrare](http://127.0.0.1:8788/intrare)
+- Pagină publică: `http://127.0.0.1:8788/s/<slug>`
+- Admin (login): [http://127.0.0.1:8788/admin](http://127.0.0.1:8788/admin)
+- Demo: [http://127.0.0.1:8788/demo](http://127.0.0.1:8788/demo)
 
 ## Deploy producție (Vercel, sursa de adevăr)
 
@@ -146,7 +133,7 @@ wrangler pages dev .open-next/assets
 | `/demo` | Intrare rapidă cont demo (după ce există user în Supabase) |
 
 Preseturi servicii: `src/lib/presets.ts`.  
-Migrări: `001_init.sql`, `002_demo.sql`, `003_storage_logos.sql`.
+Migrări: `supabase/migrations/` (vezi `docs/DEV_SETUP.md`).
 
 ## MVP — ce e livrat vs. următorii pași
 

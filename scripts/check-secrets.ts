@@ -69,6 +69,7 @@ function getOccurrences(repoRoot: string) {
 }
 
 async function run() {
+  const trackedOnly = process.argv.includes("--tracked-only");
   const results: CheckResult[] = [];
   const repoRoot = process.cwd();
 
@@ -111,6 +112,7 @@ async function run() {
     });
   }
 
+  if (!trackedOnly) {
   try {
     const output = execSync(
       "git log -G 're_[A-Za-z0-9]{20,}|eyJ[[:alnum:]_-]+\\.[[:alnum:]_-]+\\.[[:alnum:]_-]+' --pretty=format:%H --all",
@@ -124,7 +126,9 @@ async function run() {
     results.push({
       name: "Git history scan for secret-like values",
       ok: !hasHistoryLeak,
-      details: hasHistoryLeak ? "❌ CRITICAL: ROTEȘTE CHEIA IMEDIAT" : undefined
+      details: hasHistoryLeak
+        ? "❌ CRITICAL: Rotește cheile. Vezi docs/DEV_SETUP.md (secrete în istoric Git)."
+        : undefined
     });
   } catch (error: unknown) {
     const e = error as { stderr?: unknown; stdout?: unknown };
@@ -151,6 +155,9 @@ async function run() {
         details: "❌ CRITICAL: ROTEȘTE CHEIA IMEDIAT"
       });
     }
+  }
+  } else {
+    console.log("ℹ️  Scan istoric Git omis (--tracked-only). Pentru scan complet: pnpm run verify:secrets");
   }
 
   results.forEach(logResult);

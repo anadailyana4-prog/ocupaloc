@@ -1,12 +1,3 @@
-const CRITICAL_SERVER_KEYS = [
-  "NEXT_PUBLIC_SUPABASE_URL",
-  "SUPABASE_SERVICE_ROLE_KEY",
-  "STRIPE_WEBHOOK_SECRET",
-  "RESEND_API_KEY",
-  "RESEND_FROM",
-  "REMINDERS_CRON_SECRET"
-] as const;
-
 export type EnvKey =
   | "NEXT_PUBLIC_SUPABASE_URL"
   | "SUPABASE_SERVICE_ROLE_KEY"
@@ -49,6 +40,16 @@ export type EnvKey =
   | "TELEGRAM_ADMIN_IDS"
   | "TELEGRAM_OPERATOR_IDS";
 
+const CRITICAL_SERVER_KEYS_BASE: readonly EnvKey[] = [
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "RESEND_API_KEY",
+  "RESEND_FROM",
+  "REMINDERS_CRON_SECRET"
+];
+
+const CRITICAL_SERVER_KEYS_BILLING: readonly EnvKey[] = ["STRIPE_WEBHOOK_SECRET"];
+
 function readRaw(key: string): string | undefined {
   const value = process.env[key];
   if (!value) {
@@ -57,6 +58,17 @@ function readRaw(key: string): string | undefined {
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function isBillingEnabledEnv(): boolean {
+  return readRaw("BILLING_ENABLED")?.toLowerCase() === "true";
+}
+
+export function getCriticalServerKeys(): readonly EnvKey[] {
+  if (isBillingEnabledEnv()) {
+    return [...CRITICAL_SERVER_KEYS_BASE, ...CRITICAL_SERVER_KEYS_BILLING];
+  }
+  return [...CRITICAL_SERVER_KEYS_BASE];
 }
 
 export function getEnv(key: EnvKey): string {
@@ -72,7 +84,7 @@ export function getOptionalEnv(key: EnvKey): string | undefined {
 }
 
 export function assertCriticalServerEnv(): void {
-  for (const key of CRITICAL_SERVER_KEYS) {
+  for (const key of getCriticalServerKeys()) {
     getEnv(key);
   }
 }

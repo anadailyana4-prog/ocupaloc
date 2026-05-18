@@ -4,6 +4,7 @@ Single index for all project documentation.
 
 ## Quick Start
 
+- `docs/DEV_SETUP.md` — setup local (env, Supabase, port 8788)
 - `docs/00_START_HERE_60_SEC.md`
 - `docs/PROJECT_OPERATING_GUIDE.md`
 - `docs/A_TO_Z_MASTER_INDEX.md`
