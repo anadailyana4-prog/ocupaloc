@@ -61,6 +61,17 @@ function staticEntry(route: string): SitemapEntry {
   return { route, priority: 0.6, changeFrequency: "monthly" };
 }
 
+function isHttpUrl(value: string | undefined): value is string {
+  if (!value) return false;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const routes = [
     "",
@@ -98,24 +109,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceRole) {
+  if (!isHttpUrl(supabaseUrl) || !serviceRole) {
     return staticPages;
   }
 
-  const supabase = createClient(supabaseUrl, serviceRole, {
-    auth: { autoRefreshToken: false, persistSession: false }
-  });
+  try {
+    const supabase = createClient(supabaseUrl, serviceRole, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
 
-  const { data: rows } = await supabase.from("profesionisti_public").select("slug, created_at").not("slug", "is", null);
+    const { data: rows } = await supabase.from("profesionisti_public").select("slug, created_at").not("slug", "is", null);
 
-  const profilPages: MetadataRoute.Sitemap = (rows ?? [])
-    .filter((item) => Boolean(item.slug))
-    .map((item) => ({
-      url: `${SITE_URL}/${item.slug}`,
-      lastModified: item.created_at ? new Date(item.created_at) : new Date(),
-      changeFrequency: "daily",
-      priority: 0.9
-    }));
+    const profilPages: MetadataRoute.Sitemap = (rows ?? [])
+      .filter((item) => Boolean(item.slug))
+      .map((item) => ({
+        url: `${SITE_URL}/${item.slug}`,
+        lastModified: item.created_at ? new Date(item.created_at) : new Date(),
+        changeFrequency: "daily",
+        priority: 0.9
+      }));
 
-  return [...staticPages, ...profilPages];
+    return [...staticPages, ...profilPages];
+  } catch {
+    return staticPages;
+  }
 }
