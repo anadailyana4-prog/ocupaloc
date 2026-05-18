@@ -555,6 +555,13 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-12 section-reveal">
+      <section className="space-y-1">
+        <p className="text-xs font-medium uppercase tracking-widest text-amber-100/40">Dashboard</p>
+        <h1 data-testid="professional-name" className="font-display text-2xl font-semibold tracking-wide text-amber-100">
+          {prof.nume_business ?? "Businessul tău"}
+        </h1>
+      </section>
+
       {sp.info ? (
         <div className="mx-4 mt-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
           ℹ️ {decodeURIComponent(sp.info)}

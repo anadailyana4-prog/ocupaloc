@@ -297,7 +297,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-950 to-black text-zinc-50">
         <div className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-6 px-6 text-center">
-          <h1 className="text-3xl font-bold tracking-tight">{prof.nume_business}</h1>
+          <h1 data-testid="professional-name" className="text-3xl font-bold tracking-tight">{prof.nume_business}</h1>
           <p className="max-w-md text-zinc-300">Pagina de programări este în configurare. Revenim foarte curând cu serviciile disponibile online.</p>
           {prof.telefon ? (
             <a
@@ -418,7 +418,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
             </div>
           )}
           <div className="max-w-xl space-y-5">
-            <h1 className="text-3xl font-bold tracking-tight text-white md:text-4xl">{prof.nume_business}</h1>
+            <h1 data-testid="professional-name" className="text-3xl font-bold tracking-tight text-white md:text-4xl">{prof.nume_business}</h1>
             {tip ? (
               <p className="inline-flex rounded-full border border-zinc-700/90 bg-zinc-900/70 px-5 py-2 text-sm font-medium text-zinc-300">
                 {tip}
