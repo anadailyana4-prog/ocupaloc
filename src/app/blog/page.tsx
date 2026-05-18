@@ -1,10 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { DEFAULT_OG_IMAGE, canonical } from "@/lib/seo";
+
 export const metadata: Metadata = {
   title: "Blog OcupaLoc - Programari Online pentru Saloane",
   description:
-    "Articole pentru saloane beauty despre programari online, creștere fără comision, retenție și optimizare operațională cu software salon."
+    "Articole pentru saloane beauty despre programari online, creștere fără comision, retenție și optimizare operațională cu software salon.",
+  alternates: canonical("/blog"),
+  openGraph: {
+    title: "Blog OcupaLoc - Programari Online pentru Saloane",
+    description:
+      "Articole pentru saloane beauty despre programari online, creștere fără comision, retenție și optimizare operațională cu software salon.",
+    url: "https://ocupaloc.ro/blog",
+    type: "website",
+    images: [DEFAULT_OG_IMAGE]
+  }
 };
 
 const posts = [

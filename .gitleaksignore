@@ -1,0 +1,16 @@
+39fabd6bed7f44f0605a27ca4c7dff80ad2dbf9e:create-owner-user.mjs:jwt:5
+de7563f8b92a63d6549d1f21d015aa713daf5853:OWNER_PORTAL_PLAN.md:curl-auth-header:271
+39fabd6bed7f44f0605a27ca4c7dff80ad2dbf9e:test-owner-setup.mjs:jwt:5
+39fabd6bed7f44f0605a27ca4c7dff80ad2dbf9e:test-owner-portal-smoke.mjs:generic-api-key:15
+de7563f8b92a63d6549d1f21d015aa713daf5853:.env.example:curl-auth-header:39
+de7563f8b92a63d6549d1f21d015aa713daf5853:src/app/api/owner/init/route.ts:curl-auth-header:19
+6e90726e3bfa7e55c1fc1ba966dbc27bef2e8e1c:tests/api-book-handler.test.ts:generic-api-key:149
+5080d8735466d7ace7941a7271066c4c16b53f9d:.env.production:jwt:10
+5080d8735466d7ace7941a7271066c4c16b53f9d:.env.production:jwt:28
+5080d8735466d7ace7941a7271066c4c16b53f9d:.env.production:generic-api-key:2
+5080d8735466d7ace7941a7271066c4c16b53f9d:.env.production:generic-api-key:4
+5080d8735466d7ace7941a7271066c4c16b53f9d:.env.production:generic-api-key:7
+73f0608ec63e54266cc7e20da99d2578d78fb124:wrangler.toml:generic-api-key:6
+655e16b5e4d1fee407f5778c626a67499dad3e83:.env.production:generic-api-key:2
+655e16b5e4d1fee407f5778c626a67499dad3e83:.env.example:generic-api-key:2
+655e16b5e4d1fee407f5778c626a67499dad3e83:.env.example:generic-api-key:3

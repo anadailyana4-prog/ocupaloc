@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 
 import { AnalyticsEvents } from "@/components/analytics/AnalyticsEvents";
 import { Header } from "@/components/Header";
+import { DEFAULT_OG_IMAGE, SITE_URL, canonical } from "@/lib/seo";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -22,7 +23,7 @@ const cormorant = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ocupaloc.ro"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "OcupaLoc - Programări Online pentru Saloane, Clinici și Servicii",
     template: "%s | OcupaLoc"
@@ -43,20 +44,21 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "OcupaLoc" }],
   creator: "OcupaLoc",
+  alternates: canonical("/"),
   openGraph: {
     type: "website",
     locale: "ro_RO",
-    url: "https://ocupaloc.ro",
+    url: SITE_URL,
     siteName: "OcupaLoc",
     title: "OcupaLoc - Programări Online pentru Saloane, Clinici și Servicii",
     description: "Sistem de rezervări online pentru saloane beauty, frizerii, clinici și profesioniști independenți. Fără comision, 59,99 RON/lună.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "OcupaLoc - Programări online pentru saloane" }]
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: "OcupaLoc - Programări online pentru saloane" }]
   },
   twitter: {
     card: "summary_large_image",
     title: "OcupaLoc - Programări Online Saloane",
     description: "Programări online pentru saloane beauty fără comision. Preț fix 59,99 RON/lună.",
-    images: ["/og-image.png"]
+    images: [DEFAULT_OG_IMAGE]
   },
   robots: {
     index: true,
@@ -78,8 +80,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "OcupaLoc",
-    url: "https://ocupaloc.ro",
-    logo: "https://ocupaloc.ro/og-image.png",
+    url: SITE_URL,
+    logo: `${SITE_URL}${DEFAULT_OG_IMAGE}`,
     description: "Software programări online pentru saloane beauty, frizerii, manichiură și clinici din România.",
     areaServed: "RO",
     contactPoint: {
@@ -100,15 +102,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "OcupaLoc",
-    url: "https://ocupaloc.ro",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: "https://ocupaloc.ro/bucuresti/salon?q={search_term_string}"
-      },
-      "query-input": "required name=search_term_string"
-    }
+    url: SITE_URL,
+    inLanguage: "ro-RO"
   };
 
   return (

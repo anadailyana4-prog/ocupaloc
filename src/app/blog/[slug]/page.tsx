@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Script from "next/script";
 
+import { DEFAULT_OG_IMAGE, SITE_URL, absoluteUrl, canonical } from "@/lib/seo";
+
 type Post = {
   slug: string;
   title: string;
@@ -119,14 +121,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: post.title,
     description: post.description,
-    alternates: { canonical: `https://ocupaloc.ro/blog/${post.slug}` },
+    alternates: canonical(`/blog/${post.slug}`),
     openGraph: {
       type: "article",
       title: post.title,
       description: post.description,
-      url: `https://ocupaloc.ro/blog/${post.slug}`,
+      url: absoluteUrl(`/blog/${post.slug}`),
       publishedTime: post.publishedDate,
-      authors: ["OcupaLoc"]
+      authors: ["OcupaLoc"],
+      images: [DEFAULT_OG_IMAGE]
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.description,
+      images: [DEFAULT_OG_IMAGE]
     }
   };
 }
@@ -145,13 +154,14 @@ export default async function BlogPostPage({ params }: PageProps) {
     description: post.description,
     datePublished: post.publishedDate,
     dateModified: post.publishedDate,
-    author: { "@type": "Organization", name: "OcupaLoc", url: "https://ocupaloc.ro" },
+    author: { "@type": "Organization", name: "OcupaLoc", url: SITE_URL },
     publisher: {
       "@type": "Organization",
       name: "OcupaLoc",
-      logo: { "@type": "ImageObject", url: "https://ocupaloc.ro/og-image.png" }
+      logo: { "@type": "ImageObject", url: absoluteUrl(DEFAULT_OG_IMAGE) }
     },
-    mainEntityOfPage: { "@type": "WebPage", "@id": `https://ocupaloc.ro/blog/${post.slug}` }
+    image: absoluteUrl(DEFAULT_OG_IMAGE),
+    mainEntityOfPage: { "@type": "WebPage", "@id": absoluteUrl(`/blog/${post.slug}`) }
   };
 
   return (

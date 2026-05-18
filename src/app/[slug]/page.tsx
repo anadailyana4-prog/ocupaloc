@@ -7,9 +7,19 @@ import Script from "next/script";
 import { BookingCard } from "@/components/booking/BookingCard";
 import { isMissingProfesionistiColumn } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
+import { DEFAULT_OG_IMAGE, absoluteUrl, canonical, noIndexRobots, truncateDescription } from "@/lib/seo";
 
 type PageProps = { params: Promise<{ slug: string }> };
 const ORASE_TARGET = ["bucuresti", "cluj-napoca", "timisoara", "iasi", "constanta", "brasov", "sibiu", "oradea"] as const;
+const DAY_SCHEMA_MAP: Record<string, string> = {
+  luni: "Monday",
+  marti: "Tuesday",
+  miercuri: "Wednesday",
+  joi: "Thursday",
+  vineri: "Friday",
+  sambata: "Saturday",
+  duminica: "Sunday"
+};
 
 function displayInitial(name: string): string {
   const t = name.trim();
@@ -22,9 +32,33 @@ function tipLabel(tip: string | null | undefined): string | null {
     frizerie: "Frizerie",
     manichiura: "Manichiură",
     coafor: "Coafor",
+    cosmetica: "Cosmetică",
+    barber: "Barber",
+    salon: "Salon beauty",
+    clinica: "Clinică",
     altul: "Altul"
   };
   return m[tip] ?? tip;
+}
+
+function openingHoursFromProgram(program: Record<string, unknown> | null) {
+  if (!program) return undefined;
+
+  const entries = Object.entries(DAY_SCHEMA_MAP)
+    .map(([key, dayOfWeek]) => {
+      const value = program[key];
+      if (!Array.isArray(value) || typeof value[0] !== "string" || typeof value[1] !== "string") return null;
+
+      return {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek,
+        opens: value[0],
+        closes: value[1]
+      };
+    })
+    .filter(Boolean);
+
+  return entries.length > 0 ? entries : undefined;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -36,15 +70,33 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       .join(" ");
     return {
       title: `Programare online frizer ${orasTitle}`,
-      description: `Găsește frizeri și saloane în ${orasTitle} cu programare online. Rezervă în 30 secunde, fără telefon.`
+      description: `Găsește frizeri și saloane în ${orasTitle} cu programare online. Rezervă în 30 secunde, fără telefon.`,
+      alternates: canonical(`/${slug}`),
+      openGraph: {
+        title: `Programare online frizer ${orasTitle}`,
+        description: `Găsește frizeri și saloane în ${orasTitle} cu programare online. Rezervă în 30 secunde, fără telefon.`,
+        url: absoluteUrl(`/${slug}`),
+        type: "website",
+        images: [DEFAULT_OG_IMAGE]
+      }
     };
   }
   const supabase = await createSupabaseServerClient();
   const { data: prof } = await supabase
     .from("profesionisti_public")
-    .select("nume_business, description, tip_activitate, oras, logo_url")
+    .select("id, nume_business, description, tip_activitate, oras, logo_url")
     .eq("slug", slug)
     .maybeSingle();
+
+  if (!prof) {
+    return {
+      title: "Pagină indisponibilă",
+      robots: noIndexRobots
+    };
+  }
+
+  const { data: activeServices } = await supabase.from("servicii").select("id").eq("profesionist_id", prof.id).eq("activ", true).limit(1);
+  const hasActiveServices = Boolean(activeServices?.length);
 
   const name = prof?.nume_business?.trim() || slug;
   const descRaw = (prof as { description?: string | null } | null)?.description?.trim();
@@ -54,18 +106,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const image = (prof as { logo_url?: string | null } | null)?.logo_url?.trim() || "/default-salon.svg";
   const description =
     descRaw && descRaw.length > 0
-      ? descRaw.length > 160
-        ? `${descRaw.slice(0, 157)}…`
-        : descRaw
+      ? truncateDescription(descRaw)
       : `Programează-te online la ${name}${tipBit}${city ? ` în ${city}` : ""}. Vezi servicii și disponibilitate în timp real.`;
 
   return {
     title: `${name} - Programare online`,
     description,
+    alternates: canonical(`/${slug}`),
+    robots: hasActiveServices ? undefined : noIndexRobots,
     openGraph: {
       title: `${name}`,
       description,
       type: "website",
+      url: absoluteUrl(`/${slug}`),
       images: [image]
     },
     twitter: {
@@ -244,7 +297,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-950 to-black text-zinc-50">
         <div className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-6 px-6 text-center">
-          <h1 className="text-3xl font-bold tracking-tight">{prof.nume_business}</h1>
+          <h1 data-testid="professional-name" className="text-3xl font-bold tracking-tight">{prof.nume_business}</h1>
           <p className="max-w-md text-zinc-300">Pagina de programări este în configurare. Revenim foarte curând cu serviciile disponibile online.</p>
           {prof.telefon ? (
             <a
@@ -288,15 +341,21 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
     frizerie: "HairSalon",
     manichiura: "BeautySalon",
     coafor: "HairSalon",
+    cosmetica: "BeautySalon",
+    barber: "HairSalon",
+    salon: "BeautySalon",
+    clinica: "MedicalBusiness",
     altul: "LocalBusiness"
   };
   const schemaType = schemaTypeMap[prof.tip_activitate as string] ?? "LocalBusiness";
+  const servicesForSchema = (servicii ?? []).slice(0, 20);
 
   const localBusinessSchema = {
     "@context": "https://schema.org",
     "@type": schemaType,
     name: String(prof.nume_business ?? ""),
     description: publicDescription || undefined,
+    image: prof.logo_url ? String(prof.logo_url) : absoluteUrl(DEFAULT_OG_IMAGE),
     address: {
       "@type": "PostalAddress",
       addressLocality: city || "România",
@@ -304,7 +363,29 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
       streetAddress: String((prof as { adresa_publica?: string | null }).adresa_publica ?? "")
     },
     telephone: telefon || undefined,
-    url: `https://ocupaloc.ro/${slug}`
+    priceRange: "RON",
+    openingHoursSpecification: openingHoursFromProgram(prof.program),
+    hasOfferCatalog:
+      servicesForSchema.length > 0
+        ? {
+            "@type": "OfferCatalog",
+            name: `Servicii ${String(prof.nume_business ?? "")}`,
+            itemListElement: servicesForSchema.map((service) => ({
+              "@type": "Offer",
+              price: typeof service.pret === "number" ? service.pret : undefined,
+              priceCurrency: "RON",
+              itemOffered: {
+                "@type": "Service",
+                name: service.nume,
+                provider: {
+                  "@type": schemaType,
+                  name: String(prof.nume_business ?? "")
+                }
+              }
+            }))
+          }
+        : undefined,
+    url: absoluteUrl(`/${slug}`)
   };
 
   return (
@@ -337,7 +418,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
             </div>
           )}
           <div className="max-w-xl space-y-5">
-            <h1 className="text-3xl font-bold tracking-tight text-white md:text-4xl">{prof.nume_business}</h1>
+            <h1 data-testid="professional-name" className="text-3xl font-bold tracking-tight text-white md:text-4xl">{prof.nume_business}</h1>
             {tip ? (
               <p className="inline-flex rounded-full border border-zinc-700/90 bg-zinc-900/70 px-5 py-2 text-sm font-medium text-zinc-300">
                 {tip}

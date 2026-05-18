@@ -10,13 +10,17 @@ export default function robots(): MetadataRoute.Robots {
           "/demo/",
           "/api/",
           "/dashboard/",
+          "/owner/",
           "/auth/",
           "/billing/",
           "/onboarding/",
           "/programare/",
           "/status/",
           "/s/",
-          "/admin/"
+          "/admin/",
+          "/login",
+          "/reset-password",
+          "/signup?*"
         ]
       }
     ],

@@ -649,7 +649,7 @@ function BookingCardLive(props: LiveProps) {
                 />
               </div>
             ) : null}
-            <div className={publicPageLayout ? "grid grid-cols-1 gap-4 sm:grid-cols-2" : "space-y-2"}>
+            <div data-testid="services-list" className={publicPageLayout ? "grid grid-cols-1 gap-4 sm:grid-cols-2" : "space-y-2"}>
               {servicesToRender.map((s) => (
                 <button
                   key={s.id}
