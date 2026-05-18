@@ -1,31 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 
 import { BookingCard } from "@/components/booking/BookingCard";
 import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
-
-const visualCards = [
-  {
-    title: "Fluxul real de rezervare",
-    description: "Captură din cardul de rezervare folosit pe landing page: serviciu, dată, oră și confirmare.",
-    image: "/landing-screenshot-booking.png",
-    alt: "Captură reală din fluxul de rezervare OcupaLoc"
-  },
-  {
-    title: "Demo-ul interactiv",
-    description: "Captură din pagina unde un business poate configura un demo în câțiva pași.",
-    image: "/landing-screenshot-demo.png",
-    alt: "Captură reală din demo-ul interactiv OcupaLoc"
-  },
-  {
-    title: "Planul afișat clar",
-    description: "Captură din zona de preț: 59,99 RON/lună, TVA inclus și zero comision per programare.",
-    image: "/landing-screenshot-pricing.png",
-    alt: "Captură reală din cardul de preț OcupaLoc"
-  }
-] as const;
 
 export function LandingPage() {
   return (
@@ -130,46 +108,6 @@ export function LandingPage() {
               <div key={item} className="rounded-lg border oc-border oc-badge-bg px-3 py-2 text-sm font-medium oc-text">
                 {item}
               </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] oc-accent">Cum arată în practică</p>
-              <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight md:text-4xl">
-                Capturi reale din paginile OcupaLoc.
-              </h2>
-              <p className="mt-4 text-base oc-secondary-text">
-                Fără poze stock și fără promisiuni inventate: doar bucăți vizibile din interfața produsului.
-              </p>
-            </div>
-            <Link
-              href="/demo-interactiv"
-              className="inline-flex h-11 items-center justify-center rounded-lg border oc-border bg-white px-5 text-sm font-semibold oc-accent transition-colors hover:oc-badge-bg"
-            >
-              Vezi demo interactiv
-            </Link>
-          </div>
-
-          <div className="mt-8 grid gap-5 md:grid-cols-3">
-            {visualCards.map((card) => (
-              <article key={card.title} className="group overflow-hidden rounded-3xl border oc-border bg-white shadow-[0_20px_55px_-38px_rgba(15,118,110,0.45)]">
-                <div className="relative aspect-[1.35] overflow-hidden bg-[#EEF7F6]">
-                  <Image
-                    src={card.image}
-                    alt={card.alt}
-                    fill
-                    sizes="(min-width: 768px) 33vw, 100vw"
-                    className="object-cover object-top transition duration-300 group-hover:scale-[1.03]"
-                  />
-                </div>
-                <div className="p-5">
-                  <h3 className="text-xl font-semibold tracking-tight oc-text">{card.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed oc-secondary-text">{card.description}</p>
-                </div>
-              </article>
             ))}
           </div>
         </section>
