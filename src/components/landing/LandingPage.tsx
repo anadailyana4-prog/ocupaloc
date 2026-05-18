@@ -8,22 +8,22 @@ import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
 
 const visualCards = [
   {
-    title: "Pagină simplă pentru client",
-    description: "Clientul vede serviciile, alege data și ora, apoi trimite programarea din telefon.",
-    image: "/landing-booking-card.svg",
-    alt: "Ilustrație cu o pagină de rezervare OcupaLoc"
+    title: "Fluxul real de rezervare",
+    description: "Captură din cardul de rezervare folosit pe landing page: serviciu, dată, oră și confirmare.",
+    image: "/landing-screenshot-booking.png",
+    alt: "Captură reală din fluxul de rezervare OcupaLoc"
   },
   {
-    title: "Meniu clar pentru tine",
-    description: "În dashboard urmărești programările și statusul lor fără să cauți prin mesaje.",
-    image: "/landing-dashboard-card.svg",
-    alt: "Ilustrație cu dashboard de programări OcupaLoc"
+    title: "Demo-ul interactiv",
+    description: "Captură din pagina unde un business poate configura un demo în câțiva pași.",
+    image: "/landing-screenshot-demo.png",
+    alt: "Captură reală din demo-ul interactiv OcupaLoc"
   },
   {
-    title: "Confirmări pe email",
-    description: "După rezervare, clientul primește detaliile programării și linkurile utile.",
-    image: "/landing-confirmation-card.svg",
-    alt: "Ilustrație cu email de confirmare pentru programare"
+    title: "Planul afișat clar",
+    description: "Captură din zona de preț: 59,99 RON/lună, TVA inclus și zero comision per programare.",
+    image: "/landing-screenshot-pricing.png",
+    alt: "Captură reală din cardul de preț OcupaLoc"
   }
 ] as const;
 
@@ -139,10 +139,10 @@ export function LandingPage() {
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] oc-accent">Cum arată în practică</p>
               <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight md:text-4xl">
-                Câteva părți reale din flux, prezentate simplu.
+                Capturi reale din paginile OcupaLoc.
               </h2>
               <p className="mt-4 text-base oc-secondary-text">
-                Fără promisiuni exagerate: doar pagina de rezervare, meniul de administrare și confirmările pe care le folosește produsul.
+                Fără poze stock și fără promisiuni inventate: doar bucăți vizibile din interfața produsului.
               </p>
             </div>
             <Link
@@ -162,7 +162,7 @@ export function LandingPage() {
                     alt={card.alt}
                     fill
                     sizes="(min-width: 768px) 33vw, 100vw"
-                    className="object-cover transition duration-300 group-hover:scale-[1.03]"
+                    className="object-cover object-top transition duration-300 group-hover:scale-[1.03]"
                   />
                 </div>
                 <div className="p-5">
