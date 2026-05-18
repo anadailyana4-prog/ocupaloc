@@ -2,7 +2,7 @@ name: Security
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, staging]
   push:
     branches: [main]
   schedule:
@@ -40,7 +40,6 @@ jobs:
       pull-requests: read
     steps:
       - name: Dependency Review
-        continue-on-error: true
         uses: actions/dependency-review-action@v4
-      - name: Dependency Review status
-        run: echo "Dependency review completed (non-blocking mode)."
+        with:
+          fail-on-severity: high

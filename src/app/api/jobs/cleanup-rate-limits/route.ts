@@ -4,7 +4,7 @@ import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { validateCronSecret } from "@/lib/cron-auth";
 
 export async function GET(req: NextRequest) {
-  const configured = (process.env.RATE_LIMITS_CRON_SECRET || process.env.REMINDERS_CRON_SECRET || "").trim() || undefined;
+  const configured = process.env.RATE_LIMITS_CRON_SECRET?.trim() || undefined;
   if (!validateCronSecret(req.headers, configured)) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }

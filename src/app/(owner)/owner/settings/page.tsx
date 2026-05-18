@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { getOwnerBillingStatus } from "@/lib/billing/owner-status";
+import { formatOperationalEventType } from "@/lib/ops-event-labels";
 import { logOwnerAction, requireOwnerAdmin } from "@/lib/owner/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -253,7 +254,7 @@ export default async function OwnerSettingsPage({
           )}
           {latestBillingEvent ? (
             <p className="mt-1">
-              Ultimul billing operational event: {latestBillingEvent.event_type} ({latestBillingEvent.outcome}) la {new Date(latestBillingEvent.created_at).toLocaleString("ro-RO")}
+              Ultimul billing operational event: {formatOperationalEventType(latestBillingEvent.event_type)} ({latestBillingEvent.outcome}) la {new Date(latestBillingEvent.created_at).toLocaleString("ro-RO")}
             </p>
           ) : null}
         </div>

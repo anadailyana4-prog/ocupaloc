@@ -18,11 +18,16 @@ export const EXHAUSTION_STAGES = [
 
 export const TELEGRAM_ADMIN_ROLES = ["owner", "admin", "operator"] as const;
 
-export const OUTREACH_COMMANDS = [
-  { command: "report", description: "Raport zilnic" },
-  { command: "emailpreview", description: "Preview email personalizat (din email)" },
-  { command: "emailsend", description: "Trimite email personalizat (din email)" }
+/** Comenzi Telegram (email manual + link WhatsApp). */
+export const TELEGRAM_TOOL_COMMANDS = [
+  { command: "help", description: "Ajutor comenzi email si WhatsApp" },
+  { command: "emailpreview", description: "Preview email personalizat" },
+  { command: "emailsend", description: "Trimite email personalizat" },
+  { command: "whatsapp", description: "Link WhatsApp din numar" }
 ] as const;
+
+/** @deprecated Foloseste TELEGRAM_TOOL_COMMANDS */
+export const OUTREACH_COMMANDS = TELEGRAM_TOOL_COMMANDS;
 
 export const DEFAULT_OUTREACH_LIMITS = {
   perHour: 10,

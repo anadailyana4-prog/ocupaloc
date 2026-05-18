@@ -163,7 +163,7 @@ export default function ProgramariOnlineSpaMasajPage() {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-14 text-zinc-100">
+    <main className="min-h-screen oc-bg px-6 py-14 oc-text">
       <Script
         id="faq-schema-spa-masaj"
         type="application/ld+json"
@@ -178,11 +178,11 @@ export default function ProgramariOnlineSpaMasajPage() {
       <div className="mx-auto max-w-5xl space-y-14">
 
         {/* ── HERO ── */}
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
+        <section className="rounded-2xl border oc-border bg-white p-8">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
             Programări online pentru spa și masaj — rezervări automate, fără telefon
           </h1>
-          <p className="mt-5 max-w-3xl text-lg leading-relaxed text-zinc-300">
+          <p className="mt-5 max-w-3xl text-lg leading-relaxed oc-text">
             Clienții unui salon de masaj sau spa rezervă rar în orele de program — ei caută și hotărăsc seara sau în weekend.
             OcupaLoc îți oferă un link personal de rezervare disponibil 24/7: clientul alege tipul de masaj sau tratamentul dorit, terapeutul
             preferat și ora disponibilă, și primește confirmare automată. Tu nu mai ești întrerupt, agenda nu mai are suprapuneri.
@@ -192,14 +192,14 @@ export default function ProgramariOnlineSpaMasajPage() {
             <Link
               href="/signup?start=1&tip=spa-masaj"
               data-cta-location="spa_hero_primary"
-              className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500"
+              className="rounded-lg oc-primary px-6 py-3 font-semibold text-white"
             >
               Test gratuit 14 zile
             </Link>
             <Link
               href="/demo-interactiv"
               data-cta-location="spa_hero_demo"
-              className="rounded-lg border border-zinc-700 px-6 py-3 font-semibold text-zinc-200 hover:bg-zinc-800"
+              className="rounded-lg border oc-border px-6 py-3 font-semibold oc-text hover:oc-badge-bg"
             >
               Testează fluxul de rezervare
             </Link>
@@ -211,20 +211,20 @@ export default function ProgramariOnlineSpaMasajPage() {
           <h2 className="text-3xl font-bold tracking-tight">
             Orice tip de masaj sau tratament, cu durata lui exactă
           </h2>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             Spre deosebire de un tuns sau o manichiură cu durată relativ fixă, serviciile de spa și masaj variază enorm: de la 30 de minute
             la pachete complete de 3 ore. OcupaLoc permite configurarea duratei exacte pentru fiecare serviciu. Clientul vede exact cât
             durează și ce oră îi rămâne disponibilă — nu un calendar cu sloturi de 30 de minute care nu reflectă realitatea.
           </p>
           <div className="grid gap-3 md:grid-cols-3">
             {serviciiSpa.map((s) => (
-              <div key={s.name} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-                <p className="font-semibold text-zinc-100">{s.name}</p>
-                <p className="mt-1 text-sm text-zinc-400">{s.duration}</p>
+              <div key={s.name} className="rounded-xl border oc-border bg-white p-4">
+                <p className="font-semibold oc-text">{s.name}</p>
+                <p className="mt-1 text-sm oc-secondary-text">{s.duration}</p>
               </div>
             ))}
           </div>
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm oc-secondary-text">
             Duratele sunt orientative. Configurezi durata și prețul exact pentru fiecare serviciu din centrul tău.
           </p>
         </section>
@@ -236,17 +236,17 @@ export default function ProgramariOnlineSpaMasajPage() {
           </h2>
 
           {beneficii.map((b) => (
-            <article key={b.title} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
+            <article key={b.title} className="rounded-xl border oc-border bg-white p-6">
               <h3 className="text-xl font-semibold text-amber-100">{b.title}</h3>
-              <p className="mt-3 leading-relaxed text-zinc-300">{b.desc ?? b.answer}</p>
+              <p className="mt-3 leading-relaxed oc-text">{b.desc ?? b.answer}</p>
             </article>
           ))}
 
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <article className="rounded-xl border oc-border bg-white p-6">
             <h3 className="text-xl font-semibold text-amber-100">
               Reduci anulările de ultim moment prin confirmare automată
             </h3>
-            <p className="mt-3 leading-relaxed text-zinc-300">
+            <p className="mt-3 leading-relaxed oc-text">
               Clienții care rezervă online și primesc o confirmare scrisă cu serviciul, terapeutul și ora au o rată mai mică de neprezentare.
               Confirmarea funcționează ca un angajament. Poți seta și un interval minim de anulare — de exemplu, nu se pot anula rezervările
               cu mai puțin de 24 de ore înainte. Reduces locurile goale fără nicio intervenție manuală.
@@ -260,21 +260,21 @@ export default function ProgramariOnlineSpaMasajPage() {
             Ce primești cu OcupaLoc pentru spa sau salon de masaj
           </h2>
           <div className="grid gap-4 md:grid-cols-3">
-            <article className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+            <article className="rounded-xl border oc-border bg-white p-5">
               <h3 className="text-lg font-semibold">Link propriu de rezervare</h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                <span className="font-mono text-zinc-300">ocupaloc.ro/spa-ul-tau</span> — pui linkul în Instagram, Google Maps sau pe orice altă platformă. Clienții rezervă direct, fără apeluri.
+              <p className="mt-2 text-sm leading-relaxed oc-secondary-text">
+                <span className="font-mono oc-text">ocupaloc.ro/spa-ul-tau</span> — pui linkul în Instagram, Google Maps sau pe orice altă platformă. Clienții rezervă direct, fără apeluri.
               </p>
             </article>
-            <article className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+            <article className="rounded-xl border oc-border bg-white p-5">
               <h3 className="text-lg font-semibold">Agende separate per terapeut</h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+              <p className="mt-2 text-sm leading-relaxed oc-secondary-text">
                 Fiecare maseur sau terapeut are propria agendă. Clientul alege specialistul preferat și vede disponibilitatea lui reală, nu un calendar comun cu suprapuneri.
               </p>
             </article>
-            <article className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+            <article className="rounded-xl border oc-border bg-white p-5">
               <h3 className="text-lg font-semibold">Confirmare automată pentru toată lumea</h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+              <p className="mt-2 text-sm leading-relaxed oc-secondary-text">
                 Tu primești email cu detaliile rezervării, clientul primește confirmarea ședinței. Ambele instant, fără nicio acțiune manuală.
               </p>
             </article>
@@ -283,7 +283,7 @@ export default function ProgramariOnlineSpaMasajPage() {
             <Link
               href="/signup?start=1&tip=spa-masaj"
               data-cta-location="spa_features_cta"
-              className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500"
+              className="rounded-lg oc-primary px-6 py-3 font-semibold text-white"
             >
               Începe testul gratuit de 14 zile
             </Link>
@@ -295,14 +295,14 @@ export default function ProgramariOnlineSpaMasajPage() {
           <h2 className="text-3xl font-bold tracking-tight">
             OcupaLoc vs. Fresha și Treatwell pentru spa și masaj
           </h2>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             Fresha și Treatwell sunt platforme de listing — vizibilitate mare, dar cu comision pe fiecare rezervare adusă de ele.
             OcupaLoc este instrumentul tău propriu: clienții vin la tine, nu la un marketplace cu zeci de competitori.
           </p>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="border-b border-zinc-700 text-left text-zinc-400">
+                <tr className="border-b oc-border text-left oc-secondary-text">
                   <th className="pb-3 pr-4 font-medium">Funcționalitate</th>
                   <th className="pb-3 pr-4 font-semibold text-white">OcupaLoc</th>
                   <th className="pb-3 pr-4 font-medium">Fresha</th>
@@ -311,11 +311,11 @@ export default function ProgramariOnlineSpaMasajPage() {
               </thead>
               <tbody>
                 {competitorRows.map((row) => (
-                  <tr key={row.feature} className="border-b border-zinc-800">
-                    <td className="py-3 pr-4 text-zinc-400">{row.feature}</td>
-                    <td className="py-3 pr-4 font-medium text-indigo-300">{row.ocupaloc}</td>
-                    <td className="py-3 pr-4 text-zinc-400">{row.fresha}</td>
-                    <td className="py-3 text-zinc-400">{row.treatwell}</td>
+                  <tr key={row.feature} className="border-b oc-border">
+                    <td className="py-3 pr-4 oc-secondary-text">{row.feature}</td>
+                    <td className="py-3 pr-4 font-medium oc-accent">{row.ocupaloc}</td>
+                    <td className="py-3 pr-4 oc-secondary-text">{row.fresha}</td>
+                    <td className="py-3 oc-secondary-text">{row.treatwell}</td>
                   </tr>
                 ))}
               </tbody>
@@ -327,32 +327,32 @@ export default function ProgramariOnlineSpaMasajPage() {
         <section className="space-y-5">
           <h2 className="text-3xl font-bold tracking-tight">Întrebări frecvente</h2>
           {faqItems.map((item) => (
-            <article key={item.question} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+            <article key={item.question} className="rounded-xl border oc-border bg-white p-6">
               <h3 className="text-lg font-semibold">{item.question}</h3>
-              <p className="mt-2 leading-relaxed text-zinc-300">{item.answer}</p>
+              <p className="mt-2 leading-relaxed oc-text">{item.answer}</p>
             </article>
           ))}
         </section>
 
         {/* ── FINAL CTA ── */}
-        <section className="rounded-2xl border border-indigo-800 bg-indigo-950/40 p-8 text-center">
+        <section className="rounded-2xl border oc-border oc-primary p-8 text-center">
           <h2 className="text-2xl font-bold">
             Gata să primești rezervări automate la spa sau salon de masaj?
           </h2>
-          <p className="mt-3 text-zinc-300">
+          <p className="mt-3 oc-text">
             14 zile gratuit, fără card. Configurezi centrul în 5 minute și trimiți linkul primilor clienți chiar astăzi.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
               href="/signup?start=1&tip=spa-masaj"
               data-cta-location="spa_final_cta"
-              className="rounded-lg bg-indigo-600 px-8 py-3 font-semibold text-white hover:bg-indigo-500"
+              className="rounded-lg oc-primary px-8 py-3 font-semibold text-white"
             >
               Test gratuit 14 zile
             </Link>
             <Link
               href="/preturi"
-              className="rounded-lg border border-zinc-700 px-8 py-3 font-semibold text-zinc-200 hover:bg-zinc-800"
+              className="rounded-lg border oc-border px-8 py-3 font-semibold oc-text hover:oc-badge-bg"
             >
               Vezi prețul
             </Link>
@@ -360,14 +360,14 @@ export default function ProgramariOnlineSpaMasajPage() {
         </section>
 
         {/* ── INTERNAL LINKS ── */}
-        <nav aria-label="Pagini conexe" className="border-t border-zinc-800 pt-8">
-          <p className="mb-4 text-sm font-medium uppercase tracking-wider text-zinc-500">Vezi și</p>
+        <nav aria-label="Pagini conexe" className="border-t oc-border pt-8">
+          <p className="mb-4 text-sm font-medium uppercase tracking-wider oc-secondary-text">Vezi și</p>
           <ul className="flex flex-wrap gap-3">
             {relatedLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+                  className="rounded-lg border oc-border px-4 py-2 text-sm oc-text hover:oc-badge-bg"
                 >
                   {link.label}
                 </Link>

@@ -1,6 +1,7 @@
 import type Stripe from "stripe";
 
 import { getStripeClient } from "@/lib/billing/stripe";
+import { BILLING_EVENT_TYPES } from "@/lib/ops-event-taxonomy";
 import { reportError } from "@/lib/observability";
 import { recordOperationalEvent } from "@/lib/ops-events";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
@@ -54,6 +55,26 @@ async function reconcileDbSubscription(
       return { fixed: false, failed: false };
     }
 
+    await recordOperationalEvent({
+      eventType: BILLING_EVENT_TYPES.RECONCILIATION_MISMATCH,
+      flow: "billing",
+      outcome: "failure",
+      entityId: dbSub.profesionist_id,
+      metadata: {
+        source: "db_vs_stripe_existing_subscription",
+        stripeSubscriptionId: dbSub.stripe_subscription_id,
+        profesionistId: dbSub.profesionist_id,
+        dbStatus: dbSub.status,
+        stripeStatus: nextStatus,
+        dbCurrentPeriodStart: dbSub.current_period_start,
+        stripeCurrentPeriodStart: nextPeriodStart,
+        dbCurrentPeriodEnd: dbSub.current_period_end,
+        stripeCurrentPeriodEnd: nextPeriodEnd,
+        dbCancelAtPeriodEnd: dbSub.cancel_at_period_end,
+        stripeCancelAtPeriodEnd: nextCancelAtPeriodEnd
+      }
+    });
+
     const { error } = await admin
       .from("subscriptions")
       .update({
@@ -86,7 +107,7 @@ export async function runBillingReconciliation(): Promise<BillingReconciliationR
   const admin = createSupabaseServiceClient();
 
   await recordOperationalEvent({
-    eventType: "reconciliation.started",
+    eventType: BILLING_EVENT_TYPES.RECONCILIATION_STARTED,
     flow: "billing",
     outcome: "success",
     metadata: {}
@@ -112,7 +133,7 @@ export async function runBillingReconciliation(): Promise<BillingReconciliationR
     if (item.fixed) {
       result.fixed += 1;
       await recordOperationalEvent({
-        eventType: "reconciliation.fixed",
+        eventType: BILLING_EVENT_TYPES.RECONCILIATION_FIXED,
         flow: "billing",
         outcome: "success",
         metadata: {
@@ -124,7 +145,7 @@ export async function runBillingReconciliation(): Promise<BillingReconciliationR
     if (item.failed) {
       result.failed += 1;
       await recordOperationalEvent({
-        eventType: "reconciliation.failed",
+        eventType: BILLING_EVENT_TYPES.RECONCILIATION_FAILED,
         flow: "billing",
         outcome: "failure",
         metadata: {
@@ -152,6 +173,18 @@ export async function runBillingReconciliation(): Promise<BillingReconciliationR
       continue;
     }
 
+    await recordOperationalEvent({
+      eventType: BILLING_EVENT_TYPES.RECONCILIATION_MISMATCH,
+      flow: "billing",
+      outcome: "failure",
+      entityId: profesionistId,
+      metadata: {
+        source: "stripe_subscription_missing_in_db",
+        stripeSubscriptionId: stripeSub.id,
+        profesionistId
+      }
+    });
+
     const { error: upsertError } = await admin.from("subscriptions").upsert(
       {
         profesionist_id: profesionistId,
@@ -173,7 +206,7 @@ export async function runBillingReconciliation(): Promise<BillingReconciliationR
     if (upsertError) {
       result.failed += 1;
       await recordOperationalEvent({
-        eventType: "reconciliation.failed",
+        eventType: BILLING_EVENT_TYPES.RECONCILIATION_FAILED,
         flow: "billing",
         outcome: "failure",
         metadata: { stripeSubscriptionId: stripeSub.id, reason: upsertError.message }
@@ -183,7 +216,7 @@ export async function runBillingReconciliation(): Promise<BillingReconciliationR
 
     result.fixed += 1;
     await recordOperationalEvent({
-      eventType: "reconciliation.fixed",
+      eventType: BILLING_EVENT_TYPES.RECONCILIATION_FIXED,
       flow: "billing",
       outcome: "success",
       metadata: { stripeSubscriptionId: stripeSub.id, profesionistId }
@@ -191,7 +224,7 @@ export async function runBillingReconciliation(): Promise<BillingReconciliationR
   }
 
   await recordOperationalEvent({
-    eventType: "reconciliation.summary",
+    eventType: BILLING_EVENT_TYPES.RECONCILIATION_SUMMARY,
     flow: "billing",
     outcome: result.failed > 0 ? "failure" : "success",
     latencyMs: Date.now() - startedAt,

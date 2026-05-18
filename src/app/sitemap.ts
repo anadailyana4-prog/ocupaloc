@@ -10,18 +10,51 @@ const BLOG_SLUGS = [
 const COMPARATIV_SLUGS = ["fresha", "treatwell", "booksy", "stailer"] as const;
 const ORASE_LOCALE = ["bucuresti", "cluj-napoca", "timisoara", "iasi", "constanta", "brasov", "oradea", "sibiu"] as const;
 const SERVICII_LOCALE = ["frizerie", "salon", "manichiura", "cosmetica", "barber"] as const;
+const HIGH_INTENT_ROUTES = new Set([
+  "/programari-online-salon",
+  "/alternativa-fresha-romania",
+  "/software-programari-manichiura",
+  "/aplicatie-programari-frizerie",
+  "/programari-online-cosmetica",
+  "/programari-online-psiholog",
+  "/software-programari-clinica",
+  "/programari-online-coafor",
+  "/programari-online-spa-masaj",
+  "/programari-online-nutritionist",
+  "/preturi"
+]);
+
+function getStaticPriority(route: string): number {
+  if (route === "") return 1;
+  if (HIGH_INTENT_ROUTES.has(route)) return 0.9;
+  if (route === "/blog" || route.startsWith("/blog/")) return 0.8;
+  if (route.startsWith("/comparativ/")) return 0.75;
+  if (route.split("/").length === 3) return 0.7;
+  if (ORASE.includes(route.replace("/", "") as (typeof ORASE)[number])) return 0.6;
+  return 0.5;
+}
+
+function getStaticChangeFrequency(route: string): MetadataRoute.Sitemap[number]["changeFrequency"] {
+  if (route === "" || HIGH_INTENT_ROUTES.has(route)) return "weekly";
+  if (route === "/blog" || route.startsWith("/blog/")) return "weekly";
+  if (route.startsWith("/comparativ/") || route.split("/").length === 3) return "weekly";
+  if (["/termeni", "/confidentialitate", "/cookies", "/gdpr"].includes(route)) return "monthly";
+  return "monthly";
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://ocupaloc.ro";
 
   const staticPages: MetadataRoute.Sitemap = [
     "",
-    "/signup",
-    "/login",
     "/preturi",
     "/despre",
+    "/termeni",
+    "/confidentialitate",
+    "/cookies",
+    "/gdpr",
+    "/suport",
     "/blog",
-    "/demo-interactiv",
     "/programari-online-salon",
     "/alternativa-fresha-romania",
     "/software-programari-manichiura",
@@ -38,25 +71,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...ORASE.map((oras) => `/${oras}`)
   ].map((route) => ({
     url: `${baseUrl}${route}`,
-    lastModified: new Date(),
-    changeFrequency: "weekly",
-    priority:
-      route === ""
-        ? 1
-        : [
-              "/programari-online-salon",
-              "/alternativa-fresha-romania",
-              "/software-programari-manichiura",
-              "/aplicatie-programari-frizerie",
-              "/programari-online-cosmetica",
-              "/programari-online-psiholog",
-              "/software-programari-clinica",
-              "/programari-online-coafor",
-              "/programari-online-spa-masaj",
-              "/programari-online-nutritionist"
-            ].includes(route)
-          ? 0.9
-          : 0.8
+    changeFrequency: getStaticChangeFrequency(route),
+    priority: getStaticPriority(route)
   }));
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -76,8 +92,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .map((item) => ({
       url: `${baseUrl}/${item.slug}`,
       lastModified: item.created_at ? new Date(item.created_at) : new Date(),
-      changeFrequency: "daily",
-      priority: 0.9
+      changeFrequency: "weekly",
+      priority: 0.6
     }));
 
   return [...staticPages, ...profilPages];

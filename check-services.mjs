@@ -62,8 +62,6 @@ const services = {
   }
 };
 
-let overallStatus = '✅';
-
 for (const [key, config] of Object.entries(services)) {
   console.log(`\n${'─'.repeat(68)}`);
   console.log(`${config.name}`);
@@ -81,7 +79,6 @@ for (const [key, config] of Object.entries(services)) {
   }
 
   let serviceStatus = '✅';
-  let missingCount = 0;
 
   if (config.required.length > 0) {
     console.log('Required:');
@@ -93,7 +90,6 @@ for (const [key, config] of Object.entries(services)) {
       } else {
         console.log(`  ❌ ${varName}: MISSING`);
         serviceStatus = '❌';
-        missingCount++;
       }
     });
   }
@@ -112,7 +108,6 @@ for (const [key, config] of Object.entries(services)) {
   }
 
   console.log(`\nStatus: ${serviceStatus}`);
-  if (serviceStatus === '❌') overallStatus = '🟡';
 }
 
 console.log('\n' + '═'.repeat(68));

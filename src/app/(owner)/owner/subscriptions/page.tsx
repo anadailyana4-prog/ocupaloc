@@ -1,7 +1,24 @@
 import { redirect } from "next/navigation";
+import { BILLING_EVENT_TYPES } from "@/lib/ops-event-taxonomy";
 import { requireOwnerAdmin, logOwnerAction } from "@/lib/owner/auth";
 import { getSubscriptionOverview } from "@/lib/owner/stats";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+type CancelReasonRow = {
+  created_at: string;
+  metadata: {
+    reason?: string;
+    cancelType?: string;
+  } | null;
+};
+
+const CANCEL_REASON_LABELS: Record<string, string> = {
+  prea_scump: "Prețul este prea mare",
+  lipsa_functii: "Lipsesc funcții importante",
+  temporar_inchis: "Business închis temporar",
+  suport: "Probleme suport/stabilitate",
+  altul: "Alt motiv"
+};
 
 export default async function OwnerSubscriptionsPage({
   searchParams
@@ -28,8 +45,42 @@ export default async function OwnerSubscriptionsPage({
     .order("created_at", { ascending: false })
     .limit(50);
 
+  const cancelSince = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const { data: cancelReasonEvents } = await supabase
+    .from("operational_events")
+    .select("created_at, metadata")
+    .eq("flow", "billing")
+    .eq("event_type", BILLING_EVENT_TYPES.SUBSCRIPTION_CANCELED)
+    .gte("created_at", cancelSince)
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  const reasonCounter = new Map<string, number>();
+  const cancelTypeCounter = new Map<string, number>();
+
+  for (const row of (cancelReasonEvents ?? []) as CancelReasonRow[]) {
+    const reasonKey = String(row.metadata?.reason ?? "unknown").trim() || "unknown";
+    reasonCounter.set(reasonKey, (reasonCounter.get(reasonKey) ?? 0) + 1);
+
+    const cancelType = String(row.metadata?.cancelType ?? "unspecified").trim() || "unspecified";
+    cancelTypeCounter.set(cancelType, (cancelTypeCounter.get(cancelType) ?? 0) + 1);
+  }
+
+  const cancelReasonDistribution = Array.from(reasonCounter.entries())
+    .map(([reason, count]) => ({
+      reason,
+      label: CANCEL_REASON_LABELS[reason] ?? reason,
+      count
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  const cancelTypeDistribution = Array.from(cancelTypeCounter.entries())
+    .map(([cancelType, count]) => ({ cancelType, count }))
+    .sort((a, b) => b.count - a.count);
+
   const stats = {
     active: subscriptions.filter(s => s.status === "active").length,
+    reactivated: subscriptions.filter(s => s.status === "reactivated").length,
     trial: subscriptions.filter(s => s.status === "trialing").length,
     canceled: subscriptions.filter(s => s.status === "canceled").length,
     past_due: subscriptions.filter(s => s.status === "past_due").length
@@ -37,6 +88,7 @@ export default async function OwnerSubscriptionsPage({
 
   const inconsistentStatuses = subscriptions.filter((s) => {
     if (s.status === "active") return false;
+    if (s.status === "reactivated") return false;
     if (s.status === "trialing") return false;
     if (s.status === "canceled") return false;
     if (s.status === "past_due") return false;
@@ -61,10 +113,14 @@ export default async function OwnerSubscriptionsPage({
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="rounded-lg border border-emerald-700/30 bg-emerald-900/20 p-4">
           <p className="text-xs font-semibold text-emerald-400 uppercase">Active</p>
           <p className="text-2xl font-bold text-emerald-100 mt-2">{stats.active}</p>
+        </div>
+        <div className="rounded-lg border border-teal-700/30 bg-teal-900/20 p-4">
+          <p className="text-xs font-semibold text-teal-400 uppercase">Reactivated</p>
+          <p className="text-2xl font-bold text-teal-100 mt-2">{stats.reactivated}</p>
         </div>
         <div className="rounded-lg border border-cyan-700/30 bg-cyan-900/20 p-4">
           <p className="text-xs font-semibold text-cyan-400 uppercase">Trial</p>
@@ -84,6 +140,57 @@ export default async function OwnerSubscriptionsPage({
         <p>Inconsistent statuses: {inconsistentStatuses}</p>
         <p>Billing reconciliation signals: {(billingSignals ?? []).length}</p>
       </div>
+
+      <section className="rounded-lg border border-slate-700 bg-slate-900/30 p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-100">Cancel reason analytics (30 zile)</h2>
+            <p className="text-sm text-slate-400">Distribuție pe motive și tip de anulare din evenimentele operaționale.</p>
+          </div>
+          <a
+            href="/api/owner/billing/cancel-reasons?windowDays=30"
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs text-amber-300 hover:text-amber-200"
+          >
+            JSON query-ready
+          </a>
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="rounded-lg border border-slate-700/70 bg-slate-950/30 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Top motive anulare</p>
+            <ul className="mt-3 space-y-2 text-sm text-slate-200">
+              {cancelReasonDistribution.length === 0 ? (
+                <li className="text-slate-400">Nu există anulări în ultimele 30 zile.</li>
+              ) : (
+                cancelReasonDistribution.map((item) => (
+                  <li key={item.reason} className="flex items-center justify-between">
+                    <span>{item.label}</span>
+                    <span className="font-semibold text-slate-100">{item.count}</span>
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
+
+          <div className="rounded-lg border border-slate-700/70 bg-slate-950/30 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Tip anulare</p>
+            <ul className="mt-3 space-y-2 text-sm text-slate-200">
+              {cancelTypeDistribution.length === 0 ? (
+                <li className="text-slate-400">Nu există date de tip anulare.</li>
+              ) : (
+                cancelTypeDistribution.map((item) => (
+                  <li key={item.cancelType} className="flex items-center justify-between">
+                    <span>{item.cancelType}</span>
+                    <span className="font-semibold text-slate-100">{item.count}</span>
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
+        </div>
+      </section>
 
       <div className="rounded-lg border border-slate-700 overflow-hidden">
         <div className="overflow-x-auto">
@@ -112,6 +219,8 @@ export default async function OwnerSubscriptionsPage({
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
                         sub.status === "active"
                           ? "bg-emerald-500/10 text-emerald-100 border-emerald-500/30"
+                          : sub.status === "reactivated"
+                            ? "bg-teal-500/10 text-teal-100 border-teal-500/30"
                           : "bg-slate-500/10 text-slate-100 border-slate-500/30"
                       }`}
                     >

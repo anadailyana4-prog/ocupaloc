@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
+import { getPublicProofMetrics } from "@/lib/public-proof";
 
 export const metadata: Metadata = {
   title: "Programări Online Coafor | Software 59,99 RON/lună Fără Comision",
@@ -114,7 +115,8 @@ const relatedLinks = [
   { href: "/demo-interactiv", label: "Testează fluxul de rezervare" }
 ];
 
-export default function ProgramariOnlineCoaforPage() {
+export default async function ProgramariOnlineCoaforPage() {
+  const proof = await getPublicProofMetrics();
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -145,7 +147,7 @@ export default function ProgramariOnlineCoaforPage() {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-14 text-zinc-100">
+    <main className="min-h-screen oc-bg px-6 py-14 oc-text">
       <Script
         id="faq-schema-coafor"
         type="application/ld+json"
@@ -160,11 +162,11 @@ export default function ProgramariOnlineCoaforPage() {
       <div className="mx-auto max-w-5xl space-y-14">
 
         {/* ── HERO ── */}
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
+        <section className="rounded-2xl border oc-border bg-white p-8">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
             Programări online pentru coafor — fără telefon, fără agendă de hârtie
           </h1>
-          <p className="mt-5 max-w-3xl text-lg leading-relaxed text-zinc-300">
+          <p className="mt-5 max-w-3xl text-lg leading-relaxed oc-text">
             Salonul tău de coafură pierde timp prețios cu apeluri de programare, confirmări și reprogramări. OcupaLoc îți oferă un link personal
             de rezervare pe care clientele îl accesează oricând, aleg serviciul dorit — tuns, vopsit, balyage, keratinare — și primesc confirmare
             automată. Tu nu mai întrerupi lucrul ca să răspunzi la telefon. Preț fix{" "}
@@ -174,18 +176,33 @@ export default function ProgramariOnlineCoaforPage() {
             <Link
               href="/signup?start=1&tip=coafor"
               data-cta-location="coafor_hero_primary"
-              className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500"
+              className="rounded-lg oc-primary px-6 py-3 font-semibold text-white"
             >
               Test gratuit 14 zile
             </Link>
             <Link
               href="/demo-interactiv"
               data-cta-location="coafor_hero_demo"
-              className="rounded-lg border border-zinc-700 px-6 py-3 font-semibold text-zinc-200 hover:bg-zinc-800"
+              className="rounded-lg border oc-border px-6 py-3 font-semibold oc-text hover:oc-badge-bg"
             >
               Testează fluxul de rezervare
             </Link>
           </div>
+        </section>
+
+        <section className="rounded-2xl border oc-border bg-white p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] oc-secondary-text">Proof real (ultimele 30 zile)</p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border oc-border p-4">
+              <p className="text-xs oc-secondary-text">Programări confirmate pe platformă</p>
+              <p className="mt-1 text-2xl font-bold oc-text">{proof.confirmedBookings30d}</p>
+            </div>
+            <div className="rounded-xl border oc-border p-4">
+              <p className="text-xs oc-secondary-text">Business-uri active cu booking confirmat</p>
+              <p className="mt-1 text-2xl font-bold oc-text">{proof.activeBusinesses30d}</p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs oc-secondary-text">Metrici derivate din programări confirmate (nu reprezintă venit facturat Stripe).</p>
         </section>
 
         {/* ── SERVICII ── */}
@@ -193,20 +210,20 @@ export default function ProgramariOnlineCoaforPage() {
           <h2 className="text-3xl font-bold tracking-tight">
             Servicii de coafură cu durate diferite — toate în aceeași agendă
           </h2>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             Una dintre cele mai mari provocări în coafură este că serviciile au durate complet diferite. Un tuns durează 45 de minute,
             un balyage poate dura 4 ore. Cu OcupaLoc, fiecare serviciu are durata sa configurată exact, iar agenda se blochează automat
             pe întreaga perioadă. Clientele văd doar sloturile reale în care se poate programa serviciul ales — nu sloturile standard de 30 de minute.
           </p>
           <div className="grid gap-3 md:grid-cols-3">
             {serviciiCoafor.map((s) => (
-              <div key={s.name} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-                <p className="font-semibold text-zinc-100">{s.name}</p>
-                <p className="mt-1 text-sm text-zinc-400">{s.duration}</p>
+              <div key={s.name} className="rounded-xl border oc-border bg-white p-4">
+                <p className="font-semibold oc-text">{s.name}</p>
+                <p className="mt-1 text-sm oc-secondary-text">{s.duration}</p>
               </div>
             ))}
           </div>
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm oc-secondary-text">
             Duratele de mai sus sunt orientative. Tu configurezi durata exactă pentru fiecare serviciu din salonul tău.
           </p>
         </section>
@@ -217,33 +234,33 @@ export default function ProgramariOnlineCoaforPage() {
             De ce coafoarele și saloanele de coafură trec la programări online
           </h2>
 
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <article className="rounded-xl border oc-border bg-white p-6">
             <h3 className="text-xl font-semibold text-amber-100">
               Clientele rezervă când au chef — nu când ești disponibil la telefon
             </h3>
-            <p className="mt-3 leading-relaxed text-zinc-300">
+            <p className="mt-3 leading-relaxed oc-text">
               Cea mai mare parte a deciziilor de programare se iau seara sau în weekend, când salonul este ocupat sau închis. Dacă clienții nu pot
               rezerva în momentul în care vor, amână și poate uită sau merg la alt salon. Un link de rezervare disponibil 24/7 captează această
               intenție în momentul exact în care apare, fără nicio intervenție din partea ta.
             </p>
           </article>
 
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <article className="rounded-xl border oc-border bg-white p-6">
             <h3 className="text-xl font-semibold text-amber-100">
               Nu mai ești întrerupt în timpul lucrului pentru a confirma ore
             </h3>
-            <p className="mt-3 leading-relaxed text-zinc-300">
+            <p className="mt-3 leading-relaxed oc-text">
               Fiecare apel primit în timp ce lucrezi cu o clientă este o întrerupere care afectează calitatea muncii și experiența clientei de
               pe scaun. Cu programările online, confirmările sunt automate. Clienții primesc toate detaliile instant, tu nu mai întrerupi lucrul
               și nu mai ții minte cine a sunat și pentru ce oră a întrebat.
             </p>
           </article>
 
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <article className="rounded-xl border oc-border bg-white p-6">
             <h3 className="text-xl font-semibold text-amber-100">
               Fără dependență de platformele cu comision
             </h3>
-            <p className="mt-3 leading-relaxed text-zinc-300">
+            <p className="mt-3 leading-relaxed oc-text">
               Platformele de tip Fresha sau Treatwell aduc vizibilitate, dar percep 20-35% comision din rezervările generate de ele. Pe termen lung,
               devii dependent de o platformă care deține relația cu clienții tăi. OcupaLoc îți dă instrumentul de programare, dar clienții sunt
               100% ai tăi. Nu există comision, nu există listing cu concurenți, nu există risc de a pierde clienți dacă schimbi platforma.
@@ -257,21 +274,21 @@ export default function ProgramariOnlineCoaforPage() {
             Ce primești cu OcupaLoc ca salon de coafură
           </h2>
           <div className="grid gap-4 md:grid-cols-3">
-            <article className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+            <article className="rounded-xl border oc-border bg-white p-5">
               <h3 className="text-lg font-semibold">Link propriu de rezervare</h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                <span className="font-mono text-zinc-300">ocupaloc.ro/salonul-tau</span> — pui linkul în Instagram bio, Google Business sau WhatsApp și clienții rezervă direct fără să te sune.
+              <p className="mt-2 text-sm leading-relaxed oc-secondary-text">
+                <span className="font-mono oc-text">ocupaloc.ro/salonul-tau</span> — pui linkul în Instagram bio, Google Business sau WhatsApp și clienții rezervă direct fără să te sune.
               </p>
             </article>
-            <article className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+            <article className="rounded-xl border oc-border bg-white p-5">
               <h3 className="text-lg font-semibold">Agende individuale per coafor</h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+              <p className="mt-2 text-sm leading-relaxed oc-secondary-text">
                 Dacă lucrezi cu mai mulți coafori, fiecare are agenda sa. Clienta alege specialistul preferat și vede disponibilitatea lui reală.
               </p>
             </article>
-            <article className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+            <article className="rounded-xl border oc-border bg-white p-5">
               <h3 className="text-lg font-semibold">Confirmare automată — fără nicio acțiune din partea ta</h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+              <p className="mt-2 text-sm leading-relaxed oc-secondary-text">
                 La fiecare rezervare, tu primești email cu datele clientei, ea primește confirmarea cu ora și serviciul. Totul automat, instant.
               </p>
             </article>
@@ -280,7 +297,7 @@ export default function ProgramariOnlineCoaforPage() {
             <Link
               href="/signup?start=1&tip=coafor"
               data-cta-location="coafor_features_cta"
-              className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500"
+              className="rounded-lg oc-primary px-6 py-3 font-semibold text-white"
             >
               Începe testul gratuit de 14 zile
             </Link>
@@ -292,14 +309,14 @@ export default function ProgramariOnlineCoaforPage() {
           <h2 className="text-3xl font-bold tracking-tight">
             OcupaLoc vs. Fresha și Treatwell pentru saloane de coafură
           </h2>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             Fresha și Treatwell sunt platforme de listing cu vizibilitate mare, dar cu comisioane semnificative. OcupaLoc este instrumentul tău
             propriu de programări — fără comision, fără listing, fără dependență de o platformă externă.
           </p>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="border-b border-zinc-700 text-left text-zinc-400">
+                <tr className="border-b oc-border text-left oc-secondary-text">
                   <th className="pb-3 pr-4 font-medium">Funcționalitate</th>
                   <th className="pb-3 pr-4 font-semibold text-white">OcupaLoc</th>
                   <th className="pb-3 pr-4 font-medium">Fresha</th>
@@ -308,11 +325,11 @@ export default function ProgramariOnlineCoaforPage() {
               </thead>
               <tbody>
                 {competitorRows.map((row) => (
-                  <tr key={row.feature} className="border-b border-zinc-800">
-                    <td className="py-3 pr-4 text-zinc-400">{row.feature}</td>
-                    <td className="py-3 pr-4 font-medium text-indigo-300">{row.ocupaloc}</td>
-                    <td className="py-3 pr-4 text-zinc-400">{row.fresha}</td>
-                    <td className="py-3 text-zinc-400">{row.treatwell}</td>
+                  <tr key={row.feature} className="border-b oc-border">
+                    <td className="py-3 pr-4 oc-secondary-text">{row.feature}</td>
+                    <td className="py-3 pr-4 font-medium oc-accent">{row.ocupaloc}</td>
+                    <td className="py-3 pr-4 oc-secondary-text">{row.fresha}</td>
+                    <td className="py-3 oc-secondary-text">{row.treatwell}</td>
                   </tr>
                 ))}
               </tbody>
@@ -324,32 +341,32 @@ export default function ProgramariOnlineCoaforPage() {
         <section className="space-y-5">
           <h2 className="text-3xl font-bold tracking-tight">Întrebări frecvente</h2>
           {faqItems.map((item) => (
-            <article key={item.question} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+            <article key={item.question} className="rounded-xl border oc-border bg-white p-6">
               <h3 className="text-lg font-semibold">{item.question}</h3>
-              <p className="mt-2 leading-relaxed text-zinc-300">{item.answer}</p>
+              <p className="mt-2 leading-relaxed oc-text">{item.answer}</p>
             </article>
           ))}
         </section>
 
         {/* ── FINAL CTA ── */}
-        <section className="rounded-2xl border border-indigo-800 bg-indigo-950/40 p-8 text-center">
+        <section className="rounded-2xl border oc-border oc-primary p-8 text-center">
           <h2 className="text-2xl font-bold">
             Gata să primești programări fără să te mai întrerupi din lucru?
           </h2>
-          <p className="mt-3 text-zinc-300">
+          <p className="mt-3 oc-text">
             14 zile gratuit, fără card. Configurezi salonul în 5 minute și poți trimite linkul primelor cliente chiar astăzi.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
               href="/signup?start=1&tip=coafor"
               data-cta-location="coafor_final_cta"
-              className="rounded-lg bg-indigo-600 px-8 py-3 font-semibold text-white hover:bg-indigo-500"
+              className="rounded-lg oc-primary px-8 py-3 font-semibold text-white"
             >
               Test gratuit 14 zile
             </Link>
             <Link
               href="/preturi"
-              className="rounded-lg border border-zinc-700 px-8 py-3 font-semibold text-zinc-200 hover:bg-zinc-800"
+              className="rounded-lg border oc-border px-8 py-3 font-semibold oc-text hover:oc-badge-bg"
             >
               Vezi prețul
             </Link>
@@ -357,14 +374,14 @@ export default function ProgramariOnlineCoaforPage() {
         </section>
 
         {/* ── INTERNAL LINKS ── */}
-        <nav aria-label="Pagini conexe" className="border-t border-zinc-800 pt-8">
-          <p className="mb-4 text-sm font-medium uppercase tracking-wider text-zinc-500">Vezi și</p>
+        <nav aria-label="Pagini conexe" className="border-t oc-border pt-8">
+          <p className="mb-4 text-sm font-medium uppercase tracking-wider oc-secondary-text">Vezi și</p>
           <ul className="flex flex-wrap gap-3">
             {relatedLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+                  className="rounded-lg border oc-border px-4 py-2 text-sm oc-text hover:oc-badge-bg"
                 >
                   {link.label}
                 </Link>

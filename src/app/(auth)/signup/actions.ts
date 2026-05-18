@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
+import { onboardingCompletionPatch } from "@/lib/professional-milestones";
 import { reportError } from "@/lib/observability";
 import { checkApiRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
@@ -114,6 +115,11 @@ export async function bootstrapTenantAfterSignup(input: {
   const { data: existing } = await admin.from("profesionisti").select("id").eq("user_id", userId).maybeSingle();
   let profesionistId = existing?.id ?? null;
 
+  const completion = onboardingCompletionPatch();
+  const phone = input.phone?.trim() || null;
+  const tipActivitate = mapActivity(input.activity);
+  const profileComplete = Boolean(input.orgName.trim() && tipActivitate && phone);
+
   if (!profesionistId) {
     const baseSlug = sanitizeSlug(input.slug || input.orgName);
     for (let attempt = 1; attempt <= 15 && !profesionistId; attempt += 1) {
@@ -123,10 +129,11 @@ export async function bootstrapTenantAfterSignup(input: {
         .insert({
           user_id: userId,
           nume_business: input.orgName,
-          tip_activitate: mapActivity(input.activity),
-          telefon: input.phone?.trim() || null,
+          tip_activitate: tipActivitate,
+          telefon: phone,
           slug: slugCandidate,
-          onboarding_pas: 4,
+          onboarding_pas: completion.onboarding_pas,
+          onboarding_completed_at: profileComplete ? completion.onboarding_completed_at : null,
           program: buildProgram(input.workDays)
         })
         .select("id")

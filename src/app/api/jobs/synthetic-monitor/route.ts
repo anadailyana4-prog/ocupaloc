@@ -6,7 +6,7 @@ import { validateCronSecret } from "@/lib/cron-auth";
 import { getRequestId, recordOperationalEvent } from "@/lib/ops-events";
 
 type SyntheticCheck = {
-  name: "health" | "booking_public" | "dashboard_guard" | "canonical_redirect" | "login";
+  name: "health" | "booking_public" | "dashboard_guard" | "billing_checkout_guard" | "canonical_redirect" | "login";
   ok: boolean;
   statusCode?: number;
   latencyMs: number;
@@ -14,7 +14,7 @@ type SyntheticCheck = {
 };
 
 function getMonitorSecret(): string | undefined {
-  return process.env.SYNTHETIC_MONITOR_SECRET?.trim() || process.env.REMINDERS_CRON_SECRET?.trim() || undefined;
+  return process.env.SYNTHETIC_MONITOR_SECRET?.trim() || undefined;
 }
 
 function getBaseUrl() {
@@ -59,6 +59,18 @@ async function checkDashboardGuard(baseUrl: string): Promise<SyntheticCheck> {
   const redirectedToLogin = r.status >= 300 && r.status < 400 && (r.location ?? "").includes("/login");
   return {
     name: "dashboard_guard",
+    ok: redirectedToLogin,
+    statusCode: r.status,
+    latencyMs: r.latencyMs,
+    details: r.location
+  };
+}
+
+async function checkBillingCheckoutGuard(baseUrl: string): Promise<SyntheticCheck> {
+  const r = await timedFetch(`${baseUrl}/api/billing/create-checkout`);
+  const redirectedToLogin = r.status >= 300 && r.status < 400 && (r.location ?? "").includes("/login");
+  return {
+    name: "billing_checkout_guard",
     ok: redirectedToLogin,
     statusCode: r.status,
     latencyMs: r.latencyMs,
@@ -142,6 +154,7 @@ export async function GET(req: NextRequest) {
     checkHealth(baseUrl),
     checkPublicBooking(baseUrl, slug),
     checkDashboardGuard(baseUrl),
+    checkBillingCheckoutGuard(baseUrl),
     checkCanonicalRedirect(baseUrl, slug),
     checkLogin()
   ]);

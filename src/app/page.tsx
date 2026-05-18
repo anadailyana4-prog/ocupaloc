@@ -2,6 +2,12 @@ import Script from "next/script";
 
 import { LandingPage } from "@/components/landing/LandingPage";
 
+export const metadata = {
+  title: "OcupaLoc | Programări online pentru saloane, clinici și servicii locale",
+  description:
+    "OcupaLoc este un SaaS românesc de programări online pentru saloane, clinici și servicii locale. Clienții rezervă singuri, iar business-ul vede totul clar dintr-un singur loc."
+};
+
 export default function Home() {
   const softwareSchema = {
     "@context": "https://schema.org",

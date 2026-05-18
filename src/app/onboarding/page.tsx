@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
 
+import { SignupDraftBootstrap } from "@/components/onboarding/SignupDraftBootstrap";
+import { SignupDraftPrefill } from "@/components/onboarding/SignupDraftPrefill";
+
 import { saveOnboardingProfile } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,19 +53,22 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
   const pauzaProgram = extractProgramPauza(profile?.program ?? null);
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center bg-background p-6">
+    <>
+      <SignupDraftBootstrap />
+      <SignupDraftPrefill />
+    <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center oc-bg p-6 oc-text">
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-bold tracking-tight">Finalizează profilul</h1>
-        <p className="text-sm text-muted-foreground">Completează datele de bază ca să accesezi meniul.</p>
+        <p className="text-sm oc-secondary-text">Completează datele de bază ca să accesezi meniul.</p>
       </div>
 
       {sp.error ? (
-        <div className="mt-6 rounded-2xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-center text-sm text-red-200">
+        <div className="mt-6 rounded-2xl border border-[#F59E0B]/40 bg-[#F59E0B]/10 px-4 py-3 text-center text-sm text-[#92400E]">
           {decodeURIComponent(sp.error)}
         </div>
       ) : null}
 
-      <form action={saveOnboardingProfile} className="mt-8 space-y-5 rounded-2xl border border-zinc-800 bg-zinc-950/50 p-6">
+      <form action={saveOnboardingProfile} className="mt-8 space-y-5 rounded-2xl border oc-border bg-white p-6">
         <div className="space-y-2">
           <Label htmlFor="nume_business">Nume business</Label>
           <Input
@@ -72,7 +78,7 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
             maxLength={120}
             defaultValue={profile?.nume_business ?? ""}
             placeholder="ex: Cabinet Dr. Ionescu"
-            className="border-zinc-700 bg-zinc-900"
+            className="border oc-border bg-white oc-text"
           />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -86,7 +92,7 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
               maxLength={40}
               defaultValue={profile?.telefon ?? ""}
               placeholder="07xx xxx xxx"
-              className="border-zinc-700 bg-zinc-900"
+              className="border oc-border bg-white oc-text"
             />
           </div>
           <div className="space-y-2">
@@ -98,7 +104,7 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
               maxLength={40}
               defaultValue={profile?.whatsapp ?? ""}
               placeholder="07xx xxx xxx"
-              className="border-zinc-700 bg-zinc-900"
+              className="border oc-border bg-white oc-text"
             />
           </div>
         </div>
@@ -111,7 +117,7 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
             maxLength={80}
             defaultValue={profile?.tip_activitate ?? ""}
             placeholder="ex: cabinet medical, salon, studio foto, etc."
-            className="border-zinc-700 bg-zinc-900"
+            className="border oc-border bg-white oc-text"
           />
         </div>
         <div className="space-y-2">
@@ -125,9 +131,9 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
             step={5}
             defaultValue={profile?.pauza_intre_clienti ?? ""}
             placeholder="Opțional (ex: 10)"
-            className="border-zinc-700 bg-zinc-900"
+            className="border oc-border bg-white oc-text"
           />
-          <p className="text-xs text-muted-foreground">Lasă gol dacă nu vrei pauză implicită între programări.</p>
+          <p className="text-xs oc-secondary-text">Lasă gol dacă nu vrei pauză implicită între programări.</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
@@ -137,7 +143,7 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
               name="pauza_start"
               type="time"
               defaultValue={pauzaProgram?.start ?? ""}
-              className="border-zinc-700 bg-zinc-900"
+              className="border oc-border bg-white oc-text"
             />
           </div>
           <div className="space-y-2">
@@ -151,15 +157,16 @@ export default async function OnboardingPage({ searchParams }: PageProps) {
               step={5}
               defaultValue={pauzaProgram?.durationMinutes ?? ""}
               placeholder="ex: 60"
-              className="border-zinc-700 bg-zinc-900"
+              className="border oc-border bg-white oc-text"
             />
           </div>
         </div>
-        <p className="-mt-2 text-xs text-muted-foreground">Opțional. Dacă setezi ora și durata, în intervalul de pauză nu vor exista sloturi disponibile.</p>
+        <p className="-mt-2 text-xs oc-secondary-text">Opțional. Dacă setezi ora și durata, în intervalul de pauză nu vor exista sloturi disponibile.</p>
         <Button type="submit" className="w-full rounded-full">
           Salvează și continuă
         </Button>
       </form>
     </div>
+    </>
   );
 }

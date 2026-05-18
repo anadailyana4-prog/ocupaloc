@@ -56,6 +56,7 @@ export type OwnerKpiStats = {
   mrrRon: number;
   arrRon: number;
   monthlyRevenueRon: number;
+  invoicedRevenue30dRon: number | null;
   totalBusinesses: number;
   bookingsTotal: number;
   bookings24h: number;
@@ -73,6 +74,14 @@ export type OwnerKpiStats = {
   recentCriticalErrors: Array<{ id: number; eventType: string; createdAt: string; metadata: Record<string, unknown> }>;
   syntheticMonitorStatus: "healthy" | "failing" | "not_instrumented_yet";
   deploymentStatus: "not_instrumented_yet";
+  commercialMetricClassification: {
+    mrrRon: "estimated";
+    monthlyRevenueRon: "estimated";
+    arrRon: "derived";
+    invoicedRevenue30dRon: "billed";
+    trialToPaidConversionPct: "derived";
+  };
+  commercialMetricNotes: string[];
   notInstrumented: string[];
 };
 
@@ -104,7 +113,7 @@ export type BusinessListParams = {
 
 function deriveBusinessStatus(subscription: SubscriptionRow | undefined): BusinessListItem["status"] {
   if (!subscription) return "no_subscription";
-  if (subscription.status === "active") return "paid";
+  if (subscription.status === "active" || subscription.status === "reactivated") return "paid";
   if (subscription.status === "trialing") {
     if (subscription.current_period_end && new Date(subscription.current_period_end) < new Date()) {
       return "expired";
@@ -133,7 +142,7 @@ export async function getOwnerKpis(): Promise<OwnerKpiStats> {
   ]);
 
   const subRows = (subscriptions ?? []) as SubscriptionRow[];
-  const activeSubs = subRows.filter((s) => s.status === "active").length;
+  const activeSubs = subRows.filter((s) => s.status === "active" || s.status === "reactivated").length;
   const canceledSubs = subRows.filter((s) => s.status === "canceled").length;
   const trialSubs = subRows.filter((s) => s.status === "trialing");
   const trialActive = trialSubs.filter((s) => !s.current_period_end || new Date(s.current_period_end) >= now).length;
@@ -185,7 +194,11 @@ export async function getOwnerKpis(): Promise<OwnerKpiStats> {
         ? "healthy"
         : "failing";
 
-  const activeBusinessIds = new Set(subRows.filter((s) => s.status === "active").map((s) => s.profesionist_id));
+  const activeBusinessIds = new Set(
+    subRows
+      .filter((s) => s.status === "active" || s.status === "reactivated")
+      .map((s) => s.profesionist_id)
+  );
   const activeAccounts = (businesses ?? []).filter((b) => activeBusinessIds.has(String(b.id))).length;
   const totalBusinesses = totalAccounts ?? 0;
   const derived = deriveOwnerKpiMetrics({
@@ -204,6 +217,7 @@ export async function getOwnerKpis(): Promise<OwnerKpiStats> {
     mrrRon: derived.mrrRon,
     monthlyRevenueRon: derived.monthlyRevenueRon,
     arrRon: derived.arrRon,
+    invoicedRevenue30dRon: null,
     totalBusinesses,
     bookingsTotal: bookingsTotal ?? 0,
     bookings24h: bookings24h ?? 0,
@@ -221,8 +235,21 @@ export async function getOwnerKpis(): Promise<OwnerKpiStats> {
     recentCriticalErrors,
     syntheticMonitorStatus,
     deploymentStatus: "not_instrumented_yet",
+    commercialMetricClassification: {
+      mrrRon: "estimated",
+      monthlyRevenueRon: "estimated",
+      arrRon: "derived",
+      invoicedRevenue30dRon: "billed",
+      trialToPaidConversionPct: "derived"
+    },
+    commercialMetricNotes: [
+      "MRR/Monthly Revenue sunt estimate din abonamente active * preț listă.",
+      "ARR este derivat din MRR estimat (MRR * 12).",
+      "Venitul facturat Stripe nu este încă instrumentat în acest dashboard."
+    ],
     notInstrumented: [
       "deployment_status",
+      "invoiced_revenue_stripe",
       "business_email_activity_flag",
       "multi_location_model"
     ]
@@ -307,13 +334,18 @@ export async function getOwnerBusinessList(params: BusinessListParams) {
       createdAt: row.created_at,
       status: derivedStatus,
       trialExpiry,
-      currentPlan: subscription?.status === "active" ? "Professional" : subscription?.status === "trialing" ? "Trial" : "N/A",
+      currentPlan:
+        subscription?.status === "active" || subscription?.status === "reactivated"
+          ? "Professional"
+          : subscription?.status === "trialing"
+            ? "Trial"
+            : "N/A",
       locationsCount: 1,
       bookingsCount: bookingAgg?.count ?? 0,
       lastActivity: row.last_activity_at ?? bookingAgg?.last ?? null,
       recentEmailActivity: false,
       recentIssue: issueSet.has(row.id),
-      subscriptionActive: subscription?.status === "active"
+      subscriptionActive: subscription?.status === "active" || subscription?.status === "reactivated"
     };
   });
 

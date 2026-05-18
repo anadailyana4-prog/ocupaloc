@@ -9,6 +9,7 @@ import {
   resetWebhookEventToPending,
   type WebhookEventRecord
 } from "@/lib/billing/webhook-events-repository";
+import { BILLING_EVENT_TYPES } from "@/lib/ops-event-taxonomy";
 import { reportError } from "@/lib/observability";
 import { recordOperationalEvent } from "@/lib/ops-events";
 
@@ -101,12 +102,28 @@ async function upsertSubscriptionFromEvent(
     cancelAtPeriodEnd?: boolean;
   }
 ): Promise<void> {
+  let nextStatus = input.status;
+  if (nextStatus === "active" || nextStatus === "trialing") {
+    const { data: previousSub } = await admin
+      .from("subscriptions")
+      .select("stripe_subscription_id,status")
+      .eq("profesionist_id", input.profesionistId)
+      .neq("stripe_subscription_id", input.stripeSubscriptionId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (previousSub?.status === "canceled") {
+      nextStatus = "reactivated";
+    }
+  }
+
   const { error } = await admin.from("subscriptions").upsert(
     {
       profesionist_id: input.profesionistId,
       stripe_subscription_id: input.stripeSubscriptionId,
       stripe_customer_id: input.stripeCustomerId,
-      status: input.status,
+      status: nextStatus,
       current_period_start: toIsoOrNull(input.currentPeriodStart),
       current_period_end: toIsoOrNull(input.currentPeriodEnd),
       cancel_at_period_end: input.cancelAtPeriodEnd ?? false,
@@ -117,6 +134,20 @@ async function upsertSubscriptionFromEvent(
 
   if (error) {
     throw new Error(`subscriptions upsert failed: ${error.message}`);
+  }
+
+  if (nextStatus === "active" || nextStatus === "reactivated") {
+    await recordOperationalEvent({
+      eventType: BILLING_EVENT_TYPES.SUBSCRIPTION_ACTIVATED,
+      flow: "billing",
+      outcome: "success",
+      entityId: input.profesionistId,
+      metadata: {
+        profesionistId: input.profesionistId,
+        stripeSubscriptionId: input.stripeSubscriptionId,
+        status: nextStatus
+      }
+    });
   }
 }
 

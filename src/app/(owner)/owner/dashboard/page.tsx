@@ -81,15 +81,19 @@ export default async function OwnerDashboardPage() {
       <section className="rounded-xl border border-slate-800 bg-slate-900/30 p-5">
         <h2 className="mb-4 text-lg font-semibold text-slate-200">Revenue</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <KPICard label="MRR" value={stats.mrrRon.toFixed(2)} unit="RON" color="border-amber-600/30" />
-          <KPICard label="Monthly Revenue" value={stats.monthlyRevenueRon.toFixed(2)} unit="RON" color="border-amber-600/30" />
-          <KPICard label="ARR" value={stats.arrRon.toFixed(2)} unit="RON" color="border-amber-600/30" />
+          <KPICard label="MRR (estimat)" value={stats.mrrRon.toFixed(2)} unit="RON" color="border-amber-600/30" />
+          <KPICard label="Venit lunar (estimat)" value={stats.monthlyRevenueRon.toFixed(2)} unit="RON" color="border-amber-600/30" />
+          <KPICard label="ARR (derivat)" value={stats.arrRon.toFixed(2)} unit="RON" color="border-amber-600/30" />
           <KPICard
-            label="Conversion Rate (Trial-to-Paid)"
+            label="Conversion Rate Trial-to-Paid (derivat)"
             value={stats.trialToPaidConversionPct.toFixed(1)}
             unit="%"
             color="border-green-600/30"
           />
+        </div>
+        <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/30 p-3 text-xs text-slate-300">
+          <p>Venit facturat Stripe (billed): {stats.invoicedRevenue30dRon === null ? "neinstrumentat momentan" : `${stats.invoicedRevenue30dRon.toFixed(2)} RON`}</p>
+          <p className="mt-1">Notă: MRR și venitul lunar sunt estimate din abonamente active; ARR este derivat din MRR.</p>
         </div>
       </section>
 

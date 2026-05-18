@@ -1,5 +1,5 @@
 import { env } from "../src/lib/config/env";
-import { OUTREACH_COMMANDS } from "../src/lib/outreach/ops-constants";
+import { TELEGRAM_TOOL_COMMANDS } from "../src/lib/outreach/ops-constants";
 
 function getTelegramApiBase() {
   return `https://api.telegram.org/bot${env.get("TELEGRAM_BOT_TOKEN")}`;
@@ -40,11 +40,11 @@ async function main() {
     allowed_updates: ["message"]
   });
 
-  await telegramCall("setMyCommands", { commands: OUTREACH_COMMANDS });
+  await telegramCall("setMyCommands", { commands: TELEGRAM_TOOL_COMMANDS });
 
-  console.log("Telegram outreach setup finalizat.");
+  console.log("Telegram tools setup finalizat (email + WhatsApp).");
   console.log(`Webhook: ${webhookUrl}`);
-  console.log(`Comenzi setate: ${OUTREACH_COMMANDS.length}`);
+  console.log(`Comenzi setate: ${TELEGRAM_TOOL_COMMANDS.length}`);
 }
 
 void main();

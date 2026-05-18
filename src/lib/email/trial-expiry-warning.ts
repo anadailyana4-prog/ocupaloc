@@ -85,7 +85,7 @@ export async function sendTrialExpiryWarnings(): Promise<{ sent: number; skipped
     .from("subscriptions")
     .select("profesionist_id")
     .in("profesionist_id", profIds)
-    .in("status", ["active", "trialing"]);
+    .in("status", ["active", "trialing", "reactivated"]);
 
   const alreadyPaid = new Set((activeSubs ?? []).map((s) => s.profesionist_id));
 

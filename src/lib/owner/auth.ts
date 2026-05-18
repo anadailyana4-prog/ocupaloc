@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
+import { reportError } from "@/lib/observability";
 
 export type OwnerAdminUser = {
   id: string;
@@ -88,29 +89,35 @@ export async function logOwnerAction(
   metadata?: Record<string, unknown>,
   requestContext?: { ipAddress?: string | null; userAgent?: string | null }
 ): Promise<void> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
 
-    if (!user) return;
+  if (!user) return;
 
-    const isAdmin = await isOwnerAdmin();
-    if (!isAdmin) return;
+  const isAdmin = await isOwnerAdmin();
+  if (!isAdmin) return;
 
-    await supabase.from("owner_audit_logs").insert({
-      user_id: user.id,
+  const admin = createSupabaseServiceClient();
+  const { error } = await admin.from("owner_audit_logs").insert({
+    user_id: user.id,
+    action,
+    resource_type: resourceType || null,
+    resource_id: resourceId || null,
+    metadata: metadata || null,
+    ip_address: requestContext?.ipAddress || null,
+    user_agent: requestContext?.userAgent || null
+  });
+
+  if (error) {
+    reportError("auth", "owner_audit_log_write_failed", error, {
+      userId: user.id,
       action,
-      resource_type: resourceType || null,
-      resource_id: resourceId || null,
-      metadata: metadata || null,
-      ip_address: requestContext?.ipAddress || null,
-      user_agent: requestContext?.userAgent || null
+      resourceType: resourceType ?? null,
+      resourceId: resourceId ?? null
     });
-  } catch (e) {
-    console.error("Error logging owner action:", e);
-    // Don't throw, audit logging is non-critical
+    throw new Error(`Owner audit log write failed: ${error.message}`);
   }
 }
 

@@ -1,12 +1,8 @@
 import { env } from "@/lib/config/env";
 import { sendOutreachMailboxEmail } from "@/lib/outreach/mailbox-send";
-import { OUTREACH_COMMANDS } from "@/lib/outreach/ops-constants";
+import { TELEGRAM_TOOL_COMMANDS } from "@/lib/outreach/ops-constants";
 import { generatePersonalizedOutreach } from "@/lib/outreach/personalization-engine";
 import { reportError } from "@/lib/observability";
-import { buildDailyReports } from "@/lib/outreach/reporting-service";
-import { runQualificationPipeline } from "@/lib/outreach/qualification-service";
-import { runScraperOrchestration } from "@/lib/outreach/scraper-orchestrator";
-import { runOutreachScheduler } from "@/lib/outreach/scheduler";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 interface TelegramUser {
@@ -75,7 +71,7 @@ export async function setTelegramWebhook(webhookUrl: string, secretToken: string
 }
 
 export async function setTelegramCommands() {
-  await sendTelegramRequest("setMyCommands", { commands: OUTREACH_COMMANDS });
+  await sendTelegramRequest("setMyCommands", { commands: TELEGRAM_TOOL_COMMANDS });
 }
 
 function splitMessage(text: string): string[] {
@@ -114,7 +110,6 @@ export async function notifyAdmins(text: string, options?: { excludeChatIds?: nu
 }
 
 async function isAuthorized(userId: number, chatId: number, user: TelegramUser): Promise<boolean> {
-  // Fast path: check env-var allowlists first (no DB round-trip needed).
   const envIds = [
     env.optional("TELEGRAM_OWNER_IDS"),
     env.optional("TELEGRAM_ADMIN_IDS"),
@@ -126,7 +121,6 @@ async function isAuthorized(userId: number, chatId: number, user: TelegramUser):
     .filter((n) => Number.isFinite(n) && n > 0);
 
   if (envIds.includes(userId)) {
-    // Keep DB in sync without blocking; errors are intentionally swallowed.
     const adminClient = createSupabaseServiceClient();
     adminClient
       .from("telegram_admins")
@@ -148,7 +142,6 @@ async function isAuthorized(userId: number, chatId: number, user: TelegramUser):
     return true;
   }
 
-  // Fallback: check DB for users added manually.
   const adminClient = createSupabaseServiceClient();
   const { data } = await adminClient
     .from("telegram_admins")
@@ -162,7 +155,6 @@ async function isAuthorized(userId: number, chatId: number, user: TelegramUser):
 }
 
 function parseCommand(text: string): string {
-  // Handles /command, /command@botname, and extra whitespace.
   const first = text.trim().split(/\s+/)[0] ?? "";
   return first.split("@")[0]!.toLowerCase();
 }
@@ -182,7 +174,6 @@ function normalizeWhatsappPhone(value: string) {
     digits = digits.slice(2);
   }
 
-  // Local RO format (07xxxxxxxx) -> international format (40xxxxxxxxx)
   if (digits.length === 10 && digits.startsWith("0")) {
     digits = `40${digits.slice(1)}`;
   }
@@ -228,7 +219,6 @@ function inferBusinessNameFromEmail(email: string) {
 function parseSingleEmailCommandInput(text: string): SingleEmailCommandInput {
   const cleaned = text.replace(/^\/\w+(@\w+)?\s*/i, "").trim();
 
-  // Simple mode: /emailsend email@domeniu.ro
   if (cleaned && !cleaned.includes("|")) {
     const email = normalizeEmail(cleaned);
     if (!SIMPLE_EMAIL_REGEX.test(email)) {
@@ -287,7 +277,7 @@ async function isSuppressedEmail(email: string): Promise<boolean> {
 }
 
 function buildSingleEmailPreview(input: SingleEmailCommandInput) {
-  const personalized = generatePersonalizedOutreach({
+  return generatePersonalizedOutreach({
     nicheSlug: input.nicheSlug,
     businessName: input.businessName,
     city: input.city,
@@ -301,8 +291,6 @@ function buildSingleEmailPreview(input: SingleEmailCommandInput) {
     optOutUrl: "https://ocupaloc.ro/contact",
     senderName: "Echipa ocupaloc.ro"
   });
-
-  return personalized;
 }
 
 async function handleEmailPreviewCommand(text: string) {
@@ -353,9 +341,12 @@ async function handleEmailSendCommand(text: string) {
   ].join("\n");
 }
 
-/** @deprecated Kept for backward compatibility with existing tests. */
 export function buildHelpMessage() {
-  return "Comenzi disponibile: /scrape /send /report /emailpreview /emailsend. Sau trimite direct email@domeniu.ro pentru trimitere automata ori un numar de telefon pentru link WhatsApp.";
+  return [
+    "Comenzi: /emailpreview, /emailsend, /whatsapp",
+    "Trimite direct un email@domeniu.ro pentru trimitere automata.",
+    "Trimite un numar de telefon (ex. 07xx xxx xxx) pentru link WhatsApp."
+  ].join("\n");
 }
 
 export async function handleTelegramUpdate(update: TelegramUpdate) {
@@ -382,7 +373,7 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
   try {
     authorized = await isAuthorized(from.id, chat.id, from);
   } catch {
-    // DB unavailable — deny by default to be safe.
+    // DB unavailable — deny by default.
   }
 
   if (!authorized) {
@@ -400,81 +391,22 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
 
   try {
     switch (command) {
-      case "/scrape": {
-        try {
-          await sendTelegramMessage(chat.id, "Pornesc scrape + calificare. Poate dura 1-5 minute, revin cu raport.");
-        } catch {
-          // Continue even if the acknowledgement cannot be delivered.
-        }
-
-        const scrapeResult = await runScraperOrchestration({ notifyAlerts: false });
-        const qualResult = await runQualificationPipeline({ zoneId: scrapeResult.zoneId });
-        responseText = [
-          "Scrape + calificare finalizat.",
-          `Localitati procesate: ${scrapeResult.localitiesProcessed}`,
-          `Lead-uri descoperite: ${scrapeResult.discovered}`,
-          `Lead-uri inserate: ${scrapeResult.inserted}`,
-          scrapeResult.lowYield ? "Atentie: yield mic pe rularea curenta." : null,
-          "",
-          `Qualified: ${qualResult.qualified}`,
-          `Review: ${qualResult.review}`,
-          `Rejected: ${qualResult.rejected}`,
-          `Suppressed: ${qualResult.suppressed}`
-        ]
-          .filter(Boolean)
-          .join("\n");
+      case "/start":
+      case "/help":
+        responseText = buildHelpMessage();
         break;
-      }
-
-      case "/send": {
-        const result = await runOutreachScheduler({ forceStart: true, maxBatchSizeOverride: 10 });
-        responseText = result.ok
-          ? [
-              "Trimitere executata.",
-              result.sent !== undefined ? `Trimise: ${result.sent}` : null,
-              result.failed !== undefined ? `Esuate: ${result.failed}` : null,
-              result.reason ? `Detalii: ${result.reason}` : null
-            ]
-              .filter(Boolean)
-              .join("\n")
-          : `Trimiterea nu a putut fi pornita. ${result.reason ?? ""}`.trim();
-        break;
-      }
-
-      case "/report": {
-        const reports = await buildDailyReports();
-        responseText = [
-          "Raport zilnic:",
-          "",
-          reports.operational,
-          "",
-          reports.coverage,
-          "",
-          reports.efficiency
-        ].join("\n");
-        break;
-      }
-
-      case "/emailpreview": {
+      case "/emailpreview":
         responseText = await handleEmailPreviewCommand(effectiveText);
         break;
-      }
-
-      case "/emailsend": {
+      case "/emailsend":
         responseText = await handleEmailSendCommand(effectiveText);
         break;
-      }
-
-      case "/whatsapp": {
+      case "/whatsapp":
         responseText = handleWhatsAppLinkForPhone(effectiveText);
         break;
-      }
-
-      default: {
-        responseText =
-          "Comenzi disponibile: /scrape /send /report /emailpreview /emailsend. Sau trimite direct email@domeniu.ro pentru trimitere automata ori un numar de telefon pentru link WhatsApp.";
+      default:
+        responseText = buildHelpMessage();
         break;
-      }
     }
   } catch (err) {
     responseText = `Eroare la ${command}: ${err instanceof Error ? err.message : "eroare necunoscuta"}`;
@@ -483,8 +415,7 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
   try {
     await sendTelegramMessage(chat.id, responseText);
   } catch (error) {
-    // Keep webhook stable even if Telegram rejects the response.
-    reportError("cron", "telegram_outreach_send_failed", error, {
+    reportError("cron", "telegram_tools_send_failed", error, {
       command,
       chatId: chat.id,
       userId: from.id

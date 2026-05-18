@@ -71,22 +71,22 @@ async function main() {
   const statsData = await testEndpoint('1. Owner Stats (Dashboard KPIs)', `${baseUrl}/api/owner/stats`);
 
   // Test businesses endpoint
-  const businessesData = await testEndpoint('2. Owner Businesses List', `${baseUrl}/api/owner/businesses`);
+  await testEndpoint('2. Owner Businesses List', `${baseUrl}/api/owner/businesses`);
 
   // Test business detail endpoint (example with ID)
-  const businessDetailData = await testEndpoint('3. Business Detail [ID param needed]', `${baseUrl}/api/owner/business/123`);
+  await testEndpoint('3. Business Detail [ID param needed]', `${baseUrl}/api/owner/business/123`);
 
   // Test notes endpoint
-  const notesData = await testEndpoint('4. Internal Notes', `${baseUrl}/api/owner/notes`);
+  await testEndpoint('4. Internal Notes', `${baseUrl}/api/owner/notes`);
 
   // Test audit log endpoint
-  const auditData = await testEndpoint('5. Audit Log', `${baseUrl}/api/owner/audit`);
+  await testEndpoint('5. Audit Log', `${baseUrl}/api/owner/audit`);
 
   // Test operations endpoint
-  const opsData = await testEndpoint('6. Operations Status', `${baseUrl}/api/owner/operations`);
+  await testEndpoint('6. Operations Status', `${baseUrl}/api/owner/operations`);
 
   // Test access log endpoint
-  const accessData = await testEndpoint('7. Access Log', `${baseUrl}/api/owner/access-log`);
+  await testEndpoint('7. Access Log', `${baseUrl}/api/owner/access-log`);
 
   console.log('\n═══════════════════════════════════════════════════════════════');
   console.log('    ANALYSIS');

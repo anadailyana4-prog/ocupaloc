@@ -9,6 +9,7 @@ import { logBookingStatusEvent } from "@/lib/booking/status-events";
 import { notifyClientBookingCancelledByProvider, notifyClientBookingConfirmation } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
 import { withProgramPauza } from "@/lib/program";
+import { mergePublicProfileMedia } from "@/lib/public-profile-media";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { writeWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -195,6 +196,26 @@ const communicationSettingsFields = z.object({
     .nullable()
 });
 
+const mediaSettingsFields = z.object({
+  gallery_images: z.string().trim().max(4000).optional(),
+  promo_video_url: z.string().trim().max(500).optional(),
+  trust_badges: z.string().trim().max(1500).optional()
+});
+
+function splitLines(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(/\r?\n|,/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function sanitizeMediaUrl(url: string): string | null {
+  if (!url) return null;
+  if (url.startsWith("/") || url.startsWith("https://")) return url;
+  return null;
+}
+
 export async function updatePublicBusinessFields(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const {
@@ -363,6 +384,58 @@ export async function updateCommunicationSettings(formData: FormData) {
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/setari");
+  redirect("/dashboard/setari?saved=1");
+}
+
+export async function updatePublicMediaSettings(formData: FormData) {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/login");
+  }
+
+  const raw = {
+    gallery_images: String(formData.get("gallery_images") ?? ""),
+    promo_video_url: String(formData.get("promo_video_url") ?? ""),
+    trust_badges: String(formData.get("trust_badges") ?? "")
+  };
+
+  const parsed = mediaSettingsFields.safeParse(raw);
+  if (!parsed.success) {
+    redirect("/dashboard/setari?error=" + encodeURIComponent("Date media invalide."));
+  }
+
+  const galleryImages = splitLines(parsed.data.gallery_images)
+    .map(sanitizeMediaUrl)
+    .filter((value): value is string => Boolean(value))
+    .slice(0, 12);
+
+  const promoVideoUrl = sanitizeMediaUrl(parsed.data.promo_video_url ?? "");
+  const trustBadges = splitLines(parsed.data.trust_badges).slice(0, 10);
+
+  const { data: prof, error: profError } = await supabase.from("profesionisti").select("id, bio").eq("user_id", user.id).maybeSingle();
+
+  if (profError || !prof?.id) {
+    redirect("/dashboard/setari?error=" + encodeURIComponent("Nu am găsit profilul business."));
+  }
+
+  const nextBio = mergePublicProfileMedia(prof.bio, {
+    galleryImages,
+    promoVideoUrl,
+    trustBadges
+  });
+
+  const { error } = await supabase.from("profesionisti").update({ bio: nextBio }).eq("id", prof.id);
+
+  if (error) {
+    redirect("/dashboard/setari?error=" + encodeURIComponent(error.message ?? "Nu am putut salva media."));
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/setari");
+  revalidatePath("/[slug]", "page");
   redirect("/dashboard/setari?saved=1");
 }
 

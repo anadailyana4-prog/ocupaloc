@@ -8,6 +8,7 @@ import {
 } from "@/lib/domain/booking/errors";
 import { logError, logWarn, logInfo } from "@/lib/logger";
 import { normalizeRoPhone } from "@/lib/phone";
+import { getProfesionistIdBySlug, markFirstBookingIfNeeded } from "@/lib/professional-milestones";
 
 export type InsertProgramareInput = {
   slug: string;
@@ -146,6 +147,12 @@ export async function insertProgramareForProfSlug(
         "[booking] appointment created successfully via atomic RPC",
         { slug: input.slug, programareId: result.programare_id, requestId: input.requestId }
       );
+
+      const profesionistId = await getProfesionistIdBySlug(admin, input.slug);
+      if (profesionistId) {
+        await markFirstBookingIfNeeded(admin, profesionistId);
+      }
+
       return { ok: true, programareId: result.programare_id };
     }
 

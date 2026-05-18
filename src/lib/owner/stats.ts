@@ -55,7 +55,7 @@ export async function getBusinessStats(): Promise<BusinessStats | null> {
       .throwOnError();
 
     const activeCount =
-      subStats?.filter(s => s.status === "active").length || 0;
+      subStats?.filter(s => s.status === "active" || s.status === "reactivated").length || 0;
     const trialCount =
       subStats?.filter(s => s.status === "trialing").length || 0;
     const canceledCount =
@@ -168,7 +168,7 @@ export async function getBusinessList(
         "no_subscription";
 
       if (sub) {
-        if (sub.status === "active") status = "active";
+        if (sub.status === "active" || sub.status === "reactivated") status = "active";
         else if (sub.status === "trialing") status = "trial";
         else if (sub.status === "canceled") status = "canceled";
         else status = "expired";

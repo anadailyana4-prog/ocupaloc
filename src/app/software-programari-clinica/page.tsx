@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
+import { getPublicProofMetrics } from "@/lib/public-proof";
 
 export const metadata: Metadata = {
   title: "Software Programări Clinică | Stomatologie, Fizioterapie, Dermatologie — 59,99 RON/lună",
@@ -132,7 +133,8 @@ const relatedLinks = [
   { href: "/blog/telefon-vs-programari-online", label: "Telefon vs programări online" }
 ];
 
-export default function SoftwareProgramariClinicaPage() {
+export default async function SoftwareProgramariClinicaPage() {
+  const proof = await getPublicProofMetrics();
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -163,7 +165,7 @@ export default function SoftwareProgramariClinicaPage() {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-14 text-zinc-100">
+    <main className="min-h-screen oc-bg px-6 py-14 oc-text">
       <Script
         id="faq-schema-clinica"
         type="application/ld+json"
@@ -178,11 +180,11 @@ export default function SoftwareProgramariClinicaPage() {
       <div className="mx-auto max-w-5xl space-y-14">
 
         {/* ── HERO ── */}
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
+        <section className="rounded-2xl border oc-border bg-white p-8">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
             Software programări online pentru clinici — fără telefon, fără confuzii
           </h1>
-          <p className="mt-5 max-w-3xl text-lg leading-relaxed text-zinc-300">
+          <p className="mt-5 max-w-3xl text-lg leading-relaxed oc-text">
             Clinicile private pierd în medie 1-2 ore pe zi cu gestionarea programărilor la telefon. Fiecare specialitate are durate diferite,
             fiecare medic are programul lui, iar pacienții sună și pentru confirmare, și pentru reprogramare. OcupaLoc aduce tot fluxul într-un
             singur sistem: pacientul rezervă singur, alege specialistul, serviciul și ora, și primește confirmare automată. Tu și echipa ta nu
@@ -193,18 +195,33 @@ export default function SoftwareProgramariClinicaPage() {
             <Link
               href="/signup?start=1&tip=clinica"
               data-cta-location="clinica_hero_primary"
-              className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500"
+              className="rounded-lg oc-primary px-6 py-3 font-semibold text-white"
             >
               Test gratuit 14 zile
             </Link>
             <Link
               href="/demo-interactiv"
               data-cta-location="clinica_hero_demo"
-              className="rounded-lg border border-zinc-700 px-6 py-3 font-semibold text-zinc-200 hover:bg-zinc-800"
+              className="rounded-lg border oc-border px-6 py-3 font-semibold oc-text hover:oc-badge-bg"
             >
               Testează fluxul de rezervare
             </Link>
           </div>
+        </section>
+
+        <section className="rounded-2xl border oc-border bg-white p-6">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] oc-secondary-text">Proof real (ultimele 30 zile)</p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border oc-border p-4">
+              <p className="text-xs oc-secondary-text">Programări confirmate pe platformă</p>
+              <p className="mt-1 text-2xl font-bold oc-text">{proof.confirmedBookings30d}</p>
+            </div>
+            <div className="rounded-xl border oc-border p-4">
+              <p className="text-xs oc-secondary-text">Business-uri active cu booking confirmat</p>
+              <p className="mt-1 text-2xl font-bold oc-text">{proof.activeBusinesses30d}</p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs oc-secondary-text">Metrici derivate din programări confirmate (nu reprezintă venit facturat Stripe).</p>
         </section>
 
         {/* ── SPECIALITATI ── */}
@@ -212,17 +229,17 @@ export default function SoftwareProgramariClinicaPage() {
           <h2 className="text-3xl font-bold tracking-tight">
             Pentru ce specialități medicale funcționează OcupaLoc
           </h2>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             OcupaLoc funcționează pentru orice clinică sau cabinet medical privat care lucrează pe bază de programare. Nu contează dacă ai un
             singur specialist sau o echipă întreagă — sistemul se adaptează la structura ta.
           </p>
           <div className="grid gap-4 md:grid-cols-2">
             {specialitati.map((s) => (
-              <article key={s.title} className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
-                <h3 className="text-xl font-semibold text-indigo-300">
+              <article key={s.title} className="rounded-xl border oc-border bg-white p-6">
+                <h3 className="text-xl font-semibold oc-accent">
                   {s.icon} {s.title}
                 </h3>
-                <p className="mt-3 leading-relaxed text-zinc-300">{s.desc}</p>
+                <p className="mt-3 leading-relaxed oc-text">{s.desc}</p>
               </article>
             ))}
           </div>
@@ -233,39 +250,39 @@ export default function SoftwareProgramariClinicaPage() {
           <h2 className="text-3xl font-bold tracking-tight">
             De ce clinicile private trec la programări online
           </h2>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             Pacienții din România caută tot mai des clinici pe Google, Instagram sau prin recomandări și vor să rezerve imediat, nu să sune a doua
             zi când clinica e deschisă. Dacă nu oferi o metodă simplă de rezervare online, o parte din ei vor merge la un competitor care o oferă.
             Programările online nu înlocuiesc relația cu pacientul — elimină doar birocrația legată de agendă.
           </p>
 
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <article className="rounded-xl border oc-border bg-white p-6">
             <h3 className="text-xl font-semibold text-amber-100">
               Agenda fără suprapuneri, indiferent de câți specialiști ai
             </h3>
-            <p className="mt-3 leading-relaxed text-zinc-300">
+            <p className="mt-3 leading-relaxed oc-text">
               Când mai mulți medici lucrează în aceeași clinică, gestionarea agendelor comune este cel mai frecvent motiv de erori de programare.
               OcupaLoc separă agenda fiecărui specialist. Pacientul alege medicul dorit și vede disponibilitatea lui reală, nu o agendă generică.
               Nu pot apărea două programări în același slot pentru același specialist, indiferent din ce canal vine rezervarea.
             </p>
           </article>
 
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <article className="rounded-xl border oc-border bg-white p-6">
             <h3 className="text-xl font-semibold text-amber-100">
               Pacienții rezervă la orice oră — nu doar când ești disponibil la telefon
             </h3>
-            <p className="mt-3 leading-relaxed text-zinc-300">
+            <p className="mt-3 leading-relaxed oc-text">
               O parte semnificativă din căutările de clinici și cabinete se întâmplă seara sau în weekend. Dacă programările pot fi făcute doar
               în orele de program, pierzi aceste oportunități. Cu OcupaLoc, pagina de rezervare este disponibilă 24/7. Pacientul rezervă duminică
               la 22:00, tu găsești programarea confirmată luni dimineața în dashboard.
             </p>
           </article>
 
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-6">
+          <article className="rounded-xl border oc-border bg-white p-6">
             <h3 className="text-xl font-semibold text-amber-100">
               Reduci no-show-urile prin confirmare automată
             </h3>
-            <p className="mt-3 leading-relaxed text-zinc-300">
+            <p className="mt-3 leading-relaxed oc-text">
               Pacienții care rezervă online și primesc o confirmare cu detaliile programării au o rată mai mică de neprezentare față de cei care
               au sunat și au fost trecuți manual în agendă. Confirmarea scrisă — cu data, ora, serviciul și linkul de anulare dacă nu mai pot
               veni — funcționează ca un angajament. Reduces locurile goale fără nicio intervenție manuală din partea ta.
@@ -279,23 +296,23 @@ export default function SoftwareProgramariClinicaPage() {
             Ce primești cu OcupaLoc pentru clinica ta
           </h2>
           <div className="grid gap-4 md:grid-cols-3">
-            <article className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+            <article className="rounded-xl border oc-border bg-white p-5">
               <h3 className="text-lg font-semibold">Pagină publică de rezervare fără site propriu</h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+              <p className="mt-2 text-sm leading-relaxed oc-secondary-text">
                 Clinica ta primește un link de tipul{" "}
-                <span className="font-mono text-zinc-300">ocupaloc.ro/numele-clinicii</span> pe care îl pui oriunde: Google Business, Instagram, Facebook sau orice alt canal.
+                <span className="font-mono oc-text">ocupaloc.ro/numele-clinicii</span> pe care îl pui oriunde: Google Business, Instagram, Facebook sau orice alt canal.
               </p>
             </article>
-            <article className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+            <article className="rounded-xl border oc-border bg-white p-5">
               <h3 className="text-lg font-semibold">Agende separate per specialist</h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+              <p className="mt-2 text-sm leading-relaxed oc-secondary-text">
                 Fiecare medic sau terapeut are agenda și programul lui. Pacientul alege specialistul dorit și rezervă direct la el, fără confuzii
                 sau suprapuneri.
               </p>
             </article>
-            <article className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+            <article className="rounded-xl border oc-border bg-white p-5">
               <h3 className="text-lg font-semibold">Notificări instant pentru clinică și pacient</h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+              <p className="mt-2 text-sm leading-relaxed oc-secondary-text">
                 La orice rezervare nouă, atât clinica, cât și pacientul primesc email automat cu toate detaliile. Fără apeluri de confirmare,
                 fără mesaje manuale.
               </p>
@@ -305,7 +322,7 @@ export default function SoftwareProgramariClinicaPage() {
             <Link
               href="/signup?start=1&tip=clinica"
               data-cta-location="clinica_features_cta"
-              className="rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500"
+              className="rounded-lg oc-primary px-6 py-3 font-semibold text-white"
             >
               Începe testul gratuit de 14 zile
             </Link>
@@ -317,14 +334,14 @@ export default function SoftwareProgramariClinicaPage() {
           <h2 className="text-3xl font-bold tracking-tight">
             OcupaLoc față de alte soluții pentru programări clinică
           </h2>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             Platformele mari de tip listing (Docplanner / RoMedic) îți cer să concurezi cu alte clinici din același sistem. OcupaLoc îți dă
             un instrument propriu: pacientul ajunge direct la tine, nu la o pagină de comparare.
           </p>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead>
-                <tr className="border-b border-zinc-700 text-left text-zinc-400">
+                <tr className="border-b oc-border text-left oc-secondary-text">
                   <th className="pb-3 pr-4 font-medium">Funcționalitate</th>
                   <th className="pb-3 pr-4 font-semibold text-white">OcupaLoc</th>
                   <th className="pb-3 pr-4 font-medium">Docplanner / RoMedic</th>
@@ -333,11 +350,11 @@ export default function SoftwareProgramariClinicaPage() {
               </thead>
               <tbody>
                 {competitorRows.map((row) => (
-                  <tr key={row.feature} className="border-b border-zinc-800">
-                    <td className="py-3 pr-4 text-zinc-400">{row.feature}</td>
-                    <td className="py-3 pr-4 font-medium text-indigo-300">{row.ocupaloc}</td>
-                    <td className="py-3 pr-4 text-zinc-400">{row.docplanner}</td>
-                    <td className="py-3 text-zinc-400">{row.medisoft}</td>
+                  <tr key={row.feature} className="border-b oc-border">
+                    <td className="py-3 pr-4 oc-secondary-text">{row.feature}</td>
+                    <td className="py-3 pr-4 font-medium oc-accent">{row.ocupaloc}</td>
+                    <td className="py-3 pr-4 oc-secondary-text">{row.docplanner}</td>
+                    <td className="py-3 oc-secondary-text">{row.medisoft}</td>
                   </tr>
                 ))}
               </tbody>
@@ -349,32 +366,32 @@ export default function SoftwareProgramariClinicaPage() {
         <section className="space-y-5">
           <h2 className="text-3xl font-bold tracking-tight">Întrebări frecvente</h2>
           {faqItems.map((item) => (
-            <article key={item.question} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6">
+            <article key={item.question} className="rounded-xl border oc-border bg-white p-6">
               <h3 className="text-lg font-semibold">{item.question}</h3>
-              <p className="mt-2 leading-relaxed text-zinc-300">{item.answer}</p>
+              <p className="mt-2 leading-relaxed oc-text">{item.answer}</p>
             </article>
           ))}
         </section>
 
         {/* ── FINAL CTA ── */}
-        <section className="rounded-2xl border border-indigo-800 bg-indigo-950/40 p-8 text-center">
+        <section className="rounded-2xl border oc-border oc-primary p-8 text-center">
           <h2 className="text-2xl font-bold">
             Gata să elimini programările la telefon din clinica ta?
           </h2>
-          <p className="mt-3 text-zinc-300">
+          <p className="mt-3 oc-text">
             14 zile gratuit, fără card. Configurezi clinica în 5 minute și poți trimite linkul de rezervare pacienților chiar astăzi.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
               href="/signup?start=1&tip=clinica"
               data-cta-location="clinica_final_cta"
-              className="rounded-lg bg-indigo-600 px-8 py-3 font-semibold text-white hover:bg-indigo-500"
+              className="rounded-lg oc-primary px-8 py-3 font-semibold text-white"
             >
               Test gratuit 14 zile
             </Link>
             <Link
               href="/preturi"
-              className="rounded-lg border border-zinc-700 px-8 py-3 font-semibold text-zinc-200 hover:bg-zinc-800"
+              className="rounded-lg border oc-border px-8 py-3 font-semibold oc-text hover:oc-badge-bg"
             >
               Vezi prețul
             </Link>
@@ -382,14 +399,14 @@ export default function SoftwareProgramariClinicaPage() {
         </section>
 
         {/* ── INTERNAL LINKS ── */}
-        <nav aria-label="Pagini conexe" className="border-t border-zinc-800 pt-8">
-          <p className="mb-4 text-sm font-medium uppercase tracking-wider text-zinc-500">Vezi și</p>
+        <nav aria-label="Pagini conexe" className="border-t oc-border pt-8">
+          <p className="mb-4 text-sm font-medium uppercase tracking-wider oc-secondary-text">Vezi și</p>
           <ul className="flex flex-wrap gap-3">
             {relatedLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+                  className="rounded-lg border oc-border px-4 py-2 text-sm oc-text hover:oc-badge-bg"
                 >
                   {link.label}
                 </Link>

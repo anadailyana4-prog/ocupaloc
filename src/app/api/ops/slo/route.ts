@@ -4,7 +4,7 @@ import { validateCronSecret } from "@/lib/cron-auth";
 import { computeSloSnapshot, SLO_POLICY } from "@/lib/slo-policy";
 
 function getSloSecret(): string | undefined {
-  return process.env.SLO_READ_SECRET?.trim() || process.env.REMINDERS_CRON_SECRET?.trim() || undefined;
+  return process.env.SLO_READ_SECRET?.trim() || undefined;
 }
 
 function pct(n: number): number {

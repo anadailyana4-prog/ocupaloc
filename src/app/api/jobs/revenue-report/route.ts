@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const requestId = getRequestId(req.headers);
   const startedAt = Date.now();
 
-  if (!validateCronSecret(req.headers, env.optional("REMINDERS_CRON_SECRET"))) {
+  if (!validateCronSecret(req.headers, env.optional("OWNER_OPS_CRON_SECRET"))) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401, headers: { "x-request-id": requestId } });
   }
 

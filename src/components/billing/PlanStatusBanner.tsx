@@ -71,7 +71,7 @@ export function PlanStatusBanner({ status }: Props) {
         </span>
         <form method="get" action="/api/billing/create-checkout" className="ml-auto shrink-0">
           <button type="submit" className="text-xs text-sky-400 underline underline-offset-2 hover:text-sky-300">
-            Activează trial
+            Activează planul
           </button>
         </form>
       </div>
@@ -99,7 +99,7 @@ export function PlanStatusBanner({ status }: Props) {
       <div className="flex items-center gap-3 rounded-2xl border border-zinc-600/30 bg-zinc-900/40 px-4 py-3 text-sm">
         <span className="h-2 w-2 shrink-0 rounded-full bg-zinc-500" />
         <span className="text-zinc-300">
-          Abonamentul a fost anulat. Reabonează-te pentru a reactiva programările.
+          Abonamentul a fost anulat. Reabonează-te pentru a reactiva programările. O nouă perioadă de trial nu este acordată automat.
         </span>
         <form method="get" action="/api/billing/create-checkout" className="ml-auto shrink-0">
           <button type="submit" className="text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-300">

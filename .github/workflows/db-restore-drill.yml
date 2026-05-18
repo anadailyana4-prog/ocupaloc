@@ -1,0 +1,112 @@
+name: DB Restore Drill
+
+on:
+  schedule:
+    # Monthly on day 1 at 03:00 UTC
+    - cron: "0 3 1 * *"
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  restore-drill:
+    name: Restore Backup Into Staging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve source and staging DB URLs
+        env:
+          SUPABASE_DIRECT_DB_URL: ${{ secrets.SUPABASE_DIRECT_DB_URL }}
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
+        run: |
+          SOURCE_DB_URL="${SUPABASE_DIRECT_DB_URL:-$SUPABASE_DB_URL}"
+          if [ -z "$SOURCE_DB_URL" ]; then
+            echo "Missing SUPABASE_DIRECT_DB_URL or SUPABASE_DB_URL secret."
+            exit 1
+          fi
+
+          if [ -z "$SUPABASE_STAGING_DB_URL" ]; then
+            echo "Missing SUPABASE_STAGING_DB_URL secret."
+            exit 1
+          fi
+
+          case "$SOURCE_DB_URL" in
+            *pooler.supabase.com:6543*)
+              SOURCE_DB_URL=$(python3 scripts/normalize-supabase-db-url.py "$SOURCE_DB_URL")
+              ;;
+          esac
+
+          case "$SUPABASE_STAGING_DB_URL" in
+            *pooler.supabase.com:6543*)
+              SUPABASE_STAGING_DB_URL=$(python3 scripts/normalize-supabase-db-url.py "$SUPABASE_STAGING_DB_URL")
+              ;;
+          esac
+
+          echo "SOURCE_DB_URL=$SOURCE_DB_URL" >> $GITHUB_ENV
+          echo "STAGING_DB_URL=$SUPABASE_STAGING_DB_URL" >> $GITHUB_ENV
+
+      - name: Create fresh backup dump
+        run: |
+          mkdir -p backups
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H-%M-%SZ")
+          BACKUP_FILE="backups/restore-drill-${TIMESTAMP}.dump"
+
+          pg_dump "$SOURCE_DB_URL" \
+            --no-owner \
+            --no-acl \
+            --schema=public \
+            --format=custom \
+            --file="$BACKUP_FILE"
+
+          echo "BACKUP_FILE=$BACKUP_FILE" >> $GITHUB_ENV
+
+      - name: Restore dump into staging public schema
+        run: |
+          psql "$STAGING_DB_URL" -v ON_ERROR_STOP=1 -c "drop schema if exists public cascade;"
+          psql "$STAGING_DB_URL" -v ON_ERROR_STOP=1 -c "create schema public;"
+
+          pg_restore \
+            --no-owner \
+            --no-acl \
+            --clean \
+            --if-exists \
+            --schema=public \
+            --dbname "$STAGING_DB_URL" \
+            "$BACKUP_FILE"
+
+      - name: Verify restored schema and core data
+        run: |
+          set -euo pipefail
+
+          required_tables=(
+            profesionisti
+            programari
+            subscriptions
+            operational_events
+            owner_audit_logs
+          )
+
+          for table in "${required_tables[@]}"; do
+            exists=$(psql "$STAGING_DB_URL" -tA -c "select to_regclass('public.${table}') is not null;")
+            if [ "$exists" != "t" ]; then
+              echo "Missing table after restore: public.${table}"
+              exit 1
+            fi
+          done
+
+          programari_count=$(psql "$STAGING_DB_URL" -tA -c "select count(*) from public.programari;")
+          profesionisti_count=$(psql "$STAGING_DB_URL" -tA -c "select count(*) from public.profesionisti;")
+          subscriptions_count=$(psql "$STAGING_DB_URL" -tA -c "select count(*) from public.subscriptions;")
+
+          echo "Restored counts: programari=$programari_count profesionisti=$profesionisti_count subscriptions=$subscriptions_count"
+
+      - name: Upload restore drill artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-restore-drill-${{ github.run_id }}
+          path: backups/
+          retention-days: 30
+          if-no-files-found: error

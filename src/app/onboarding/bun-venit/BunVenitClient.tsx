@@ -32,41 +32,41 @@ export function BunVenitClient({ slug }: Props) {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-4 py-12 text-zinc-100">
+    <main className="min-h-screen oc-bg px-4 py-12 oc-text">
       <div className="mx-auto max-w-4xl space-y-8">
         <header className="space-y-4 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full oc-badge-bg oc-accent">
             <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M20 6 9 17l-5-5" />
             </svg>
           </div>
           <h1 className="text-4xl font-bold tracking-tight">Cont creat cu succes!</h1>
-          <p className="text-lg text-zinc-400">Un pas rămas: activează trial-ul gratuit ca să poți primi programări.</p>
+          <p className="text-lg oc-secondary-text">Un pas rămas: activează trial-ul gratuit ca să poți primi programări.</p>
         </header>
 
         <section className="grid gap-4 md:grid-cols-3">
-          <Card className="border-zinc-800 bg-zinc-900">
+          <Card className="border oc-border bg-white">
             <CardContent className="space-y-4 p-6">
-              <p className="text-sm font-semibold text-primary">1. Personalizează-ți pagina</p>
+              <p className="text-sm font-semibold oc-accent">1. Personalizează-ți pagina</p>
               <Button asChild className="w-full">
                 <Link href="/dashboard/pagina">Editează profil</Link>
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="border-zinc-800 bg-zinc-900">
+          <Card className="border oc-border bg-white">
             <CardContent className="space-y-4 p-6">
-              <p className="text-sm font-semibold text-primary">2. Adaugă-ți serviciile complete</p>
+              <p className="text-sm font-semibold oc-accent">2. Adaugă-ți serviciile complete</p>
               <Button asChild className="w-full" variant="secondary">
                 <Link href="/dashboard/servicii">Adaugă servicii</Link>
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="border-zinc-800 bg-zinc-900">
+          <Card className="border oc-border bg-white">
             <CardContent className="space-y-4 p-6">
-              <p className="text-sm font-semibold text-primary">3. Trimite link-ul clienților</p>
-              <p className="rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs text-zinc-300">{publicUrl}</p>
+              <p className="text-sm font-semibold oc-accent">3. Trimite link-ul clienților</p>
+              <p className="rounded-md border oc-border oc-badge-bg px-3 py-2 text-xs oc-text">{publicUrl}</p>
               <Button className="w-full" variant="outline" onClick={() => void copyUrl()}>
                 Copy
               </Button>
@@ -74,11 +74,11 @@ export function BunVenitClient({ slug }: Props) {
           </Card>
         </section>
 
-        <div className="space-y-3 rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-6 text-center">
-          <p className="text-base font-semibold text-zinc-100">Activează trial gratuit 14 zile</p>
-          <p className="text-sm text-zinc-400">Nu ți se percepe nimic astăzi. Abonamentul (59,99 RON/lună) începe automat după cele 14 zile. Poți anula oricând.</p>
+        <div className="space-y-3 rounded-xl border oc-border oc-badge-bg p-6 text-center">
+          <p className="text-base font-semibold oc-text">Activează trial gratuit 14 zile</p>
+          <p className="text-sm oc-secondary-text">Nu ți se percepe nimic astăzi. Abonamentul (59,99 RON/lună) începe automat după cele 14 zile. Poți anula oricând.</p>
           <form method="get" action="/api/billing/create-checkout">
-            <Button type="submit" size="lg" className="mt-2 bg-emerald-600 text-white hover:bg-emerald-500">
+            <Button type="submit" size="lg" className="mt-2 oc-primary">
               Activează trial gratuit
             </Button>
           </form>

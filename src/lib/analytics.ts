@@ -52,6 +52,18 @@ function postOperationalEvent(eventName: string, payload: Record<string, string 
   });
 }
 
+function postPageViewEvent(eventName: string, payload: Record<string, string | number | boolean | null>) {
+  postOperationalEvent(eventName, payload);
+  if (!canTrack()) return;
+
+  window.gtag?.("event", "page_view", {
+    page_title: payload.title ?? document.title,
+    page_location: window.location.href,
+    page_path: payload.page ?? window.location.pathname,
+    page_referrer: payload.referrer ?? document.referrer
+  });
+}
+
 export const trackSignup = (step: number) => {
   if (!canTrack()) return;
   window.gtag?.("event", "signup_step", {
@@ -70,7 +82,12 @@ export const trackCalculator = (appointments: number) => {
   });
 };
 
-export const trackCTAClick = (location: string) => {
+export const trackCTAClick = (location: string, targetPath?: string) => {
+  postOperationalEvent("growth_cta_click", {
+    cta_location: location,
+    page: typeof window !== "undefined" ? window.location.pathname : "",
+    target_path: targetPath ?? ""
+  });
   if (!canTrack()) return;
   window.gtag?.("event", "cta_click", {
     event_category: "engagement",
@@ -139,6 +156,50 @@ export const trackReferralAttributedVisit = (payload: { referral_source: string;
   window.gtag?.("event", "referral_attributed_visit", {
     event_category: "growth",
     ...payload
+  });
+};
+
+export const trackSitePageView = (payload: {
+  page: string;
+  title?: string | null;
+  referrer?: string | null;
+  session_id: string;
+  visit_id: string;
+  is_entry: boolean;
+  page_index: number;
+}) => {
+  postPageViewEvent("site_page_view", {
+    ...payload,
+    title: payload.title ?? "",
+    referrer: payload.referrer ?? ""
+  });
+};
+
+export const trackSiteVisitStarted = (payload: {
+  page: string;
+  title?: string | null;
+  referrer?: string | null;
+  session_id: string;
+  visit_id: string;
+}) => {
+  postOperationalEvent("site_visit_started", {
+    ...payload,
+    title: payload.title ?? "",
+    referrer: payload.referrer ?? ""
+  });
+};
+
+export const trackSiteVisitEnded = (payload: {
+  page: string;
+  title?: string | null;
+  session_id: string;
+  visit_id: string;
+  duration_ms: number;
+  pages_viewed: number;
+}) => {
+  postOperationalEvent("site_visit_ended", {
+    ...payload,
+    title: payload.title ?? ""
   });
 };
 

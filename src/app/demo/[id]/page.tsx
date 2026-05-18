@@ -49,11 +49,11 @@ export default async function DemoByIdPage({ params }: PageProps) {
   const isExpired = new Date(demo.expires_at).getTime() <= Date.now();
   if (isExpired) {
     return (
-      <main className="min-h-screen bg-zinc-950 px-4 py-20 text-zinc-100">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-zinc-800 bg-zinc-900/60 p-8 text-center">
+      <main className="min-h-screen oc-bg px-4 py-20 oc-text">
+        <div className="mx-auto max-w-2xl rounded-2xl border oc-border bg-white p-8 text-center">
           <h1 className="text-3xl font-bold">Demo expirat, creează altul</h1>
-          <p className="mt-3 text-zinc-400">Link-urile demo sunt valide 24 de ore.</p>
-          <Link href="/demo-interactiv" className="mt-6 inline-flex rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
+          <p className="mt-3 oc-secondary-text">Link-urile demo sunt valide 24 de ore.</p>
+          <Link href="/demo-interactiv" className="mt-6 inline-flex rounded-lg oc-primary px-5 py-3 font-semibold text-white">
             Creează demo nou
           </Link>
         </div>
@@ -62,7 +62,7 @@ export default async function DemoByIdPage({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-black">
+    <main className="min-h-screen oc-bg">
       <DemoLandingPreview
         businessName={demo.business_name}
         city={demo.city}

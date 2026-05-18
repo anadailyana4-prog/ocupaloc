@@ -137,3 +137,17 @@ workflow: e2e-staging.yml
 | Local dev | Skip if no BASE_URL | Always | Dev-friendly, avoid noise |
 | CI (main) | Skip if ENABLE_E2E=false | On every push | Fast CI, explicit opt-in |
 | Staging | Run (strict) | Daily 2 AM + manual | Comprehensive validation |
+
+## Rate Limiting Policy Matrix (Billing)
+
+Current implementation uses `checkApiRateLimit` (Supabase RPC `check_rate_limit`).
+
+| Endpoint | Key pattern | Limit | Window | Behavior at limit | Fail mode |
+|---|---|---|---|---|---|
+| `/api/billing/create-checkout` | `billing:create-checkout:prof:{id}` | 8 requests | 10 min | Redirect to dashboard with error | fail-open (`true`) |
+| `/api/billing/cancel` | `billing:cancel:prof:{id}` | 4 requests | 30 min | Redirect to dashboard with error | fail-open (`true`) |
+| `/api/billing/portal` | `billing:portal:prof:{id}` | 10 requests | 10 min | Redirect to dashboard with error | fail-open (`true`) |
+
+Operational note:
+- `fail-open` is temporary for resilience during DB/RPC outages.
+- Upgrade target for maturity phase: switch billing endpoints to fail-closed once rate-limit infra stability is verified in production.

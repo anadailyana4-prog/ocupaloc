@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { formatOperationalEventType } from "@/lib/ops-event-labels";
 import { requireOwnerAdmin, logOwnerAction } from "@/lib/owner/auth";
 import { getFailedCronJobs } from "@/lib/owner/stats";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -89,7 +90,8 @@ export default async function OwnerErrorsPage() {
             {(opFailures ?? []).map((event) => (
               <div key={event.id} className="rounded-lg border border-red-700/30 bg-red-900/10 p-3 flex justify-between">
                 <div>
-                  <p className="text-red-100 font-medium">{event.flow}: {event.event_type}</p>
+                  <p className="text-red-100 font-medium">{event.flow}: {formatOperationalEventType(event.event_type)}</p>
+                  <p className="text-[11px] text-red-400">raw: {event.event_type}</p>
                   <p className="text-xs text-red-300">entity: {event.entity_id ?? "n/a"}</p>
                 </div>
                 <p className="text-xs text-slate-400">{new Date(event.created_at).toLocaleString("ro-RO")}</p>

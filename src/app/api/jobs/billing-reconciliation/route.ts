@@ -8,7 +8,7 @@ import { reportError } from "@/lib/observability";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  if (!validateCronSecret(req.headers, env.optional("REMINDERS_CRON_SECRET"))) {
+  if (!validateCronSecret(req.headers, env.optional("BILLING_CRON_SECRET"))) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 

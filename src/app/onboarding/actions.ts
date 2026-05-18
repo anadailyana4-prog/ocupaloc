@@ -3,9 +3,11 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { onboardingCompletionPatch } from "@/lib/professional-milestones";
 import { withProgramPauza } from "@/lib/program";
 import { slugifyBusinessName, uniqueSlug } from "@/lib/slug";
 import { recordOperationalEvent } from "@/lib/ops-events";
+import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { writeWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -88,13 +90,16 @@ export async function saveOnboardingProfile(formData: FormData) {
         }
       : undefined;
 
+  const completion = onboardingCompletionPatch();
+
   if (existingProf?.id) {
     const values: Record<string, unknown> = {
       nume_business: parsed.data.nume_business,
       telefon: parsed.data.telefon,
       whatsapp: parsed.data.whatsapp || null,
       tip_activitate: parsed.data.tip_activitate,
-      onboarding_pas: 4
+      onboarding_pas: completion.onboarding_pas,
+      onboarding_completed_at: completion.onboarding_completed_at
     };
     if (pauseValue !== undefined) {
       values.pauza_intre_clienti = pauseValue;
@@ -122,7 +127,8 @@ export async function saveOnboardingProfile(formData: FormData) {
       telefon: parsed.data.telefon,
       whatsapp: parsed.data.whatsapp || null,
       tip_activitate: parsed.data.tip_activitate,
-      onboarding_pas: 4
+      onboarding_pas: completion.onboarding_pas,
+      onboarding_completed_at: completion.onboarding_completed_at
     };
     if (pauseValue !== undefined) {
       values.pauza_intre_clienti = pauseValue;
@@ -140,6 +146,15 @@ export async function saveOnboardingProfile(formData: FormData) {
 
   if (errorMessage) {
     redirect(`/onboarding?error=${encodeURIComponent(errorMessage)}`);
+  }
+
+  const admin = createSupabaseServiceClient();
+  const { data: profRow } = await admin.from("profesionisti").select("id").eq("user_id", user.id).maybeSingle();
+  if (profRow?.id) {
+    await admin
+      .from("profesionisti")
+      .update({ last_activity_at: completion.onboarding_completed_at })
+      .eq("id", profRow.id);
   }
 
   await recordOperationalEvent({

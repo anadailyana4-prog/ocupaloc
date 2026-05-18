@@ -50,19 +50,19 @@ const faq = [
 
 export default function SupportPage() {
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-14 text-zinc-100">
+    <main className="min-h-screen oc-bg px-6 py-14 oc-text">
       <div className="mx-auto max-w-5xl space-y-10">
-        <header className="rounded-3xl border border-zinc-800 bg-zinc-900/70 p-8 shadow-2xl shadow-black/20">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300/80">Suport</p>
+        <header className="rounded-3xl border oc-border bg-white p-8 shadow-[0_20px_45px_-30px_rgba(15,118,110,0.35)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] oc-accent">Suport</p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight md:text-5xl">Centru de suport OcupaLoc</h1>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-zinc-300 md:text-lg">
+          <p className="mt-4 max-w-3xl text-base leading-7 oc-secondary-text md:text-lg">
             Aici găsești punctul public de contact pentru întrebări comerciale, probleme tehnice, onboarding și solicitări privind datele. Începem cu pași clari, fără să te plimbăm între pagini.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <a href={CONTACT_MAILTO} className="inline-flex rounded-full bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">
+            <a href={CONTACT_MAILTO} className="inline-flex rounded-full oc-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#D97706]">
               Scrie-ne la {CONTACT_EMAIL}
             </a>
-            <Link href="/status" className="inline-flex rounded-full border border-zinc-700 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-800">
+            <Link href="/status" className="inline-flex rounded-full border oc-border bg-white px-5 py-3 text-sm font-semibold oc-text transition hover:oc-badge-bg">
               Verifică statusul sistemului
             </Link>
           </div>
@@ -70,23 +70,23 @@ export default function SupportPage() {
 
         <section className="grid gap-6 md:grid-cols-3">
           {supportCards.map((card) => (
-            <article key={card.title} className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-              <h2 className="text-xl font-semibold text-zinc-100">{card.title}</h2>
-              <p className="mt-3 text-sm leading-6 text-zinc-400">{card.description}</p>
-              <Link href={card.href} className="mt-5 inline-flex rounded-full border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-100 transition hover:border-zinc-500 hover:bg-zinc-800">
+            <article key={card.title} className="rounded-2xl border oc-border bg-white p-6">
+              <h2 className="text-xl font-semibold oc-text">{card.title}</h2>
+              <p className="mt-3 text-sm leading-6 oc-secondary-text">{card.description}</p>
+              <Link href={card.href} className="mt-5 inline-flex rounded-full border oc-border bg-white px-4 py-2 text-sm font-medium oc-text transition hover:oc-badge-bg">
                 {card.ctaLabel}
               </Link>
             </article>
           ))}
         </section>
 
-        <section className="rounded-3xl border border-zinc-800 bg-zinc-900/40 p-7">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500">Întrebări frecvente de suport</p>
+        <section className="rounded-3xl border oc-border bg-white p-7">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] oc-secondary-text">Întrebări frecvente de suport</p>
           <div className="mt-6 space-y-5">
             {faq.map((item) => (
-              <article key={item.question} className="rounded-2xl border border-zinc-800 bg-zinc-950/50 p-5">
-                <h2 className="text-lg font-semibold text-zinc-100">{item.question}</h2>
-                <p className="mt-2 text-sm leading-7 text-zinc-400">{item.answer}</p>
+              <article key={item.question} className="rounded-2xl border oc-border oc-badge-bg p-5">
+                <h2 className="text-lg font-semibold oc-text">{item.question}</h2>
+                <p className="mt-2 text-sm leading-7 oc-secondary-text">{item.answer}</p>
               </article>
             ))}
           </div>

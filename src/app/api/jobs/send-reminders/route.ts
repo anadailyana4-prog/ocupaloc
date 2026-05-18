@@ -101,49 +101,70 @@ async function sendType(admin: ReturnType<typeof createSupabaseServiceClient>, t
     return { sent: 0, failed: 0 };
   }
 
-  const ids = rows.map((r) => r.id);
-  const { data: sentRows, error: sentRowsError } = await admin
+  const { error: trackingCheckError } = await admin
     .from("programari_reminders")
-    .select("programare_id")
-    .eq("tip", type)
-    .in("programare_id", ids);
+    .select("id")
+    .limit(1);
 
-  const trackingDisabled = isMissingProgramariRemindersTable(sentRowsError);
-  if (sentRowsError && !trackingDisabled) {
-    reportError("cron", "reminder_tracking_query_failed", sentRowsError, { type });
+  const trackingDisabled = isMissingProgramariRemindersTable(trackingCheckError);
+  if (trackingCheckError && !trackingDisabled) {
+    reportError("cron", "reminder_tracking_query_failed", trackingCheckError, { type });
   }
-
-  const sent = new Set((sentRows ?? []).map((r) => r.programare_id));
   const stats: ReminderDeliveryStats = {
     sent: 0,
     failed: 0
   };
 
   for (const row of rows) {
-    if (sent.has(row.id)) continue;
+    if (!trackingDisabled) {
+      const { data: claimRows, error: claimError } = await admin
+        .from("programari_reminders")
+        .upsert(
+          {
+            profesionist_id: row.profesionist_id,
+            programare_id: row.id,
+            tip: type
+          },
+          { onConflict: "programare_id,tip", ignoreDuplicates: true }
+        )
+        .select("id");
+
+      if (claimError) {
+        if (!isMissingProgramariRemindersTable(claimError)) {
+          reportError("cron", "reminder_tracking_insert_failed", claimError, {
+            type,
+            programareId: row.id
+          });
+        }
+        continue;
+      }
+
+      if (!claimRows?.length) {
+        continue;
+      }
+    }
+
     const delivered = await sendReminderWithRetry(row.id, type);
     if (!delivered) {
       stats.failed += 1;
+      if (!trackingDisabled) {
+        const { error: releaseError } = await admin
+          .from("programari_reminders")
+          .delete()
+          .eq("programare_id", row.id)
+          .eq("tip", type);
+
+        if (releaseError && !isMissingProgramariRemindersTable(releaseError)) {
+          reportError("cron", "reminder_tracking_release_failed", releaseError, {
+            type,
+            programareId: row.id
+          });
+        }
+      }
       continue;
     }
 
     stats.sent += 1;
-
-    if (trackingDisabled) {
-      continue;
-    }
-
-    const { error: insErr } = await admin.from("programari_reminders").insert({
-      profesionist_id: row.profesionist_id,
-      programare_id: row.id,
-      tip: type
-    });
-    if (insErr && !isMissingProgramariRemindersTable(insErr)) {
-      reportError("cron", "reminder_tracking_insert_failed", insErr, {
-        type,
-        programareId: row.id
-      });
-    }
   }
 
   return stats;

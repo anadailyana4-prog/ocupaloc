@@ -14,6 +14,8 @@ function statusTone(status: ProfessionalBillingModel["status"]): string {
   switch (status) {
     case "active":
       return "border-emerald-500/30 bg-emerald-950/30 text-emerald-200";
+    case "reactivated":
+      return "border-teal-500/30 bg-teal-950/30 text-teal-200";
     case "trial":
     case "trialing":
       return "border-sky-500/30 bg-sky-950/30 text-sky-200";

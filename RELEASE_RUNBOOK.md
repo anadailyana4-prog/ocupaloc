@@ -167,6 +167,69 @@ Reminder cron authorization:
 - endpoint accepts `Authorization: Bearer <REMINDERS_CRON_SECRET>`
 - rotate `REMINDERS_CRON_SECRET` and update scheduler in lockstep
 
+## Billing Dispute / Refund Playbook
+
+### Chargeback / Dispute (Stripe)
+1. Detect:
+   - monitor Stripe dispute events and owner alerts.
+   - identify impacted `profesionist_id`, invoice/subscription id, and payment id.
+2. Freeze risky actions:
+   - block any manual refund action until dispute type and amount are confirmed.
+   - keep an immutable timeline of all operator actions.
+3. Collect evidence (same business day):
+   - booking proof (date/time, service, confirmation reminders sent).
+   - customer communication proof (email/WhatsApp threads where available).
+   - cancellation policy evidence visible at booking time.
+   - subscription state timeline (`active` -> `past_due`/`canceled` etc.).
+4. Submit Stripe evidence before deadline:
+   - attach concise factual statement, no speculative text.
+   - include timezone and currency in every amount reference.
+5. Close loop:
+   - record final outcome (`won`/`lost`) and root cause category.
+   - trigger follow-up action (policy copy fix, reminder copy fix, fraud rule, etc.).
+
+### Refund (operator-initiated)
+1. Eligibility check:
+   - verify payment status and whether a dispute already exists.
+   - verify requested amount and reason code.
+2. Approval policy:
+   - full refund: owner/admin approval required.
+   - partial refund: owner/admin approval + explicit amount rationale.
+3. Execute in Stripe:
+   - record refund id, amount, currency, actor, and timestamp.
+4. Notify customer:
+   - send confirmation with expected settlement timeline.
+5. Post-action verification:
+   - reconcile local billing view with Stripe status.
+
+### Mandatory Evidence in Owner Notes + Audit
+For every dispute/refund case, store the minimum dataset below:
+1. Case identifiers:
+   - `stripe_dispute_id` or `stripe_refund_id`
+   - `stripe_payment_intent_id`
+   - `stripe_invoice_id` (if present)
+   - `stripe_subscription_id`
+2. Business linkage:
+   - `profesionist_id`
+   - business slug/name at event time
+3. Financial details:
+   - `amount`
+   - `currency`
+   - `reason_code` (controlled vocabulary)
+4. Timeline:
+   - incident detected at
+   - evidence submitted at
+   - final outcome at
+5. Actor traceability:
+   - operator user id/email
+   - action performed (`dispute_evidence_submitted`, `refund_approved`, `refund_executed`, etc.)
+6. Supporting proofs:
+   - links/attachments references for booking, reminders, policy snapshot, communication logs.
+
+Owner/audit logging rule:
+- every operational step above must create an explicit owner audit action entry and a linked owner note.
+- if evidence is incomplete, case status must be marked `pending_evidence` until completed.
+
 ## Release Steps
 1. Merge PR to `main` (branch protection requires CI green).
 2. Verify GitHub Actions `CI` and `Security` workflows are successful.
@@ -205,6 +268,41 @@ Failures trigger a `critical` alert to `ALERT_WEBHOOK_URL` (if configured). Moni
 - RPO target (booking data): 15 minutes
 
 ## Incident Response
+
+## Monthly Incident Drill (F3-4)
+
+Cadence:
+- 1 exercițiu/lună, preferabil în prima săptămână.
+- Durata țintă: 30-45 minute.
+
+Minimal drill scenario:
+1. Booking path degradat (`/api/book` 5xx sau latenta > p95 threshold).
+2. Billing path inaccesibil (`/api/billing/create-checkout` nu redirecționează corect).
+
+Roles:
+- Incident commander: owner on-call.
+- Operator: execută pașii tehnici (health, slo, synthetic, rollback).
+- Scribe: notează timeline și deciziile.
+
+Drill checklist:
+1. Detectare: rulează `GET /api/health` și `GET /api/ops/slo`.
+2. Confirmare impact: rulează synthetic monitor endpoint.
+3. Clasificare severitate: P1/P2/P3 după impact pe booking/billing.
+4. Acțiune: simulează decizie `GO/NO-GO` și pașii de rollback.
+5. Comunicare: redactează update intern cu ETA și owner.
+6. Închidere: notează ce a mers, ce a lipsit, ce automatizăm.
+
+Success criteria:
+- Timp până la detectare < 5 minute.
+- Timp până la owner assignment < 10 minute.
+- Timp până la decizie rollback/no-rollback < 15 minute.
+- Checklist completat integral și arhivat în notes interne.
+
+Evidence to retain:
+- Timestamp start/end drill.
+- Capturi output pentru `/api/health`, `/api/ops/slo`, synthetic monitor.
+- Decizia GO/NO-GO și pașii făcuți.
+- 2 acțiuni concrete de follow-up (maxim 14 zile termen).
 
 ### 15-minute Incident Checklist (P1/P2)
 1. Acknowledge incident in ops channel and assign incident commander.

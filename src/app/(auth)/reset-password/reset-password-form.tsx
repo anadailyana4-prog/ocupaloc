@@ -90,22 +90,22 @@ export default function ResetPasswordForm() {
 
   if (!sessionChecked) {
     return (
-      <main className="flex min-h-screen items-center justify-center p-4">
-        <p className="text-sm text-muted-foreground">Verificăm linkul de resetare...</p>
+      <main className="flex min-h-screen items-center justify-center oc-bg p-4 oc-text">
+        <p className="text-sm oc-secondary-text">Verificăm linkul de resetare...</p>
       </main>
     );
   }
 
   if (error) {
     return (
-      <main className="flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-md border-zinc-800 bg-zinc-950">
+      <main className="flex min-h-screen items-center justify-center oc-bg p-4 oc-text">
+        <Card className="w-full max-w-md border oc-border bg-white">
           <CardHeader>
             <CardTitle>Eroare la resetare</CardTitle>
             <CardDescription>{error}</CardDescription>
           </CardHeader>
           <CardFooter>
-            <Link href="/login" className="text-sm text-primary underline underline-offset-4">
+            <Link href="/login" className="text-sm oc-accent underline underline-offset-4">
               Înapoi la autentificare
             </Link>
           </CardFooter>
@@ -116,14 +116,14 @@ export default function ResetPasswordForm() {
 
   if (!hasRecoverySession) {
     return (
-      <main className="flex min-h-screen items-center justify-center p-4">
-        <Card className="w-full max-w-md border-zinc-800 bg-zinc-950">
+      <main className="flex min-h-screen items-center justify-center oc-bg p-4 oc-text">
+        <Card className="w-full max-w-md border oc-border bg-white">
           <CardHeader>
             <CardTitle>Link invalid sau expirat</CardTitle>
             <CardDescription>Cere un nou email de resetare din pagina de autentificare.</CardDescription>
           </CardHeader>
           <CardFooter>
-            <Link href="/login" className="text-sm text-primary underline underline-offset-4">
+            <Link href="/login" className="text-sm oc-accent underline underline-offset-4">
               Înapoi la autentificare
             </Link>
           </CardFooter>
@@ -133,8 +133,8 @@ export default function ResetPasswordForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md border-zinc-800 bg-zinc-950">
+    <main className="flex min-h-screen items-center justify-center oc-bg p-4 oc-text">
+      <Card className="w-full max-w-md border oc-border bg-white">
         <CardHeader>
           <CardTitle>Setează parola nouă</CardTitle>
           <CardDescription>Introdu noua parolă pentru contul tău.</CardDescription>
@@ -159,7 +159,7 @@ export default function ResetPasswordForm() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-1 top-1 h-8 px-2 text-zinc-400 hover:text-zinc-100"
+                  className="absolute right-1 top-1 h-8 px-2 oc-secondary-text hover:oc-text"
                   onClick={() => setShowPassword((prev) => !prev)}
                   aria-label={showPassword ? "Ascunde parola" : "Arată parola"}
                 >
@@ -186,7 +186,7 @@ export default function ResetPasswordForm() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-1 top-1 h-8 px-2 text-zinc-400 hover:text-zinc-100"
+                  className="absolute right-1 top-1 h-8 px-2 oc-secondary-text hover:oc-text"
                   onClick={() => setShowConfirmPassword((prev) => !prev)}
                   aria-label={showConfirmPassword ? "Ascunde parola" : "Arată parola"}
                 >
@@ -201,7 +201,7 @@ export default function ResetPasswordForm() {
           </form>
         </CardContent>
         <CardFooter>
-          <Link href="/login" className="text-sm text-muted-foreground underline underline-offset-4 hover:text-zinc-100">
+          <Link href="/login" className="text-sm oc-secondary-text underline underline-offset-4 hover:oc-text">
             Înapoi la autentificare
           </Link>
         </CardFooter>

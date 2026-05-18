@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 
+import { formatOperationalEventType } from "@/lib/ops-event-labels";
+import { BILLING_RECONCILIATION_SIGNAL_TYPES } from "@/lib/ops-event-taxonomy";
 import { logOwnerAction, requireOwnerAdminFromRequest } from "@/lib/owner/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -22,6 +24,7 @@ export async function GET(request: Request) {
         .from("operational_events")
         .select("event_type, outcome, created_at, metadata")
         .eq("flow", "billing")
+        .in("event_type", [...BILLING_RECONCILIATION_SIGNAL_TYPES])
         .order("created_at", { ascending: false })
         .limit(20)
     ]);
@@ -39,8 +42,14 @@ export async function GET(request: Request) {
       ok: true,
       data: {
         cronJobs: cron ?? [],
-        synthetic: synthetic ?? [],
-        billingReconciliation: billingRecon ?? [],
+        synthetic: (synthetic ?? []).map((event) => ({
+          ...event,
+          event_type_label: formatOperationalEventType(event.event_type)
+        })),
+        billingReconciliation: (billingRecon ?? []).map((event) => ({
+          ...event,
+          event_type_label: formatOperationalEventType(event.event_type)
+        })),
         emailQueueStats: {
           queued: emailQueued,
           processing: emailProcessing,

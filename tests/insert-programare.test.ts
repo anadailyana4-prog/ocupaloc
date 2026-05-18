@@ -14,6 +14,33 @@ import { insertProgramareForProfSlug } from "../src/lib/booking/insert-programar
 
 // ─── Stub Supabase Client ───────────────────────────────────────────────────
 
+function makeFromStub() {
+  return (table: string) => {
+    if (table === "programari") {
+      return {
+        update: () => ({
+          eq: async () => ({ error: null })
+        })
+      };
+    }
+    if (table === "profesionisti") {
+      return {
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({ data: { id: "prof-uuid" }, error: null })
+          })
+        }),
+        update: () => ({
+          eq: () => ({
+            is: async () => ({ error: null })
+          })
+        })
+      };
+    }
+    throw new Error(`unexpected table ${table}`);
+  };
+}
+
 function makeAdmin(rpcResponse: {
   data?: Array<{
     success: boolean;
@@ -24,7 +51,8 @@ function makeAdmin(rpcResponse: {
   error?: { code?: string; message?: string };
 }): SupabaseClient {
   return {
-    rpc: async () => rpcResponse
+    rpc: async () => rpcResponse,
+    from: makeFromStub()
   } as unknown as SupabaseClient;
 }
 
@@ -375,7 +403,8 @@ test("insertProgramareForProfSlug: trims phone and name inputs", async () => {
           }
         ]
       };
-    }
+    },
+    from: makeFromStub()
   } as unknown as SupabaseClient;
 
   const result = await insertProgramareForProfSlug(admin, {

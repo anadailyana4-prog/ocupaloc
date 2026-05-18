@@ -4,8 +4,6 @@
  * Analyzes what's REAL vs PLACEHOLDER in the owner portal
  */
 
-const baseUrl = 'https://ocupaloc.ro';
-
 const analysis = {
   '1. Dashboard (KPIs)': {
     code: 'Calls getOwnerKpis() from lib/owner/data.ts',

@@ -1,214 +1,85 @@
-# Contributing to ocupaloc.ro
+# CONTRIBUTING - Reguli de lucru OcupaLoc
 
-Thank you for your interest in contributing to ocupaloc.ro! This document provides guidelines and instructions for contributing to the project.
+Acest fișier definește modul standard de lucru pentru a evita schimbări haotice.
 
-## Code of Conduct
+## 1) Branch-uri
 
-Please be respectful and constructive in all interactions with other contributors.
+- `main` = producție
+- `staging` = integrare continuă / pre-release
+- feature branches pornesc din `staging`
 
-## Getting Started
+Flux obligatoriu:
 
-Before coding, review the project operating map:
-- `docs/PROJECT_OPERATING_GUIDE.md`
-- `docs/A_TO_Z_MASTER_INDEX.md`
-- `docs/FEATURE_IMPLEMENTATION_CHECKLIST.md`
+- `feature/* -> staging -> main`
 
-1. **Fork the repository** on GitHub
-2. **Clone your fork** locally:
-   ```bash
-   git clone https://github.com/<your-username>/ocupaloc.git
-   cd ocupaloc
-   ```
-3. **Create a feature branch**:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-4. **Set up the development environment**:
-   ```bash
-   pnpm install
-   cp .env.example .env.local
-   # Fill in your .env.local with test credentials
-   pnpm run dev
-   ```
+## 2) Naming pentru branch-uri
 
-## Development Workflow
+Folosește una dintre formele:
 
-### 1. Code Quality Standards
+- `feat/public-nume-scurt`
+- `feat/app-nume-scurt`
+- `fix/public-nume-scurt`
+- `fix/app-nume-scurt`
+- `chore/ops-nume-scurt`
+- `hotfix/prod-nume-scurt`
 
-All code must pass:
-- **ESLint**: `pnpm run lint`
-- **TypeScript**: `pnpm run typecheck`
-- **Unit tests**: `pnpm run test`
-- **Build**: `pnpm run build`
+## 3) Convenții de commit
 
-Before committing, run the full quality gate:
-```bash
-pnpm run check:all
-```
+Format:
 
-### 2. Writing Tests
+- `<type>(<scope>): <mesaj scurt>`
 
-- **Unit tests** go in `tests/*.test.ts` files
-- **E2E tests** go in `tests/e2e/*.spec.ts` files
-- Coverage is enforced by `pnpm run test:coverage:check` thresholds defined in `package.json`
-- Use Vitest for unit tests, Playwright for E2E tests
+Tipuri:
 
-Example unit test:
-```typescript
-import { describe, it, expect } from "vitest";
-import { normalizePhoneNumber } from "@/lib/phone";
+- `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
 
-describe("normalizePhoneNumber", () => {
-  it("converts Romanian mobile to +40 format", () => {
-    expect(normalizePhoneNumber("0721234567")).toBe("+40721234567");
-  });
-});
-```
+Exemple:
 
-Example E2E test:
-```typescript
-import { test, expect } from "@playwright/test";
+- `feat(public): unify transactional shell with oc tokens`
+- `fix(app): prevent duplicate booking insert`
+- `chore(ops): tighten staging deploy rules`
 
-test("salon owner can create a service", async ({ page }) => {
-  await page.goto("/intrare");
-  await page.fill("input[type=email]", process.env.PLAYWRIGHT_LOGIN_EMAIL!);
-  // ... rest of test
-});
-```
+## 4) Validare minimă înainte de PR
 
-### 3. Updating the Changelog
+Obligatoriu:
 
-When making changes, update `CHANGELOG.md`:
+- `pnpm run check:local`
 
-1. Find or create an `[Unreleased]` section at the top
-2. Add your changes under appropriate categories:
-   - **Added**: New features
-   - **Changed**: Modifications to existing functionality
-   - **Deprecated**: Features to be removed in future versions
-   - **Removed**: Deleted functionality
-   - **Fixed**: Bug fixes
-   - **Security**: Security fixes or improvements
-3. Use descriptive bullet points
-4. Reference issue/PR numbers: `Fix rate limiting bug (#123)`
+Pentru auth/booking/billing/jobs:
 
-Example:
-```markdown
-## [Unreleased]
+- `pnpm run check:all`
 
-### Added
-- Email notifications for booking reminders (#456)
+## 5) Cum formulezi task-uri pentru agent/developer
 
-### Fixed
-- Database query timeout on large bookings list (#789)
-```
+Template minim:
 
-### 4. Commit Messages
+1. Context
+2. Obiectiv
+3. Scope exact (fișiere/rute)
+4. Out of scope
+5. Reguli stricte (ce nu se atinge)
+6. Validări obligatorii
+7. Livrabile finale
 
-Use clear, descriptive commit messages:
-- **feat**: New feature → `feat: add email reminders for upcoming bookings`
-- **fix**: Bug fix → `fix: prevent double bookings on schedule conflicts`
-- **docs**: Documentation → `docs: update setup instructions`
-- **style**: Code style → `style: add missing type annotations`
-- **refactor**: Code refactoring → `refactor: extract rate limiting to separate module`
-- **test**: Test additions → `test: add integration tests for webhook handlers`
-- **chore**: Maintenance → `chore: update dependencies`
+## 6) Regula de separare UI / logică / ops
 
-Format: `<type>: <subject>`
-- Keep subject under 50 characters
-- Use imperative mood ("add" not "adds")
-- No period at the end
+- Nu combina în același PR mare:
+  - UI (stil/componente)
+  - logică (auth/booking/billing/jobs)
+  - ops (workflows, deploy, config)
+- Dacă schimbarea atinge mai multe zone, sparge în faze/PR-uri separate.
 
-### 5. Pull Request Process
+## 7) Definition of Done pentru PR
 
-1. **Update tests** for any new functionality
-2. **Run full validation**:
-   ```bash
-   pnpm run check:all
-   ```
-3. **Push your branch**:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-4. **Create a Pull Request** on GitHub with:
-   - Clear description of changes
-   - Reference to any related issues (#123)
-   - Summary of testing performed
-   - Changelog entries if applicable
-5. **Address review feedback** promptly
-6. **Ensure all CI checks pass** before merge
+Un PR este gata doar dacă include:
 
-## Deployment
+1. Scope clar și limitat
+2. Checks locale rulate
+3. Preview verificat pe rutele afectate
+4. Riscuri notate
+5. Fără fișiere neintenționate în diff
 
-### Branch Protection Rules
+## 8) Referință rapidă
 
-The `main` branch is protected:
-- All PRs must have passing CI checks
-- Code review approval required
-- Status checks must pass:
-  - `Typecheck, Lint & Build` job
-  - All ESLint, TypeScript, and test validations
-
-### Production Deployment
-
-1. Changes are automatically deployed to production when merged to `main`
-2. Vercel automatically builds and deploys the `main` branch
-3. Health checks run post-deployment
-4. Sentry tracks errors in production
-
-## Troubleshooting
-
-### Tests Failing
-
-```bash
-# Clear cache and reinstall
-rm -rf node_modules pnpm-lock.yaml
-pnpm install
-
-# Run tests with verbose output
-pnpm run test -- --reporter=verbose
-```
-
-### Type Errors After Changes
-
-```bash
-# Regenerate TypeScript definitions
-pnpm run typecheck
-```
-
-### Lint Errors
-
-```bash
-# Run ESLint with auto-fix
-pnpm exec eslint . --fix
-```
-
-## Reporting Issues
-
-If you find a bug:
-1. Check existing issues to avoid duplicates
-2. Provide a clear description
-3. Include steps to reproduce
-4. Include relevant environment details (Node version, OS, etc.)
-5. Attach screenshots or logs if applicable
-
-## Feature Requests
-
-For feature requests:
-1. Check existing issues and discussions
-2. Provide clear use case and expected behavior
-3. Include any relevant mockups or examples
-4. Consider implementation complexity and maintenance burden
-
-## Questions?
-
-- Check [README.md](./README.md) for setup instructions
-- Review existing [issues](https://github.com/anadailyana4-prog/ocupaloc/issues) and [discussions](https://github.com/anadailyana4-prog/ocupaloc/discussions)
-- Ask in GitHub Discussions for general questions
-
-## License
-
-By contributing to this project, you agree that your contributions will be licensed under the same license as the project.
-
----
-
-Thank you for contributing! 🙏
+- Reguli deploy: [DEPLOY.md](DEPLOY.md)
+- Runbook operațional: [RUNBOOK.md](RUNBOOK.md)

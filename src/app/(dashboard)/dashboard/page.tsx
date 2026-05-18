@@ -9,7 +9,8 @@ import { CancelSubscriptionButton } from "./cancel-subscription-button";
 import { CopyPublicLinkButton } from "./copy-public-link";
 import { ProgramariTable, type ProgramareRow } from "./programari-table";
 import { type PlanStatus } from "@/components/billing/PlanStatusBanner";
-import { BILLING_TRIAL_DAYS, isBillingEnabled } from "@/lib/billing/config";
+import { SignupDraftBootstrap } from "@/components/onboarding/SignupDraftBootstrap";
+import { getPlanStatus } from "@/lib/billing/entitlement";
 import { extractProgramPauza, getProgramSlotConfig, parseProgramJson, ziKeyFromDate } from "@/lib/program";
 import { computeFreeSlots } from "@/lib/slots";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
@@ -115,50 +116,9 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
   }
 
   // --- Plan status for billing banner ---
-  let planStatus: PlanStatus = { kind: "none" };
-  if (isBillingEnabled()) {
-    const admin = createSupabaseServiceClient();
-    const { data: sub, error: subError } = await admin
-      .from("subscriptions")
-      .select("status, current_period_end")
-      .eq("profesionist_id", prof.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    const missingSubscriptionsTable = (subError?.code ?? "") === "PGRST205";
-
-    if (missingSubscriptionsTable && prof.created_at) {
-      const createdAt = new Date(prof.created_at).getTime();
-      const trialEnd = createdAt + BILLING_TRIAL_DAYS * 86400000;
-      const daysLeft = Math.max(0, Math.ceil((trialEnd - Date.now()) / 86400000));
-      planStatus = daysLeft > 0 ? { kind: "trial", daysLeft } : { kind: "active", periodEnd: new Date(trialEnd).toISOString() };
-    } else if (sub) {
-      const now = Date.now();
-      if (sub.status === "trialing") {
-        const end = sub.current_period_end ? new Date(sub.current_period_end as string).getTime() : now;
-        planStatus = { kind: "trialing_stripe", daysLeft: Math.max(0, Math.ceil((end - now) / 86400000)) };
-      } else if (sub.status === "active") {
-        planStatus = { kind: "active", periodEnd: sub.current_period_end as string };
-      } else if (sub.status === "past_due") {
-        planStatus = { kind: "past_due" };
-      } else if (sub.status === "canceled") {
-        planStatus = { kind: "canceled" };
-      } else {
-        planStatus = { kind: "none" };
-      }
-    } else {
-      planStatus = { kind: "none" };
-    }
-  } else {
-    // Billing disabled — compute legacy trial display-only
-    if (prof.created_at) {
-      const createdAt = new Date(prof.created_at).getTime();
-      const trialEnd = createdAt + BILLING_TRIAL_DAYS * 86400000;
-      const daysLeft = Math.max(0, Math.ceil((trialEnd - Date.now()) / 86400000));
-      planStatus = daysLeft > 0 ? { kind: "trial", daysLeft } : { kind: "active", periodEnd: new Date(trialEnd).toISOString() };
-    }
-  }
+  const planStatus: PlanStatus = await getPlanStatus(prof.id, {
+    profesionistCreatedAt: prof.created_at ?? null
+  });
   // ---
 
   const sp = searchParams ? await searchParams : {};
@@ -555,6 +515,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-12 section-reveal">
+      <SignupDraftBootstrap showToastOnApply />
       {sp.info ? (
         <div className="mx-4 mt-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
           ℹ️ {decodeURIComponent(sp.info)}
@@ -572,7 +533,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
         <div className="rounded-2xl border border-zinc-700/60 bg-zinc-900/60 px-5 py-4">
           <p className="text-sm font-semibold text-zinc-100">Ne pare rău că ai ales să pleci.</p>
           <p className="mt-1 text-xs text-zinc-400">
-            Abonamentul este anulat și nu se vor mai retrage bani. Dacă vrei să revii, poți reactiva oricând trial-ul sau abonamentul din dashboard.
+            Abonamentul este anulat și nu se vor mai retrage bani. Dacă vrei să revii, poți reactiva planul din dashboard, iar o nouă perioadă gratuită se acordă doar dacă business-ul este eligibil conform politicii de trial.
           </p>
           <form method="get" action="/api/billing/create-checkout" className="mt-3">
             <button

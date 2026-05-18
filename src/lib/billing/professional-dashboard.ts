@@ -37,7 +37,7 @@ type LoadProfessionalBillingDeps = {
 export type ProfessionalBillingModel = {
   businessName: string;
   planName: string;
-  status: "active" | "trialing" | "trial" | "past_due" | "canceled" | "incomplete" | "paused" | "none" | "disabled";
+  status: "active" | "reactivated" | "trialing" | "trial" | "past_due" | "canceled" | "incomplete" | "paused" | "none" | "disabled";
   statusLabel: string;
   statusMessage: string;
   currentPeriodEnd: string | null;
@@ -170,6 +170,19 @@ function toStatusModel(input: {
         statusMessage: cancelAtPeriodEnd
           ? "Abonamentul este activ, dar va fi oprit la finalul perioadei curente."
           : "Abonamentul este activ și se reînnoiește automat.",
+        currentPeriodEnd,
+        cancelAtPeriodEnd,
+        canOpenCheckout: false,
+        canOpenPortal: true,
+        canCancelSubscription: !cancelAtPeriodEnd
+      };
+    case "reactivated":
+      return {
+        status: "reactivated",
+        statusLabel: "Reactivat",
+        statusMessage: cancelAtPeriodEnd
+          ? "Abonamentul reactivat rămâne activ până la finalul perioadei curente."
+          : "Abonamentul a fost reactivat cu succes și se reînnoiește automat.",
         currentPeriodEnd,
         cancelAtPeriodEnd,
         canOpenCheckout: false,

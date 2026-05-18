@@ -108,22 +108,6 @@ const NICHE_COPY: Record<string, { label: string; problem: string; benefit: stri
   }
 };
 
-function buildObservation(input: PersonalizationInput) {
-  if (input.nicheSlug === "beauty-independent") {
-    return `Salut ${input.businessName}, am vazut activitatea ta si mi-a venit ideea sa-ti scriu — pare ca majoritate clientelor iti scriu pe multiple canale (WhatsApp, Instagram, SMS, apeluri).`;
-  }
-
-  if (!input.website) {
-    return `Am vazut ${input.businessName} in ${input.city} si pare ca prezenta online se bazeaza mai ales pe Google, telefon sau social media.`;
-  }
-
-  if (!input.observableSignals.bookingLinkDetected) {
-    return `Am vazut site-ul ${input.businessName} si nu pare sa existe un pas foarte clar de programare online.`;
-  }
-
-  return `Am vazut ${input.businessName} din ${input.city} si faptul ca aveti deja prezenta online ajuta mult.`;
-}
-
 function buildFollowUp(input: PersonalizationInput, optOutText: string) {
   const subject = `Revin scurt pentru ${input.businessName}`;
   const text = [

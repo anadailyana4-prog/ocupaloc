@@ -1,10 +1,10 @@
 export {};
 
 const baseUrl = (process.env.SYNTHETIC_BASE_URL ?? "https://ocupaloc.ro").replace(/\/$/, "");
-const secret = process.env.SYNTHETIC_MONITOR_SECRET ?? process.env.REMINDERS_CRON_SECRET;
+const secret = process.env.SYNTHETIC_MONITOR_SECRET;
 
 if (!secret) {
-  console.error("SYNTHETIC_MONITOR_SECRET or REMINDERS_CRON_SECRET is required");
+  console.error("SYNTHETIC_MONITOR_SECRET is required");
   process.exit(1);
 }
 

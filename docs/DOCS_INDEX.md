@@ -21,6 +21,16 @@ Single index for all project documentation.
 - `docs/technical-audit-2026-05-11.md`
 - `docs/romania-growth-playbook.md`
 
+## Project Evaluation (2026-05-18)
+
+- `docs/evaluation-signup-to-first-booking.md` — flux signup → prima programare + gap-uri metrici
+- `docs/evaluation-cron-jobs-env-map.md` — cron Vercel, secrete, env per job
+- `docs/evaluation-uncommitted-pr-split.md` — review WIP local și propunere 8 PR-uri
+
+## Platform Production (Supabase → Vercel → GSC)
+
+- `docs/platform-production-handoff.md` — checklist unic închidere producție
+
 ## Rules
 
 - Any new operational document must be added here.

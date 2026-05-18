@@ -20,10 +20,14 @@ export async function GET(req: NextRequest) {
 
   const admin = createSupabaseServiceClient();
   const startedAt = Date.now();
-  const { error } = await admin.from("profesionisti").select("id").limit(1);
+  const [dbResult, bookingsResult] = await Promise.all([
+    admin.from("profesionisti").select("id").limit(1),
+    admin.from("programari").select("id").limit(1)
+  ]);
 
   const checks = {
-    db: !error,
+    db: !dbResult.error,
+    bookings: !bookingsResult.error,
     resendConfigured: Boolean(process.env.RESEND_API_KEY?.trim()),
     remindersSecretConfigured: Boolean(process.env.REMINDERS_CRON_SECRET?.trim()),
     bookingConfirmationSecretConfigured: Boolean(process.env.BOOKING_CONFIRMATION_SECRET?.trim()),
@@ -38,7 +42,8 @@ export async function GET(req: NextRequest) {
       checks,
       latencyMs: Date.now() - startedAt,
       timestamp: new Date().toISOString(),
-      dbError: error?.message ?? null
+      dbError: dbResult.error?.message ?? null,
+      bookingsError: bookingsResult.error?.message ?? null
     },
     { status: Object.values(checks).every(Boolean) ? 200 : 503 }
   );

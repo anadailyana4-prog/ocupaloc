@@ -8,7 +8,7 @@ import { sendFounderFleetDigest } from "@/lib/email/founder-fleet-digest";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  if (!validateCronSecret(req.headers, process.env.REMINDERS_CRON_SECRET?.trim())) {
+  if (!validateCronSecret(req.headers, process.env.OWNER_OPS_CRON_SECRET?.trim())) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 

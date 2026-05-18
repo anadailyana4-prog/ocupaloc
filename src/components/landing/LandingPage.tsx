@@ -171,8 +171,8 @@ export function LandingPage() {
             </p>
           </div>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {["Saloane", "Clinici", "Consultanți", "Studiouri", "Beauty", "Servicii locale"].map((item) => (
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {["Saloane", "Frizerii", "Coafor", "Manichiură", "Cosmetică", "Psihologi", "Nutriționiști", "Clinici"].map((item) => (
               <article key={item} className="oc-card p-5 shadow-sm">
                 <h3 className="text-lg font-semibold">{item}</h3>
               </article>

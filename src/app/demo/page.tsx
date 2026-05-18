@@ -27,10 +27,10 @@ export default function DemoPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4 text-white">
-      <form action={loginDemo} className="w-full max-w-md space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/60 p-6 text-center">
+    <div className="flex min-h-screen items-center justify-center oc-bg px-4 text-white">
+      <form action={loginDemo} className="w-full max-w-md space-y-4 rounded-xl border oc-border bg-white p-6 text-center">
         <h1 className="text-xl font-semibold">Acces demo</h1>
-        <p className="text-sm text-zinc-400">Autentificarea demo se face securizat, doar din variabile de mediu server-side.</p>
+        <p className="text-sm oc-secondary-text">Autentificarea demo se face securizat, doar din variabile de mediu server-side.</p>
         <Button data-testid="demo-login-submit" type="submit" className="w-full">
           Intră în demo
         </Button>

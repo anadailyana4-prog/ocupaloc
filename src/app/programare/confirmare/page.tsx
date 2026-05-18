@@ -48,18 +48,18 @@ export default async function BookingConfirmationPage({ searchParams }: PageProp
   const copy = textForState(state);
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-4 py-16 text-zinc-100">
-      <div className="mx-auto max-w-xl rounded-2xl border border-zinc-800 bg-zinc-900 p-8 text-center">
-        <p className={`mb-4 text-4xl ${copy.ok ? "text-emerald-400" : "text-amber-400"}`}>{copy.ok ? "✓" : "!"}</p>
+    <main className="min-h-screen oc-bg px-4 py-16 oc-text">
+      <div className="mx-auto max-w-xl rounded-2xl border oc-border bg-white p-8 text-center">
+        <p className={`mb-4 text-4xl ${copy.ok ? "oc-accent" : "oc-primary-text"}`}>{copy.ok ? "✓" : "!"}</p>
         <h1 className="text-2xl font-bold tracking-tight">{copy.title}</h1>
-        <p className="mt-3 text-zinc-300">{copy.desc}</p>
+        <p className="mt-3 oc-secondary-text">{copy.desc}</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           {slug ? (
-            <Link href={`/${slug}`} className="rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500">
+            <Link href={`/${slug}`} className="rounded-full oc-primary px-5 py-2.5 text-sm font-semibold text-white">
               Înapoi la pagina de rezervare
             </Link>
           ) : null}
-          <Link href="/" className="rounded-full border border-zinc-700 px-5 py-2.5 text-sm font-semibold hover:bg-zinc-800">
+          <Link href="/" className="rounded-full border oc-border bg-white px-5 py-2.5 text-sm font-semibold oc-accent hover:oc-badge-bg">
             Acasă
           </Link>
         </div>

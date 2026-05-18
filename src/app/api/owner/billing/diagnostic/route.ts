@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getOwnerBillingStatus } from "@/lib/billing/owner-status";
+import { formatOperationalEventType } from "@/lib/ops-event-labels";
 import { logOwnerAction, requireOwnerAdminFromRequest } from "@/lib/owner/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -36,7 +37,10 @@ export async function GET(request: Request) {
       data: {
         status: billingStatus,
         lastWebhookEvent: latestWebhookResult.data ?? null,
-        recentBillingEvents: recentBillingEventsResult.data ?? []
+        recentBillingEvents: (recentBillingEventsResult.data ?? []).map((event) => ({
+          ...event,
+          event_type_label: formatOperationalEventType(event.event_type)
+        }))
       }
     });
   } catch {

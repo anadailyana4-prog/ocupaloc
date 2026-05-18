@@ -2,11 +2,12 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 
 import { SmartRulesForm } from "../smart-rules-form";
-import { updateCommunicationSettings, updatePublicBusinessFields, updatePauzeSettings } from "../actions";
+import { updateCommunicationSettings, updatePublicBusinessFields, updatePublicMediaSettings, updatePauzeSettings } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { parsePublicProfileMedia } from "@/lib/public-profile-media";
 import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
 import { extractProgramPauza } from "@/lib/program";
@@ -31,6 +32,7 @@ type SettingsProfile = {
   email_reminders_enabled?: boolean | null;
   google_review_url?: string | null;
   program?: unknown;
+  bio?: unknown;
 };
 
 export default async function DashboardSetariPage({ searchParams }: PageProps) {
@@ -42,8 +44,8 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
 
   const { data: prof, error: profErr } = await selectWithTelefonFallback<SettingsProfile>(
     async (columns) => await supabase.from("profesionisti").select(columns).eq("user_id", user.id).maybeSingle(),
-    "id, slug, telefon, description, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes, pauza_intre_clienti, email_reminders_enabled, google_review_url, program",
-    "id, slug, description, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes, pauza_intre_clienti, email_reminders_enabled, google_review_url, program"
+    "id, slug, telefon, description, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes, pauza_intre_clienti, email_reminders_enabled, google_review_url, program, bio",
+    "id, slug, description, smart_rules_enabled, smart_max_future_bookings, smart_client_cancel_threshold, smart_cancel_window_days, smart_min_notice_minutes, pauza_intre_clienti, email_reminders_enabled, google_review_url, program, bio"
   );
 
   if (profErr || !prof?.id) {
@@ -52,6 +54,8 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
 
   const sp = searchParams ? await searchParams : {};
   const pauzaProgram = extractProgramPauza(prof.program ?? null);
+  const mediaProfile = parsePublicProfileMedia(prof.bio);
+  const curatedAssetPaths = ["/default-salon.svg", "/og-image.svg", "/blog/salon-programari-online.svg", "/blog/programari-online-beneficii.svg", "/blog/reducere-no-show.svg"];
 
   return (
     <div className="space-y-8 px-4 py-8 sm:px-6 lg:px-8 max-w-2xl">
@@ -186,6 +190,66 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
             className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105"
           >
             Salvează datele publice
+          </Button>
+        </form>
+      </section>
+
+      <section className="lux-card space-y-4 p-6">
+        <div>
+          <h2 className="font-display text-xl font-semibold tracking-wide text-amber-100">Galerie publică și video</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Alege doar materiale reale. Poți folosi imagini din proiectul OcupaLoc sau linkuri HTTPS proprii.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-zinc-700/60 bg-zinc-900/50 p-3 text-xs text-zinc-300">
+          Asset-uri deja existente în proiect (copy/paste): {curatedAssetPaths.join(", ")}
+        </div>
+
+        <form action={updatePublicMediaSettings} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="gallery_images">Imagini galerie (una pe linie)</Label>
+            <Textarea
+              id="gallery_images"
+              name="gallery_images"
+              rows={5}
+              defaultValue={mediaProfile.galleryImages.join("\n")}
+              className="resize-y border-zinc-700 bg-zinc-900"
+              placeholder="/default-salon.svg"
+            />
+            <p className="text-xs text-muted-foreground">Acceptat: căi locale care încep cu / sau linkuri https://</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="promo_video_url">Video promo (opțional)</Label>
+            <Input
+              id="promo_video_url"
+              name="promo_video_url"
+              type="text"
+              defaultValue={mediaProfile.promoVideoUrl ?? ""}
+              className="border-zinc-700 bg-zinc-900"
+              placeholder="https://... sau /video.mp4"
+            />
+            <p className="text-xs text-muted-foreground">Momentan în proiect nu există fișiere video; câmpul rămâne opțional.</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="trust_badges">Elemente de încredere (una pe linie)</Label>
+            <Textarea
+              id="trust_badges"
+              name="trust_badges"
+              rows={4}
+              defaultValue={mediaProfile.trustBadges.join("\n")}
+              className="resize-y border-zinc-700 bg-zinc-900"
+              placeholder={"Răspundem în limba română\nFără comision per programare"}
+            />
+          </div>
+
+          <Button
+            type="submit"
+            className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105"
+          >
+            Salvează galeria și media
           </Button>
         </form>
       </section>

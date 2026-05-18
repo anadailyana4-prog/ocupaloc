@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { BILLING_RECONCILIATION_SIGNAL_TYPES } from "@/lib/ops-event-taxonomy";
+import { formatOperationalEventType } from "@/lib/ops-event-labels";
 import { requireOwnerAdmin, logOwnerAction } from "@/lib/owner/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -23,6 +25,7 @@ export default async function OwnerOperationsPage() {
       .from("operational_events")
       .select("event_type, outcome, created_at, metadata")
       .eq("flow", "billing")
+      .in("event_type", [...BILLING_RECONCILIATION_SIGNAL_TYPES])
       .order("created_at", { ascending: false })
       .limit(20),
     supabase.from("email_queue").select("status, created_at").gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
@@ -85,7 +88,10 @@ export default async function OwnerOperationsPage() {
           ) : (
             (billing ?? []).map((event) => (
               <div key={`${event.event_type}-${event.created_at}`} className="rounded-lg border border-slate-700 bg-slate-800/30 p-3 flex justify-between">
-                <p className="text-slate-100">{event.event_type}</p>
+                <div>
+                  <p className="text-slate-100">{formatOperationalEventType(event.event_type)}</p>
+                  <p className="text-[11px] text-slate-500">raw: {event.event_type}</p>
+                </div>
                 <p className="text-xs text-slate-500">{new Date(event.created_at).toLocaleString("ro-RO")}</p>
               </div>
             ))

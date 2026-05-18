@@ -394,13 +394,25 @@ function SignupPageContent() {
     // Any transient DB/FK issue here would block onboarding UX.
     // Initial setup is handled safely after login from dashboard actions.
 
+    localStorage.removeItem("ocupaloc:signupDraftApplied");
     localStorage.setItem("ocupaloc:lastSlug", slug);
     localStorage.removeItem(SIGNUP_STEP_STORAGE_KEY);
     localStorage.removeItem(SIGNUP_EMAIL_STORAGE_KEY);
-    localStorage.removeItem(SIGNUP_NAME_STORAGE_KEY);
+    localStorage.setItem(SIGNUP_NAME_STORAGE_KEY, businessName.trim());
     localStorage.setItem("ocupaloc:lastImportedClients", String(importedCount));
     localStorage.setItem("ocupaloc:onboardingServices", JSON.stringify(services));
     localStorage.setItem("ocupaloc:onboardingSchedule", JSON.stringify(workDays));
+    localStorage.setItem(
+      "ocupaloc:signupDraft",
+      JSON.stringify({
+        orgName: businessName.trim(),
+        slug,
+        activity,
+        phone: cleanPhone,
+        services,
+        workDays
+      })
+    );
     trackOnboardingEvent("onboarding_activation", {
       step: 3,
       page: "/signup",
@@ -417,7 +429,7 @@ function SignupPageContent() {
       <div className="flex min-h-screen items-center justify-center oc-bg oc-text p-4">
         <Card className="w-full max-w-md border oc-border oc-bg text-center">
           <CardHeader className="space-y-4 pb-2">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-4xl">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full oc-badge-bg text-4xl oc-accent">
               📧
             </div>
             <CardTitle className="text-2xl oc-text">Verificați emailul</CardTitle>
@@ -517,7 +529,7 @@ function SignupPageContent() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="absolute right-1 top-1 h-8 px-2 text-zinc-400 hover:text-zinc-100"
+                      className="absolute right-1 top-1 h-8 px-2 oc-secondary-text hover:oc-text"
                       onClick={() => setShowPassword((prev) => !prev)}
                       aria-label={showPassword ? "Ascunde parola" : "Arată parola"}
                     >
@@ -543,7 +555,7 @@ function SignupPageContent() {
               </Dialog>
 
               {importedCount > 0 ? (
-                <p className="text-sm font-medium text-emerald-700\">{importedCount} clienți importați cu succes</p>
+                <p className="text-sm font-medium oc-accent">{importedCount} clienți importați cu succes</p>
               ) : null}
             </section>
           ) : null}

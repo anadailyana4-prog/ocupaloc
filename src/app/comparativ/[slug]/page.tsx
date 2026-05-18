@@ -91,36 +91,36 @@ export default async function ComparativPage({ params }: PageProps) {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-14 text-zinc-100">
+    <main className="min-h-screen oc-bg px-6 py-14 oc-text">
       <Script id={`faq-schema-comparativ-${slug}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <div className="mx-auto max-w-5xl space-y-8">
         <header className="space-y-3">
           <h1 className="text-4xl font-bold tracking-tight">{meta.h1}</h1>
-          <p className="text-zinc-400">Comparativ simplu pentru saloane care vor cost predictibil și zero comision.</p>
+          <p className="oc-secondary-text">Comparativ simplu pentru saloane care vor cost predictibil și zero comision.</p>
         </header>
 
-        <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60">
+        <section className="overflow-hidden rounded-2xl border oc-border bg-white">
           <table className="w-full text-left text-sm">
-            <thead className="bg-zinc-800/70 text-zinc-200">
+            <thead className="oc-badge-bg oc-text">
               <tr>
                 <th className="px-4 py-3">Caracteristică</th>
                 <th className="px-4 py-3 text-emerald-300">OcupaLoc</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="border-t border-zinc-800">
+              <tr className="border-t oc-border">
                 <td className="px-4 py-3">Preț lunar</td>
                 <td className="px-4 py-3 font-semibold text-emerald-300">59,99 RON</td>
               </tr>
-              <tr className="border-t border-zinc-800">
+              <tr className="border-t oc-border">
                 <td className="px-4 py-3">Comision per programare</td>
                 <td className="px-4 py-3 font-semibold text-emerald-300">0 RON</td>
               </tr>
-              <tr className="border-t border-zinc-800">
+              <tr className="border-t oc-border">
                 <td className="px-4 py-3">Suport</td>
                 <td className="px-4 py-3 font-semibold text-emerald-300">În română, telefon</td>
               </tr>
-              <tr className="border-t border-zinc-800">
+              <tr className="border-t oc-border">
                 <td className="px-4 py-3">Setup</td>
                 <td className="px-4 py-3 font-semibold text-emerald-300">5 minute</td>
               </tr>
@@ -130,9 +130,9 @@ export default async function ComparativPage({ params }: PageProps) {
 
         <CalculatorComision />
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
+        <section className="rounded-2xl border oc-border bg-white p-6">
           <h2 className="text-2xl font-bold">Dezavantaje frecvente la platformele cu comision</h2>
-          <ul className="mt-3 space-y-2 text-zinc-300">
+          <ul className="mt-3 space-y-2 oc-text">
             {competitor.dezavantaje.map((item) => (
               <li key={item}>- {item}</li>
             ))}
@@ -142,14 +142,14 @@ export default async function ComparativPage({ params }: PageProps) {
         <section className="space-y-3">
           <h2 className="text-2xl font-bold">Întrebări frecvente</h2>
           {faqItems.map((item) => (
-            <article key={item.q} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+            <article key={item.q} className="rounded-xl border oc-border bg-white p-4">
               <h3 className="font-semibold">{item.q}</h3>
-              <p className="mt-1 text-zinc-400">{item.a}</p>
+              <p className="mt-1 oc-secondary-text">{item.a}</p>
             </article>
           ))}
         </section>
 
-        <Link href="/signup?start=1" className="inline-flex rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-500">
+        <Link href="/signup?start=1" className="inline-flex rounded-lg oc-primary px-6 py-3 font-semibold text-white">
           Treci la OcupaLoc fără comision
         </Link>
       </div>

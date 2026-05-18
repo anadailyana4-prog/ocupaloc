@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
+import { Suspense } from "react";
 import { Toaster } from "sonner";
 
 import { AnalyticsEvents } from "@/components/analytics/AnalyticsEvents";
@@ -30,6 +31,10 @@ export const metadata: Metadata = {
   description:
     "Software programări online pentru saloane beauty, frizerii, clinici și servicii. Preț fix 59,99 RON/lună, zero comision. Rezervări online în 30 de secunde.",
   keywords: [
+    "software de programari",
+    "program de programari",
+    "software programari online",
+    "sistem programari online",
     "programări online salon",
     "programari online saloane",
     "software programari salon",
@@ -50,13 +55,13 @@ export const metadata: Metadata = {
     siteName: "OcupaLoc",
     title: "OcupaLoc - Programări Online pentru Saloane, Clinici și Servicii",
     description: "Sistem de rezervări online pentru saloane beauty, frizerii, clinici și profesioniști independenți. Fără comision, 59,99 RON/lună.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "OcupaLoc - Programări online pentru saloane" }]
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "OcupaLoc - Programări online pentru saloane" }]
   },
   twitter: {
     card: "summary_large_image",
     title: "OcupaLoc - Programări Online Saloane",
     description: "Programări online pentru saloane beauty fără comision. Preț fix 59,99 RON/lună.",
-    images: ["/og-image.png"]
+    images: ["/og-image.svg"]
   },
   robots: {
     index: true,
@@ -79,7 +84,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     "@type": "Organization",
     name: "OcupaLoc",
     url: "https://ocupaloc.ro",
-    logo: "https://ocupaloc.ro/og-image.png",
+    logo: "https://ocupaloc.ro/og-image.svg",
     description: "Software programări online pentru saloane beauty, frizerii, manichiură și clinici din România.",
     areaServed: "RO",
     contactPoint: {
@@ -100,15 +105,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "OcupaLoc",
-    url: "https://ocupaloc.ro",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: "https://ocupaloc.ro/bucuresti/salon?q={search_term_string}"
-      },
-      "query-input": "required name=search_term_string"
-    }
+    url: "https://ocupaloc.ro"
   };
 
   return (
@@ -127,7 +124,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 function gtag(){dataLayer.push(arguments);}
                 window.gtag = gtag;
                 gtag('js', new Date());
-                gtag('config', '${gaId}');
+                gtag('config', '${gaId}', { send_page_view: false });
               `
             }}
           />
@@ -143,7 +140,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         ) : null}
       </head>
       <body className={`${jakarta.variable} ${cormorant.variable} min-h-screen bg-background font-sans text-foreground antialiased`}>
-        <AnalyticsEvents />
+        <Suspense fallback={null}>
+          <AnalyticsEvents />
+        </Suspense>
         <Header />
         {children}
         <Toaster

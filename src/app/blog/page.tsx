@@ -4,7 +4,13 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Blog OcupaLoc - Programari Online pentru Saloane",
   description:
-    "Articole pentru saloane beauty despre programari online, creștere fără comision, retenție și optimizare operațională cu software salon."
+    "Articole pentru saloane beauty despre programari online, creștere fără comision, retenție și optimizare operațională cu software salon.",
+  alternates: {
+    canonical: "/blog"
+  },
+  openGraph: {
+    url: "https://ocupaloc.ro/blog"
+  }
 };
 
 const posts = [
@@ -27,21 +33,21 @@ const posts = [
 
 export default function BlogIndexPage() {
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-14 text-zinc-100">
+    <main className="min-h-screen oc-bg px-6 py-14 oc-text">
       <div className="mx-auto max-w-4xl space-y-8">
         <header className="space-y-3">
           <h1 className="text-4xl font-bold tracking-tight">Blog despre programari online pentru saloane beauty</h1>
-          <p className="text-zinc-400">Resurse practice pentru frizerie, manichiură și cosmetică: procese mai bune, costuri mai mici, creștere fără comision.</p>
+          <p className="oc-secondary-text">Resurse practice pentru frizerie, manichiură și cosmetică: procese mai bune, costuri mai mici, creștere fără comision.</p>
         </header>
         <div className="space-y-4">
           {posts.map((post) => (
-            <article key={post.slug} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
+            <article key={post.slug} className="rounded-2xl border oc-border bg-white p-6">
               <h2 className="text-2xl font-semibold">
-                <Link href={`/blog/${post.slug}`} className="hover:text-indigo-300">
+                <Link href={`/blog/${post.slug}`} className="hover:oc-accent">
                   {post.title}
                 </Link>
               </h2>
-              <p className="mt-2 text-zinc-400">{post.excerpt}</p>
+              <p className="mt-2 oc-secondary-text">{post.excerpt}</p>
             </article>
           ))}
         </div>

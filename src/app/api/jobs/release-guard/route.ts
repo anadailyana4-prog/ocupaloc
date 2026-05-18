@@ -5,7 +5,7 @@ import { reportError } from "@/lib/observability";
 import { computeSloSnapshot } from "@/lib/slo-policy";
 
 function getGuardSecret(): string | undefined {
-  return process.env.RELEASE_GUARD_SECRET?.trim() || process.env.REMINDERS_CRON_SECRET?.trim() || undefined;
+  return process.env.RELEASE_GUARD_SECRET?.trim() || process.env.OWNER_OPS_CRON_SECRET?.trim() || undefined;
 }
 
 export async function GET(req: NextRequest) {

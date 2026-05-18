@@ -8,12 +8,45 @@ type CheckResult = {
   details?: string;
 };
 
+type HistoryLeakException = {
+  approved: boolean;
+  approvedBy: string;
+  approvedAt: string;
+  reason: string;
+  mitigation: string[];
+  commitHashes: string[];
+  expiresAt?: string;
+};
+
 const SUSPICIOUS_VALUE_PATTERNS: Array<{ key: string; regex: RegExp }> = [
   // Supabase service role is a JWT that should never be committed.
   { key: "SUPABASE_SERVICE_ROLE_KEY", regex: /eyJ[\w-]+\.[\w-]+\.[\w-]+/g },
   // Resend keys start with re_.
   { key: "RESEND_API_KEY", regex: /\bre_[A-Za-z0-9]{20,}\b/g }
 ];
+
+function loadHistoryLeakException(repoRoot: string): HistoryLeakException | null {
+  const file = join(repoRoot, "security", "secret-history-exception.json");
+  try {
+    const parsed = JSON.parse(readFileSync(file, "utf8")) as Partial<HistoryLeakException>;
+    if (!parsed || parsed.approved !== true) return null;
+    if (!parsed.approvedBy || !parsed.approvedAt || !parsed.reason) return null;
+    if (!Array.isArray(parsed.mitigation) || parsed.mitigation.length === 0) return null;
+    if (!Array.isArray(parsed.commitHashes) || parsed.commitHashes.length === 0) return null;
+
+    return {
+      approved: true,
+      approvedBy: parsed.approvedBy,
+      approvedAt: parsed.approvedAt,
+      reason: parsed.reason,
+      mitigation: parsed.mitigation,
+      commitHashes: parsed.commitHashes,
+      expiresAt: parsed.expiresAt
+    };
+  } catch {
+    return null;
+  }
+}
 
 function logResult(result: CheckResult) {
   const icon = result.ok ? "✅" : "❌";
@@ -120,12 +153,39 @@ async function run() {
       encoding: "utf8"
       }
     ).trim();
-    const hasHistoryLeak = output.length > 0;
-    results.push({
-      name: "Git history scan for secret-like values",
-      ok: !hasHistoryLeak,
-      details: hasHistoryLeak ? "❌ CRITICAL: ROTEȘTE CHEIA IMEDIAT" : undefined
-    });
+    const leakCommits = output
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const hasHistoryLeak = leakCommits.length > 0;
+
+    if (!hasHistoryLeak) {
+      results.push({
+        name: "Git history scan for secret-like values",
+        ok: true
+      });
+    } else {
+      const exception = loadHistoryLeakException(repoRoot);
+      const now = Date.now();
+      const expiresAtMs = exception?.expiresAt ? Date.parse(exception.expiresAt) : Number.NaN;
+      const isExpired = Number.isFinite(expiresAtMs) && now > expiresAtMs;
+      const allowedHashes = new Set(exception?.commitHashes ?? []);
+      const uncovered = leakCommits.filter((hash) => !allowedHashes.has(hash));
+
+      if (exception && !isExpired && uncovered.length === 0) {
+        results.push({
+          name: "Git history scan for secret-like values",
+          ok: true,
+          details: `Accepted by exception (${exception.approvedBy}) for known historical commits only`
+        });
+      } else {
+        results.push({
+          name: "Git history scan for secret-like values",
+          ok: false,
+          details: "❌ CRITICAL: ROTEȘTE CHEIA IMEDIAT"
+        });
+      }
+    }
   } catch (error: unknown) {
     const e = error as { stderr?: unknown; stdout?: unknown };
     const stderr = typeof e.stderr === "string" ? e.stderr : "";

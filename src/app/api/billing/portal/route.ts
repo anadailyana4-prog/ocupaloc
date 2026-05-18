@@ -4,6 +4,7 @@ import { getSiteUrl, isBillingEnabled } from "@/lib/billing/config";
 import { getOrCreateStripeCustomer } from "@/lib/billing/customer";
 import { getStripeClient } from "@/lib/billing/stripe";
 import { reportError } from "@/lib/observability";
+import { checkApiRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -62,6 +63,20 @@ export async function POST() {
 
     if (profError || !prof) {
       return NextResponse.redirect(new URL("/onboarding", siteUrl), 303);
+    }
+
+    const rateLimitKey = `billing:portal:prof:${String(prof.id)}`;
+    const rateLimit = await checkApiRateLimit(admin, rateLimitKey, 10, 10 * 60 * 1000);
+
+    if (!rateLimit.allowed) {
+      return NextResponse.redirect(
+        new URL(
+          "/dashboard?error=" +
+            encodeURIComponent("Ai făcut prea multe cereri către portalul de billing. Încearcă din nou în câteva minute."),
+          siteUrl
+        ),
+        303
+      );
     }
 
     const stripe = getStripeClient();

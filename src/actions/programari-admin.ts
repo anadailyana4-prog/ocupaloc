@@ -4,6 +4,7 @@ import { isBefore, parseISO } from "date-fns";
 import { formatInTimeZone, toDate } from "date-fns-tz";
 
 import { logBookingStatusEvent } from "@/lib/booking/status-events";
+import { markFirstBookingIfNeeded } from "@/lib/professional-milestones";
 import { notifyClientBookingRescheduledByProvider } from "@/lib/email/programare-notify";
 import { reportError } from "@/lib/observability";
 import { calcDataFinalProgramare } from "@/lib/slots";
@@ -90,6 +91,7 @@ export async function createStaffProgramare(input: {
   if (ins) return { ok: false as const, message: ins.message };
   if (inserted?.id) {
     await logBookingStatusEvent({ bookingId: inserted.id, status: "confirmat", source: "salon_manual" });
+    await markFirstBookingIfNeeded(admin, profId);
   }
   return { ok: true as const };
 }

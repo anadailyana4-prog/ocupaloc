@@ -3,10 +3,13 @@ import Link from "next/link";
 import Script from "next/script";
 
 export const metadata: Metadata = {
-  title: "Programări Online Salon | Software 59,99 RON/lună Fără Comision",
+  title: "Software Programari Salon | Program de Programari 59,99 RON/luna",
   description:
-    "Software românesc de programări pentru saloane beauty. Frizerie, manichiură, cosmetică. Fără comision, la 59,99 RON/lună.",
-  alternates: { canonical: "https://ocupaloc.ro/programari-online-salon" }
+    "Software de programari online pentru saloane beauty. Program de programari pentru frizerie, manichiura si cosmetica. Fara comision, 59,99 RON/luna.",
+  alternates: { canonical: "https://ocupaloc.ro/programari-online-salon" },
+  openGraph: {
+    url: "https://ocupaloc.ro/programari-online-salon"
+  }
 };
 
 const faqItems = [
@@ -34,6 +37,7 @@ const faqItems = [
 
 const relatedLinks = [
   { href: "/preturi", label: "Prețuri OcupaLoc" },
+  { href: "/software-programari-clinica", label: "Software programari clinica" },
   { href: "/software-programari-manichiura", label: "Software programări manichiură" },
   { href: "/aplicatie-programari-frizerie", label: "Aplicație programări frizerie" },
   { href: "/programari-online-cosmetica", label: "Programări online cosmetică" }
@@ -54,42 +58,42 @@ export default function ProgramariOnlineSalonPage() {
   };
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-14 text-zinc-100">
+    <main className="min-h-screen oc-bg px-6 py-14 pb-24 oc-text md:pb-14">
       <Script id="faq-schema-programari-online-salon" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <div className="mx-auto max-w-5xl space-y-12">
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
+        <section className="rounded-2xl border oc-border bg-white p-8">
           <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Programari online pentru salonul tău, fără comision</h1>
-          <p className="mt-4 max-w-3xl text-lg leading-relaxed text-zinc-300">
+          <p className="mt-4 max-w-3xl text-lg leading-relaxed oc-text">
             Dacă ai un software salon care simplifică rezervările, câștigi timp, reduci conversațiile repetitive și păstrezi 100% din încasări. OcupaLoc este
             soluția de programari online creată pentru saloane beauty din România: frizerie, manichiură, cosmetică și masaj. Preț fix 59,99 RON pe lună, fără comision
             la fiecare client nou.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/signup?start=1" data-cta-location="seo_programari_online_salon_hero_primary" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-500">
+            <Link href="/signup?start=1" data-cta-location="seo_programari_online_salon_hero_primary" className="rounded-lg oc-primary px-5 py-3 font-semibold text-white">
               Încearcă 14 zile gratis
             </Link>
-            <Link href="/signup?start=1" data-cta-location="seo_programari_online_salon_hero_secondary" className="rounded-lg border border-zinc-700 px-5 py-3 font-semibold text-zinc-200 hover:bg-zinc-800">
+            <Link href="/signup?start=1" data-cta-location="seo_programari_online_salon_hero_secondary" className="rounded-lg border oc-border px-5 py-3 font-semibold oc-text hover:oc-badge-bg">
               Creează cont acum
             </Link>
           </div>
         </section>
 
         <section className="grid gap-4 md:grid-cols-3">
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+          <article className="rounded-xl border oc-border bg-white p-5">
             <h2 className="text-xl font-semibold">Rezervări non-stop</h2>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+            <p className="mt-2 text-sm leading-relaxed oc-secondary-text">
               Clienții tăi pot face programari online în orice moment, inclusiv seara sau în weekend. Tu nu mai depinzi de telefon pentru fiecare rezervare.
             </p>
           </article>
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+          <article className="rounded-xl border oc-border bg-white p-5">
             <h2 className="text-xl font-semibold">Fără comision</h2>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+            <p className="mt-2 text-sm leading-relaxed oc-secondary-text">
               Cu 59,99 RON pe lună ai cost predictibil. Nu pierzi bani la fiecare client, ceea ce contează enorm când agenda începe să se umple.
             </p>
           </article>
-          <article className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+          <article className="rounded-xl border oc-border bg-white p-5">
             <h2 className="text-xl font-semibold">Setup rapid</h2>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+            <p className="mt-2 text-sm leading-relaxed oc-secondary-text">
               Adaugi servicii, program și link-ul public în câțiva pași. Un software salon bun trebuie să te ajute din prima zi, nu după săptămâni de training.
             </p>
           </article>
@@ -97,52 +101,52 @@ export default function ProgramariOnlineSalonPage() {
 
         <section className="rounded-2xl border border-emerald-700/40 bg-emerald-950/20 p-6">
           <h2 className="text-2xl font-bold">Cât economisești cu OcupaLoc</h2>
-          <p className="mt-3 leading-relaxed text-zinc-200">
+          <p className="mt-3 leading-relaxed oc-text">
             Dacă ai 60 de programari online într-o lună și plătești comision per rezervare, costul poate trece ușor de 600 RON. Cu OcupaLoc plătești 59,99 RON, fără
             comision. Diferența rămâne în business și o poți reinvesti în produse, training sau echipamente. Pe termen lung, un software salon cu preț fix te ajută
             să crești sănătos și să nu fii penalizat tocmai când ai cele mai multe programări.
           </p>
         </section>
 
-        <section className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
+        <section className="space-y-4 rounded-2xl border oc-border bg-white p-8">
           <h2 className="text-3xl font-bold tracking-tight">Ghid practic pentru programari online în salon</h2>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             Când un salon începe să crească, cel mai mare blocaj nu mai este neapărat lipsa cererii, ci modul în care este gestionată cererea. Dacă rezervările vin
             doar prin telefon și mesaje, fiecare zi devine o combinație între muncă efectivă cu clientul și administrare. Programari online înseamnă că transferi
             partea repetitivă către un flux clar: clientul vede serviciile, alege ora și primește confirmare. Pentru un software salon, acest flux este fundația.
           </p>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             În practică, clienții caută rapid pe Google, Instagram și TikTok. Când găsesc un salon care oferă programari online fără comision și informații clare despre
             servicii, au mai multă încredere. Nu mai trebuie să întrebe de fiecare dată „Cât costă?”, „Cât durează?” sau „Aveți loc joi?”. Toate aceste răspunsuri sunt
             deja în pagină. Conversia crește pentru că scade fricțiunea. Într-un business local, fiecare secundă contează între interes și acțiune.
           </p>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             O greșeală frecventă este folosirea mai multor sisteme: carnet pentru notițe, WhatsApp pentru confirmări și apeluri pentru modificări. Acest model merge cât
             timp ai puțini clienți, dar devine greu când apar ore de vârf. Un software salon centralizează agenda, datele clienților și istoricul. În loc să cauți
             conversații vechi, vezi instant cine vine, ce serviciu a rezervat și când revine. Pentru frizerie, manichiură și cosmetică, această claritate salvează ore
             întregi în fiecare săptămână.
           </p>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             Costul este, de asemenea, un factor decisiv. Mulți antreprenori acceptă comisioane mari pentru că par mici la început. Când faci calculele pe 6 sau 12 luni,
             comisionul depășește rapid un abonament fix. 59,99 RON este un prag simplu de înțeles și ușor de planificat. Nu ești surprins la final de lună și nu trebuie
             să ajustezi prețurile din cauza platformei. Un model fără comision îți păstrează marja și te ajută să scalezi când cererea crește.
           </p>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             Un alt avantaj major al programărilor online este disponibilitatea. Cea mai mare parte a rezervărilor se face în afara orelor clasice de lucru. Clienții
             verifică agenda seara, după serviciu, sau duminica pentru săptămâna următoare. Dacă salonul tău nu permite rezervare instant, acești clienți aleg concurența.
             Când ai software salon cu link public, transformi aceste momente în venit real, fără să fii prezent la telefon.
           </p>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             Pentru rezultate bune, începe cu o structură simplă: servicii clare, durate realiste, prețuri corecte și un program actualizat. Apoi pune link-ul de
             programari online în bio Instagram, în Google Business Profile și în mesajul de WhatsApp. Nu complica procesul cu multe opțiuni de la început. Clientul
             trebuie să găsească rapid ce caută și să finalizeze rezervarea în sub un minut. Această simplitate crește rata de finalizare.
           </p>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             Dacă vrei să treci de la un sistem bazat pe mesaje la unul predictibil, fă tranziția treptat. Menține câteva zile ambele variante, apoi direcționează toți
             clienții către linkul unic. În scurt timp vei vedea că agenda devine mai ordonată, no-show-urile sunt mai ușor de gestionat, iar discuțiile repetitive scad.
             Cu software salon potrivit, ai mai mult timp pentru calitatea serviciilor și pentru creșterea business-ului.
           </p>
-          <p className="leading-relaxed text-zinc-300">
+          <p className="leading-relaxed oc-text">
             În final, programari online nu sunt doar un trend, ci o infrastructură de lucru pentru salonul modern. Când combini preț fix 59,99 RON, model fără comision
             și experiență simplă pentru client, obții un avantaj competitiv real. Iar acest avantaj nu vine din promisiuni mari, ci din procese zilnice mai bune, care
             îți aduc încasări mai stabile, clienți mai mulțumiți și mai puțin stres operațional.
@@ -152,23 +156,65 @@ export default function ProgramariOnlineSalonPage() {
         <section className="space-y-4">
           <h2 className="text-3xl font-bold">Întrebări frecvente</h2>
           {faqItems.map((item) => (
-            <article key={item.question} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
+            <article key={item.question} className="rounded-xl border oc-border bg-white p-5">
               <h3 className="text-lg font-semibold">{item.question}</h3>
-              <p className="mt-2 leading-relaxed text-zinc-400">{item.answer}</p>
+              <p className="mt-2 leading-relaxed oc-secondary-text">{item.answer}</p>
             </article>
           ))}
         </section>
 
-        <section className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
+        <section className="rounded-xl border oc-border bg-white p-5">
           <h2 className="text-2xl font-bold">Vezi și:</h2>
           <div className="mt-3 flex flex-wrap gap-3">
             {relatedLinks.map((item) => (
-              <Link key={item.href} href={item.href} className="rounded-lg border border-zinc-700 px-4 py-2 text-sm hover:bg-zinc-800">
+              <Link key={item.href} href={item.href} className="rounded-lg border oc-border px-4 py-2 text-sm hover:oc-badge-bg">
                 {item.label}
               </Link>
             ))}
           </div>
         </section>
+
+        <section className="rounded-2xl border oc-border oc-badge-bg p-7 text-center">
+          <h2 className="text-3xl font-bold tracking-tight">Vrei să umpli agenda fără comision?</h2>
+          <p className="mx-auto mt-3 max-w-2xl leading-relaxed oc-secondary-text">
+            Pornești gratuit, publici linkul de rezervare în social media și vezi primele programări online într-un flux clar.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/signup?start=1"
+              data-cta-location="seo_programari_online_salon_final_primary"
+              className="rounded-lg oc-primary px-6 py-3 font-semibold text-white"
+            >
+              Încearcă 14 zile gratis
+            </Link>
+            <Link
+              href="/preturi"
+              data-cta-location="seo_programari_online_salon_final_preturi"
+              className="rounded-lg border oc-border bg-white px-6 py-3 font-semibold oc-text hover:oc-badge-bg"
+            >
+              Vezi prețul complet
+            </Link>
+          </div>
+        </section>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t oc-border bg-white/95 p-3 backdrop-blur md:hidden">
+        <div className="mx-auto flex max-w-5xl gap-2">
+          <Link
+            href="/signup?start=1"
+            data-cta-location="seo_programari_online_salon_mobile_sticky_primary"
+            className="inline-flex h-11 flex-1 items-center justify-center rounded-lg oc-primary px-4 text-sm font-semibold text-white"
+          >
+            Start gratuit
+          </Link>
+          <Link
+            href="/preturi"
+            data-cta-location="seo_programari_online_salon_mobile_sticky_preturi"
+            className="inline-flex h-11 flex-1 items-center justify-center rounded-lg border oc-border bg-white px-4 text-sm font-semibold oc-text"
+          >
+            Vezi preț
+          </Link>
+        </div>
       </div>
     </main>
   );

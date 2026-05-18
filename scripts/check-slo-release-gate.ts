@@ -1,11 +1,11 @@
 export {};
 
 const baseUrl = (process.env.SLO_BASE_URL ?? "https://ocupaloc.ro").replace(/\/$/, "");
-const secret = process.env.SLO_READ_SECRET ?? process.env.REMINDERS_CRON_SECRET;
+const secret = process.env.SLO_READ_SECRET;
 const windowMinutes = Number(process.env.SLO_WINDOW_MINUTES ?? "60");
 
 if (!secret) {
-  console.error("SLO_READ_SECRET or REMINDERS_CRON_SECRET is required");
+  console.error("SLO_READ_SECRET is required");
   process.exit(1);
 }
 

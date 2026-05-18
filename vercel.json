@@ -66,16 +66,16 @@
       "schedule": "15 10 * * *"
     },
     {
-      "path": "/api/jobs/sync-outreach-replies",
-      "schedule": "0 9 * * *"
+      "path": "/api/jobs/winback-cancel-reasons",
+      "schedule": "0 12 * * *"
     },
     {
-      "path": "/api/jobs/outreach-daily-report?force=true",
-      "schedule": "0 6 * * *"
+      "path": "/api/jobs/activation-nudge",
+      "schedule": "30 12 * * *"
     },
     {
-      "path": "/api/jobs/outreach-approval-reminders",
-      "schedule": "30 6 * * *"
+      "path": "/api/jobs/google-indexing",
+      "schedule": "15 7 * * *"
     }
   ]
 }

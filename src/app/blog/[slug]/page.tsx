@@ -149,46 +149,46 @@ export default async function BlogPostPage({ params }: PageProps) {
     publisher: {
       "@type": "Organization",
       name: "OcupaLoc",
-      logo: { "@type": "ImageObject", url: "https://ocupaloc.ro/og-image.png" }
+      logo: { "@type": "ImageObject", url: "https://ocupaloc.ro/og-image.svg" }
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": `https://ocupaloc.ro/blog/${post.slug}` }
   };
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-14 text-zinc-100">
+    <main className="min-h-screen oc-bg px-6 py-14 oc-text">
       <Script id={`article-schema-${post.slug}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
       <article className="mx-auto max-w-3xl space-y-8">
         <header className="space-y-3">
           <h1 className="text-4xl font-bold tracking-tight">{post.title}</h1>
-          <p className="text-zinc-400">{post.description}</p>
-          <time dateTime={post.publishedDate} className="text-sm text-zinc-500">
+          <p className="oc-secondary-text">{post.description}</p>
+          <time dateTime={post.publishedDate} className="text-sm oc-secondary-text">
             {new Date(post.publishedDate).toLocaleDateString("ro-RO", { year: "numeric", month: "long", day: "numeric" })}
           </time>
         </header>
 
         <section className="space-y-4">
           {paragraphs.map((paragraph) => (
-            <p key={paragraph.slice(0, 30)} className="leading-relaxed text-zinc-300">
+            <p key={paragraph.slice(0, 30)} className="leading-relaxed oc-text">
               {paragraph}
             </p>
           ))}
         </section>
 
-        <section className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">
+        <section className="rounded-xl border oc-border bg-white p-5">
           <h2 className="text-2xl font-bold">Vezi și:</h2>
           <div className="mt-3 flex flex-wrap gap-3">
             {post.relatedLandingLinks.map((item) => (
-              <Link key={item.href} href={item.href} className="rounded-lg border border-zinc-700 px-4 py-2 text-sm hover:bg-zinc-800">
+              <Link key={item.href} href={item.href} className="rounded-lg border oc-border px-4 py-2 text-sm hover:oc-badge-bg">
                 {item.label}
               </Link>
             ))}
           </div>
         </section>
 
-        <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/20 p-6 text-center">
+        <div className="rounded-2xl border oc-border oc-primary p-6 text-center">
           <h3 className="text-xl font-semibold">Vrei mai multe rezervări fără comision?</h3>
-          <p className="mt-2 text-sm text-zinc-300">Începe cu un software salon la 59,99 RON și mută toate programările în online.</p>
-          <Link href="/signup?start=1" data-cta-location={`blog_${post.slug}_cta`} className="mt-4 inline-flex rounded-lg bg-indigo-600 px-5 py-2.5 font-medium text-white hover:bg-indigo-500">
+          <p className="mt-2 text-sm oc-text">Începe cu un software salon la 59,99 RON și mută toate programările în online.</p>
+          <Link href="/signup?start=1" data-cta-location={`blog_${post.slug}_cta`} className="mt-4 inline-flex rounded-lg oc-primary px-5 py-2.5 font-medium text-white">
             Creează cont gratuit
           </Link>
         </div>
