@@ -1,9 +1,31 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 import { BookingCard } from "@/components/booking/BookingCard";
 import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
+
+const visualCards = [
+  {
+    title: "Pagină simplă pentru client",
+    description: "Clientul vede serviciile, alege data și ora, apoi trimite programarea din telefon.",
+    image: "/landing-booking-card.svg",
+    alt: "Ilustrație cu o pagină de rezervare OcupaLoc"
+  },
+  {
+    title: "Meniu clar pentru tine",
+    description: "În dashboard urmărești programările și statusul lor fără să cauți prin mesaje.",
+    image: "/landing-dashboard-card.svg",
+    alt: "Ilustrație cu dashboard de programări OcupaLoc"
+  },
+  {
+    title: "Confirmări pe email",
+    description: "După rezervare, clientul primește detaliile programării și linkurile utile.",
+    image: "/landing-confirmation-card.svg",
+    alt: "Ilustrație cu email de confirmare pentru programare"
+  }
+] as const;
 
 export function LandingPage() {
   return (
@@ -108,6 +130,46 @@ export function LandingPage() {
               <div key={item} className="rounded-lg border oc-border oc-badge-bg px-3 py-2 text-sm font-medium oc-text">
                 {item}
               </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] oc-accent">Cum arată în practică</p>
+              <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight md:text-4xl">
+                Câteva părți reale din flux, prezentate simplu.
+              </h2>
+              <p className="mt-4 text-base oc-secondary-text">
+                Fără promisiuni exagerate: doar pagina de rezervare, meniul de administrare și confirmările pe care le folosește produsul.
+              </p>
+            </div>
+            <Link
+              href="/demo-interactiv"
+              className="inline-flex h-11 items-center justify-center rounded-lg border oc-border bg-white px-5 text-sm font-semibold oc-accent transition-colors hover:oc-badge-bg"
+            >
+              Vezi demo interactiv
+            </Link>
+          </div>
+
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
+            {visualCards.map((card) => (
+              <article key={card.title} className="group overflow-hidden rounded-3xl border oc-border bg-white shadow-[0_20px_55px_-38px_rgba(15,118,110,0.45)]">
+                <div className="relative aspect-[1.35] overflow-hidden bg-[#EEF7F6]">
+                  <Image
+                    src={card.image}
+                    alt={card.alt}
+                    fill
+                    sizes="(min-width: 768px) 33vw, 100vw"
+                    className="object-cover transition duration-300 group-hover:scale-[1.03]"
+                  />
+                </div>
+                <div className="p-5">
+                  <h3 className="text-xl font-semibold tracking-tight oc-text">{card.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed oc-secondary-text">{card.description}</p>
+                </div>
+              </article>
             ))}
           </div>
         </section>
