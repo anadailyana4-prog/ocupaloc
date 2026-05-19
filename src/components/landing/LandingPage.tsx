@@ -73,15 +73,22 @@ export function LandingPage() {
                   href="/signup?start=1"
                   data-analytics="homepage_cta_signup"
                   data-cta-location="homepage_hero"
-                  className="inline-flex h-11 items-center justify-center rounded-lg oc-primary px-5 text-sm font-semibold transition-colors"
+                  className="inline-flex h-11 items-center justify-center rounded-lg oc-primary px-5 text-sm font-semibold text-white transition-colors"
                 >
                   Încearcă gratuit
+                </Link>
+                <Link
+                  href="/demo-interactiv"
+                  data-cta-location="homepage_hero_demo"
+                  className="inline-flex h-11 items-center justify-center rounded-lg border oc-border bg-white px-5 text-sm font-semibold oc-accent transition-colors hover:oc-badge-bg"
+                >
+                  Vezi demo fără cont
                 </Link>
                 <a
                   href="#cum-functioneaza"
                   className="inline-flex h-11 items-center justify-center rounded-lg border oc-border bg-white px-5 text-sm font-semibold oc-accent transition-colors hover:oc-badge-bg"
                 >
-                  Vezi cum funcționează
+                  Cum funcționează
                 </a>
               </div>
             </div>
@@ -310,16 +317,23 @@ export function LandingPage() {
                 href="/signup?start=1"
                 data-analytics="homepage_cta_signup"
                 data-cta-location="homepage_final_cta"
-                className="inline-flex h-11 items-center justify-center rounded-lg oc-primary px-5 text-sm font-semibold transition-colors"
+                className="inline-flex h-11 items-center justify-center rounded-lg oc-primary px-5 text-sm font-semibold text-white transition-colors"
               >
                 Încearcă gratuit
               </Link>
-              <a
-                href="#pret"
+              <Link
+                href="/demo-interactiv"
+                data-cta-location="homepage_final_demo"
                 className="inline-flex h-11 items-center justify-center rounded-lg border oc-border bg-white px-5 text-sm font-semibold oc-accent transition-colors hover:oc-badge-bg"
               >
-                Vezi prețul
-              </a>
+                Vezi demo fără cont
+              </Link>
+              <Link
+                href="/preturi"
+                className="inline-flex h-11 items-center justify-center rounded-lg border oc-border bg-white px-5 text-sm font-semibold oc-accent transition-colors hover:oc-badge-bg"
+              >
+                Prețuri complete
+              </Link>
             </div>
           </div>
         </section>
@@ -336,7 +350,8 @@ export function LandingPage() {
             <div>
               <p className="text-sm font-semibold oc-text">Produs</p>
               <ul className="mt-3 space-y-2 text-sm oc-secondary-text">
-                <li><a href="#pret" className="transition-colors hover:oc-text">Prețuri</a></li>
+                <li><Link href="/preturi" className="transition-colors hover:oc-text">Prețuri</Link></li>
+                <li><Link href="/demo-interactiv" className="transition-colors hover:oc-text">Demo fără cont</Link></li>
                 <li><a href="#cum-functioneaza" className="transition-colors hover:oc-text">Cum funcționează</a></li>
                 <li><a href="#pentru-cine" className="transition-colors hover:oc-text">Pentru cine</a></li>
               </ul>
@@ -377,7 +392,12 @@ type DemoLandingProps = {
   ctaHref: string;
 };
 
+function isBarberDemoType(businessType: string) {
+  return businessType === "Barber" || businessType === "Frizerie";
+}
+
 export function DemoLandingPreview({ businessName, city, businessType, services, ctaHref }: DemoLandingProps) {
+  const barberDemo = isBarberDemoType(businessType);
   const serviceLabels = services.map((service) => {
     if (typeof service === "string") return service;
     if (typeof service === "object" && service && "label" in service && typeof (service as { label?: unknown }).label === "string") {
@@ -397,12 +417,22 @@ export function DemoLandingPreview({ businessName, city, businessType, services,
         <p className="text-sm font-bold oc-text">🔔 DEMO - Acest business nu există, e doar exemplu pentru a vedea fluxul</p>
       </div>
       <div className="rounded-2xl oc-card border oc-border p-8 shadow-md">
-        <h1 className="text-4xl font-extrabold tracking-tight oc-text">
-          {businessName} - {city}
+        <h1 className="text-4xl font-extrabold tracking-tight oc-text md:text-5xl">
+          {businessName}
         </h1>
-        <p className="mt-3 oc-secondary-text">
-          Exemplu de pagină pentru {businessType.toLowerCase()} cu programări online și preț fix 59,99 RON/lună, fără comision.
+        <p className="mt-2 text-sm font-medium oc-accent">
+          {barberDemo ? `Programări online · demo personalizat · ${city}` : `${businessType} · ${city}`}
         </p>
+        <p className="mt-3 oc-secondary-text">
+          {barberDemo
+            ? "Pagina ta de rezervare — cu serviciul principal Tuns și restul meniului orientativ. Clienții se programează singuri; tu vezi doar orele ocupate."
+            : `Exemplu de pagină pentru ${businessType.toLowerCase()} cu programări online și preț fix 59,99 RON/lună, fără comision.`}
+        </p>
+        {barberDemo ? (
+          <p className="mt-4 text-xs oc-secondary-text">
+            Servicii exemplu (Tuns, Tuns + barbă, Contur) — le înlocuiești cu prețurile tale la crearea profilului.
+          </p>
+        ) : null}
         <div className="mt-6 grid gap-3 md:grid-cols-3">
           {serviceLabels.map((service) => (
             <div key={service} className="rounded-lg oc-card border oc-border p-4 text-sm oc-text shadow-sm">
@@ -410,9 +440,12 @@ export function DemoLandingPreview({ businessName, city, businessType, services,
             </div>
           ))}
         </div>
-        <Link href={ctaHref} className="mt-8 inline-flex rounded-lg oc-primary px-6 py-3 text-base font-semibold transition-colors">
-          Vreau și eu așa
+        <Link href={ctaHref} className="mt-8 inline-flex rounded-lg oc-primary px-6 py-3 text-base font-semibold text-white transition-colors">
+          Creează profilul tău — 14 zile gratuit
         </Link>
+        <p className="mt-3 text-sm oc-secondary-text">
+          Datele din demo se precompletează la înregistrare. După confirmarea emailului primești pagina ta live.
+        </p>
       </div>
       <BookingCard variant="demo" />
     </section>

@@ -2,6 +2,10 @@ import { env } from "@/lib/config/env";
 import { sendOutreachMailboxEmail } from "@/lib/outreach/mailbox-send";
 import { TELEGRAM_TOOL_COMMANDS } from "@/lib/outreach/ops-constants";
 import { generatePersonalizedOutreach } from "@/lib/outreach/personalization-engine";
+import {
+  handleTelegramBarberLead,
+  parseTelegramBarberLead
+} from "@/lib/outreach/telegram-barber-lead";
 import { reportError } from "@/lib/observability";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
@@ -345,7 +349,9 @@ export function buildHelpMessage() {
   return [
     "Comenzi: /emailpreview, /emailsend, /whatsapp",
     "Trimite direct un email@domeniu.ro pentru trimitere automata.",
-    "Trimite un numar de telefon (ex. 07xx xxx xxx) pentru link WhatsApp."
+    "Lead frizerie: 07xx xxx xxx | Nume frizerie",
+    "(demo + mesaj WhatsApp + link creare profil)",
+    "Doar telefon: link WhatsApp generic."
   ].join("\n");
 }
 
@@ -361,11 +367,13 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
 
   const directEmail = normalizeEmail(text);
   const directPhone = normalizePhone(text);
+  const barberLead = parseTelegramBarberLead(text);
   const isCommand = text.startsWith("/");
   const isDirectEmailMessage = SIMPLE_EMAIL_REGEX.test(directEmail);
   const isDirectPhoneMessage = SIMPLE_PHONE_REGEX.test(directPhone);
+  const isBarberLeadMessage = barberLead !== null;
 
-  if (!isCommand && !isDirectEmailMessage && !isDirectPhoneMessage) {
+  if (!isCommand && !isDirectEmailMessage && !isDirectPhoneMessage && !isBarberLeadMessage) {
     return { ok: true, ignored: true };
   }
 
@@ -385,8 +393,18 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
     return { ok: true, unauthorized: true };
   }
 
-  const command = isCommand ? parseCommand(text) : isDirectPhoneMessage ? "/whatsapp" : "/emailsend";
-  const effectiveText = isDirectEmailMessage ? `/emailsend ${directEmail}` : isDirectPhoneMessage ? directPhone : text;
+  const command = isCommand
+    ? parseCommand(text)
+    : isBarberLeadMessage
+      ? "/lead"
+      : isDirectPhoneMessage
+        ? "/whatsapp"
+        : "/emailsend";
+  const effectiveText = isDirectEmailMessage
+    ? `/emailsend ${directEmail}`
+    : isDirectPhoneMessage
+      ? directPhone
+      : text;
   let responseText: string;
 
   try {
@@ -404,6 +422,14 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
       case "/whatsapp":
         responseText = handleWhatsAppLinkForPhone(effectiveText);
         break;
+      case "/lead": {
+        const lead = parseTelegramBarberLead(effectiveText);
+        if (!lead) {
+          throw new Error("Format: 07xx xxx xxx | Nume frizerie");
+        }
+        responseText = await handleTelegramBarberLead(lead);
+        break;
+      }
       default:
         responseText = buildHelpMessage();
         break;

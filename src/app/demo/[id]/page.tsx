@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { DemoShareBar } from "@/components/demo/DemoShareBar";
 import { DemoLandingPreview } from "@/components/landing/LandingPage";
+import { DEMO_LINK_VALID_DAYS } from "@/lib/demo/constants";
+import { buildDemoSignupPath } from "@/lib/demo/create-demo";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -16,9 +19,14 @@ type DemoRow = {
   expires_at: string;
 };
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = createSupabaseServiceClient();
+  const { data } = await supabase.from("demos").select("business_name").eq("id", id).maybeSingle();
+  const name = (data as { business_name?: string } | null)?.business_name?.trim();
+
   return {
-    title: "Demo Salon",
+    title: name ? `Demo ${name} · OcupaLoc` : "Demo OcupaLoc",
     robots: {
       index: false,
       follow: false,
@@ -52,7 +60,7 @@ export default async function DemoByIdPage({ params }: PageProps) {
       <main className="min-h-screen oc-bg px-4 py-20 oc-text">
         <div className="mx-auto max-w-2xl rounded-2xl border oc-border bg-white p-8 text-center">
           <h1 className="text-3xl font-bold">Demo expirat, creează altul</h1>
-          <p className="mt-3 oc-secondary-text">Link-urile demo sunt valide 24 de ore.</p>
+          <p className="mt-3 oc-secondary-text">Link-urile demo sunt valide {DEMO_LINK_VALID_DAYS} zile.</p>
           <Link href="/demo-interactiv" className="mt-6 inline-flex rounded-lg oc-primary px-5 py-3 font-semibold text-white">
             Creează demo nou
           </Link>
@@ -61,6 +69,10 @@ export default async function DemoByIdPage({ params }: PageProps) {
     );
   }
 
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://ocupaloc.ro").replace(/\/$/, "");
+  const demoUrl = `${siteUrl}/demo/${demo.id}`;
+  const signupUrl = `${siteUrl}${buildDemoSignupPath(demo.id, demo.business_name)}`;
+
   return (
     <main className="min-h-screen oc-bg">
       <DemoLandingPreview
@@ -68,8 +80,9 @@ export default async function DemoByIdPage({ params }: PageProps) {
         city={demo.city}
         businessType={demo.business_type}
         services={Array.isArray(demo.services) ? demo.services : []}
-        ctaHref={`/signup?demo=${demo.id}&name=${encodeURIComponent(demo.business_name)}`}
+        ctaHref={buildDemoSignupPath(demo.id, demo.business_name)}
       />
+      <DemoShareBar demoUrl={demoUrl} signupUrl={signupUrl} businessName={demo.business_name} />
     </main>
   );
 }
