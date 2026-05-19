@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Prepare SUPABASE_DB_URL (pooler or direct) for pg_dump on GitHub Actions."""
+"""Prepare Supabase credentials for pg_dump on GitHub Actions (writes backup-pg.env)."""
 
+import shlex
 import socket
 import subprocess
 import sys
-from urllib.parse import quote, urlsplit, urlunsplit
+from pathlib import Path
+from urllib.parse import urlsplit
 
 
-def _resolve_ipv4(host: str) -> str | None:
+def _resolve_ipv4(host: str) -> str:
     try:
         infos = socket.getaddrinfo(host, 5432, socket.AF_INET, socket.SOCK_STREAM)
         if infos:
@@ -24,86 +26,59 @@ def _resolve_ipv4(host: str) -> str | None:
     except (subprocess.CalledProcessError, FileNotFoundError, OSError):
         pass
 
-    return None
+    raise SystemExit(f"Could not resolve IPv4 for {host}.")
 
 
-def _with_ipv4(db_url: str, port: int) -> str:
-    parts = urlsplit(db_url)
-    host = parts.hostname
-    if not host:
-        raise SystemExit("Invalid database URL: missing host.")
-
-    ipv4 = _resolve_ipv4(host)
-    if not ipv4:
-        raise SystemExit(f"Could not resolve IPv4 for {host}.")
-
-    user = quote(parts.username or "", safe="")
-    password = quote(parts.password or "", safe="")
-    auth = f"{user}:{password}@" if parts.username else ""
-    netloc = f"{auth}{ipv4}:{port}"
-    return urlunsplit((parts.scheme, netloc, parts.path or "/postgres", parts.query, parts.fragment))
-
-
-def prepare_backup_db_url(db_url: str) -> str:
+def prepare_backup_connection(db_url: str) -> dict[str, str]:
     parts = urlsplit(db_url)
     host = parts.hostname or ""
     username = parts.username or ""
     password = parts.password or ""
-    path = parts.path or "/postgres"
+    database = (parts.path or "/postgres").lstrip("/") or "postgres"
 
-    # Pooler URL (typical GitHub secret) -> session mode port 5432 for pg_dump.
-    if "pooler.supabase.com" in host and username.startswith("postgres."):
-        user_enc = quote(username, safe="")
-        pass_enc = quote(password, safe="")
-        session = urlunsplit(
-            (parts.scheme, f"{user_enc}:{pass_enc}@{host}:5432", path, parts.query, parts.fragment)
+    if not host or not username or not password:
+        raise SystemExit("SUPABASE_DB_URL must include host, user and password.")
+
+    port = parts.port or 5432
+
+    # pg_dump needs session pooler (5432), not transaction pooler (6543).
+    if "pooler.supabase.com" in host and port == 6543:
+        port = 5432
+
+    if not username.startswith("postgres."):
+        raise SystemExit(
+            "SUPABASE_DB_URL must be the Session pooler URI from Supabase "
+            "(user postgres.<project_ref>, port 5432). "
+            "Dashboard: Project Settings → Database → Connection string → Session mode."
         )
-        return _with_ipv4(session, 5432)
 
-    # Direct db.<ref>.supabase.co — try IPv4; fallback to session pooler on :5432.
-    if host.startswith("db.") and host.endswith(".supabase.co"):
-        project_ref = host.removeprefix("db.").removesuffix(".supabase.co")
-        direct = urlunsplit(
-            (
-                parts.scheme,
-                f"{quote(username, safe='')}:{quote(password, safe='')}@{host}:5432",
-                path,
-                parts.query,
-                parts.fragment,
-            )
-        )
-        try:
-            return _with_ipv4(direct, 5432)
-        except SystemExit:
-            pooler_user = username if username.startswith("postgres.") else f"postgres.{project_ref}"
-            user_enc = quote(pooler_user, safe="")
-            pass_enc = quote(password, safe="")
-            pooler_host = "aws-0-eu-central-1.pooler.supabase.com"
-            session = urlunsplit(
-                (parts.scheme, f"{user_enc}:{pass_enc}@{pooler_host}:5432", path, parts.query, parts.fragment)
-            )
-            return _with_ipv4(session, 5432)
+    if "pooler.supabase.com" not in host and not host.startswith("db."):
+        raise SystemExit(f"Unexpected database host: {host}")
 
-    if username.startswith("postgres."):
-        user_enc = quote(username, safe="")
-        pass_enc = quote(password, safe="")
-        pooler_host = host if "pooler.supabase.com" in host else "aws-0-eu-central-1.pooler.supabase.com"
-        session = urlunsplit(
-            (parts.scheme, f"{user_enc}:{pass_enc}@{pooler_host}:5432", path, parts.query, parts.fragment)
-        )
-        return _with_ipv4(session, 5432)
+    pg_host = _resolve_ipv4(host)
 
-    raise SystemExit(
-        "Unsupported SUPABASE_DB_URL. Use Supabase pooler URI (postgres.<ref> @ pooler.supabase.com)."
-    )
+    return {
+        "PGHOST": pg_host,
+        "PGPORT": str(port),
+        "PGUSER": username,
+        "PGPASSWORD": password,
+        "PGDATABASE": database,
+    }
+
+
+def write_env_file(path: Path, values: dict[str, str]) -> None:
+    lines = [f"{key}={shlex.quote(value)}" for key, value in values.items()]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("Usage: prepare-backup-db-url.py <database_url>", file=sys.stderr)
+    if len(sys.argv) not in (2, 3):
+        print("Usage: prepare-backup-db-url.py <database_url> [output.env]", file=sys.stderr)
         return 1
 
-    print(prepare_backup_db_url(sys.argv[1]))
+    out = Path(sys.argv[2] if len(sys.argv) == 3 else "backup-pg.env")
+    write_env_file(out, prepare_backup_connection(sys.argv[1]))
+    print(f"Wrote {out}")
     return 0
 
 

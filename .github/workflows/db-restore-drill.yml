@@ -36,8 +36,12 @@ jobs:
             exit 1
           fi
 
-          SOURCE_DB_URL=$(python3 scripts/prepare-backup-db-url.py "$SOURCE_DB_URL")
-          SUPABASE_STAGING_DB_URL=$(python3 scripts/prepare-backup-db-url.py "$SUPABASE_STAGING_DB_URL")
+          SOURCE_DB_URL=$(python3 scripts/normalize-supabase-db-url.py "$SOURCE_DB_URL")
+          SOURCE_DB_URL=$(python3 scripts/pg-url-for-ci.py "$SOURCE_DB_URL")
+          echo "SOURCE_DB_URL=$SOURCE_DB_URL" >> $GITHUB_ENV
+          STAGING_DB_URL=$(python3 scripts/normalize-supabase-db-url.py "$SUPABASE_STAGING_DB_URL")
+          STAGING_DB_URL=$(python3 scripts/pg-url-for-ci.py "$STAGING_DB_URL")
+          echo "STAGING_DB_URL=$STAGING_DB_URL" >> $GITHUB_ENV
 
           echo "SOURCE_DB_URL=$SOURCE_DB_URL" >> $GITHUB_ENV
           echo "STAGING_DB_URL=$SUPABASE_STAGING_DB_URL" >> $GITHUB_ENV
