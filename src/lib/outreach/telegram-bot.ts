@@ -4,6 +4,7 @@ import { TELEGRAM_TOOL_COMMANDS } from "@/lib/outreach/ops-constants";
 import { generatePersonalizedOutreach } from "@/lib/outreach/personalization-engine";
 import {
   handleTelegramBarberLead,
+  looksLikeBarberLeadAttempt,
   parseTelegramBarberLead
 } from "@/lib/outreach/telegram-barber-lead";
 import { reportError } from "@/lib/observability";
@@ -368,10 +369,11 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
   const directEmail = normalizeEmail(text);
   const directPhone = normalizePhone(text);
   const barberLead = parseTelegramBarberLead(text);
+  const isBarberLeadAttempt = looksLikeBarberLeadAttempt(text);
   const isCommand = text.startsWith("/");
   const isDirectEmailMessage = SIMPLE_EMAIL_REGEX.test(directEmail);
-  const isDirectPhoneMessage = SIMPLE_PHONE_REGEX.test(directPhone);
-  const isBarberLeadMessage = barberLead !== null;
+  const isDirectPhoneMessage = SIMPLE_PHONE_REGEX.test(directPhone) && !isBarberLeadAttempt;
+  const isBarberLeadMessage = barberLead !== null || isBarberLeadAttempt;
 
   if (!isCommand && !isDirectEmailMessage && !isDirectPhoneMessage && !isBarberLeadMessage) {
     return { ok: true, ignored: true };
@@ -386,7 +388,14 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
 
   if (!authorized) {
     try {
-      await sendTelegramMessage(chat.id, "Acces neautorizat.");
+      await sendTelegramMessage(
+        chat.id,
+        [
+          "Acces neautorizat.",
+          `ID-ul tau Telegram: ${from.id}`,
+          "Adauga-l in TELEGRAM_OWNER_IDS pe Vercel, apoi reincearca."
+        ].join("\n")
+      );
     } catch {
       // Ignore.
     }
@@ -425,7 +434,7 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
       case "/lead": {
         const lead = parseTelegramBarberLead(effectiveText);
         if (!lead) {
-          throw new Error("Format: 07xx xxx xxx Nume frizerie");
+          throw new Error("Exemplu: 0722123456 Barber Shop Victor (telefon, spatiu, nume)");
         }
         responseText = await handleTelegramBarberLead(lead);
         break;

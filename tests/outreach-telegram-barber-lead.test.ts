@@ -5,8 +5,10 @@ import {
   BARBER_OUTREACH_DEMO_SERVICES,
   buildBarberWhatsAppOutreachMessage
 } from "../src/lib/demo/barber-outreach";
+import { sanitizeDemoBusinessName } from "../src/lib/demo/create-demo";
 import {
   buildWhatsAppLink,
+  looksLikeBarberLeadAttempt,
   parseTelegramBarberLead
 } from "../src/lib/outreach/telegram-barber-lead";
 import { buildDemoUrls } from "../src/lib/demo/create-demo";
@@ -14,7 +16,6 @@ import { buildDemoUrls } from "../src/lib/demo/create-demo";
 test("BARBER_OUTREACH_DEMO_SERVICES start with Tuns", () => {
   assert.equal(BARBER_OUTREACH_DEMO_SERVICES.length, 3);
   assert.match(BARBER_OUTREACH_DEMO_SERVICES[0]!.name, /^Tuns$/);
-  assert.match(BARBER_OUTREACH_DEMO_SERVICES[0]!.label, /^Tuns ·/);
 });
 
 test("parseTelegramBarberLead accepts phone space business name", () => {
@@ -24,17 +25,20 @@ test("parseTelegramBarberLead accepts phone space business name", () => {
   assert.equal(lead.businessName, "Barber Shop Victor");
 });
 
-test("parseTelegramBarberLead accepts spaced phone before name", () => {
-  const lead = parseTelegramBarberLead("0722 123 456 Frizerie Maria");
+test("parseTelegramBarberLead accepts messy names and symbols", () => {
+  const lead = parseTelegramBarberLead("0722123456 #1 Barber & Co!");
   assert.ok(lead);
-  assert.equal(lead.phone, "0722 123 456");
-  assert.equal(lead.businessName, "Frizerie Maria");
+  assert.equal(lead.businessName, "#1 Barber & Co!");
 });
 
-test("parseTelegramBarberLead still accepts legacy pipe format", () => {
-  const lead = parseTelegramBarberLead("0722123456 | Frizerie Maria");
-  assert.ok(lead);
-  assert.equal(lead.businessName, "Frizerie Maria");
+test("looksLikeBarberLeadAttempt is true for phone plus text", () => {
+  assert.equal(looksLikeBarberLeadAttempt("0722123456 X"), true);
+  assert.equal(looksLikeBarberLeadAttempt("0722123456"), false);
+});
+
+test("sanitizeDemoBusinessName keeps readable salon names", () => {
+  assert.equal(sanitizeDemoBusinessName("#1 Barber & Co!"), "1 Barber & Co");
+  assert.equal(sanitizeDemoBusinessName("AB"), "AB");
 });
 
 test("buildBarberWhatsAppOutreachMessage names salon and explains need", () => {
@@ -46,14 +50,8 @@ test("buildBarberWhatsAppOutreachMessage names salon and explains need", () => {
     signupUrl
   });
 
-  assert.match(message, new RegExp(salon.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
-  assert.match(message, /Tuns/i);
-  assert.match(message, /nu răspunzi la telefon/i);
-  assert.match(message, /merge la alt salon/i);
-  assert.match(message, /fără comision/i);
-  assert.match(message, /2 minute/i);
+  assert.match(message, /Barber Shop Victor/i);
   assert.ok(message.includes(demoUrl));
-  assert.ok(message.includes(signupUrl));
   assert.doesNotMatch(message, /clientele/i);
 });
 

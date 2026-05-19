@@ -4,7 +4,21 @@ import { BARBER_OUTREACH_DEMO_SERVICES } from "@/lib/demo/barber-outreach";
 import { DEMO_LINK_VALID_MS } from "@/lib/demo/constants";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
-export const DEMO_BUSINESS_NAME_REGEX = /^[a-zA-Z0-9ăâîșțĂÂÎȘȚ\s\-]{3,40}$/;
+export const DEMO_BUSINESS_NAME_REGEX = /^[a-zA-Z0-9ăâîșțĂÂÎȘȚ\s\-'.&]{2,40}$/;
+
+/** Curăță numele pentru demo (Telegram poate trimite orice text). */
+export function sanitizeDemoBusinessName(raw: string): string {
+  const collapsed = raw.trim().replace(/\s+/g, " ");
+  if (!collapsed) return "Salon";
+
+  const safe = collapsed.replace(/[^a-zA-Z0-9ăâîșțĂÂÎȘȚ\s\-'.&]/gu, "").trim();
+  if (safe.length >= 2) return safe.slice(0, 40);
+
+  const lettersOnly = collapsed.replace(/[^\p{L}\p{N}]/gu, " ").replace(/\s+/g, " ").trim();
+  if (lettersOnly.length >= 2) return lettersOnly.slice(0, 40);
+
+  return "Salon";
+}
 
 export const DEMO_BUSINESS_TYPES = ["Frizerie", "Salon", "Manichiură", "Cosmetică", "Barber"] as const;
 export type DemoBusinessType = (typeof DEMO_BUSINESS_TYPES)[number];
@@ -81,7 +95,8 @@ export async function createDemoRecord(input: CreateDemoRecordInput) {
   if (!DEMO_CITIES.includes(city)) {
     return { ok: false as const, error: "Oraș invalid" };
   }
-  if (!DEMO_BUSINESS_NAME_REGEX.test(businessName)) {
+  const safeName = sanitizeDemoBusinessName(businessName);
+  if (!DEMO_BUSINESS_NAME_REGEX.test(safeName)) {
     return { ok: false as const, error: "Nume invalid" };
   }
   if (!Array.isArray(services) || services.length !== 3) {
@@ -109,7 +124,7 @@ export async function createDemoRecord(input: CreateDemoRecordInput) {
 
     const { error } = await supabase.from("demos").insert({
       id,
-      business_name: businessName,
+      business_name: safeName,
       business_type: businessType,
       city,
       services: normalizedServices,
@@ -133,7 +148,7 @@ export async function createDemoRecord(input: CreateDemoRecordInput) {
 /** Demo barber pentru outreach (servicii orientative, oraș default București). */
 export async function createBarberOutreachDemo(businessName: string) {
   return createDemoRecord({
-    businessName,
+    businessName: sanitizeDemoBusinessName(businessName),
     businessType: "Barber",
     city: "București",
     services: BARBER_OUTREACH_DEMO_SERVICES.map((s) => s.label)

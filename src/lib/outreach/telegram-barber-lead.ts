@@ -1,28 +1,46 @@
 import {
   buildDemoUrls,
   createBarberOutreachDemo,
-  DEMO_BUSINESS_NAME_REGEX
+  sanitizeDemoBusinessName
 } from "@/lib/demo/create-demo";
 import { buildBarberWhatsAppOutreachMessage } from "@/lib/demo/barber-outreach";
-
-const SIMPLE_PHONE_REGEX = /^\+?[0-9][0-9\s().-]{6,20}$/;
 
 export type TelegramBarberLeadInput = {
   phone: string;
   businessName: string;
 };
 
+function countPhoneDigits(phone: string) {
+  return phone.replace(/\D/g, "").length;
+}
+
 function validateBarberLead(phone: string, businessName: string): TelegramBarberLeadInput | null {
   const cleanedPhone = phone.trim();
   const cleanedName = businessName.trim();
   if (!cleanedPhone || !cleanedName) return null;
-  if (!SIMPLE_PHONE_REGEX.test(cleanedPhone)) return null;
-  if (!DEMO_BUSINESS_NAME_REGEX.test(cleanedName)) return null;
+
+  const digits = countPhoneDigits(cleanedPhone);
+  if (digits < 8 || digits > 15) return null;
+  if (cleanedName.length < 2) return null;
+
   return { phone: cleanedPhone, businessName: cleanedName };
 }
 
+/** Mesaj cu cifre + text (nu doar telefon) — tratăm ca lead, nu ignorăm. */
+export function looksLikeBarberLeadAttempt(text: string): boolean {
+  const trimmed = text.trim().replace(/[\n\r\t]+/g, " ");
+  if (trimmed.length < 10) return false;
+
+  const digits = countPhoneDigits(trimmed);
+  if (digits < 8) return false;
+
+  if (/^\+?[0-9\s().-]+$/.test(trimmed)) return false;
+
+  return trimmed.includes("|") || /\s/.test(trimmed);
+}
+
 export function parseTelegramBarberLead(text: string): TelegramBarberLeadInput | null {
-  const trimmed = text.trim();
+  const trimmed = text.trim().replace(/[\n\r\t]+/g, " ");
   if (!trimmed) return null;
 
   if (trimmed.includes("|")) {
@@ -30,11 +48,13 @@ export function parseTelegramBarberLead(text: string): TelegramBarberLeadInput |
       .split("|")
       .map((part) => part.trim())
       .filter(Boolean);
-    if (parts.length !== 2) return null;
-    return validateBarberLead(parts[0]!, parts[1]!);
+    if (parts.length < 2) return null;
+    const phone = parts[0]!;
+    const businessName = parts.slice(1).join(" ").trim();
+    return validateBarberLead(phone, businessName);
   }
 
-  const spaceSeparated = trimmed.match(/^([+0-9][0-9\s().-]*?)\s+([a-zA-ZăâîșțĂÂÎȘȚ].+)$/u);
+  const spaceSeparated = trimmed.match(/^([+\d][\d\s().-]+)\s+(.+)$/u);
   if (spaceSeparated) {
     return validateBarberLead(spaceSeparated[1]!, spaceSeparated[2]!);
   }
@@ -73,24 +93,25 @@ export function getOutreachSiteUrl() {
 }
 
 export async function handleTelegramBarberLead(lead: TelegramBarberLeadInput) {
-  const created = await createBarberOutreachDemo(lead.businessName);
+  const displayName = sanitizeDemoBusinessName(lead.businessName);
+  const created = await createBarberOutreachDemo(displayName);
   if (!created.ok) {
     throw new Error(created.error);
   }
 
   const siteUrl = getOutreachSiteUrl();
-  const { demoUrl, signupUrl } = buildDemoUrls(siteUrl, created.id, lead.businessName);
+  const { demoUrl, signupUrl } = buildDemoUrls(siteUrl, created.id, displayName);
   const whatsappMessage = buildBarberWhatsAppOutreachMessage({
-    businessName: lead.businessName,
+    businessName: displayName,
     demoUrl,
     signupUrl
   });
   const whatsappLink = buildWhatsAppLink(lead.phone, whatsappMessage);
 
   return [
-    `✅ ${lead.businessName}`,
+    `✅ ${displayName}`,
     "",
-    "📎 Demo (servicii orientative barber):",
+    "📎 Demo:",
     demoUrl,
     "",
     "👤 Creează profil:",
