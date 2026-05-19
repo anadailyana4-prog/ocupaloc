@@ -34,14 +34,11 @@ def pg_url_for_ci(db_url: str) -> str:
     if not host:
         return db_url
 
-    if "pooler.supabase.com" in host:
-        return db_url
-
     ipv4 = _resolve_ipv4_host(host)
     if not ipv4:
         print(
             f"Could not resolve IPv4 for {host}. "
-            "Set GitHub secret SUPABASE_POOLER_DB_URL (Session pooler, port 5432 or 6543).",
+            "Use SUPABASE_DIRECT_DB_URL (db.<project>.supabase.co:5432) in GitHub secrets.",
             file=sys.stderr,
         )
         raise SystemExit(1)
