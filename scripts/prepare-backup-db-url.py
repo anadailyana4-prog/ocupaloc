@@ -8,6 +8,19 @@ import sys
 from pathlib import Path
 from urllib.parse import urlsplit
 
+# Dashboard copy-paste often uses eu-central-1; production project is West EU (Ireland).
+CANONICAL_POOLER_HOST_BY_REF: dict[str, str] = {
+    "tffwoljimpdckvlogyqu": "aws-0-eu-west-1.pooler.supabase.com",
+    "zezhiteevqfgtmqedduq": "aws-0-eu-west-1.pooler.supabase.com",
+}
+
+
+def _canonical_pooler_host(username: str, host: str) -> str:
+    if "pooler.supabase.com" not in host or not username.startswith("postgres."):
+        return host
+    project_ref = username.split(".", 1)[1]
+    return CANONICAL_POOLER_HOST_BY_REF.get(project_ref, host)
+
 
 def _resolve_ipv4(host: str) -> str:
     try:
@@ -55,6 +68,7 @@ def prepare_backup_connection(db_url: str) -> dict[str, str]:
     if "pooler.supabase.com" not in host and not host.startswith("db."):
         raise SystemExit(f"Unexpected database host: {host}")
 
+    host = _canonical_pooler_host(username, host)
     pg_host = _resolve_ipv4(host)
 
     return {
