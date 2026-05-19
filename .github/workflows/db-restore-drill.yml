@@ -16,15 +16,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
       - name: Resolve source and staging DB URLs
         env:
+          SUPABASE_POOLER_DB_URL: ${{ secrets.SUPABASE_POOLER_DB_URL }}
           SUPABASE_DIRECT_DB_URL: ${{ secrets.SUPABASE_DIRECT_DB_URL }}
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           SUPABASE_STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
         run: |
-          SOURCE_DB_URL="${SUPABASE_DIRECT_DB_URL:-$SUPABASE_DB_URL}"
+          SOURCE_DB_URL="${SUPABASE_POOLER_DB_URL:-${SUPABASE_DIRECT_DB_URL:-$SUPABASE_DB_URL}}"
           if [ -z "$SOURCE_DB_URL" ]; then
-            echo "Missing SUPABASE_DIRECT_DB_URL or SUPABASE_DB_URL secret."
+            echo "Missing SUPABASE_POOLER_DB_URL, SUPABASE_DIRECT_DB_URL, or SUPABASE_DB_URL secret."
             exit 1
           fi
 
@@ -33,17 +37,8 @@ jobs:
             exit 1
           fi
 
-          case "$SOURCE_DB_URL" in
-            *pooler.supabase.com:6543*)
-              SOURCE_DB_URL=$(python3 scripts/normalize-supabase-db-url.py "$SOURCE_DB_URL")
-              ;;
-          esac
-
-          case "$SUPABASE_STAGING_DB_URL" in
-            *pooler.supabase.com:6543*)
-              SUPABASE_STAGING_DB_URL=$(python3 scripts/normalize-supabase-db-url.py "$SUPABASE_STAGING_DB_URL")
-              ;;
-          esac
+          SOURCE_DB_URL=$(python3 scripts/pg-url-for-ci.py "$SOURCE_DB_URL")
+          SUPABASE_STAGING_DB_URL=$(python3 scripts/pg-url-for-ci.py "$SUPABASE_STAGING_DB_URL")
 
           echo "SOURCE_DB_URL=$SOURCE_DB_URL" >> $GITHUB_ENV
           echo "STAGING_DB_URL=$SUPABASE_STAGING_DB_URL" >> $GITHUB_ENV
