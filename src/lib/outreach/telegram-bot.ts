@@ -349,7 +349,7 @@ export function buildHelpMessage() {
   return [
     "Comenzi: /emailpreview, /emailsend, /whatsapp",
     "Trimite direct un email@domeniu.ro pentru trimitere automata.",
-    "Lead frizerie: 07xx xxx xxx | Nume frizerie",
+    "Lead frizerie: 07xx xxx xxx Nume frizerie",
     "(demo + mesaj WhatsApp + link creare profil)",
     "Doar telefon: link WhatsApp generic."
   ].join("\n");
@@ -425,7 +425,7 @@ export async function handleTelegramUpdate(update: TelegramUpdate) {
       case "/lead": {
         const lead = parseTelegramBarberLead(effectiveText);
         if (!lead) {
-          throw new Error("Format: 07xx xxx xxx | Nume frizerie");
+          throw new Error("Format: 07xx xxx xxx Nume frizerie");
         }
         responseText = await handleTelegramBarberLead(lead);
         break;

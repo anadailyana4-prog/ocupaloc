@@ -17,8 +17,22 @@ test("BARBER_OUTREACH_DEMO_SERVICES start with Tuns", () => {
   assert.match(BARBER_OUTREACH_DEMO_SERVICES[0]!.label, /^Tuns ·/);
 });
 
-test("parseTelegramBarberLead accepts phone and business name", () => {
-  const lead = parseTelegramBarberLead("0722 123 456 | Frizerie Maria");
+test("parseTelegramBarberLead accepts phone space business name", () => {
+  const lead = parseTelegramBarberLead("0722123456 Barber Shop Victor");
+  assert.ok(lead);
+  assert.equal(lead.phone, "0722123456");
+  assert.equal(lead.businessName, "Barber Shop Victor");
+});
+
+test("parseTelegramBarberLead accepts spaced phone before name", () => {
+  const lead = parseTelegramBarberLead("0722 123 456 Frizerie Maria");
+  assert.ok(lead);
+  assert.equal(lead.phone, "0722 123 456");
+  assert.equal(lead.businessName, "Frizerie Maria");
+});
+
+test("parseTelegramBarberLead still accepts legacy pipe format", () => {
+  const lead = parseTelegramBarberLead("0722123456 | Frizerie Maria");
   assert.ok(lead);
   assert.equal(lead.businessName, "Frizerie Maria");
 });

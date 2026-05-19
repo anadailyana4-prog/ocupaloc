@@ -64,7 +64,7 @@ async function main() {
   console.log("Telegram tools setup finalizat (email + WhatsApp + lead barber).");
   console.log(`Webhook: ${webhookUrl}`);
   console.log(`Comenzi setate: ${TELEGRAM_TOOL_COMMANDS.length}`);
-  console.log("Lead barber in chat: 07xx xxx xxx | Nume frizerie");
+  console.log("Lead barber in chat: 07xx xxx xxx Nume frizerie");
 }
 
 void main();

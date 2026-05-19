@@ -14,5 +14,5 @@ test("telegram help message lists email and whatsapp commands", () => {
 
   assert.match(help, /email/i);
   assert.match(help, /whatsapp/i);
-  assert.match(help, /07xx.*\|.*frizerie/i);
+  assert.match(help, /07xx.*nume frizerie/i);
 });

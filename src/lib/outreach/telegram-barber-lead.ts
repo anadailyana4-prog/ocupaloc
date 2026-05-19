@@ -12,23 +12,34 @@ export type TelegramBarberLeadInput = {
   businessName: string;
 };
 
+function validateBarberLead(phone: string, businessName: string): TelegramBarberLeadInput | null {
+  const cleanedPhone = phone.trim();
+  const cleanedName = businessName.trim();
+  if (!cleanedPhone || !cleanedName) return null;
+  if (!SIMPLE_PHONE_REGEX.test(cleanedPhone)) return null;
+  if (!DEMO_BUSINESS_NAME_REGEX.test(cleanedName)) return null;
+  return { phone: cleanedPhone, businessName: cleanedName };
+}
+
 export function parseTelegramBarberLead(text: string): TelegramBarberLeadInput | null {
   const trimmed = text.trim();
-  if (!trimmed.includes("|")) return null;
+  if (!trimmed) return null;
 
-  const parts = trimmed
-    .split("|")
-    .map((part) => part.trim())
-    .filter(Boolean);
+  if (trimmed.includes("|")) {
+    const parts = trimmed
+      .split("|")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    if (parts.length !== 2) return null;
+    return validateBarberLead(parts[0]!, parts[1]!);
+  }
 
-  if (parts.length !== 2) return null;
+  const spaceSeparated = trimmed.match(/^([+0-9][0-9\s().-]*?)\s+([a-zA-ZăâîșțĂÂÎȘȚ].+)$/u);
+  if (spaceSeparated) {
+    return validateBarberLead(spaceSeparated[1]!, spaceSeparated[2]!);
+  }
 
-  const [phone, businessName] = parts;
-  if (!phone || !businessName) return null;
-  if (!SIMPLE_PHONE_REGEX.test(phone)) return null;
-  if (!DEMO_BUSINESS_NAME_REGEX.test(businessName)) return null;
-
-  return { phone, businessName };
+  return null;
 }
 
 export { buildBarberWhatsAppOutreachMessage };
