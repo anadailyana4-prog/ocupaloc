@@ -30,10 +30,18 @@ def _resolve_ipv4_host(host: str) -> str | None:
 def pg_url_for_ci(db_url: str) -> str:
     parts = urlsplit(db_url)
     host = parts.hostname
-    port = parts.port or 5432
     if not host:
         return db_url
 
+    if not (host.startswith("db.") and host.endswith(".supabase.co")):
+        print(
+            f"Expected direct host db.<project>.supabase.co, got {host}. "
+            "Run normalize-supabase-db-url.py first if the secret is a pooler URL.",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
+
+    port = 5432
     ipv4 = _resolve_ipv4_host(host)
     if not ipv4:
         print(

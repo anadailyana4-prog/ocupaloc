@@ -30,7 +30,8 @@ jobs:
             exit 1
           fi
 
-          # GitHub runners often fail on IPv6; resolve db.*.supabase.co to IPv4.
+          # Pooler secret -> direct :5432; then IPv4 for GitHub (no IPv6).
+          DB_URL=$(python3 scripts/normalize-supabase-db-url.py "$DB_URL")
           DB_URL=$(python3 scripts/pg-url-for-ci.py "$DB_URL")
           echo "DB_URL=$DB_URL" >> $GITHUB_ENV
           echo "PGSSLMODE=require" >> $GITHUB_ENV
