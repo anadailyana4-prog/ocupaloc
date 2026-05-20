@@ -1,11 +1,18 @@
 import { createClient } from "@supabase/supabase-js";
 import type { MetadataRoute } from "next";
 
-const ORASE = ["bucuresti", "cluj-napoca", "timisoara", "iasi", "constanta", "brasov", "sibiu", "oradea"] as const;
+const ORASE = ["bucuresti", "cluj-napoca", "timisoara", "iasi", "constanta", "brasov", "sibiu", "oradea", "craiova", "galati", "ploiesti", "buzau", "satu-mare", "bacau", "pitesti"] as const;
 const BLOG_SLUGS = [
+  "ghid-seo-saloane-romania",
+  "cum-sa-cresti-salon-fara-buget",
+  "retentie-clienti-salon",
+  "ghid-fiscal-salon-romania",
   "fresha-cat-costa-romania",
   "cum-sa-reduci-anularile",
-  "telefon-vs-programari-online"
+  "telefon-vs-programari-online",
+  "alternativa-booksy-romania",
+  "programari-online-fara-comision",
+  "software-programari-cabinet-medic"
 ] as const;
 const COMPARATIV_SLUGS = ["fresha", "treatwell", "booksy", "stailer"] as const;
 const ORASE_LOCALE = ["bucuresti", "cluj-napoca", "timisoara", "iasi", "constanta", "brasov", "oradea", "sibiu"] as const;
@@ -23,7 +30,11 @@ const HIGH_INTENT_ROUTES = new Set([
   "/programari-online-coafor",
   "/programari-online-spa-masaj",
   "/programari-online-nutritionist",
-  "/preturi"
+  "/preturi",
+  "/ghid-programari-salon",
+  "/cazuri-de-succes",
+  "/intrebari-frecvente",
+  "/resurse"
 ]);
 
 function getStaticPriority(route: string): number {
@@ -49,16 +60,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticPages: MetadataRoute.Sitemap = [
     "",
-    "/preturi",
     "/despre",
     "/termeni",
     "/confidentialitate",
     "/cookies",
-    "/gdpr",
+    "/changelog",
     "/suport",
     "/demo-interactiv",
     "/business-demo",
     "/blog",
+    "/ghid-programari-salon",
+    "/cazuri-de-succes",
+    "/intrebari-frecvente",
+    "/resurse",
     "/programari-online-salon",
     "/alternativa-fresha-romania",
     "/software-programari-manichiura",
@@ -69,6 +83,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/programari-online-coafor",
     "/programari-online-spa-masaj",
     "/programari-online-nutritionist",
+    "/preturi",
     ...COMPARATIV_SLUGS.map((slug) => `/comparativ/${slug}`),
     ...ORASE_LOCALE.flatMap((oras) => SERVICII_LOCALE.map((serviciu) => `/${oras}/${serviciu}`)),
     ...BLOG_SLUGS.map((slug) => `/blog/${slug}`),
