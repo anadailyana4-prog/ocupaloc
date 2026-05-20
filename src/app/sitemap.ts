@@ -11,6 +11,8 @@ const COMPARATIV_SLUGS = ["fresha", "treatwell", "booksy", "stailer"] as const;
 const ORASE_LOCALE = ["bucuresti", "cluj-napoca", "timisoara", "iasi", "constanta", "brasov", "oradea", "sibiu"] as const;
 const SERVICII_LOCALE = ["frizerie", "salon", "manichiura", "cosmetica", "barber"] as const;
 const HIGH_INTENT_ROUTES = new Set([
+  "/demo-interactiv",
+  "/business-demo",
   "/programari-online-salon",
   "/alternativa-fresha-romania",
   "/software-programari-manichiura",
@@ -54,6 +56,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/cookies",
     "/gdpr",
     "/suport",
+    "/demo-interactiv",
+    "/business-demo",
     "/blog",
     "/programari-online-salon",
     "/alternativa-fresha-romania",
@@ -75,9 +79,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: getStaticPriority(route)
   }));
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!supabaseUrl || !serviceRole) {
+    return staticPages;
+  }
+
+  try {
+    const parsed = new URL(supabaseUrl);
+    if (parsed.protocol !== "https:" || !parsed.hostname.endsWith(".supabase.co")) {
+      return staticPages;
+    }
+  } catch {
     return staticPages;
   }
 

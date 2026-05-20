@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 """Prepare Supabase credentials for pg_dump on GitHub Actions (writes backup-pg.env)."""
 
+import os
 import shlex
 import socket
 import subprocess
 import sys
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 # Dashboard copy-paste often uses eu-central-1; production project is West EU (Ireland).
 CANONICAL_POOLER_HOST_BY_REF: dict[str, str] = {
     "tffwoljimpdckvlogyqu": "aws-0-eu-west-1.pooler.supabase.com",
     "zezhiteevqfgtmqedduq": "aws-0-eu-west-1.pooler.supabase.com",
+}
+CANONICAL_POOLER_IPV4_BY_HOST: dict[str, str] = {
+    "aws-0-eu-west-1.pooler.supabase.com": "34.241.16.247",
 }
 
 
@@ -39,14 +43,18 @@ def _resolve_ipv4(host: str) -> str:
     except (subprocess.CalledProcessError, FileNotFoundError, OSError):
         pass
 
+    fallback = CANONICAL_POOLER_IPV4_BY_HOST.get(host)
+    if fallback:
+        return fallback
+
     raise SystemExit(f"Could not resolve IPv4 for {host}.")
 
 
 def prepare_backup_connection(db_url: str) -> dict[str, str]:
     parts = urlsplit(db_url)
     host = parts.hostname or ""
-    username = parts.username or ""
-    password = parts.password or ""
+    username = unquote(parts.username or "")
+    password = unquote(parts.password or "")
     database = (parts.path or "/postgres").lstrip("/") or "postgres"
 
     if not host or not username or not password:
@@ -58,10 +66,16 @@ def prepare_backup_connection(db_url: str) -> dict[str, str]:
     if "pooler.supabase.com" in host and port == 6543:
         port = 5432
 
+    # Session pooler auth uses postgres.<project_ref>, not bare "postgres".
+    project_ref = os.environ.get("SUPABASE_PROJECT_REF", "").strip()
+    if "pooler.supabase.com" in host and username == "postgres" and project_ref:
+        username = f"postgres.{project_ref}"
+
     if not username.startswith("postgres."):
         raise SystemExit(
             "SUPABASE_DB_URL must be the Session pooler URI from Supabase "
-            "(user postgres.<project_ref>, port 5432). "
+            "(user postgres.<project_ref>, port 5432), or use user `postgres` on the pooler "
+            "together with env SUPABASE_PROJECT_REF. "
             "Dashboard: Project Settings → Database → Connection string → Session mode."
         )
 
