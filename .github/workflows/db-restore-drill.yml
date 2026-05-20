@@ -16,8 +16,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Install PostgreSQL client 17
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
 
       - name: Resolve source and staging DB URLs
         env:
