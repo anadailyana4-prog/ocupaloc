@@ -109,7 +109,7 @@ jobs:
           echo "Restored counts: programari=$programari_count profesionisti=$profesionisti_count subscriptions=$subscriptions_count"
 
       - name: Upload restore drill artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: db-restore-drill-${{ github.run_id }}
           path: backups/
