@@ -173,7 +173,7 @@ export default async function OwnerSettingsPage({
           <button
             type="submit"
             disabled={ownerAdmin.role !== "owner"}
-            className="px-3 py-2 rounded-lg border border-amber-500/40 bg-amber-500/20 text-amber-100 disabled:opacity-50"
+            className="px-3 py-2 rounded-lg border border-oc-amber/40 bg-oc-amber/20 text-oc-amber-light disabled:opacity-50"
           >
             Invite/Promote Admin
           </button>

@@ -37,7 +37,7 @@ jobs:
             echo "Missing SUPABASE_DIRECT_DB_URL or SUPABASE_DB_URL secret."
             exit 1
           fi
-
+          # Must be Session pooler URI user postgres.<ref> + database password (not CLI cli_login token).
           python3 scripts/prepare-backup-db-url.py "$DB_URL" backup-pg.env
 
       - name: Dump schema + data

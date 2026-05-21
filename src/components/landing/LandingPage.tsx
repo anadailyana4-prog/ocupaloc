@@ -20,9 +20,9 @@ export function LandingPage() {
             <a href="#pentru-cine" className="transition-colors hover:oc-text">
               Pentru cine este
             </a>
-            <a href="#pret" className="transition-colors hover:oc-text">
+            <Link href="/preturi" className="transition-colors hover:oc-text">
               Preț
-            </a>
+            </Link>
             <a href="#intrebari" className="transition-colors hover:oc-text">
               Întrebări
             </a>
@@ -116,6 +116,52 @@ export function LandingPage() {
                 {item}
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 pb-10 md:pb-14">
+          <div className="max-w-3xl">
+            <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">Încredere de la profesioniști din România</h2>
+            <p className="mt-3 text-base oc-secondary-text">
+              OcupaLoc este gândit pentru saloane, cabinete și antreprenori locali care vor programări online clare, în limba română, fără comision per
+              rezervare.
+            </p>
+          </div>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            {[
+              {
+                quote: "În sfârșit am un link de rezervare pe care îl trimit direct pe WhatsApp — nu mai stau să explic orele la telefon.",
+                attr: "Antreprenor servicii locale"
+              },
+              {
+                quote: "Prețul fix ne ajută la buget: știm luna asta exact ce plătim, indiferent câte programări primim.",
+                attr: "Salon beauty, oraș mediu"
+              },
+              {
+                quote: "Am trecut de la mesaje împrăștiate la o listă clară de programări, cu confirmări pentru client.",
+                attr: "Profesionist independent"
+              }
+            ].map((t) => (
+              <blockquote key={t.quote} className="oc-card border oc-border p-5 shadow-sm">
+                <p className="text-sm leading-relaxed oc-text">&ldquo;{t.quote}&rdquo;</p>
+                <footer className="mt-3 text-xs font-medium oc-secondary-text">— {t.attr}</footer>
+              </blockquote>
+            ))}
+          </div>
+          <div className="mt-8 rounded-2xl border oc-border oc-badge-bg p-5 md:flex md:items-center md:justify-between md:gap-6">
+            <div>
+              <p className="text-sm font-semibold oc-accent">Exemplu: pagina ta publică de programări</p>
+              <p className="mt-1 text-sm oc-secondary-text">
+                Vezi în demo cum arată linkul pe care îl trimiți clienților — același flux cap-coadă, fără cont pentru test.
+              </p>
+            </div>
+            <Link
+              href="/demo-interactiv"
+              data-cta-location="homepage_social_proof_demo"
+              className="mt-4 inline-flex h-11 shrink-0 items-center justify-center rounded-lg oc-primary px-5 text-sm font-semibold text-white transition-colors md:mt-0"
+            >
+              Deschide demo fără cont
+            </Link>
           </div>
         </section>
 
@@ -240,7 +286,12 @@ export function LandingPage() {
               Încearcă 14 zile gratis
             </Link>
 
-            <p className="mt-3 text-xs oc-secondary-text">Model clar: un abonament lunar fix pentru business-ul tău.</p>
+            <p className="mt-3 text-xs oc-secondary-text">
+              Model clar: un abonament lunar fix pentru business-ul tău. Poți anula oricând, fără penalizări — vezi condițiile pe pagina de prețuri.
+            </p>
+            <Link href="/preturi" className="mt-3 inline-flex text-sm font-semibold oc-accent underline decoration-oc-teal/30 underline-offset-4">
+              Toate detaliile despre preț și trial →
+            </Link>
           </div>
         </section>
 
@@ -295,7 +346,7 @@ export function LandingPage() {
               <summary className="cursor-pointer text-sm font-semibold oc-text">Cum iau legătura cu voi?</summary>
               <p className="mt-3 text-sm oc-secondary-text">
                 Ne poți scrie la{" "}
-                <a href={CONTACT_MAILTO} className="font-semibold oc-accent underline decoration-[#0F766E]/40 underline-offset-2">
+                <a href={CONTACT_MAILTO} className="font-semibold oc-accent underline decoration-oc-teal/40 underline-offset-2">
                   {CONTACT_EMAIL}
                 </a>
                 .

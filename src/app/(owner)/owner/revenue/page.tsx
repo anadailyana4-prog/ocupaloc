@@ -21,13 +21,13 @@ export default async function OwnerRevenuePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-lg border border-amber-700/30 bg-amber-900/20 p-4">
-          <p className="text-xs font-semibold text-amber-300 uppercase">MRR</p>
-          <p className="text-2xl font-bold text-amber-100 mt-2">{stats.mrrRon.toFixed(2)} RON</p>
+        <div className="rounded-lg border border-oc-amber/30 bg-oc-amber/10 p-4">
+          <p className="text-xs font-semibold text-oc-amber-light uppercase">MRR</p>
+          <p className="text-2xl font-bold text-oc-amber-light mt-2">{stats.mrrRon.toFixed(2)} RON</p>
         </div>
-        <div className="rounded-lg border border-amber-700/30 bg-amber-900/20 p-4">
-          <p className="text-xs font-semibold text-amber-300 uppercase">ARR</p>
-          <p className="text-2xl font-bold text-amber-100 mt-2">{stats.arrRon.toFixed(2)} RON</p>
+        <div className="rounded-lg border border-oc-amber/30 bg-oc-amber/10 p-4">
+          <p className="text-xs font-semibold text-oc-amber-light uppercase">ARR</p>
+          <p className="text-2xl font-bold text-oc-amber-light mt-2">{stats.arrRon.toFixed(2)} RON</p>
         </div>
         <div className="rounded-lg border border-emerald-700/30 bg-emerald-900/20 p-4">
           <p className="text-xs font-semibold text-emerald-300 uppercase">Trial to Paid</p>

@@ -7,10 +7,9 @@
  * Cron: Mon 08:00 via /api/jobs/founder-fleet-digest
  */
 
+import { BILLING_TRIAL_DAYS } from "@/lib/billing/config";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { reportError } from "@/lib/observability";
-
-const BILLING_TRIAL_DAYS = 30;
 
 function escapeHtml(v: string): string {
   return v

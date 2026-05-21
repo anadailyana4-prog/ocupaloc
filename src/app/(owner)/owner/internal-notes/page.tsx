@@ -36,13 +36,13 @@ export default async function OwnerInternalNotesPage() {
               <div className="mt-2 flex items-center justify-between">
                 <div className="flex gap-2">
                   {(note.tags ?? []).map((tag: string) => (
-                    <span key={tag} className="text-xs px-2 py-1 rounded bg-amber-500/10 text-amber-100 border border-amber-500/20">
+                    <span key={tag} className="text-xs px-2 py-1 rounded bg-oc-amber/10 text-oc-amber-light border border-oc-amber/20">
                       {tag}
                     </span>
                   ))}
                 </div>
                 <div className="text-xs text-slate-500">
-                  <Link className="text-amber-300 hover:text-amber-200" href={`/owner/businesses/${note.profesionist_id}`}>
+                  <Link className="text-oc-amber-light hover:text-oc-amber" href={`/owner/businesses/${note.profesionist_id}`}>
                     Open business
                   </Link>
                   <span className="mx-2">•</span>

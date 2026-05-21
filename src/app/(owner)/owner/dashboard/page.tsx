@@ -81,9 +81,9 @@ export default async function OwnerDashboardPage() {
       <section className="rounded-xl border border-slate-800 bg-slate-900/30 p-5">
         <h2 className="mb-4 text-lg font-semibold text-slate-200">Revenue</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <KPICard label="MRR (estimat)" value={stats.mrrRon.toFixed(2)} unit="RON" color="border-amber-600/30" />
-          <KPICard label="Venit lunar (estimat)" value={stats.monthlyRevenueRon.toFixed(2)} unit="RON" color="border-amber-600/30" />
-          <KPICard label="ARR (derivat)" value={stats.arrRon.toFixed(2)} unit="RON" color="border-amber-600/30" />
+          <KPICard label="MRR (estimat)" value={stats.mrrRon.toFixed(2)} unit="RON" color="border-oc-amber/30" />
+          <KPICard label="Venit lunar (estimat)" value={stats.monthlyRevenueRon.toFixed(2)} unit="RON" color="border-oc-amber/30" />
+          <KPICard label="ARR (derivat)" value={stats.arrRon.toFixed(2)} unit="RON" color="border-oc-amber/30" />
           <KPICard
             label="Conversion Rate Trial-to-Paid (derivat)"
             value={stats.trialToPaidConversionPct.toFixed(1)}
@@ -146,7 +146,7 @@ export default async function OwnerDashboardPage() {
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <Link
             href="/owner/businesses"
-            className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-center text-sm font-medium text-amber-100 transition hover:bg-amber-500/20"
+            className="rounded-lg border border-oc-amber/30 bg-oc-amber/10 px-4 py-2 text-center text-sm font-medium text-oc-amber-light transition hover:bg-oc-amber/20"
           >
             View All Businesses
           </Link>

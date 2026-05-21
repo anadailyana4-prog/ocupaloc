@@ -62,7 +62,7 @@ export function SmartRulesForm({
       {/* Header + master toggle */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="font-display text-2xl font-semibold tracking-wide text-amber-100">Reguli smart</h2>
+          <h2 className="dash-page-title">Reguli smart</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Protejează-ți agenda împotriva rezervărilor de ultim moment sau abuzive.
           </p>
@@ -75,7 +75,7 @@ export function SmartRulesForm({
           aria-checked={isEnabled}
           onClick={() => setIsEnabled((v) => !v)}
           className={`relative mt-1 inline-flex h-7 w-[52px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300 ${
-            isEnabled ? "bg-amber-300" : "bg-zinc-600"
+            isEnabled ? "bg-oc-amber" : "bg-oc-border"
           }`}
         >
           <span
@@ -90,8 +90,8 @@ export function SmartRulesForm({
 
       {/* Disabled state notice */}
       {!isEnabled && (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-5 py-4 text-sm text-zinc-400">
-          Regulile sunt <span className="font-medium text-zinc-300">inactive</span>. Orice client poate rezerva fără restricții.
+        <div className="rounded-xl border oc-border bg-white bg-white/60 px-5 py-4 text-sm oc-secondary-text">
+          Regulile sunt <span className="font-medium oc-secondary-text">inactive</span>. Orice client poate rezerva fără restricții.
           Activează comutatorul de mai sus pentru a configura protecțiile.
         </div>
       )}
@@ -101,15 +101,15 @@ export function SmartRulesForm({
         <div className={`space-y-3 transition-opacity duration-200 ${isEnabled ? "opacity-100" : "pointer-events-none opacity-30"}`}>
 
           {/* Rule 1: min notice */}
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+          <div className="rounded-xl border oc-border bg-white bg-white p-5">
             <div className="flex items-start gap-4">
               <span className="mt-0.5 shrink-0 text-2xl leading-none" aria-hidden>⏱</span>
               <div className="flex-1 space-y-3">
                 <div>
-                  <p className="font-medium text-zinc-100">Preaviz minim la rezervare</p>
-                  <p className="mt-0.5 text-sm text-zinc-400">
+                  <p className="font-medium oc-text">Preaviz minim la rezervare</p>
+                  <p className="mt-0.5 text-sm oc-secondary-text">
                     Clientul poate rezerva cu cel puțin{" "}
-                    <span className="font-semibold text-amber-200">{minutesToLabel(notice)}</span>.
+                    <span className="font-semibold text-oc-amber">{minutesToLabel(notice)}</span>.
                     {" "}Previne rezervările de ultim moment.
                   </p>
                 </div>
@@ -121,9 +121,9 @@ export function SmartRulesForm({
                     value={notice}
                     onChange={(e) => setNotice(Math.max(0, Math.min(1440, Number(e.target.value))))}
                     disabled={!isEnabled}
-                    className="w-24 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-amber-300 focus:outline-none"
+                    className="w-24 rounded-lg border dash-input px-3 py-2 text-sm oc-text focus:border-oc-teal focus:outline-none"
                   />
-                  <span className="text-sm text-zinc-500">minute <span className="text-zinc-600">(0 = imediat)</span></span>
+                  <span className="text-sm oc-secondary-text">minute <span className="oc-secondary-text">(0 = imediat)</span></span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {[0, 30, 60, 120, 240].map((m) => (
@@ -134,8 +134,8 @@ export function SmartRulesForm({
                       onClick={() => setNotice(m)}
                       className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                         notice === m
-                          ? "bg-amber-300 text-slate-900"
-                          : "border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+                          ? "bg-oc-amber text-white"
+                          : "border border-zinc-700 oc-secondary-text hover:border-oc-teal/40 hover:oc-accent"
                       }`}
                     >
                       {m === 0 ? "Imediat" : minutesToLabel(m)}
@@ -147,17 +147,17 @@ export function SmartRulesForm({
           </div>
 
           {/* Rule 2: max future bookings */}
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+          <div className="rounded-xl border oc-border bg-white bg-white p-5">
             <div className="flex items-start gap-4">
               <span className="mt-0.5 shrink-0 text-2xl leading-none" aria-hidden>📅</span>
               <div className="flex-1 space-y-3">
                 <div>
-                  <p className="font-medium text-zinc-100">Maxim programări active per client</p>
-                  <p className="mt-0.5 text-sm text-zinc-400">
+                  <p className="font-medium oc-text">Maxim programări active per client</p>
+                  <p className="mt-0.5 text-sm oc-secondary-text">
                     {maxFuture === 0
                       ? "Nicio limită — un client poate ocupa oricâte locuri în avans."
                       : <>Un client poate avea maxim{" "}
-                          <span className="font-semibold text-amber-200">{maxFuture} programare{maxFuture !== 1 ? "i active" : " activă"}</span>{" "}
+                          <span className="font-semibold text-oc-amber">{maxFuture} programare{maxFuture !== 1 ? "i active" : " activă"}</span>{" "}
                           în același timp.</>
                     }
                   </p>
@@ -170,9 +170,9 @@ export function SmartRulesForm({
                     value={maxFuture}
                     onChange={(e) => setMaxFuture(Math.max(0, Math.min(10, Number(e.target.value))))}
                     disabled={!isEnabled}
-                    className="w-20 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-amber-300 focus:outline-none"
+                    className="w-20 rounded-lg border dash-input px-3 py-2 text-sm oc-text focus:border-oc-teal focus:outline-none"
                   />
-                  <span className="text-sm text-zinc-500">programări <span className="text-zinc-600">(0 = fără limită)</span></span>
+                  <span className="text-sm oc-secondary-text">programări <span className="oc-secondary-text">(0 = fără limită)</span></span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {[0, 1, 2, 3].map((n) => (
@@ -183,8 +183,8 @@ export function SmartRulesForm({
                       onClick={() => setMaxFuture(n)}
                       className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                         maxFuture === n
-                          ? "bg-amber-300 text-slate-900"
-                          : "border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+                          ? "bg-oc-amber text-white"
+                          : "border border-zinc-700 oc-secondary-text hover:border-oc-teal/40 hover:oc-accent"
                       }`}
                     >
                       {n === 0 ? "Fără limită" : `Max ${n}`}
@@ -196,26 +196,26 @@ export function SmartRulesForm({
           </div>
 
           {/* Rule 3: cancel abuse */}
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+          <div className="rounded-xl border oc-border bg-white bg-white p-5">
             <div className="flex items-start gap-4">
               <span className="mt-0.5 shrink-0 text-2xl leading-none" aria-hidden>🚫</span>
               <div className="flex-1 space-y-3">
                 <div>
-                  <p className="font-medium text-zinc-100">Blocare după anulări repetate</p>
-                  <p className="mt-0.5 text-sm text-zinc-400">
+                  <p className="font-medium oc-text">Blocare după anulări repetate</p>
+                  <p className="mt-0.5 text-sm oc-secondary-text">
                     {threshold === 0
                       ? "Dezactivat — clienții pot anula de oricâte ori fără consecințe."
                       : <>Dacă un client anulează de{" "}
-                          <span className="font-semibold text-amber-200">{threshold} ori</span>{" "}
+                          <span className="font-semibold text-oc-amber">{threshold} ori</span>{" "}
                           în ultimele{" "}
-                          <span className="font-semibold text-amber-200">{windowDays} zile</span>
+                          <span className="font-semibold text-oc-amber">{windowDays} zile</span>
                           , nu mai poate rezerva online.</>
                     }
                   </p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <p className="text-xs text-zinc-500">Anulări permise</p>
+                    <p className="text-xs oc-secondary-text">Anulări permise</p>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -224,13 +224,13 @@ export function SmartRulesForm({
                         value={threshold}
                         onChange={(e) => setThreshold(Math.max(0, Math.min(10, Number(e.target.value))))}
                         disabled={!isEnabled}
-                        className="w-20 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-amber-300 focus:outline-none"
+                        className="w-20 rounded-lg border dash-input px-3 py-2 text-sm oc-text focus:border-oc-teal focus:outline-none"
                       />
-                      <span className="text-xs text-zinc-500">anulări <span className="text-zinc-600">(0 = off)</span></span>
+                      <span className="text-xs oc-secondary-text">anulări <span className="oc-secondary-text">(0 = off)</span></span>
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <p className="text-xs text-zinc-500">Fereastră de analiză</p>
+                    <p className="text-xs oc-secondary-text">Fereastră de analiză</p>
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -239,9 +239,9 @@ export function SmartRulesForm({
                         value={windowDays}
                         onChange={(e) => setWindowDays(Math.max(7, Math.min(365, Number(e.target.value))))}
                         disabled={!isEnabled || threshold === 0}
-                        className="w-20 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-amber-300 focus:outline-none disabled:opacity-40"
+                        className="w-20 rounded-lg border dash-input px-3 py-2 text-sm oc-text focus:border-oc-amber focus:outline-none disabled:opacity-40"
                       />
-                      <span className="text-xs text-zinc-500">zile</span>
+                      <span className="text-xs oc-secondary-text">zile</span>
                     </div>
                   </div>
                 </div>
@@ -259,8 +259,8 @@ export function SmartRulesForm({
                       onClick={() => { setThreshold(t); setWindowDays(w); }}
                       className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                         threshold === t && (t === 0 || windowDays === w)
-                          ? "bg-amber-300 text-slate-900"
-                          : "border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+                          ? "bg-oc-amber text-white"
+                          : "border border-zinc-700 oc-secondary-text hover:border-oc-teal/40 hover:oc-accent"
                       }`}
                     >
                       {label}
@@ -277,7 +277,7 @@ export function SmartRulesForm({
           <button
             type="submit"
             disabled={status === "saving"}
-            className="rounded-full bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 px-6 py-2.5 text-sm font-semibold text-slate-900 transition hover:brightness-105 disabled:opacity-50"
+            className="rounded-full bg-gradient-to-r from-oc-amber-light to-oc-amber px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-105 disabled:opacity-50"
           >
             {status === "saving" ? "Se salvează…" : "Salvează"}
           </button>

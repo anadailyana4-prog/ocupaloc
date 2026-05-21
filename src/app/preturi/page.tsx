@@ -34,6 +34,11 @@ export default async function PreturiPage() {
  {
  question: "Pot testa înainte de activare?",
  answer: "Da. Poți începe cu 14 zile gratuite pentru a valida fluxul complet de rezervări."
+ },
+ {
+ question: "Pot anula abonamentul oricând?",
+ answer:
+ "Da. Nu ai contract pe termen lung: poți opri reînnoirea când vrei din zona de facturare din cont (fără penalizări pentru simpla anulare înainte de următoarea perioadă de facturare)."
  }
  ] as const;
 
@@ -74,7 +79,7 @@ export default async function PreturiPage() {
  <div className="mx-auto max-w-6xl space-y-10">
  <header className="space-y-4 text-center">
  <h1 className="text-4xl font-bold tracking-tight md:text-5xl">59,99 RON pe lună. Atât.</h1>
- <p className="text-lg oc-secondary-text">Fără comisioane ascunse. Fără taxă per programare. Rezervarea este online; plata la rezervare nu este inclusă.</p>
+ <p className="text-lg oc-secondary-text">Fără comisioane ascunse. Fără taxă per programare. 14 zile gratuite, după care rămâi doar dacă îți place — poți anula abonamentul oricând, din cont. Rezervarea este online; plata la rezervare nu este inclusă.</p>
  </header>
 
  <section className="mx-auto max-w-xl rounded-2xl border oc-border bg-white p-8 text-center">

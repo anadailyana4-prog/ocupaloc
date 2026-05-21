@@ -235,7 +235,7 @@ export default async function ProgramariOnlineCoaforPage() {
           </h2>
 
           <article className="rounded-xl border oc-border bg-white p-6">
-            <h3 className="text-xl font-semibold text-amber-100">
+            <h3 className="text-xl font-semibold text-oc-teal">
               Clientele rezervă când au chef — nu când ești disponibil la telefon
             </h3>
             <p className="mt-3 leading-relaxed oc-text">
@@ -246,7 +246,7 @@ export default async function ProgramariOnlineCoaforPage() {
           </article>
 
           <article className="rounded-xl border oc-border bg-white p-6">
-            <h3 className="text-xl font-semibold text-amber-100">
+            <h3 className="text-xl font-semibold text-oc-teal">
               Nu mai ești întrerupt în timpul lucrului pentru a confirma ore
             </h3>
             <p className="mt-3 leading-relaxed oc-text">
@@ -257,7 +257,7 @@ export default async function ProgramariOnlineCoaforPage() {
           </article>
 
           <article className="rounded-xl border oc-border bg-white p-6">
-            <h3 className="text-xl font-semibold text-amber-100">
+            <h3 className="text-xl font-semibold text-oc-teal">
               Fără dependență de platformele cu comision
             </h3>
             <p className="mt-3 leading-relaxed oc-text">

@@ -92,7 +92,7 @@ export default async function OwnerBusinessesPage({
           <option value="desc">Desc</option>
           <option value="asc">Asc</option>
         </select>
-        <button className="md:col-span-5 w-full md:w-auto px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-100 font-medium" type="submit">
+        <button className="md:col-span-5 w-full md:w-auto px-4 py-2 rounded-lg bg-oc-amber/20 border border-oc-amber/40 text-oc-amber-light font-medium" type="submit">
           Apply filters
         </button>
       </form>
@@ -121,7 +121,7 @@ export default async function OwnerBusinessesPage({
               {result.items.map((business) => (
                 <tr key={business.id} className="hover:bg-slate-800/30 transition">
                   <td className="px-4 py-3">
-                    <Link href={`/owner/businesses/${business.id}`} className="font-medium text-amber-200 hover:text-amber-100">
+                    <Link href={`/owner/businesses/${business.id}`} className="font-medium text-oc-amber-light hover:text-oc-amber">
                       {business.businessName}
                     </Link>
                     <p className="text-xs text-slate-500">/{business.slug}</p>

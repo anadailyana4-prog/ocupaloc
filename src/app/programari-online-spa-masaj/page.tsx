@@ -237,13 +237,13 @@ export default function ProgramariOnlineSpaMasajPage() {
 
           {beneficii.map((b) => (
             <article key={b.title} className="rounded-xl border oc-border bg-white p-6">
-              <h3 className="text-xl font-semibold text-amber-100">{b.title}</h3>
+              <h3 className="text-xl font-semibold text-oc-teal">{b.title}</h3>
               <p className="mt-3 leading-relaxed oc-text">{b.desc ?? b.answer}</p>
             </article>
           ))}
 
           <article className="rounded-xl border oc-border bg-white p-6">
-            <h3 className="text-xl font-semibold text-amber-100">
+            <h3 className="text-xl font-semibold text-oc-teal">
               Reduci anulările de ultim moment prin confirmare automată
             </h3>
             <p className="mt-3 leading-relaxed oc-text">

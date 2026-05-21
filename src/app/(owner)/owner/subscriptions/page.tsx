@@ -151,7 +151,7 @@ export default async function OwnerSubscriptionsPage({
             href="/api/owner/billing/cancel-reasons?windowDays=30"
             target="_blank"
             rel="noreferrer"
-            className="text-xs text-amber-300 hover:text-amber-200"
+            className="text-xs text-oc-amber-light hover:text-oc-amber"
           >
             JSON query-ready
           </a>
@@ -239,7 +239,7 @@ export default async function OwnerSubscriptionsPage({
                         href={`https://dashboard.stripe.com/subscriptions/${sub.stripe_subscription_id}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs text-amber-300 hover:text-amber-200"
+                        className="text-xs text-oc-amber-light hover:text-oc-amber"
                       >
                         Stripe
                       </a>

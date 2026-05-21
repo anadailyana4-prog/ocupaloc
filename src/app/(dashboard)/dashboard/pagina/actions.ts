@@ -109,7 +109,7 @@ export async function savePageSettings(formData: FormData) {
   }
 
   if (error) {
-    redirect("/dashboard/pagina?error=" + encodeURIComponent(error.message ?? "Nu am putut salva datele."));
+    redirect("/dashboard/pagina?error=save_failed");
   }
 
   const { data: prof } = await supabase.from("profesionisti").select("slug").eq("id", profId).maybeSingle();

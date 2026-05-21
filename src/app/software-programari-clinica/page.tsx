@@ -257,7 +257,7 @@ export default async function SoftwareProgramariClinicaPage() {
           </p>
 
           <article className="rounded-xl border oc-border bg-white p-6">
-            <h3 className="text-xl font-semibold text-amber-100">
+            <h3 className="text-xl font-semibold text-oc-teal">
               Agenda fără suprapuneri, indiferent de câți specialiști ai
             </h3>
             <p className="mt-3 leading-relaxed oc-text">
@@ -268,7 +268,7 @@ export default async function SoftwareProgramariClinicaPage() {
           </article>
 
           <article className="rounded-xl border oc-border bg-white p-6">
-            <h3 className="text-xl font-semibold text-amber-100">
+            <h3 className="text-xl font-semibold text-oc-teal">
               Pacienții rezervă la orice oră — nu doar când ești disponibil la telefon
             </h3>
             <p className="mt-3 leading-relaxed oc-text">
@@ -279,7 +279,7 @@ export default async function SoftwareProgramariClinicaPage() {
           </article>
 
           <article className="rounded-xl border oc-border bg-white p-6">
-            <h3 className="text-xl font-semibold text-amber-100">
+            <h3 className="text-xl font-semibold text-oc-teal">
               Reduci no-show-urile prin confirmare automată
             </h3>
             <p className="mt-3 leading-relaxed oc-text">

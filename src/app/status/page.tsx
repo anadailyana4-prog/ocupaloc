@@ -58,7 +58,7 @@ export default function StatusPage() {
               <div className="mt-2 flex items-center gap-3">
                 <span
                   className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
-                    data?.ok ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
+                    data?.ok ? "bg-emerald-100 text-emerald-700" : "bg-oc-amber-soft text-oc-warning"
                   }`}
                 >
                   {loading ? "Verificăm..." : data?.ok ? "Operațional" : "Degradat"}
@@ -75,7 +75,7 @@ export default function StatusPage() {
             </button>
           </div>
 
-          {error ? <p className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{error}</p> : null}
+          {error ? <p className="mt-4 rounded-2xl border border-oc-amber/30 bg-oc-amber-soft px-4 py-3 text-sm text-oc-warning">{error}</p> : null}
           {data?.timestamp ? <p className="mt-4 text-sm oc-secondary-text">Ultima verificare: {new Date(data.timestamp).toLocaleString("ro-RO")}</p> : null}
         </section>
 

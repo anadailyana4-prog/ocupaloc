@@ -55,13 +55,12 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
   const sp = searchParams ? await searchParams : {};
   const pauzaProgram = extractProgramPauza(prof.program ?? null);
   const mediaProfile = parsePublicProfileMedia(prof.bio);
-  const curatedAssetPaths = ["/default-salon.svg", "/og-image.svg", "/blog/salon-programari-online.svg", "/blog/programari-online-beneficii.svg", "/blog/reducere-no-show.svg"];
 
   return (
     <div className="space-y-8 px-4 py-8 sm:px-6 lg:px-8 max-w-2xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-wide text-amber-100">Setări business</h1>
+          <h1 className="dash-page-title">Setări business</h1>
           <p className="mt-1 text-sm text-muted-foreground">Configurează informațiile publice și regulile de rezervare.</p>
         </div>
         <Button asChild variant="secondary" className="rounded-full text-sm">
@@ -70,12 +69,12 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
       </div>
 
       {sp.saved === "1" ? (
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">
+        <div className="rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
           Setările au fost salvate.
         </div>
       ) : null}
       {sp.error ? (
-        <div className="rounded-2xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+        <div className="rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
           {decodeURIComponent(sp.error)}
         </div>
       ) : null}
@@ -83,7 +82,7 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
       {/* Pause settings — first so it's visible without scrolling */}
       <section className="lux-card space-y-4 p-6">
         <div>
-          <h2 className="font-display text-xl font-semibold tracking-wide text-amber-100">Pauze</h2>
+          <h2 className="dash-section-title">Pauze</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Configurează pauza dintre programări și pauza zilnică de prânz.
           </p>
@@ -99,7 +98,7 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
               max={120}
               step={5}
               defaultValue={prof.pauza_intre_clienti ?? ""}
-              className="border-zinc-700 bg-zinc-900"
+              className="dash-input"
               placeholder="ex. 10"
             />
             <p className="text-xs text-muted-foreground">Pauza adăugată automat după fiecare programare (0 = fără pauză).</p>
@@ -112,7 +111,7 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
                 name="pauza_start"
                 type="time"
                 defaultValue={pauzaProgram?.start ?? ""}
-                className="border-zinc-700 bg-zinc-900"
+                className="dash-input"
                 placeholder="ex. 13:00"
               />
             </div>
@@ -126,7 +125,7 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
                 max={240}
                 step={15}
                 defaultValue={pauzaProgram?.durationMinutes ?? ""}
-                className="border-zinc-700 bg-zinc-900"
+                className="dash-input"
                 placeholder="ex. 60"
               />
             </div>
@@ -134,7 +133,7 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
           <p className="text-xs text-muted-foreground">Lasă ora și durata goale dacă nu ai pauză zilnică.</p>
           <Button
             type="submit"
-            className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105"
+            className="rounded-full border-0 bg-gradient-to-r from-oc-amber-light to-oc-amber text-white hover:brightness-105"
           >
             Salvează pauzele
           </Button>
@@ -144,7 +143,7 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
       {/* Public profile fields */}
       <section className="lux-card space-y-4 p-6">
         <div>
-          <h2 className="font-display text-xl font-semibold tracking-wide text-amber-100">Date publice</h2>
+          <h2 className="dash-section-title">Date publice</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Telefonul și descrierea apar pe pagina publică a business-ului tău.
             {prof.slug ? (
@@ -154,7 +153,7 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
                   href={`/${prof.slug}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-amber-300 hover:underline"
+                  className="text-oc-amber hover:underline"
                 >
                   Deschide pagina publică →
                 </a>
@@ -171,7 +170,7 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
               type="tel"
               maxLength={50}
               defaultValue={prof.telefon ?? ""}
-              className="border-zinc-700 bg-zinc-900"
+              className="dash-input"
             />
           </div>
           <div className="space-y-2">
@@ -182,12 +181,12 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
               maxLength={2000}
               rows={4}
               defaultValue={prof.description ?? ""}
-              className="resize-y border-zinc-700 bg-zinc-900"
+              className="resize-y dash-input"
             />
           </div>
           <Button
             type="submit"
-            className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105"
+            className="rounded-full border-0 bg-gradient-to-r from-oc-amber-light to-oc-amber text-white hover:brightness-105"
           >
             Salvează datele publice
           </Button>
@@ -196,60 +195,72 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
 
       <section className="lux-card space-y-4 p-6">
         <div>
-          <h2 className="font-display text-xl font-semibold tracking-wide text-amber-100">Galerie publică și video</h2>
+          <h2 className="dash-section-title">Galerie foto publică</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Alege doar materiale reale. Poți folosi imagini din proiectul OcupaLoc sau linkuri HTTPS proprii.
+            Imaginile adăugate aici apar pe pagina publică de programări a salonului tău, în secțiunea &ldquo;Galerie&rdquo;.
           </p>
-        </div>
-
-        <div className="rounded-xl border border-zinc-700/60 bg-zinc-900/50 p-3 text-xs text-zinc-300">
-          Asset-uri deja existente în proiect (copy/paste): {curatedAssetPaths.join(", ")}
         </div>
 
         <form action={updatePublicMediaSettings} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="gallery_images">Imagini galerie (una pe linie)</Label>
+            <Label htmlFor="gallery_images">Linkuri imagini (una pe linie)</Label>
             <Textarea
               id="gallery_images"
               name="gallery_images"
               rows={5}
               defaultValue={mediaProfile.galleryImages.join("\n")}
-              className="resize-y border-zinc-700 bg-zinc-900"
-              placeholder="/default-salon.svg"
+              className="resize-y dash-input"
+              placeholder="https://exemplu.ro/poza1.jpg&#10;https://exemplu.ro/poza2.jpg"
             />
-            <p className="text-xs text-muted-foreground">Acceptat: căi locale care încep cu / sau linkuri https://</p>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">
+                Adaugă linkuri directe către imagini (URL-uri care se termină în .jpg, .png, .webp).
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Pentru încărcare: urcă pozele pe Google Drive, Dropbox, Imgur sau site-ul tău, apoi copiază linkul direct aici.
+              </p>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="promo_video_url">Video promo (opțional)</Label>
-            <Input
-              id="promo_video_url"
-              name="promo_video_url"
-              type="text"
-              defaultValue={mediaProfile.promoVideoUrl ?? ""}
-              className="border-zinc-700 bg-zinc-900"
-              placeholder="https://... sau /video.mp4"
-            />
-            <p className="text-xs text-muted-foreground">Momentan în proiect nu există fișiere video; câmpul rămâne opțional.</p>
-          </div>
+          {mediaProfile.galleryImages.length > 0 && (
+            <div className="rounded-lg border oc-border bg-white p-3">
+              <p className="text-xs font-medium oc-text mb-2">Previzualizare ({mediaProfile.galleryImages.length} imagini active):</p>
+              <div className="flex flex-wrap gap-2">
+                {mediaProfile.galleryImages.slice(0, 6).map((img, i) => (
+                  <div key={i} className="h-16 w-16 rounded-lg border oc-border bg-oc-bg overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  </div>
+                ))}
+                {mediaProfile.galleryImages.length > 6 && (
+                  <div className="h-16 w-16 rounded-lg border oc-border bg-oc-bg flex items-center justify-center text-xs text-muted-foreground">
+                    +{mediaProfile.galleryImages.length - 6}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
-            <Label htmlFor="trust_badges">Elemente de încredere (una pe linie)</Label>
+            <Label htmlFor="trust_badges">Badge-uri de încredere (una pe linie)</Label>
             <Textarea
               id="trust_badges"
               name="trust_badges"
-              rows={4}
+              rows={3}
               defaultValue={mediaProfile.trustBadges.join("\n")}
-              className="resize-y border-zinc-700 bg-zinc-900"
-              placeholder={"Răspundem în limba română\nFără comision per programare"}
+              className="resize-y dash-input"
+              placeholder={"✓ 10 ani experiență\n✓ Produse profesionale\n✓ Programări online 24/7"}
             />
+            <p className="text-xs text-muted-foreground">
+              Acestea apar sub numele business-ului pe pagina publică.
+            </p>
           </div>
 
           <Button
             type="submit"
-            className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105"
+            className="rounded-full border-0 bg-gradient-to-r from-oc-amber-light to-oc-amber text-white hover:brightness-105"
           >
-            Salvează galeria și media
+            Salvează galeria
           </Button>
         </form>
       </section>
@@ -265,24 +276,24 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
 
       <section className="lux-card space-y-4 p-6">
         <div>
-          <h2 className="font-display text-xl font-semibold tracking-wide text-amber-100">Reminder-e email & review</h2>
+          <h2 className="dash-section-title">Reminder-e email & review</h2>
           <p className="mt-1 text-sm text-muted-foreground">Configurează reminder-ele pe email și link-ul Google review trimis după finalizarea programării.</p>
         </div>
 
         <form action={updateCommunicationSettings} className="space-y-4">
-          <div className="flex items-center gap-3 rounded-xl border border-zinc-700/70 bg-zinc-900/60 p-3">
+          <div className="flex items-center gap-3 dash-panel p-3">
             <input
               id="email_reminders_enabled"
               name="email_reminders_enabled"
               type="checkbox"
               defaultChecked={prof.email_reminders_enabled !== false}
-              className="h-4 w-4 rounded border-zinc-600 bg-zinc-900"
+              className="h-4 w-4 rounded oc-border bg-white"
             />
             <div className="flex items-center gap-2">
               <Label htmlFor="email_reminders_enabled" className="cursor-pointer">Activează reminder-ele pe email pentru clienți</Label>
               <span
                 title="Trimitem 3 tipuri de reminder pe email: 24h (cu linkuri securizate pentru confirmare, reprogramare, anulare), 2h (reconfirmare apropiată), morning (în dimineața programării pentru ziua curentă)."
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-zinc-600 text-[11px] font-semibold text-zinc-300 cursor-help"
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full border oc-border text-[11px] font-semibold oc-secondary-text cursor-help"
                 aria-label="Detalii reminder-e email"
               >
                 i
@@ -297,14 +308,14 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
               name="google_review_url"
               type="url"
               defaultValue={prof.google_review_url ?? ""}
-              className="border-zinc-700 bg-zinc-900"
+              className="dash-input"
               placeholder="https://g.page/r/.../review"
             />
           </div>
 
           <Button
             type="submit"
-            className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105"
+            className="rounded-full border-0 bg-gradient-to-r from-oc-amber-light to-oc-amber text-white hover:brightness-105"
           >
             Salvează reminder-ele email & review
           </Button>

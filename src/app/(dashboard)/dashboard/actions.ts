@@ -46,7 +46,7 @@ export async function cancelBooking(id: string): Promise<BookingActionResult> {
     .eq("profesionist_id", ctx.profId)
     .in("status", ["confirmat", "in_asteptare"]);
   if (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: "Nu am putut anula programarea. Încearcă din nou." };
   }
   await logBookingStatusEvent({ bookingId: parsed.data, status: "anulat", source: "salon_dashboard" });
   try {
@@ -75,7 +75,7 @@ export async function completeBooking(id: string): Promise<BookingActionResult> 
     .eq("profesionist_id", ctx.profId)
     .eq("status", "confirmat");
   if (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: "Nu am putut marca programarea ca finalizată. Încearcă din nou." };
   }
   await logBookingStatusEvent({ bookingId: parsed.data, status: "finalizat", source: "salon_dashboard" });
   try {
@@ -104,7 +104,7 @@ export async function markNoShow(id: string): Promise<BookingActionResult> {
     .eq("profesionist_id", ctx.profId)
     .eq("status", "confirmat");
   if (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: "Nu am putut marca clientul ca neprezent. Încearcă din nou." };
   }
   await logBookingStatusEvent({ bookingId: parsed.data, status: "noaparit", source: "salon_dashboard" });
   revalidatePath("/dashboard");
@@ -137,7 +137,7 @@ export async function updateBookingNotes(id: string, notes: string): Promise<Boo
     .eq("profesionist_id", ctx.profId);
 
   if (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: "Nu am putut salva notița. Încearcă din nou." };
   }
 
   revalidatePath("/dashboard");
@@ -240,7 +240,7 @@ export async function updatePublicBusinessFields(formData: FormData) {
     }
   );
   if (error) {
-    redirect("/dashboard/setari?error=" + encodeURIComponent(error.message ?? "Nu am putut salva datele publice."));
+    redirect("/dashboard/setari?error=save_failed");
   }
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/setari");
@@ -306,7 +306,7 @@ export async function updatePauzeSettings(formData: FormData) {
   if (Object.keys(updateValues).length > 0) {
     const { error } = await supabase.from("profesionisti").update(updateValues).eq("user_id", user.id);
     if (error) {
-      redirect("/dashboard/setari?error=" + encodeURIComponent(error.message ?? "Nu am putut salva setările de pauze."));
+      redirect("/dashboard/setari?error=save_failed");
     }
   }
 
@@ -344,7 +344,7 @@ export async function saveSmartRulesFromClient(data: {
     })
     .eq("user_id", user.id);
 
-  if (error) return { ok: false, message: error.message };
+  if (error) return { ok: false, message: "Nu am putut salva setările. Încearcă din nou." };
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/setari");
@@ -379,7 +379,7 @@ export async function updateCommunicationSettings(formData: FormData) {
     .eq("user_id", user.id);
 
   if (error) {
-    redirect("/dashboard/setari?error=" + encodeURIComponent(error.message ?? "Nu am putut salva setările de comunicare."));
+    redirect("/dashboard/setari?error=save_failed");
   }
 
   revalidatePath("/dashboard");
@@ -430,7 +430,7 @@ export async function updatePublicMediaSettings(formData: FormData) {
   const { error } = await supabase.from("profesionisti").update({ bio: nextBio }).eq("id", prof.id);
 
   if (error) {
-    redirect("/dashboard/setari?error=" + encodeURIComponent(error.message ?? "Nu am putut salva media."));
+    redirect("/dashboard/setari?error=save_failed");
   }
 
   revalidatePath("/dashboard");
@@ -530,7 +530,7 @@ export async function addManualBooking(input: {
     if (insErr.code === "23P01") {
       return { success: false, message: "Intervalul se suprapune cu o programare existentă. Alege altă oră." };
     }
-    return { success: false, message: insErr.message };
+    return { success: false, message: "Eroare la salvarea programării. Încearcă din nou sau contactează suportul dacă problema persistă." };
   }
 
   let clientNotification: "queued" | "failed" | "not_requested" = "not_requested";

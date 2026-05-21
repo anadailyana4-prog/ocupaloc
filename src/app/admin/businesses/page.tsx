@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatInTimeZone } from "date-fns-tz";
 
+import { BILLING_TRIAL_DAYS } from "@/lib/billing/config";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { getUser } from "@/lib/supabase/server";
 
@@ -14,7 +15,7 @@ type HealthBand = "critical" | "at_risk" | "watch" | "healthy";
 const HEALTH_BAND_CONFIG: Record<HealthBand, { label: string; badgeClasses: string; rowBg: string }> = {
   critical: { label: "CRITIC",  badgeClasses: "bg-red-900/80 text-red-100 border border-red-700",    rowBg: "bg-red-950/25" },
   at_risk:  { label: "LA RISC", badgeClasses: "bg-orange-900/80 text-orange-200 border border-orange-700", rowBg: "bg-orange-950/20" },
-  watch:    { label: "ATENȚIE", badgeClasses: "bg-amber-900/80 text-amber-200 border border-amber-700",  rowBg: "bg-amber-950/10" },
+  watch:    { label: "ATENȚIE", badgeClasses: "bg-oc-amber/20 text-oc-amber-light border border-oc-amber/40",  rowBg: "bg-oc-amber/5" },
   healthy:  { label: "OK",      badgeClasses: "bg-emerald-900/80 text-emerald-200 border border-emerald-700", rowBg: "bg-zinc-950" },
 };
 
@@ -154,7 +155,6 @@ export default async function AdminBusinessesPage() {
   }
 
   const FOURTEEN_DAYS_AGO = twoWeeksAgo;
-  const BILLING_TRIAL_DAYS = 30;
 
   const rows = (businesses ?? []).map((s) => {
     const createdAt = s.created_at ? new Date(s.created_at) : null;
@@ -284,7 +284,7 @@ export default async function AdminBusinessesPage() {
     <div className="space-y-6 p-6">
       <div>
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-amber-50">Admin — Conturi ({rows.length})</h1>
+          <h1 className="text-2xl font-bold text-oc-amber-light">Admin — Conturi ({rows.length})</h1>
           <Link
             href="/api/admin/businesses-csv"
             className="rounded-full bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-300 hover:bg-zinc-700 hover:text-white"
@@ -296,7 +296,7 @@ export default async function AdminBusinessesPage() {
         <div className="mt-2 flex flex-wrap gap-3 text-xs text-zinc-500">
           <span><span className="inline-block w-2 h-2 rounded-full bg-red-700 mr-1"></span>CRITIC — setup/billing/expirat</span>
           <span><span className="inline-block w-2 h-2 rounded-full bg-orange-700 mr-1"></span>LA RISC — inactiv 14z / conf. &lt;60%</span>
-          <span><span className="inline-block w-2 h-2 rounded-full bg-amber-700 mr-1"></span>ATENȚIE — conf. &lt;80% / login vechi / trial expiră</span>
+          <span><span className="inline-block w-2 h-2 rounded-full bg-oc-amber mr-1"></span>ATENȚIE — conf. &lt;80% / login vechi / trial expiră</span>
           <span><span className="inline-block w-2 h-2 rounded-full bg-emerald-700 mr-1"></span>OK — fără probleme critice</span>
         </div>
       </div>
@@ -309,11 +309,11 @@ export default async function AdminBusinessesPage() {
             { label: "MRR (RON)", value: `${mrr} lei`, color: mrr > 0 ? "text-violet-200" : "text-zinc-500", highlight: true },
             { label: "Abonamente active", value: activeSubsCount, color: activeSubsCount > 0 ? "text-emerald-300" : "text-zinc-500" },
             { label: "Trialing (Stripe)", value: trialingSubsCount, color: trialingSubsCount > 0 ? "text-sky-300" : "text-zinc-500" },
-            { label: "Trial (legacy)", value: trialCount, color: trialCount > 0 ? "text-amber-300" : "text-zinc-500" },
+            { label: "Trial (legacy)", value: trialCount, color: trialCount > 0 ? "text-oc-amber-light" : "text-zinc-500" },
             { label: "Plată restantă", value: pastDueCount, color: pastDueCount > 0 ? "text-red-400" : "text-zinc-500" },
             { label: "Anulate (total)", value: canceledCount, color: canceledCount > 0 ? "text-zinc-400" : "text-zinc-600" },
             { label: "Churn (30z)", value: churnedLast30dCount ?? 0, color: (churnedLast30dCount ?? 0) > 0 ? "text-red-300" : "text-zinc-600" },
-            { label: "Conv. trial→plătit", value: `${trialConversionPct}%`, color: trialConversionPct >= 20 ? "text-emerald-300" : trialConversionPct > 0 ? "text-amber-300" : "text-zinc-500" },
+            { label: "Conv. trial→plătit", value: `${trialConversionPct}%`, color: trialConversionPct >= 20 ? "text-emerald-300" : trialConversionPct > 0 ? "text-oc-amber-light" : "text-zinc-500" },
           ].map((s) => (
             <div key={s.label} className={`rounded-xl border ${s.highlight ? "border-violet-500/30 bg-violet-900/30" : "border-zinc-800 bg-zinc-900/60"} px-4 py-3`}>
               <p className={`text-xl font-bold ${s.color}`}>{s.value}</p>
@@ -334,7 +334,7 @@ export default async function AdminBusinessesPage() {
             {[
               { label: "Critic",    value: criticalCount, valueColor: criticalCount > 0 ? "text-red-400"     : "text-zinc-600", border: criticalCount > 0 ? "border-red-900/50"    : "border-zinc-800" },
               { label: "La risc",  value: atRiskCount,   valueColor: atRiskCount   > 0 ? "text-orange-400"  : "text-zinc-600", border: atRiskCount   > 0 ? "border-orange-900/50" : "border-zinc-800" },
-              { label: "Atenţie",  value: watchCount,    valueColor: watchCount    > 0 ? "text-amber-400"   : "text-zinc-600", border: watchCount    > 0 ? "border-amber-900/50"  : "border-zinc-800" },
+              { label: "Atenţie",  value: watchCount,    valueColor: watchCount    > 0 ? "text-oc-amber-light"   : "text-zinc-600", border: watchCount    > 0 ? "border-oc-amber/30"  : "border-zinc-800" },
               { label: "Sănătos",  value: healthyCount,  valueColor: healthyCount  > 0 ? "text-emerald-400" : "text-zinc-600", border: "border-zinc-800" },
             ].map((s) => (
               <div key={s.label} className={`rounded-xl border ${s.border} bg-zinc-900/60 px-4 py-3`}>
@@ -359,13 +359,13 @@ export default async function AdminBusinessesPage() {
         return (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
             {[
-              { label: "Total conturi", value: totalBusinesses, color: "text-amber-50" },
+              { label: "Total conturi", value: totalBusinesses, color: "text-oc-amber-light" },
               { label: "Setup complet", value: onboardedCount, color: "text-emerald-300" },
               { label: "Abonament activ", value: activeSubCount, color: "text-sky-300" },
               { label: "Activi 7z", value: activeThisWeek, color: activeThisWeek > 0 ? "text-emerald-400" : "text-zinc-500" },
               { label: "La risc", value: atRiskCount, color: atRiskCount > 0 ? "text-red-400" : "text-zinc-500" },
               { label: "Nicio programare", value: neverBookedCount, color: neverBookedCount > 0 ? "text-violet-400" : "text-zinc-500" },
-              { label: "Trial expiră", value: trialExpiringCount, color: trialExpiringCount > 0 ? "text-amber-400" : "text-zinc-500" },
+              { label: "Trial expiră", value: trialExpiringCount, color: trialExpiringCount > 0 ? "text-oc-amber-light" : "text-zinc-500" },
               { label: "Programări (30z)", value: totalBookings30d, color: totalBookings30d > 0 ? "text-violet-300" : "text-zinc-500" },
             ].map((s) => (
               <div key={s.label} className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-3">
@@ -424,17 +424,17 @@ export default async function AdminBusinessesPage() {
                 <td className="px-4 py-3 text-zinc-400 text-xs">{r.subEnd}</td>
                 <td className="px-4 py-3 text-zinc-400 text-xs">{r.lastBooking}</td>
                 <td className="px-4 py-3 text-xs">
-                  <span className={r.lastLoginDays === null ? "text-zinc-600" : r.lastLoginDays > 30 ? "text-red-400" : r.lastLoginDays > 14 ? "text-amber-400" : "text-emerald-400"}>
+                  <span className={r.lastLoginDays === null ? "text-zinc-600" : r.lastLoginDays > 30 ? "text-red-400" : r.lastLoginDays > 14 ? "text-oc-amber-light" : "text-emerald-400"}>
                     {r.lastLogin}
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`font-semibold ${r.bookingsThisWeek === 0 ? "text-red-400" : r.bookingsThisWeek >= 5 ? "text-emerald-400" : "text-amber-300"}`}>
+                  <span className={`font-semibold ${r.bookingsThisWeek === 0 ? "text-red-400" : r.bookingsThisWeek >= 5 ? "text-emerald-400" : "text-oc-amber-light"}`}>
                     {r.bookingsThisWeek}
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`font-semibold ${r.totalBookings30d === 0 ? "text-red-400" : r.totalBookings30d >= 20 ? "text-emerald-400" : "text-amber-300"}`}>
+                  <span className={`font-semibold ${r.totalBookings30d === 0 ? "text-red-400" : r.totalBookings30d >= 20 ? "text-emerald-400" : "text-oc-amber-light"}`}>
                     {r.totalBookings30d}
                   </span>
                 </td>
@@ -450,7 +450,7 @@ export default async function AdminBusinessesPage() {
                 <td className="px-4 py-3 text-xs">
                   {r.confirmationRate30d !== null ? (
                     <div>
-                      <span className={`font-bold text-sm ${r.confirmationRate30d >= 80 ? "text-emerald-400" : r.confirmationRate30d >= 60 ? "text-amber-400" : "text-red-400"}`}>
+                      <span className={`font-bold text-sm ${r.confirmationRate30d >= 80 ? "text-emerald-400" : r.confirmationRate30d >= 60 ? "text-oc-amber-light" : "text-red-400"}`}>
                         {r.confirmationRate30d}%
                       </span>
                       <div className="text-zinc-500 mt-0.5">
@@ -475,7 +475,7 @@ export default async function AdminBusinessesPage() {
                 </td>
                 {/* Aşteptare */}
                 <td className="px-4 py-3 text-center">
-                  <span className={`font-semibold text-sm ${r.pendingNext7d === 0 ? "text-zinc-600" : r.pendingNext7d >= 3 ? "text-orange-400" : "text-amber-300"}`}>
+                  <span className={`font-semibold text-sm ${r.pendingNext7d === 0 ? "text-zinc-600" : r.pendingNext7d >= 3 ? "text-orange-400" : "text-oc-amber-light"}`}>
                     {r.pendingNext7d > 0 ? r.pendingNext7d : "—"}
                   </span>
                 </td>
@@ -513,7 +513,7 @@ export default async function AdminBusinessesPage() {
                     {r.email !== "—" ? (
                       <a
                         href={`mailto:${r.email}`}
-                        className="text-xs text-zinc-400 hover:text-amber-300 hover:underline"
+                        className="text-xs text-zinc-400 hover:text-oc-amber-light hover:underline"
                       >
                         Email
                       </a>

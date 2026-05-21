@@ -178,3 +178,77 @@ test("handleBookRequest passes optional clientNotes to insertBooking", async () 
   assert.equal(result.body.success, true);
   assert.equal(capturedClientNotes, "Sun la interfon");
 });
+
+test("handleBookRequest passes requestId and idempotencyKey together with custom deps", async () => {
+  let capturedKey: string | undefined;
+  let capturedRid: string | undefined;
+  const deps = makeDeps({
+    insertBooking: async (_admin, input) => {
+      capturedKey = input.idempotencyKey;
+      capturedRid = input.requestId;
+      return { ok: true, programareId: "p-combo" };
+    }
+  });
+
+  const result = await handleBookRequest(validPayload, "10.0.0.1", "trace-99", deps, "idem-combo");
+  assert.equal(result.status, 200);
+  assert.equal(capturedKey, "idem-combo");
+  assert.equal(capturedRid, "trace-99");
+});
+
+test("handleBookRequest returns 400 for non-slot insert failure (not block, not conflict)", async () => {
+  const deps = makeDeps({
+    insertBooking: async () => ({ ok: false, message: "Nu putem procesa cererea în acest moment." })
+  });
+  const result = await handleBookRequest(validPayload, "127.0.0.1", deps);
+  assert.equal(result.status, 400);
+  assert.equal(result.body.success, false);
+});
+
+test("handleBookRequest returns 500 when insertBooking throws", async () => {
+  const deps = makeDeps({
+    insertBooking: async () => {
+      throw new Error("DB connection reset");
+    }
+  });
+  const result = await handleBookRequest(validPayload, "127.0.0.1", deps);
+  assert.equal(result.status, 500);
+  assert.equal(result.body.success, false);
+  assert.match((result.body.error as string) ?? "", /connection reset/);
+});
+
+test("handleBookRequest returns 400 for invalid serviceId (not UUID)", async () => {
+  const result = await handleBookRequest(
+    { ...validPayload, serviceId: "not-a-uuid" },
+    "127.0.0.1",
+    makeDeps()
+  );
+  assert.equal(result.status, 400);
+});
+
+test("handleBookRequest returns 400 for short client name", async () => {
+  const result = await handleBookRequest(
+    { ...validPayload, clientName: "A" },
+    "127.0.0.1",
+    makeDeps()
+  );
+  assert.equal(result.status, 400);
+});
+
+test("handleBookRequest returns 400 for phone with fewer than 10 digits", async () => {
+  const result = await handleBookRequest(
+    { ...validPayload, clientPhone: "0712" },
+    "127.0.0.1",
+    makeDeps()
+  );
+  assert.equal(result.status, 400);
+});
+
+test("handleBookRequest returns 400 for clientNotes over 500 chars", async () => {
+  const result = await handleBookRequest(
+    { ...validPayload, clientNotes: "x".repeat(501) },
+    "127.0.0.1",
+    makeDeps()
+  );
+  assert.equal(result.status, 400);
+});

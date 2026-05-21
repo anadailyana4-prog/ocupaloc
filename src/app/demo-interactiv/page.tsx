@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { trackDemoCreated } from "@/lib/analytics";
 
+import { DEMO_LINK_VALID_DAYS } from "@/lib/demo/constants";
+
 import { createDemo } from "./actions";
 
 const BUSINESS_TYPES = ["Frizerie", "Salon", "Manichiură", "Cosmetică", "Barber"] as const;
@@ -88,7 +90,9 @@ export default function DemoInteractivPage() {
  <Card className="mx-auto w-full max-w-2xl oc-border bg-white">
  <CardHeader>
  <CardTitle>Demo interactiv OcupaLoc</CardTitle>
- <CardDescription>Configurează un demo în 3 pași. Link valabil 24 de ore.</CardDescription>
+          <CardDescription>
+            Configurează un demo în 3 pași. Link valabil {DEMO_LINK_VALID_DAYS} zile — ideal de trimis pe WhatsApp.
+          </CardDescription>
  <p className="text-xs oc-secondary-text">Pasul {step} din 3</p>
  </CardHeader>
  <CardContent className="space-y-6">

@@ -3,6 +3,11 @@ import test from "node:test";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import {
+  BlockedClientError,
+  BookingError,
+  NoSubscriptionError
+} from "../../src/lib/domain/booking/errors";
 import { createBookingAtomic } from "../../src/lib/booking/insert-programare";
 
 test("prevents double booking with atomic transaction", async () => {
@@ -58,4 +63,110 @@ test("prevents double booking with atomic transaction", async () => {
   }
 
   assert.equal(bookings.length, 1);
+});
+
+test("createBookingAtomic maps BLOCKED RPC error to BlockedClientError", async () => {
+  const admin = {
+    rpc: async () => ({
+      data: null,
+      error: { message: "BLOCKED: client is blocked" }
+    })
+  } as unknown as SupabaseClient;
+
+  const result = await createBookingAtomic(
+    admin,
+    "prof-1",
+    "srv-1",
+    new Date("2026-05-01T10:00:00.000Z"),
+    new Date("2026-05-01T11:00:00.000Z"),
+    "0712345678",
+    "Test"
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.ok(result.error instanceof BlockedClientError);
+});
+
+test("createBookingAtomic maps NOSUBSCRIPTION RPC error", async () => {
+  const admin = {
+    rpc: async () => ({
+      data: null,
+      error: { message: "NOSUBSCRIPTION expired" }
+    })
+  } as unknown as SupabaseClient;
+
+  const result = await createBookingAtomic(
+    admin,
+    "prof-1",
+    "srv-1",
+    new Date("2026-05-01T10:00:00.000Z"),
+    new Date("2026-05-01T11:00:00.000Z"),
+    "0712345678",
+    "Test"
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.ok(result.error instanceof NoSubscriptionError);
+});
+
+test("createBookingAtomic throws generic error becomes BookingError", async () => {
+  const admin = {
+    rpc: async () => ({
+      data: null,
+      error: { message: "Something else went wrong" }
+    })
+  } as unknown as SupabaseClient;
+
+  const result = await createBookingAtomic(
+    admin,
+    "prof-1",
+    "srv-1",
+    new Date("2026-05-01T10:00:00.000Z"),
+    new Date("2026-05-01T11:00:00.000Z"),
+    "0712345678",
+    "Test"
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.ok(result.error instanceof BookingError);
+});
+
+test("createBookingAtomic accepts single object row from RPC", async () => {
+  const admin = {
+    rpc: async () => ({
+      data: { programare_id: "single-row-id" },
+      error: null
+    })
+  } as unknown as SupabaseClient;
+
+  const result = await createBookingAtomic(
+    admin,
+    "prof-1",
+    "srv-1",
+    new Date("2026-05-01T10:00:00.000Z"),
+    new Date("2026-05-01T11:00:00.000Z"),
+    "0712345678",
+    "Test",
+    "e@mail.com"
+  );
+  assert.equal(result.ok, true);
+  if (result.ok) assert.equal(result.programareId, "single-row-id");
+});
+
+test("createBookingAtomic fails when programare_id missing", async () => {
+  const admin = {
+    rpc: async () => ({
+      data: { programare_id: "" },
+      error: null
+    })
+  } as unknown as SupabaseClient;
+
+  const result = await createBookingAtomic(
+    admin,
+    "prof-1",
+    "srv-1",
+    new Date("2026-05-01T10:00:00.000Z"),
+    new Date("2026-05-01T11:00:00.000Z"),
+    "0712345678",
+    "Test"
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.ok(result.error instanceof BookingError);
 });

@@ -121,7 +121,7 @@ export default function OwnerLoginPage() {
       <div className="w-full max-w-md space-y-8 px-4">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-wide text-amber-100">
+          <h1 className="text-3xl font-bold tracking-wide text-oc-amber-light">
             OcupaLoc
           </h1>
           <p className="text-sm text-slate-400 mt-1">Owner Control Portal</p>
@@ -149,7 +149,7 @@ export default function OwnerLoginPage() {
                   onChange={e => setEmail(e.target.value)}
                   required
                   disabled={loading}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-oc-amber"
                   placeholder="your@email.com"
                 />
               </div>
@@ -165,7 +165,7 @@ export default function OwnerLoginPage() {
                     onChange={e => setPassword(e.target.value)}
                     required
                     disabled={loading}
-                    className="w-full px-3 py-2 pr-10 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    className="w-full px-3 py-2 pr-10 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-oc-amber"
                     placeholder="••••••••"
                   />
                   <button
@@ -173,7 +173,7 @@ export default function OwnerLoginPage() {
                     onClick={() => setShowPassword((v) => !v)}
                     disabled={loading}
                     aria-label={showPassword ? "Ascunde parola" : "Arata parola"}
-                    className="absolute inset-y-0 right-2 my-auto h-7 w-7 rounded text-slate-300 hover:text-amber-300 disabled:opacity-50"
+                    className="absolute inset-y-0 right-2 my-auto h-7 w-7 rounded text-slate-300 hover:text-oc-amber-light disabled:opacity-50"
                   >
                     {showPassword ? "🙈" : "👁"}
                   </button>
@@ -183,7 +183,7 @@ export default function OwnerLoginPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-amber-400 to-orange-400 text-slate-900 font-semibold hover:brightness-110 disabled:opacity-50"
+                className="w-full bg-gradient-to-r from-oc-amber-light to-oc-amber text-slate-900 font-semibold hover:brightness-110 disabled:opacity-50"
               >
                 {loading ? "Signing in..." : "Sign in"}
               </Button>

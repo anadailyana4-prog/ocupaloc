@@ -28,7 +28,7 @@ export function CancelSubscriptionButton() {
 
   return (
     <form method="post" action="/api/billing/cancel" onSubmit={handleSubmit}>
-      <label htmlFor="cancel_reason" className="mb-2 block text-sm text-zinc-300">
+      <label htmlFor="cancel_reason" className="mb-2 block text-sm oc-secondary-text">
         Motivul principal al anulării
       </label>
       <select
@@ -37,7 +37,7 @@ export function CancelSubscriptionButton() {
         required
         value={reason}
         onChange={(event) => setReason(event.target.value)}
-        className="mb-3 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
+        className="mb-3 w-full rounded-xl border dash-input px-3 py-2 text-sm oc-text"
       >
         <option value="">Alege motivul</option>
         <option value="prea_scump">Prețul este prea mare</option>
@@ -47,11 +47,11 @@ export function CancelSubscriptionButton() {
         <option value="altul">Alt motiv</option>
       </select>
 
-      <label htmlFor="cancel_note" className="mb-2 block text-sm text-zinc-300">
+      <label htmlFor="cancel_note" className="mb-2 block text-sm oc-secondary-text">
         Detalii opționale
       </label>
 
-      <label htmlFor="cancel_mode" className="mb-2 block text-sm text-zinc-300">
+      <label htmlFor="cancel_mode" className="mb-2 block text-sm oc-secondary-text">
         Tipul anulării
       </label>
       <select
@@ -59,7 +59,7 @@ export function CancelSubscriptionButton() {
         name="cancel_mode"
         value={cancelMode}
         onChange={(event) => setCancelMode(event.target.value === "immediate" ? "immediate" : "period_end")}
-        className="mb-3 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
+        className="mb-3 w-full rounded-xl border dash-input px-3 py-2 text-sm oc-text"
       >
         <option value="period_end">La finalul perioadei curente (recomandat)</option>
         <option value="immediate">Imediat (oprește accesul acum)</option>
@@ -70,14 +70,14 @@ export function CancelSubscriptionButton() {
         name="cancel_note"
         rows={3}
         maxLength={500}
-        className="mb-4 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100"
+        className="mb-4 w-full rounded-xl border dash-input px-3 py-2 text-sm oc-text"
         placeholder="Spune-ne pe scurt ce am putea îmbunătăți"
       />
 
       <button
         type="submit"
         disabled={isSubmitting}
-        className="inline-flex items-center rounded-full border border-red-500/40 bg-red-950/40 px-4 py-2 text-sm font-medium text-red-200 transition hover:border-red-400/60 hover:bg-red-900/50 disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex items-center rounded-full border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-800 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? "Se anulează..." : "Anulează abonamentul"}
       </button>

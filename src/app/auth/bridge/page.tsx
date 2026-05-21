@@ -128,9 +128,15 @@ export default function AuthBridgePage() {
         setMessage("Autentificare reușită. Redirecționăm...");
   if (!cancelled) window.location.replace(safeNext);
       } catch (error) {
+        console.error("[auth/bridge] Auth error details:", {
+          isSignupConfirmation,
+          error: getErrorMessage(error),
+          ignorable: isIgnorableSignupLinkError(error)
+        });
         if (isSignupConfirmation && isIgnorableSignupLinkError(error)) {
           // Reused/expired signup links are common after the first successful click.
           // Treat them as confirmation-complete to avoid trapping users in an auth-error loop.
+          console.log("[auth/bridge] Ignoring signup error and redirecting to login");
           if (!cancelled) window.location.replace("/login?signup=confirmat");
           return;
         }

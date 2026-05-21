@@ -1,4 +1,5 @@
 import { handleBookRouteRequest } from "@/app/api/book/handler";
+import { embedCorsOptions, withEmbedCors } from "@/lib/http/embed-cors";
 
 /**
  * POST /api/book
@@ -14,6 +15,11 @@ import { handleBookRouteRequest } from "@/app/api/book/handler";
  * @header Idempotency-Key optional key for request deduplication (24h expiry)
  * @returns 200 with the created programare id, or 4xx/5xx with `{ error }` message.
  */
+export async function OPTIONS() {
+  return embedCorsOptions();
+}
+
 export async function POST(req: Request) {
-  return handleBookRouteRequest(req);
+  const res = await handleBookRouteRequest(req);
+  return withEmbedCors(res);
 }

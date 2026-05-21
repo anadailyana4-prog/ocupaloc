@@ -109,10 +109,10 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
       </div>
 
       {sp.saved === "1" ? (
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/40 px-4 py-3 text-sm text-emerald-200">Setările au fost salvate.</div>
+        <div className="rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">Setările au fost salvate.</div>
       ) : null}
       {sp.error ? (
-        <div className="rounded-2xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-sm text-red-200">{decodeURIComponent(sp.error)}</div>
+        <div className="rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">{decodeURIComponent(sp.error)}</div>
       ) : null}
 
       <form action={savePageSettings} className="space-y-8">
@@ -124,7 +124,7 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
             required
             maxLength={200}
             defaultValue={org.nume_business ?? ""}
-            className="border-zinc-700 bg-zinc-900"
+            className="dash-input"
           />
         </div>
         <div className="space-y-2">
@@ -136,7 +136,7 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
             maxLength={50}
             defaultValue={org.telefon ?? ""}
             placeholder="07xx xxx xxx"
-            className="border-zinc-700 bg-zinc-900"
+            className="dash-input"
           />
         </div>
         <div className="space-y-2">
@@ -148,7 +148,7 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
             maxLength={50}
             defaultValue={whatsappValue}
             placeholder="07xx xxx xxx"
-            className="border-zinc-700 bg-zinc-900"
+            className="dash-input"
           />
           <p className="text-xs text-muted-foreground">Opțional. Dacă e completat, apare butonul „Scrie pe WhatsApp” pe pagina publică.</p>
         </div>
@@ -160,7 +160,7 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
             maxLength={200}
             defaultValue={org.adresa_publica ?? ""}
             placeholder="ex: Str. Exemplu 12, București"
-            className="border-zinc-700 bg-zinc-900"
+            className="dash-input"
           />
           <p className="text-xs text-muted-foreground">Opțional. Dacă o completezi, apare pe pagina publică și în reminderul de 24h trimis clientului.</p>
         </div>
@@ -173,7 +173,7 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
             maxLength={200}
             defaultValue={org.email ?? ""}
             placeholder="salon@exemplu.ro"
-            className="border-zinc-700 bg-zinc-900"
+            className="dash-input"
           />
           <p className="text-xs text-muted-foreground">Primești aici mesaj la fiecare rezervare nouă (când e configurat Resend).</p>
         </div>
@@ -186,7 +186,7 @@ export default async function PaginaDashboardPage({ searchParams }: PageProps) {
             rows={4}
             defaultValue={org.description ?? ""}
             placeholder="Scurtă descriere vizibilă pe pagina ta publică…"
-            className="resize-y border-zinc-700 bg-zinc-900"
+            className="resize-y dash-input"
           />
           <p className="text-xs text-muted-foreground">Maximum 200 de caractere.</p>
         </div>

@@ -13,22 +13,22 @@ type Props = {
 function statusTone(status: ProfessionalBillingModel["status"]): string {
   switch (status) {
     case "active":
-      return "border-emerald-500/30 bg-emerald-950/30 text-emerald-200";
+      return "border-emerald-300 bg-emerald-50 text-emerald-800";
     case "reactivated":
-      return "border-teal-500/30 bg-teal-950/30 text-teal-200";
+      return "border-oc-teal bg-oc-teal-soft text-oc-teal";
     case "trial":
     case "trialing":
-      return "border-sky-500/30 bg-sky-950/30 text-sky-200";
+      return "border-sky-300 bg-sky-50 text-sky-800";
     case "past_due":
     case "incomplete":
-      return "border-red-500/30 bg-red-950/30 text-red-200";
+      return "border-red-300 bg-red-50 text-red-800";
     case "canceled":
     case "paused":
-      return "border-orange-500/30 bg-orange-950/30 text-orange-200";
+      return "border-orange-300 bg-orange-50 text-orange-800";
     case "disabled":
-      return "border-zinc-700 bg-zinc-900/60 text-zinc-300";
+      return "border oc-border bg-white oc-secondary-text";
     default:
-      return "border-zinc-700 bg-zinc-900/60 text-zinc-300";
+      return "border oc-border bg-white oc-secondary-text";
   }
 }
 
@@ -49,14 +49,14 @@ export function ProfessionalBillingView({ model }: Props) {
     <div className="space-y-8 px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-semibold tracking-wide text-amber-100">Billing</h1>
+          <h1 className="dash-page-title">Billing</h1>
           <p className="mt-1 text-sm text-muted-foreground">Abonamentul și metricile relevante doar pentru business-ul tău.</p>
         </div>
         <div className="flex flex-wrap gap-3">
           {model.canOpenCheckout ? (
             <Link
               href="/billing/checkout"
-              className="inline-flex items-center rounded-full bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:brightness-105"
+              className="inline-flex items-center rounded-full bg-gradient-to-r from-oc-amber-light to-oc-amber text-white text-sm font-semibold hover:brightness-105"
             >
               Upgrade
             </Link>
@@ -65,7 +65,7 @@ export function ProfessionalBillingView({ model }: Props) {
             <form method="post" action="/api/billing/portal">
               <button
                 type="submit"
-                className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-900/70 px-4 py-2 text-sm font-medium text-zinc-100 hover:border-zinc-500"
+                className="inline-flex items-center rounded-full dash-chip px-4 py-2 text-sm font-medium oc-text hover:border-oc-teal/40"
               >
                 Gestionează billing
               </button>
@@ -78,12 +78,12 @@ export function ProfessionalBillingView({ model }: Props) {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
             <div className="text-xs uppercase tracking-wide text-muted-foreground">Subscription overview</div>
-            <div className="text-xl font-semibold text-zinc-100">{model.planName}</div>
+            <div className="text-xl font-semibold oc-text">{model.planName}</div>
             <div className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusTone(model.status)}`}>
               {model.statusLabel}
             </div>
           </div>
-          <div className="grid gap-3 text-sm text-zinc-300 sm:text-right">
+          <div className="grid gap-3 text-sm oc-secondary-text sm:text-right">
             <div>
               <div className="text-xs uppercase tracking-wide text-muted-foreground">Business</div>
               <div>{model.businessName}</div>
@@ -94,28 +94,28 @@ export function ProfessionalBillingView({ model }: Props) {
             </div>
           </div>
         </div>
-        <p className="mt-4 text-sm text-zinc-300">{model.statusMessage}</p>
+        <p className="mt-4 text-sm oc-secondary-text">{model.statusMessage}</p>
         {model.providerWarning ? (
-          <div className="mt-4 rounded-2xl border border-orange-500/30 bg-orange-950/30 px-4 py-3 text-sm text-orange-200">{model.providerWarning}</div>
+          <div className="mt-4 rounded-2xl border border-orange-300 bg-orange-50 px-4 py-3 text-sm text-orange-900">{model.providerWarning}</div>
         ) : null}
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="lux-card p-4">
           <p className="text-xs text-muted-foreground">Luna aceasta</p>
-          <p className="mt-1 text-2xl font-semibold text-amber-100">{formatLei(model.revenueCurrentMonth)}</p>
+          <p className="mt-1 text-2xl font-semibold oc-accent">{formatLei(model.revenueCurrentMonth)}</p>
         </div>
         <div className="lux-card p-4">
           <p className="text-xs text-muted-foreground">Luna trecută</p>
-          <p className="mt-1 text-2xl font-semibold text-zinc-100">{formatLei(model.revenuePreviousMonth)}</p>
+          <p className="mt-1 text-2xl font-semibold oc-text">{formatLei(model.revenuePreviousMonth)}</p>
         </div>
         <div className="lux-card p-4">
           <p className="text-xs text-muted-foreground">Booking-uri luna aceasta</p>
-          <p className="mt-1 text-2xl font-semibold text-zinc-100">{model.bookingsCurrentMonth}</p>
+          <p className="mt-1 text-2xl font-semibold oc-text">{model.bookingsCurrentMonth}</p>
         </div>
         <div className="lux-card p-4">
           <p className="text-xs text-muted-foreground">Delta venit</p>
-          <p className="mt-1 text-2xl font-semibold text-zinc-100">{deltaLabel(model.revenueDeltaPercent)}</p>
+          <p className="mt-1 text-2xl font-semibold oc-text">{deltaLabel(model.revenueDeltaPercent)}</p>
         </div>
       </section>
 
@@ -133,7 +133,7 @@ export function ProfessionalBillingView({ model }: Props) {
           {model.canOpenCheckout ? (
             <Link
               href="/billing/checkout"
-              className="inline-flex items-center rounded-full bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 px-4 py-2 text-sm font-semibold text-slate-900 hover:brightness-105"
+              className="inline-flex items-center rounded-full bg-gradient-to-r from-oc-amber-light to-oc-amber text-white text-sm font-semibold hover:brightness-105"
             >
               Deschide checkout
             </Link>
@@ -142,7 +142,7 @@ export function ProfessionalBillingView({ model }: Props) {
             <form method="post" action="/api/billing/portal">
               <button
                 type="submit"
-                className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-900/70 px-4 py-2 text-sm font-medium text-zinc-100 hover:border-zinc-500"
+                className="inline-flex items-center rounded-full dash-chip px-4 py-2 text-sm font-medium oc-text hover:border-oc-teal/40"
               >
                 Deschide portalul de billing
               </button>
@@ -153,7 +153,7 @@ export function ProfessionalBillingView({ model }: Props) {
       </section>
 
       {emptyState ? (
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-950/60 px-4 py-4 text-sm text-zinc-300">
+        <section className="rounded-2xl border dash-dialog/60 px-4 py-4 text-sm oc-secondary-text">
           Nu există încă venituri sau suficiente booking-uri pentru această perioadă. Pagina rămâne disponibilă și va afișa datele imediat ce apar facturi sau programări relevante.
         </section>
       ) : null}

@@ -58,7 +58,7 @@ export async function submitProfesionistiOnboarding(formData: FormData) {
       })
       .eq("user_id", user.id);
     if (error) {
-      redirect("/onboarding?error=" + encodeURIComponent(error.message));
+      redirect("/onboarding?error=save_failed");
     }
   } else {
     const { error } = await supabase.from("profesionisti").insert({
@@ -70,7 +70,7 @@ export async function submitProfesionistiOnboarding(formData: FormData) {
       onboarding_pas: 4
     });
     if (error) {
-      redirect("/onboarding?error=" + encodeURIComponent(error.message));
+      redirect("/onboarding?error=save_failed");
     }
   }
 

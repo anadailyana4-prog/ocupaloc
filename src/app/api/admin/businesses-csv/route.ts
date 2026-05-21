@@ -1,12 +1,12 @@
 import { formatInTimeZone } from "date-fns-tz";
 
+import { BILLING_TRIAL_DAYS } from "@/lib/billing/config";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { getUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 const TZ = "Europe/Bucharest";
-const BILLING_TRIAL_DAYS = 30;
 
 function csvCell(v: string | number | null | undefined): string {
   const s = String(v ?? "");

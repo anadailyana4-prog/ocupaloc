@@ -263,14 +263,14 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
 
  if (!servicii?.length) {
  return (
- <div className="min-h-screen bg-gradient-to-b from-[#F8F6F1] via-[#F8F6F1] to-[#EEF7F6] oc-text">
+ <div className="min-h-screen bg-gradient-to-b from-oc-cream via-oc-cream to-oc-teal-soft oc-text">
  <div className="mx-auto flex min-h-screen max-w-3xl flex-col items-center justify-center gap-6 px-6 text-center">
  <h1 className="text-3xl font-bold tracking-tight">{prof.nume_business}</h1>
  <p className="max-w-md oc-text">Pagina de programări este în configurare. Revenim foarte curând cu serviciile disponibile online.</p>
  {prof.telefon ? (
  <a
  href={`tel:${String(prof.telefon).replace(/\s+/g, "")}`}
- className="inline-flex items-center justify-center rounded-full oc-badge-bg px-8 py-3 text-sm font-semibold oc-text ring-1 ring-[#0F766E]/20 transition hover:bg-white hover:ring-[#0F766E]/20"
+ className="inline-flex items-center justify-center rounded-full oc-badge-bg px-8 py-3 text-sm font-semibold oc-text ring-1 ring-oc-teal/20 transition hover:bg-white hover:ring-oc-teal/20"
  >
  Sună: {String(prof.telefon)}
  </a>
@@ -330,7 +330,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
  };
 
  return (
- <div className="min-h-screen bg-gradient-to-b from-[#F8F6F1] via-[#F8F6F1] to-[#EEF7F6] oc-text">
+ <div className="min-h-screen bg-gradient-to-b from-oc-cream via-oc-cream to-oc-teal-soft oc-text">
  <Script id={`local-business-schema-${slug}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }} />
  {isOwner ? (
  <div className="flex items-center gap-3 border-b oc-border bg-white px-4 py-2">
@@ -352,7 +352,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
  />
  ) : (
  <div
- className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#F59E0B] to-[#0F766E] text-4xl font-bold tracking-tight text-white shadow-xl shadow-[0_12px_28px_-18px_rgba(245,158,11,0.45)] ring-4 ring-[#0F766E]/15"
+ className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-oc-amber-light to-oc-teal text-4xl font-bold tracking-tight text-white shadow-xl shadow-[0_12px_28px_-18px_rgba(245,158,11,0.45)] ring-4 ring-oc-teal/15"
  aria-hidden
  >
  {displayInitial((prof.nume_business as string) || slug)}
@@ -378,7 +378,7 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
  {telefon ? (
  <a
  href={`tel:${telHref}`}
- className="inline-flex items-center justify-center rounded-full oc-badge-bg px-8 py-3 text-sm font-semibold oc-text ring-1 ring-[#0F766E]/20 transition hover:bg-white hover:ring-[#0F766E]/20"
+ className="inline-flex items-center justify-center rounded-full oc-badge-bg px-8 py-3 text-sm font-semibold oc-text ring-1 ring-oc-teal/20 transition hover:bg-white hover:ring-oc-teal/20"
  >
  {telefon}
  </a>

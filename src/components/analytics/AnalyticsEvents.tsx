@@ -107,6 +107,8 @@ export function AnalyticsEvents() {
       window.removeEventListener("pagehide", endVisit);
       endVisit();
     };
+    // Visit listeners are bound once per document mount; page views are tracked in the effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional single mount for session/visit lifecycle
   }, []);
 
   useEffect(() => {

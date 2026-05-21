@@ -82,31 +82,31 @@ export function Header() {
   }
 
   return (
-    <header className="border-b border-amber-200/15 bg-slate-950/70 backdrop-blur-xl">
+    <header className="border-b oc-border oc-bg backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-        <Link href="/" className="font-display text-xl font-semibold tracking-wide text-amber-100">
+        <Link href="/" className="font-display text-xl font-semibold tracking-wide oc-accent">
           OcupaLoc
         </Link>
         {isAuthPage ? null : session === null ? (
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm" className="rounded-full border-amber-200/25 bg-slate-900/50 text-amber-50 hover:bg-slate-800/70">
+            <Button asChild variant="outline" size="sm" className="rounded-full oc-text border-oc-border bg-white hover:bg-oc-teal-soft">
               <Link href="/login">Intră în cont</Link>
             </Button>
-            <Button asChild size="sm" className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105">
+            <Button asChild size="sm" className="rounded-full border-0 oc-primary">
               <Link href="/signup?start=1">Creează cont</Link>
             </Button>
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <div className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-amber-200/20 bg-slate-800 text-xs font-semibold text-amber-100">
+            <div className="inline-flex h-8 w-8 items-center justify-center rounded-full border oc-border bg-oc-teal-soft text-xs font-semibold oc-accent">
               {initialsFromEmail(session.user.email)}
             </div>
-            <span className="hidden text-sm text-amber-50/80 sm:inline">{session.user.email ?? "utilizator"}</span>
+            <span className="hidden text-sm oc-secondary-text sm:inline">{session.user.email ?? "utilizator"}</span>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="rounded-full border-amber-200/25 bg-slate-900/50 text-amber-50 hover:bg-slate-800/70"
+              className="rounded-full oc-text border-oc-border bg-white hover:bg-oc-teal-soft"
               onClick={() => void handleSignOut()}
               disabled={isSigningOut}
             >

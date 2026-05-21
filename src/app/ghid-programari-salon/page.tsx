@@ -20,7 +20,10 @@ const tableOfContents = [
   { id: "implementare", title: "Implementare pas cu pas" },
   { id: "reducere-noshow", title: "Cum reduci no-show-urile cu 70%" },
   { id: "marketing", title: "Marketing gratuit pentru saloane" },
+  { id: "studii-caz", title: "Studii de caz reale" },
   { id: "comparatie", title: "Comparație: comision vs abonament fix" },
+  { id: "checklist", title: "Checklist implementare" },
+  { id: "resurse", title: "Resurse gratuite" },
   { id: "faq", title: "Întrebări frecvente" }
 ];
 
@@ -384,7 +387,158 @@ export default function GhidProgramariSalonPage() {
           </p>
         </section>
 
-        {/* Section 7: FAQ */}
+        {/* Section 6b: Studii de Caz */}
+        <section id="studii-caz" className="space-y-4">
+          <h2 className="text-3xl font-bold">Studii de caz: rezultate reale</h2>
+          <p className="leading-relaxed oc-text">
+            Iată cum trei saloane din România au transformat business-ul folosind programări online:
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-6 mt-6">
+            <div className="rounded-xl border oc-border bg-white p-6">
+              <h3 className="text-lg font-semibold mb-2">Studio Beauty Elena</h3>
+              <p className="text-sm oc-secondary-text mb-3">București, 4 angajați</p>
+              <ul className="text-sm space-y-2 oc-text">
+                <li>• <strong>Înainte:</strong> 80 programări/lună pe telefon</li>
+                <li>• <strong>După:</strong> 145 programări/lună online</li>
+                <li>• <strong>Rezultat:</strong> +81% programări, -78% no-shows</li>
+              </ul>
+              <p className="text-sm mt-3 italic oc-secondary-text">
+                &ldquo;Am recuperat costul abonamentului în prima săptămână.&rdquo;
+              </p>
+            </div>
+
+            <div className="rounded-xl border oc-border bg-white p-6">
+              <h3 className="text-lg font-semibold mb-2">Barber Shop Andrei</h3>
+              <p className="text-sm oc-secondary-text mb-3">Cluj-Napoca, 2 frizeri</p>
+              <ul className="text-sm space-y-2 oc-text">
+                <li>• <strong>Înainte:</strong> 60 programări/lună (mix telefon/walk-in)</li>
+                <li>• <strong>După:</strong> 110 programări/lună</li>
+                <li>• <strong>Rezultat:</strong> +83% programări, +200% clienți noi</li>
+              </ul>
+              <p className="text-sm mt-3 italic oc-secondary-text">
+                &ldquo;Link-ul în bio-ul de Instagram a fost game-changer.&rdquo;
+              </p>
+            </div>
+
+            <div className="rounded-xl border oc-border bg-white p-6">
+              <h3 className="text-lg font-semibold mb-2">DermaCare</h3>
+              <p className="text-sm oc-secondary-text mb-3">Timișoara, cabinet cosmetică</p>
+              <ul className="text-sm space-y-2 oc-text">
+                <li>• <strong>Înainte:</strong> 40 programări/lună, 30% neprezentări</li>
+                <li>• <strong>După:</strong> 72 programări/lună, 8% neprezentări</li>
+                <li>• <strong>Rezultat:</strong> +80% programări, 2 ore/zi economisite</li>
+              </ul>
+              <p className="text-sm mt-3 italic oc-secondary-text">
+                &ldquo;Reminder-ele automate au redus anulările la jumătate.&rdquo;
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 text-center">
+            <Link href="/cazuri-de-succes" className="text-sm font-semibold oc-accent hover:underline">
+              Vezi toate cazurile de succes →
+            </Link>
+          </div>
+        </section>
+
+        {/* Section 6c: Video Tutorial */}
+        <section className="space-y-4">
+          <h2 className="text-3xl font-bold">Tutorial video: configurare în 10 minute</h2>
+          <p className="leading-relaxed oc-text">
+            Vezi cât de ușor este să configurezi OcupaLoc pentru salonul tău:
+          </p>
+          <div className="aspect-video rounded-xl bg-zinc-900 flex items-center justify-center">
+            <div className="text-center text-white">
+              <p className="text-lg mb-2">🎥 Video tutorial în curând</p>
+              <p className="text-sm opacity-75">Abonează-te pentru a fi notificat când e gata</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 7: Checklist */}
+        <section id="checklist" className="space-y-4">
+          <h2 className="text-3xl font-bold">Checklist: Digitalizare salon în 30 de zile</h2>
+          <p className="leading-relaxed oc-text">
+            Urmează acești pași pentru a trece de la agendă fizică la programări digitale:
+          </p>
+
+          <div className="space-y-3 mt-4">
+            <div className="flex items-start gap-3 p-4 rounded-lg border oc-border bg-white">
+              <span className="text-xl">☐</span>
+              <div>
+                <p className="font-medium">Săptămâna 1: Setup tehnic</p>
+                <p className="text-sm oc-secondary-text">Creează cont OcupaLoc, adaugă serviciile și setează programul de lucru</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 rounded-lg border oc-border bg-white">
+              <span className="text-xl">☐</span>
+              <div>
+                <p className="font-medium">Săptămâna 2: Migrare date</p>
+                <p className="text-sm oc-secondary-text">Importă clienții existenți, programează primii clienți prin noul sistem</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 rounded-lg border oc-border bg-white">
+              <span className="text-xl">☐</span>
+              <div>
+                <p className="font-medium">Săptămâna 3: Comunicare</p>
+                <p className="text-sm oc-secondary-text">Anunță clienții despre noul sistem, pune link-ul în bio pe social media</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-4 rounded-lg border oc-border bg-white">
+              <span className="text-xl">☐</span>
+              <div>
+                <p className="font-medium">Săptămâna 4: Optimizare</p>
+                <p className="text-sm oc-secondary-text">Analizează primele rezultate, ajustează programul și colectează feedback</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 p-4 rounded-lg border oc-border oc-badge-bg">
+            <p className="text-sm font-medium">💡 Pro tip: Descarcă checklist-ul complet în format PDF pentru a-l printa și urmări progresul.</p>
+          </div>
+        </section>
+
+        {/* Section 8: Resurse */}
+        <section id="resurse" className="space-y-4">
+          <h2 className="text-3xl font-bold">Resurse gratuite pentru saloane</h2>
+          <p className="leading-relaxed oc-text">
+            Tool-uri, template-uri și ghiduri pentru a-ți crește salonul:
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-4 mt-4">
+            <Link href="/calculator-roi" className="flex items-center gap-4 p-4 rounded-xl border oc-border bg-white hover:oc-badge-bg transition">
+              <span className="text-3xl">📊</span>
+              <div>
+                <p className="font-semibold">Calculator ROI</p>
+                <p className="text-sm oc-secondary-text">Calculează economiile anuale</p>
+              </div>
+            </Link>
+            <Link href="/resurse/template-postari-social" className="flex items-center gap-4 p-4 rounded-xl border oc-border bg-white hover:oc-badge-bg transition">
+              <span className="text-3xl">📱</span>
+              <div>
+                <p className="font-semibold">Template-uri Social Media</p>
+                <p className="text-sm oc-secondary-text">10 postări gata de folosit</p>
+              </div>
+            </Link>
+            <Link href="/blog" className="flex items-center gap-4 p-4 rounded-xl border oc-border bg-white hover:oc-badge-bg transition">
+              <span className="text-3xl">📚</span>
+              <div>
+                <p className="font-semibold">Blog OcupaLoc</p>
+                <p className="text-sm oc-secondary-text">Articole despre marketing și management salon</p>
+              </div>
+            </Link>
+            <Link href="/ghid-programari-salon/checklist.pdf" className="flex items-center gap-4 p-4 rounded-xl border oc-border bg-white hover:oc-badge-bg transition">
+              <span className="text-3xl">✅</span>
+              <div>
+                <p className="font-semibold">Checklist PDF</p>
+                <p className="text-sm oc-secondary-text">Descarcă și printează (în curând)</p>
+              </div>
+            </Link>
+          </div>
+        </section>
+
+        {/* Section 9: FAQ */}
         <section id="faq" className="space-y-4">
           <h2 className="text-3xl font-bold">Întrebări frecvente</h2>
           

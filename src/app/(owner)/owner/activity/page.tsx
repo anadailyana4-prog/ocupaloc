@@ -152,7 +152,7 @@ export default async function OwnerActivityPage() {
             href="/api/owner/analytics/activation-funnel?windowDays=90"
             target="_blank"
             rel="noreferrer"
-            className="text-xs text-amber-300 hover:text-amber-200"
+            className="text-xs text-oc-amber-light hover:text-oc-amber"
           >
             Activation funnel + trial-to-paid cohort (JSON query-ready)
           </a>

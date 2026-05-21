@@ -109,9 +109,9 @@ function BookingCardDemo() {
  <div className="text-xs md:text-sm font-medium oc-secondary-text mb-3">4. Confirmare</div>
  <div className="text-sm md:text-base font-semibold oc-text">Serviciu principal</div>
  <div className="mt-1 text-sm md:text-base oc-secondary-text">Marți, 15 aprilie • 14:00 - 14:45</div>
- <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-4 mt-4">
- <p className="font-bold text-center text-amber-900">⚠️ Acesta este un DEMO</p>
- <p className="text-sm text-center text-amber-800">Rezervarea nu este reală. Creează-ți propriul business mai jos.</p>
+ <div className="bg-oc-amber-soft border-2 border-oc-amber/40 rounded-lg p-4 mb-4 mt-4">
+ <p className="font-bold text-center text-oc-warning">⚠️ Acesta este un DEMO</p>
+ <p className="text-sm text-center text-oc-amber">Rezervarea nu este reală. Creează-ți propriul business mai jos.</p>
  </div>
  <Button disabled className="w-full opacity-50 cursor-not-allowed">
  Demo - Rezervare indisponibilă
@@ -686,10 +686,10 @@ function BookingCardLive(props: LiveProps) {
  publicPageLayout
  ? `rounded-2xl px-5 py-5 ${
  selectedServiceId === s.id
- ? "oc-border oc-primary ring-2 ring-[#0F766E]/25"
+ ? "oc-border oc-primary ring-2 ring-oc-teal/25"
  : "oc-border oc-badge-bg hover:oc-border hover:oc-badge-bg"
  }`
- : `rounded-lg px-3 py-2.5 ${selectedServiceId === s.id ? "oc-border oc-badge-bg ring-1 ring-[#0F766E]/25" : "oc-border oc-badge-bg hover:oc-badge-bg"}`
+ : `rounded-lg px-3 py-2.5 ${selectedServiceId === s.id ? "oc-border oc-badge-bg ring-1 ring-oc-teal/25" : "oc-border oc-badge-bg hover:oc-badge-bg"}`
  }`}
  >
  <div className={`font-semibold oc-text ${publicPageLayout ? "text-base md:text-lg" : "text-sm md:text-base"}`}>
@@ -999,7 +999,7 @@ function BookingCardLive(props: LiveProps) {
  onChange={(e) => setClientNotes(e.target.value)}
  maxLength={500}
  placeholder="Ex: vin cu 5 minute întârziere"
- className="mt-1 min-h-20 w-full rounded-md border oc-border bg-white px-3 py-2 text-sm oc-text outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]/20"
+ className="mt-1 min-h-20 w-full rounded-md border oc-border bg-white px-3 py-2 text-sm oc-text outline-none focus-visible:ring-2 focus-visible:ring-oc-teal/20"
  />
  <p className="mt-1 text-[11px] oc-secondary-text">Maxim 500 caractere.</p>
  </div>
@@ -1078,7 +1078,7 @@ function BookingCardLive(props: LiveProps) {
  onChange={(e) => setClientNotes(e.target.value)}
  maxLength={500}
  placeholder="Ex: prefer să fiu sunat(ă) la sosire"
- className="mt-1 min-h-20 w-full rounded-md border oc-border bg-white px-3 py-2 text-sm oc-text outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]/20"
+ className="mt-1 min-h-20 w-full rounded-md border oc-border bg-white px-3 py-2 text-sm oc-text outline-none focus-visible:ring-2 focus-visible:ring-oc-teal/20"
  />
  <p className="mt-1 text-[11px] oc-secondary-text">Maxim 500 caractere.</p>
  </div>

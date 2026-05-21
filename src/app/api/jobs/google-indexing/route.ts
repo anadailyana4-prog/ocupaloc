@@ -17,6 +17,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const result = await runGoogleIndexingDailyJob();
+    if ("skipped" in result && result.skipped) {
+      return NextResponse.json({ ok: true, ...result, ranAt: new Date().toISOString() });
+    }
     return NextResponse.json({ ok: true, ...result, ranAt: new Date().toISOString() });
   } catch (error) {
     reportError("cron", "google_indexing_job_failed", error);

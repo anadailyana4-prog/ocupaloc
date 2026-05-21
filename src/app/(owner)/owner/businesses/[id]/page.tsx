@@ -57,7 +57,7 @@ export default async function OwnerBusinessDetailPage({
     return (
       <div className="text-center py-12">
         <p className="text-slate-400">Business not found</p>
-        <Link href="/owner/businesses" className="text-amber-400 mt-4 inline-block">
+        <Link href="/owner/businesses" className="text-oc-amber-light mt-4 inline-block">
           Back to businesses
         </Link>
       </div>
@@ -74,7 +74,7 @@ export default async function OwnerBusinessDetailPage({
           <h1 className="text-3xl font-bold text-slate-100">{business.nume_business}</h1>
           <p className="text-slate-400 mt-1">/{business.slug}</p>
         </div>
-        <Link href="/owner/businesses" className="text-amber-400 hover:text-amber-300">
+        <Link href="/owner/businesses" className="text-oc-amber-light hover:text-oc-amber">
           Back
         </Link>
       </div>
@@ -125,7 +125,7 @@ export default async function OwnerBusinessDetailPage({
             Mark for follow-up
           </label>
           <div>
-            <button type="submit" className="px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-100 font-medium">
+            <button type="submit" className="px-4 py-2 rounded-lg bg-oc-amber/20 border border-oc-amber/40 text-oc-amber-light font-medium">
               Save note
             </button>
           </div>

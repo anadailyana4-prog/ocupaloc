@@ -36,7 +36,7 @@ const statusLabels: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  in_asteptare: "bg-amber-50 text-amber-900 border-amber-200",
+  in_asteptare: "bg-oc-amber-soft text-oc-warning border-oc-amber/30",
   confirmat: "bg-emerald-50 text-emerald-900 border-emerald-200",
   finalizat: "bg-slate-100 text-slate-900 border-slate-300",
   anulat: "bg-red-50 text-red-900 border-red-200",

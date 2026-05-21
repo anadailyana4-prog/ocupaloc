@@ -72,7 +72,11 @@ function scoreUrl(rawUrl: string): number {
       score += 40;
     }
 
-    if (path === "/demo-interactiv" || path === "/demo-salon" || path === "/suport") {
+    if (path === "/demo-interactiv" || path === "/business-demo") {
+      score += 55;
+    }
+
+    if (path === "/demo-salon" || path === "/suport") {
       score -= 25;
     }
   } catch {
@@ -127,7 +131,27 @@ async function getAccessToken(): Promise<string> {
   return accessToken;
 }
 
+function hasGoogleIndexingCredentials(): boolean {
+  return Boolean(
+    process.env.GOOGLE_INDEXING_CLIENT_EMAIL?.trim() && process.env.GOOGLE_INDEXING_PRIVATE_KEY?.trim()
+  );
+}
+
 export async function runGoogleIndexingDailyJob() {
+  if (!hasGoogleIndexingCredentials()) {
+    return {
+      skipped: true,
+      reason: "missing_google_indexing_credentials",
+      sitemapUrl: null,
+      discovered: 0,
+      attempted: 0,
+      submitted: 0,
+      failed: 0,
+      failedUrls: [] as Array<{ url: string; status: number; body: string }>,
+      selectedUrls: [] as string[]
+    };
+  }
+
   const baseUrl = sanitizeBaseUrl(process.env.NEXT_PUBLIC_SITE_URL?.trim() || "https://ocupaloc.ro");
   const sitemapUrl = process.env.GOOGLE_INDEXING_SITEMAP_URL?.trim() || `${baseUrl}/sitemap.xml`;
 

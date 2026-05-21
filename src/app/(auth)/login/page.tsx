@@ -78,11 +78,21 @@ function LoginForm() {
 
     if (error) {
       setBusy(false);
-      const isUnconfirmed = error.message.toLowerCase().includes("email not confirmed");
+      // Debug logging to help diagnose login issues
+      console.error("[login] Supabase auth error:", {
+        message: error.message,
+        status: (error as { status?: number }).status,
+        code: (error as { code?: string }).code
+      });
+      const errorLower = error.message.toLowerCase();
+      const isUnconfirmed = 
+        errorLower.includes("email not confirmed") || 
+        errorLower.includes("user not confirmed") ||
+        errorLower.includes("not confirmed");
       setSubmitError(
         isUnconfirmed
-          ? "Trebuie să confirmi emailul înainte de a te autentifica. Verifică inbox-ul și dă click pe linkul din email."
-          : error.message
+          ? "Trebuie să confirmi emailul înainte de a te autentifica. Verifică inbox-ul și folderul Spam."
+          : "Email sau parolă invalidă."
       );
       void reportAuthOutcome("failure", error.message);
       return;
@@ -221,9 +231,21 @@ function LoginForm() {
                 {busy ? "Se autentifică…" : "Continuă"}
               </Button>
               {authError === "auth" && decodedAuthReason && !signupConfirmed ? (
-                <p className="text-sm text-amber-300">Autentificarea anterioară a eșuat: {decodedAuthReason}</p>
+                <div className="rounded-md border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-orange-800">
+                  <p className="font-medium">Problemă la confirmare</p>
+                  <p className="text-xs mt-1">Încearcă să te autentifici mai jos sau contactează suportul dacă problema persistă.</p>
+                </div>
               ) : null}
-              {submitError ? <p className="text-sm text-red-600">{submitError}</p> : null}
+              {submitError ? (
+                <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  <p className="font-medium">{submitError}</p>
+                  {submitError.includes("confirmi emailul") && (
+                    <p className="mt-1 text-xs text-red-600">
+                      Probleme? Contactează-ne la suport@ocupaloc.ro cu adresa ta de email.
+                    </p>
+                  )}
+                </div>
+              ) : null}
             </form>
           </Form>
         </CardContent>

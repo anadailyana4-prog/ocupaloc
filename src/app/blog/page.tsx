@@ -15,6 +15,26 @@ export const metadata: Metadata = {
 
 const posts = [
   {
+    slug: "ghid-seo-saloane-romania",
+    title: "SEO pentru saloane: cum să apari pe Google în 2025",
+    excerpt: "Ghid complet de SEO local pentru saloane beauty din România. Optimizare Google Business, keywords și strategii de conținut."
+  },
+  {
+    slug: "cum-sa-cresti-salon-fara-buget",
+    title: "Cum să crești un salon fără buget de marketing",
+    excerpt: "Strategii gratuite și tacticile eficiente pentru creșterea unui salon cu buget zero."
+  },
+  {
+    slug: "retentie-clienti-salon",
+    title: "Retenția clienților: cum să îi faci să revină",
+    excerpt: "Strategii pentru creșterea ratei de returență a clienților în salonul tău."
+  },
+  {
+    slug: "ghid-fiscal-salon-romania",
+    title: "Ghid fiscal pentru saloane în România 2025",
+    excerpt: "Tot ce trebuie să știi despre taxe, impozite și obligații fiscale pentru salonul tău."
+  },
+  {
     slug: "fresha-cat-costa-romania",
     title: "Cât te costă platformele cu comision și cum îți protejezi marja",
     excerpt: "Analiză detaliată a costurilor pe comision și de ce modelul 59,99 RON fără comision poate fi mai profitabil."
@@ -28,6 +48,21 @@ const posts = [
     slug: "telefon-vs-programari-online",
     title: "Telefon vs programări online: ce aduce mai multe încasări",
     excerpt: "Comparație directă între modelul clasic pe telefon și fluxul modern de software salon."
+  },
+  {
+    slug: "alternativa-booksy-romania",
+    title: "Alternativă Booksy în România: cost fix versus comision",
+    excerpt: "De ce un SaaS fără comision poate proteja marja când ai deja clienți și canale proprii."
+  },
+  {
+    slug: "programari-online-fara-comision",
+    title: "Programări online fără comision: cum îți protejezi marja",
+    excerpt: "Impactul costului variabil pe măsură ce crești volumul și avantajul abonamentului predictibil."
+  },
+  {
+    slug: "software-programari-cabinet-medic",
+    title: "Software programări pentru cabinet și clinică mică",
+    excerpt: "Agendă clară, confirmări și link unic de rezervare, adaptat fluxului zilnic."
   }
 ];
 

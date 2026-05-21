@@ -8,10 +8,11 @@ Acest runbook standardizeaza operatiunile SEO pentru indexare, monitorizare si r
 - Prioritizarea URL-urilor comerciale cu impact pe intentia de cumparare.
 
 ## Prioritati URL
-Ordinea de lucru ramane fixa:
-1. Money pages: `/programari-online-salon`, `/alternativa-fresha-romania`, `/software-programari-manichiura`, `/aplicatie-programari-frizerie`, `/preturi`.
-2. Blog list + articole cu intentie comerciala: `/blog`, `/blog/fresha-cat-costa-romania`, `/blog/cum-sa-reduci-anularile`, `/blog/telefon-vs-programari-online`.
-3. Pagini locale (oras/serviciu) doar dupa ce lotul de mai sus este stabil.
+Ordinea de lucru ramane fixa (brand OcupaLoc = platforma SaaS, nu pagini verticale „salon”):
+1. Pagini de brand / conversie: `/`, `/preturi`, `/despre`, `/alternativa-fresha-romania`, `/demo-interactiv`, `/business-demo`, `/demo`, `/suport`.
+2. Comparativ competitori: `/comparativ/fresha`, `/comparativ/booksy`, `/comparativ/treatwell`, `/comparativ/stailer`.
+3. Blog list + articole: `/blog`, `/blog/fresha-cat-costa-romania`, `/blog/cum-sa-reduci-anularile`, `/blog/telefon-vs-programari-online`, `/blog/alternativa-booksy-romania`, `/blog/programari-online-fara-comision`, `/blog/software-programari-cabinet-medic`.
+4. Pagini verticale SEO (frizerie/salon/manichiura) si locale (oras/serviciu) doar dupa lotul 1–3.
 
 ## Rutina zilnica (5-10 minute)
 1. Search Console -> Indexarea paginilor.

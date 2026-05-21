@@ -11,14 +11,55 @@ const config: Config = {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))"
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))"
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))"
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))"
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))"
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))"
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))"
+        },
+        /* ═══════════════════════════════════════════════════════════════
+           PALETA PSIHOLOGICĂ OCUPALOC v2.0
+           ═══════════════════════════════════════════════════════════════ */
         oc: {
-          primary: "#F59E0B",
-          accent: "#0F766E",
-          success: "#10B981",
-          warning: "#EF4444",
-          bg: "#F8F6F1",
-          text: "#1E293B",
-          border: "#E2E8F0"
+          cream: "#FAF9F7",
+          "cream-dark": "#F5F3EE",
+          teal: "#0D9488",
+          "teal-dark": "#0F766E",
+          "teal-soft": "#E6F4F3",
+          amber: "#D97706",
+          "amber-light": "#F59E0B",
+          "amber-soft": "#FEF7E8",
+          slate: "#0F172A",
+          "slate-light": "#1E293B",
+          muted: "#64748B",
+          border: "#E2E8F0",
+          rose: "#E11D48",
+          "rose-soft": "#FCE7F0",
+          success: "#059669",
+          "success-soft": "#D1FAE5",
+          warning: "#B45309"
         }
       },
       borderRadius: {

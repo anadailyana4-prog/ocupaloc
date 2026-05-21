@@ -208,7 +208,7 @@ export default async function ProgramariOnlineNutritionistPage() {
           </p>
 
           <article className="rounded-xl border oc-border bg-white p-6">
-            <h3 className="text-xl font-semibold text-amber-100">
+            <h3 className="text-xl font-semibold text-oc-teal">
               Clienții rezervă când sunt motivați — nu când ești disponibil la mesaje
             </h3>
             <p className="mt-3 leading-relaxed oc-text">
@@ -219,7 +219,7 @@ export default async function ProgramariOnlineNutritionistPage() {
           </article>
 
           <article className="rounded-xl border oc-border bg-white p-6">
-            <h3 className="text-xl font-semibold text-amber-100">
+            <h3 className="text-xl font-semibold text-oc-teal">
               Gestionezi consultații la cabinet și online din același sistem
             </h3>
             <p className="mt-3 leading-relaxed oc-text">
@@ -230,7 +230,7 @@ export default async function ProgramariOnlineNutritionistPage() {
           </article>
 
           <article className="rounded-xl border oc-border bg-white p-6">
-            <h3 className="text-xl font-semibold text-amber-100">
+            <h3 className="text-xl font-semibold text-oc-teal">
               Prima consultație și follow-up — cu durate diferite în aceeași agendă
             </h3>
             <p className="mt-3 leading-relaxed oc-text">

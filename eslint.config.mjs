@@ -20,7 +20,8 @@ const eslintConfig = [
       ".open-next/**",
       ".wrangler/**",
       ".npm-cache/**",
-      "tailwind.config.ts"
+      "tailwind.config.ts",
+      "public/widget.js"
     ]
   },
   ...compat.extends("next/core-web-vitals", "next/typescript")

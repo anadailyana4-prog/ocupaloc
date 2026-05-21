@@ -482,6 +482,44 @@ test("insertProgramareForProfSlug: blocked client rejects normalized phone varia
   assert.match((third as { ok: false; message: string }).message, /sună direct|Ne pare rău/i);
 });
 
+test("insertProgramareForProfSlug: observatii update failure still returns success", async () => {
+  const admin = {
+    rpc: async () => ({
+      data: [
+        {
+          success: true,
+          programare_id: "prog-with-notes",
+          error_code: null,
+          error_message: null
+        }
+      ]
+    }),
+    from: (table: string) => {
+      if (table === "programari") {
+        return {
+          update: () => ({
+            eq: async () => ({ error: { message: "RLS" } })
+          })
+        };
+      }
+      return makeFromStub()(table);
+    }
+  } as unknown as SupabaseClient;
+
+  const result = await insertProgramareForProfSlug(admin, {
+    slug: "salon",
+    serviciuId: "service-uuid",
+    dateStr: "2026-05-01",
+    slotIso: "2026-05-01T10:00:00.000Z",
+    numeClient: "Test Client",
+    telefonClient: "0712345678",
+    observatiiClient: "Note importante"
+  });
+
+  assert.equal(result.ok, true);
+  if (result.ok) assert.equal(result.programareId, "prog-with-notes");
+});
+
 test("insertProgramareForProfSlug: null email is converted to empty string", async () => {
   let capturedEmail: unknown = "SENTINEL";
   const admin = {
@@ -497,7 +535,8 @@ test("insertProgramareForProfSlug: null email is converted to empty string", asy
           }
         ]
       };
-    }
+    },
+    from: makeFromStub()
   } as unknown as SupabaseClient;
 
   await insertProgramareForProfSlug(admin, {

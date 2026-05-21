@@ -214,7 +214,7 @@ export default async function ProgramariOnlinePsihologPage() {
           </p>
 
           <article className="rounded-xl border oc-border bg-white p-6">
-            <h3 className="text-xl font-semibold text-amber-100">
+            <h3 className="text-xl font-semibold text-oc-teal">
               {"Clienții rezervă când au curajul să o facă — nu când ești disponibil la telefon"}
             </h3>
             <p className="mt-3 leading-relaxed oc-text">
@@ -226,7 +226,7 @@ export default async function ProgramariOnlinePsihologPage() {
           </article>
 
           <article className="rounded-xl border oc-border bg-white p-6">
-            <h3 className="text-xl font-semibold text-amber-100">
+            <h3 className="text-xl font-semibold text-oc-teal">
               Fără conversații repetitive despre ore și disponibilitate
             </h3>
             <p className="mt-3 leading-relaxed oc-text">

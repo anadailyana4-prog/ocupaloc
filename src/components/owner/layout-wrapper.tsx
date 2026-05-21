@@ -111,7 +111,7 @@ export function OwnerLayout({
       {/* Sidebar */}
       <aside className="w-64 border-r border-slate-800 bg-slate-900 p-4 overflow-y-auto">
         <div className="mb-8">
-          <Link href="/owner/dashboard" className="text-xl font-bold tracking-wide text-amber-100">
+          <Link href="/owner/dashboard" className="text-xl font-bold tracking-wide text-oc-amber-light">
             OcupaLoc Owner
           </Link>
           <p className="text-xs text-slate-400 mt-1">Control Center</p>
@@ -126,7 +126,7 @@ export function OwnerLayout({
                 href={item.href}
                 className={`block px-3 py-2 rounded-lg transition ${
                   isActive
-                    ? "bg-amber-500/20 border-l-2 border-amber-400 text-amber-100"
+                    ? "bg-oc-amber/20 border-l-2 border-oc-amber-light text-oc-amber-light"
                     : "hover:bg-slate-800 text-slate-300"
                 }`}
               >

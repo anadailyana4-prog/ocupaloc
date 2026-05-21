@@ -35,22 +35,25 @@ export function DashboardHeader() {
             OcupaLoc
           </Link>
           <nav className="hidden sm:flex items-center gap-3 text-sm oc-secondary-text flex-wrap">
-            <Link href="/dashboard" className="transition hover:oc-accent">
+            <Link href="/dashboard" prefetch className="transition hover:oc-accent">
               Acasă
             </Link>
-            <Link href="/dashboard/servicii" className="transition hover:oc-accent">
+            <Link href="/dashboard/servicii" prefetch className="transition hover:oc-accent">
               Servicii
             </Link>
-            <Link href="/dashboard/program" className="transition hover:oc-accent">
+            <Link href="/dashboard/program" prefetch className="transition hover:oc-accent">
               Program
             </Link>
-            <Link href="/dashboard/billing" className="transition hover:oc-accent">
+            <Link href="/dashboard/billing" prefetch className="transition hover:oc-accent">
               Billing
             </Link>
-            <Link href="/dashboard/pagina" className="transition hover:oc-accent hidden sm:inline">
+            <Link href="/dashboard/pagina" prefetch className="transition hover:oc-accent hidden sm:inline">
               Pagină publică
             </Link>
-            <Link href="/dashboard/setari" className="transition hover:oc-accent hidden sm:inline">
+            <Link href="/dashboard/preview" prefetch className="transition hover:oc-accent hidden sm:inline">
+              Previzualizare
+            </Link>
+            <Link href="/dashboard/setari" prefetch className="transition hover:oc-accent hidden sm:inline">
               Setări
             </Link>
           </nav>
@@ -66,22 +69,25 @@ export function DashboardHeader() {
       </div>
       {/* Mobile nav — visible only below sm breakpoint */}
       <nav className="flex sm:hidden items-center gap-4 overflow-x-auto px-4 pb-2 text-sm oc-secondary-text whitespace-nowrap">
-        <Link href="/dashboard" className="transition hover:oc-accent py-1">
+        <Link href="/dashboard" prefetch className="transition hover:oc-accent py-1">
           Acasă
         </Link>
-        <Link href="/dashboard/servicii" className="transition hover:oc-accent py-1">
+        <Link href="/dashboard/servicii" prefetch className="transition hover:oc-accent py-1">
           Servicii
         </Link>
-        <Link href="/dashboard/program" className="transition hover:oc-accent py-1">
+        <Link href="/dashboard/program" prefetch className="transition hover:oc-accent py-1">
           Program
         </Link>
-        <Link href="/dashboard/billing" className="transition hover:oc-accent py-1">
+        <Link href="/dashboard/billing" prefetch className="transition hover:oc-accent py-1">
           Billing
         </Link>
-        <Link href="/dashboard/pagina" className="transition hover:oc-accent py-1">
+        <Link href="/dashboard/pagina" prefetch className="transition hover:oc-accent py-1">
           Pagină publică
         </Link>
-        <Link href="/dashboard/setari" className="transition hover:oc-accent py-1">
+        <Link href="/dashboard/preview" prefetch className="transition hover:oc-accent py-1">
+          Previzualizare
+        </Link>
+        <Link href="/dashboard/setari" prefetch className="transition hover:oc-accent py-1">
           Setări
         </Link>
       </nav>

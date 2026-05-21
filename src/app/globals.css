@@ -2,50 +2,100 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════════
+   OcupaLoc — sistem unic de culori (landing, loading, dashboard, auth)
+   Fundal cream #F8F6F1 · text #1E293B · accent teal #0F766E · amber #F59E0B
+   NU folosi zinc-900/950 sau amber-100 pe fundal închis în zona produs.
+   ═══════════════════════════════════════════════════════════════════ */
+
 @layer base {
   :root {
-    --background: 32 50% 96%;
-    --foreground: 215 32% 23%;
-    --card: 32 44% 94%;
-    --card-foreground: 215 32% 23%;
-    --popover: 32 44% 94%;
-    --popover-foreground: 215 32% 23%;
-    --primary: 38 92% 50%;
-    --primary-foreground: 215 32% 23%;
-    --secondary: 175 73% 28%;
-    --secondary-foreground: 32 50% 96%;
-    --muted: 210 14% 83%;
-    --muted-foreground: 215 32% 43%;
-    --accent: 175 73% 28%;
-    --accent-foreground: 32 50% 96%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 32 50% 96%;
-    --border: 210 18% 85%;
-    --input: 32 44% 94%;
-    --ring: 38 92% 50%;
-    --radius: 0.85rem;
+    /* ═══════════════════════════════════════════════════════════════
+       PALETA PSIHOLOGICĂ OCUPALOC v2.0
+       
+       Fundal cream cald + contrast optimizat pentru wellness/beauty
+       
+       Psihologia culorilor:
+       • Teal #0D9488    → Încredere, calm, profesionalism medical
+       • Amber #D97706   → Energie, acțiune, conversie (CTA)
+       • Cream #FAF9F7   → Curățenie, spațiu, luxury
+       • Slate #0F172A   → Autoritate, lizibilitate maximă
+       • Rose #E11D48    → Urgent, notificări importante
+       ═══════════════════════════════════════════════════════════════ */
+    
+    /* Fundaluri */
+    --background: 40 20% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    
+    /* CTA & Acțiuni - Amber psihologic pentru conversie */
+    --primary: 32 95% 44%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Accent & Brand - Teal pentru încredere */
+    --secondary: 174 72% 31%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 174 72% 31%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Stări neutre */
+    --muted: 215 16% 47%;
+    --muted-foreground: 215 20% 65%;
+    
+    /* Stări critice - Rose pentru vizibilitate */
+    --destructive: 346 84% 51%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Borduri & Inputs */
+    --border: 214 32% 91%;
+    --input: 0 0% 100%;
+    --ring: 174 72% 31%;
+    --radius: 0.75rem;
+    
+    /* Tokeni OcupaLoc — folosiți CONSISTENT în tot proiectul */
+    --oc-cream: #FAF9F7;
+    --oc-cream-dark: #F5F3EE;
+    --oc-teal: #0D9488;
+    --oc-teal-dark: #0F766E;
+    --oc-teal-soft: #E6F4F3;
+    --oc-amber: #D97706;
+    --oc-amber-light: #F59E0B;
+    --oc-amber-soft: #FEF7E8;
+    --oc-slate: #0F172A;
+    --oc-slate-light: #1E293B;
+    --oc-muted: #64748B;
+    --oc-border: #E2E8F0;
+    --oc-rose: #E11D48;
+    --oc-rose-soft: #FCE7F0;
+    --oc-success: #059669;
+    --oc-success-soft: #D1FAE5;
+    --oc-warning: #B45309;
   }
 
   .dark {
-    --background: 32 50% 96%;
-    --foreground: 215 32% 23%;
-    --card: 32 44% 94%;
-    --card-foreground: 215 32% 23%;
-    --popover: 32 44% 94%;
-    --popover-foreground: 215 32% 23%;
-    --primary: 38 92% 50%;
-    --primary-foreground: 215 32% 23%;
-    --secondary: 175 73% 28%;
-    --secondary-foreground: 32 50% 96%;
-    --muted: 210 14% 83%;
-    --muted-foreground: 215 32% 43%;
-    --accent: 175 73% 28%;
-    --accent-foreground: 32 50% 96%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 32 50% 96%;
-    --border: 210 18% 85%;
-    --input: 32 44% 94%;
-    --ring: 38 92% 50%;
+    /* Dark mode — contrast inversat, păstrând psihologia culorilor */
+    --background: 222 47% 11%;
+    --foreground: 40 20% 98%;
+    --card: 222 47% 14%;
+    --card-foreground: 40 20% 98%;
+    --popover: 222 47% 14%;
+    --popover-foreground: 40 20% 98%;
+    --primary: 32 95% 52%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 174 72% 41%;
+    --secondary-foreground: 222 47% 11%;
+    --accent: 174 72% 41%;
+    --accent-foreground: 222 47% 11%;
+    --muted: 215 20% 65%;
+    --muted-foreground: 215 16% 56%;
+    --destructive: 346 84% 61%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 217 33% 17%;
+    --input: 222 47% 14%;
+    --ring: 174 72% 41%;
   }
 }
 
@@ -55,33 +105,33 @@
   }
 
   body {
-    background-color: hsl(var(--background));
+    background-color: var(--oc-cream);
     background-image: radial-gradient(circle at 15% 15%, rgba(245, 158, 11, 0.08), transparent 34%),
       radial-gradient(circle at 82% 0%, rgba(15, 118, 110, 0.08), transparent 36%),
       radial-gradient(circle at 50% 100%, rgba(15, 118, 110, 0.06), transparent 44%);
-    color: hsl(var(--foreground));
+    color: var(--oc-slate);
   }
 }
 
-/* Landing page unified color system */
+/* Tokeni utilitari — folosiți în tot site-ul */
 .oc-bg {
-  @apply bg-[#F8F6F1];
+  @apply bg-[#FAF9F7];
 }
 
 .oc-text {
-  @apply text-[#1E293B];
+  @apply text-[#0F172A];
 }
 
 .oc-accent {
-  @apply text-[#0F766E];
+  @apply text-[#0D9488];
 }
 
 .oc-primary {
-  @apply bg-[#F59E0B] text-white hover:bg-[#D97706];
+  @apply bg-[#D97706] text-white hover:bg-[#B45309];
 }
 
 .oc-primary-text {
-  @apply text-[#F59E0B];
+  @apply text-[#D97706];
 }
 
 .oc-secondary-text {
@@ -93,20 +143,20 @@
 }
 
 .oc-badge-bg {
-  @apply bg-[#EEF7F6];
+  @apply bg-[#E6F4F3];
 }
 
 .oc-card {
-  @apply rounded-xl border oc-border bg-white;
+  @apply rounded-xl border border-[#E2E8F0] bg-white shadow-sm;
 }
 
 .text-balance {
   text-wrap: balance;
 }
 
+/* Dashboard / lux — carduri albe (NU slate-950) */
 .lux-card {
-  @apply rounded-2xl border border-amber-300/20 bg-slate-950/40 backdrop-blur-sm;
-  box-shadow: 0 10px 40px rgba(2, 6, 23, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  @apply rounded-2xl border border-[#E2E8F0] bg-white shadow-sm;
 }
 
 .lux-cta {
@@ -124,13 +174,105 @@
 }
 
 .lux-outline {
-  @apply rounded-xl border border-amber-200/30 bg-slate-900/40 px-5 py-3 font-semibold text-amber-100;
+  @apply rounded-xl border border-[#E2E8F0] bg-white px-5 py-3 font-semibold text-[#0F172A];
   transition: background-color 180ms ease, border-color 180ms ease;
 }
 
 .lux-outline:hover {
-  border-color: rgba(253, 230, 138, 0.46);
-  background-color: rgba(23, 37, 84, 0.4);
+  @apply border-[#0D9488]/30 bg-[#E6F4F3];
+}
+
+/* Dashboard — componente reutilizabile */
+.dash-page-title {
+  @apply font-display text-2xl font-semibold tracking-wide text-[#0D9488];
+}
+
+.dash-section-title {
+  @apply font-display text-xl font-semibold tracking-wide text-[#0D9488];
+}
+
+.dash-input {
+  @apply h-10 w-full rounded-md border border-[#E2E8F0] bg-white px-3 text-sm text-[#0F172A] outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488]/25;
+}
+
+.dash-textarea {
+  @apply w-full rounded-md border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#0F172A] outline-none focus-visible:ring-2 focus-visible:ring-[#0D9488]/25;
+}
+
+.dash-panel {
+  @apply rounded-xl border border-[#E2E8F0] bg-white p-3 shadow-sm;
+}
+
+.dash-chip {
+  @apply rounded-full border border-[#E2E8F0] px-4 py-1.5 text-sm font-medium text-[#64748B] transition hover:border-[#0D9488]/30 hover:text-[#0D9488];
+}
+
+.dash-chip-active {
+  @apply border-oc-amber bg-oc-amber text-white hover:text-white;
+}
+
+.dash-back-link {
+  @apply inline-flex items-center gap-1 text-sm text-[#64748B] transition hover:text-[#0D9488];
+}
+
+.dash-table-wrap {
+  @apply overflow-x-auto rounded-xl border border-[#E2E8F0] bg-white;
+}
+
+.dash-table-head {
+  @apply border-b border-[#E2E8F0] bg-[#E6F4F3];
+}
+
+.dash-table-th {
+  @apply px-4 py-3 text-left text-sm font-medium text-[#64748B];
+}
+
+.dash-table-row {
+  @apply border-b border-[#E2E8F0] last:border-0;
+}
+
+.dash-dialog {
+  @apply border border-[#E2E8F0] bg-white text-[#0F172A];
+}
+
+.dash-kpi-label {
+  @apply text-sm text-[#64748B];
+}
+
+.dash-kpi-value {
+  @apply text-3xl font-bold text-[#0F172A];
+}
+
+.dash-kpi-hint {
+  @apply text-xs text-[#64748B];
+}
+
+.dash-week-tile {
+  @apply flex flex-col items-center rounded-xl border border-[#E2E8F0] bg-white px-1 py-2.5 text-center;
+}
+
+.dash-week-tile-today {
+  @apply border-oc-amber/40 bg-oc-amber-soft;
+}
+
+.dash-week-tile-busy {
+  @apply border-oc-teal/25 bg-oc-teal-soft;
+}
+
+.dash-week-tile-muted {
+  @apply opacity-40;
+}
+
+.dash-alert-warn {
+  @apply rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900;
+}
+
+.dash-alert-info {
+  @apply rounded-xl border border-oc-teal/20 bg-oc-teal-soft px-4 py-3 text-sm text-oc-slate;
+}
+
+.dash-note-box {
+  @apply rounded-xl border border-oc-border bg-oc-teal-soft p-3 text-xs text-oc-muted;
 }
 
 .section-reveal {
@@ -148,32 +290,30 @@
   }
 }
 
-/* Prevent browser autofill from overriding text color in dark theme */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-text-fill-color: hsl(var(--foreground)) !important;
-  -webkit-box-shadow: 0 0 0px 1000px hsl(var(--card)) inset !important;
-  caret-color: hsl(var(--foreground));
+  -webkit-text-fill-color: #0F172A !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  caret-color: #0F172A;
 }
 
-/* Force readable Sonner toasts in dark UI */
 [data-sonner-toaster] [data-sonner-toast] {
-  background: #09090b !important;
-  color: #fafafa !important;
-  border: 1px solid #27272a !important;
+  background: #ffffff !important;
+  color: #0F172A !important;
+  border: 1px solid #E2E8F0 !important;
 }
 
 [data-sonner-toaster] [data-sonner-toast] [data-title],
 [data-sonner-toaster] [data-sonner-toast] [data-description],
 [data-sonner-toaster] [data-sonner-toast] [data-content] {
-  color: #fafafa !important;
+  color: #0F172A !important;
 }
 
 [data-sonner-toaster] [data-sonner-toast] [data-button],
 [data-sonner-toaster] [data-sonner-toast] [data-cancel] {
-  background: #18181b !important;
-  color: #fafafa !important;
-  border: 1px solid #3f3f46 !important;
+  background: #f8f6f1 !important;
+  color: #1e293b !important;
+  border: 1px solid #e2e8f0 !important;
 }

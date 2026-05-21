@@ -71,13 +71,22 @@ def prepare_backup_connection(db_url: str) -> dict[str, str]:
     if "pooler.supabase.com" in host and username == "postgres" and project_ref:
         username = f"postgres.{project_ref}"
 
-    allowed_prefixes = ("postgres.", "cli_login_postgres.")
+    if username.startswith("cli_login_postgres."):
+        raise SystemExit(
+            "SUPABASE_DB_URL must not use cli_login_postgres.* (CLI token user). "
+            "That role cannot LOCK/pg_dump all tables. Use Session pooler URI with "
+            "user postgres.<project_ref> and your database password "
+            "(Dashboard → Database → Connect → Direct → Session pooler → URI), "
+            "or run: SUPABASE_DATABASE_PASSWORD='...' python3 scripts/sync-github-supabase-db-secret.py"
+        )
+
+    allowed_prefixes = ("postgres.",)
     if not username.startswith(allowed_prefixes):
         raise SystemExit(
             "SUPABASE_DB_URL must be the Session pooler URI from Supabase "
-            "(user postgres.<project_ref> or cli_login_postgres.<project_ref>, port 5432), "
+            "(user postgres.<project_ref>, port 5432), "
             "or use user `postgres` on the pooler together with env SUPABASE_PROJECT_REF. "
-            "Dashboard: Project Settings → Database → Connection string → Session mode."
+            "Dashboard: Project Settings → Database → Connection string → Session pooler."
         )
 
     if "pooler.supabase.com" not in host and not host.startswith("db."):

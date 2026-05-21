@@ -153,7 +153,7 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
 
   return (
     <div className="space-y-6">
-      <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-200 transition">
+      <Link href="/dashboard" className="inline-flex items-center gap-1 dash-back-link transition">
         ← Înapoi la meniu
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -164,11 +164,11 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
           </p>
           {supportsFeatured ? (
             <>
-              <p className="text-xs text-zinc-400">Servicii populare selectate: {featuredCount}/6</p>
-              <p className="text-xs text-zinc-500">Le setezi la crearea contului ca să apară primele în pagina publică și să ghidezi clienții spre cele mai cerute servicii.</p>
+              <p className="text-xs oc-secondary-text">Servicii populare selectate: {featuredCount}/6</p>
+              <p className="text-xs oc-secondary-text">Le setezi la crearea contului ca să apară primele în pagina publică și să ghidezi clienții spre cele mai cerute servicii.</p>
             </>
           ) : (
-            <p className="text-xs text-zinc-500">Serviciile populare devin disponibile după migrarea bazei de date.</p>
+            <p className="text-xs oc-secondary-text">Serviciile populare devin disponibile după migrarea bazei de date.</p>
           )}
         </div>
         <Button type="button" onClick={openAdd}>
@@ -176,9 +176,9 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
         </Button>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-zinc-800">
+      <div className="dash-table-wrap rounded-lg">
         <table className="w-full min-w-[640px] text-sm">
-          <thead className="border-b border-zinc-800 bg-zinc-950/80">
+          <thead className="border-b dash-dialog/80">
             <tr>
               <th className="px-4 py-3 text-left font-medium">Nume</th>
               <th className="px-4 py-3 text-left font-medium">Durată (min)</th>
@@ -197,7 +197,7 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
               </tr>
             ) : (
               initialServices.map((s) => (
-                <tr key={s.id} className="border-b border-zinc-900 last:border-0">
+                <tr key={s.id} className="border-b oc-border last:border-0">
                   <td className="px-4 py-3 font-medium">{s.name}</td>
                   <td className="px-4 py-3">{s.duration_min}</td>
                   <td className="px-4 py-3">{Number(s.price).toFixed(2)}</td>
@@ -211,7 +211,7 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
                           disabled={pendingFeaturedId === s.id || (!featuredIds.has(s.id) && featuredCount >= MAX_FEATURED_SERVICES)}
                           className="data-[state=checked]:!bg-green-500"
                         />
-                        <span className="text-xs text-zinc-400">{featuredIds.has(s.id) ? "Da" : "Nu"}</span>
+                        <span className="text-xs oc-secondary-text">{featuredIds.has(s.id) ? "Da" : "Nu"}</span>
                       </div>
                     </td>
                   ) : null}
@@ -231,22 +231,22 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
       </div>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="border-zinc-800 bg-zinc-950 text-white sm:max-w-md">
+        <DialogContent className="dash-dialog sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Serviciu nou</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
               <Label htmlFor="add-name">Nume</Label>
-              <Input id="add-name" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 border-zinc-700 bg-zinc-900" />
+              <Input id="add-name" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 dash-input" />
             </div>
             <div>
               <Label htmlFor="add-dur">Durată (min)</Label>
-              <Input id="add-dur" type="number" min={1} max={480} value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="mt-1 border-zinc-700 bg-zinc-900" />
+              <Input id="add-dur" type="number" min={1} max={480} value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="mt-1 dash-input" />
             </div>
             <div>
               <Label htmlFor="add-price">Preț (RON)</Label>
-              <Input id="add-price" type="number" min={0} step={1} value={price} onChange={(e) => setPrice(Number(e.target.value))} className="mt-1 border-zinc-700 bg-zinc-900" />
+              <Input id="add-price" type="number" min={0} step={1} value={price} onChange={(e) => setPrice(Number(e.target.value))} className="mt-1 dash-input" />
             </div>
             <div className="flex items-center gap-2">
               <Switch id="add-active" checked={active} onCheckedChange={setActive} />
@@ -265,22 +265,22 @@ export function ServiciiManager({ initialServices, orgSlug, supportsFeatured }: 
       </Dialog>
 
       <Dialog open={editRow !== null} onOpenChange={(o) => !o && setEditRow(null)}>
-        <DialogContent className="border-zinc-800 bg-zinc-950 text-white sm:max-w-md">
+        <DialogContent className="dash-dialog sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Editează serviciu</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
               <Label htmlFor="ed-name">Nume</Label>
-              <Input id="ed-name" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 border-zinc-700 bg-zinc-900" />
+              <Input id="ed-name" value={name} onChange={(e) => setName(e.target.value)} className="mt-1 dash-input" />
             </div>
             <div>
               <Label htmlFor="ed-dur">Durată (min)</Label>
-              <Input id="ed-dur" type="number" min={1} max={480} value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="mt-1 border-zinc-700 bg-zinc-900" />
+              <Input id="ed-dur" type="number" min={1} max={480} value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="mt-1 dash-input" />
             </div>
             <div>
               <Label htmlFor="ed-price">Preț (RON)</Label>
-              <Input id="ed-price" type="number" min={0} step={1} value={price} onChange={(e) => setPrice(Number(e.target.value))} className="mt-1 border-zinc-700 bg-zinc-900" />
+              <Input id="ed-price" type="number" min={0} step={1} value={price} onChange={(e) => setPrice(Number(e.target.value))} className="mt-1 dash-input" />
             </div>
             <div className="flex items-center gap-2">
               <Switch id="ed-active" checked={active} onCheckedChange={setActive} />

@@ -82,7 +82,7 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
 
   return (
     <div className="space-y-6">
-      <Link href="/dashboard" className="inline-flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-200 transition">
+      <Link href="/dashboard" className="inline-flex items-center gap-1 dash-back-link transition">
         ← Înapoi la meniu
       </Link>
       <div>
@@ -90,9 +90,9 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
         <p className="text-sm text-muted-foreground">Orele tale de lucru (vizibile pe pagina publică de rezervare).</p>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-zinc-800">
+      <div className="dash-table-wrap rounded-lg">
         <table className="w-full min-w-[520px] text-sm">
-          <thead className="border-b border-zinc-800 bg-zinc-950/80">
+          <thead className="border-b dash-dialog/80">
             <tr>
               <th className="px-4 py-3 text-left font-medium">Zi</th>
               <th className="px-4 py-3 text-left font-medium">Start</th>
@@ -105,7 +105,7 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
               const r = rows.find((x) => x.day === day)!;
               const closed = r.closed;
               return (
-                <tr key={day} className="border-b border-zinc-900 last:border-0">
+                <tr key={day} className="border-b oc-border last:border-0">
                   <td className="px-4 py-3 font-medium">{DAY_LABELS[day]}</td>
                   <td className="px-4 py-3">
                     <input
@@ -113,7 +113,7 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
                       value={r.start}
                       disabled={closed}
                       onChange={(e) => setRow(day, { start: e.target.value })}
-                      className="h-9 rounded-md border border-zinc-700 bg-zinc-900 px-2 text-white disabled:opacity-40"
+                      className="h-9 rounded-md dash-chip px-2 oc-text disabled:opacity-40"
                     />
                   </td>
                   <td className="px-4 py-3">
@@ -122,7 +122,7 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
                       value={r.end}
                       disabled={closed}
                       onChange={(e) => setRow(day, { end: e.target.value })}
-                      className="h-9 rounded-md border border-zinc-700 bg-zinc-900 px-2 text-white disabled:opacity-40"
+                      className="h-9 rounded-md dash-chip px-2 oc-text disabled:opacity-40"
                     />
                   </td>
                   <td className="px-4 py-3">
@@ -140,12 +140,12 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
         </table>
       </div>
 
-      <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-950/50 p-4">
-        <h2 className="text-sm font-semibold text-zinc-100">Strategie sloturi publice</h2>
-        <p className="text-xs text-zinc-400">Implicit recomandat: porniri aliniate la durata serviciului + pauza dintre clienți.</p>
+      <div className="space-y-3 rounded-lg border dash-dialog/50 p-4">
+        <h2 className="text-sm font-semibold oc-text">Strategie sloturi publice</h2>
+        <p className="text-xs oc-secondary-text">Implicit recomandat: porniri aliniate la durata serviciului + pauza dintre clienți.</p>
 
         <div className="space-y-3">
-          <label className={`flex items-start gap-3 rounded-md border p-3 cursor-pointer transition-colors ${slotConfig.strategy === "service_duration" ? "border-zinc-500 bg-zinc-800/60" : "border-zinc-800 hover:border-zinc-700"}`}>
+          <label className={`flex items-start gap-3 rounded-md border p-3 cursor-pointer transition-colors ${slotConfig.strategy === "service_duration" ? "border-zinc-500 bg-oc-teal-soft" : "border oc-border hover:border-oc-teal/30"}`}>
             <input
               type="radio"
               name="slot-strategy"
@@ -154,11 +154,14 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
               className="mt-0.5 shrink-0"
             />
             <div className="space-y-0.5">
-              <p className="text-sm font-medium text-zinc-100">Pe durata serviciului <span className="ml-1 rounded bg-zinc-700 px-1.5 py-0.5 text-xs text-zinc-300">recomandat</span></p>
-              <p className="text-xs text-zinc-400">Sloturile pornesc exact când se termină cel anterior. Dacă serviciul durează 60 min, clienții pot alege 09:00, 10:00, 11:00 etc. Ideal pentru saloane, cabinete sau orice business unde fiecare client ocupă tot intervalul.</p>
+              <p className="text-sm font-medium oc-text">
+                Pe durata serviciului{" "}
+                <span className="ml-1 rounded bg-oc-amber-soft px-1.5 py-0.5 text-xs text-oc-warning">recomandat</span>
+              </p>
+              <p className="text-xs oc-secondary-text">Sloturile pornesc exact când se termină cel anterior. Dacă serviciul durează 60 min, clienții pot alege 09:00, 10:00, 11:00 etc. Ideal pentru saloane, cabinete sau orice business unde fiecare client ocupă tot intervalul.</p>
             </div>
           </label>
-          <label className={`flex items-start gap-3 rounded-md border p-3 cursor-pointer transition-colors ${slotConfig.strategy === "fixed_step" ? "border-zinc-500 bg-zinc-800/60" : "border-zinc-800 hover:border-zinc-700"}`}>
+          <label className={`flex items-start gap-3 rounded-md border p-3 cursor-pointer transition-colors ${slotConfig.strategy === "fixed_step" ? "border-zinc-500 bg-oc-teal-soft" : "border oc-border hover:border-oc-teal/30"}`}>
             <input
               type="radio"
               name="slot-strategy"
@@ -172,8 +175,8 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
               className="mt-0.5 shrink-0"
             />
             <div className="space-y-0.5">
-              <p className="text-sm font-medium text-zinc-100">Pas fix</p>
-              <p className="text-xs text-zinc-400">Sloturile apar la intervale egale indiferent de durata serviciului. De ex. la 5 min: 09:00, 09:05, 09:10... Util dacă oferi mai multe servicii cu durate diferite și vrei ca toți clienții să poată alege din același grid orar.</p>
+              <p className="text-sm font-medium oc-text">Pas fix</p>
+              <p className="text-xs oc-secondary-text">Sloturile apar la intervale egale indiferent de durata serviciului. De ex. la 5 min: 09:00, 09:05, 09:10... Util dacă oferi mai multe servicii cu durate diferite și vrei ca toți clienții să poată alege din același grid orar.</p>
             </div>
           </label>
         </div>
@@ -190,7 +193,7 @@ export function ProgramEditor({ initialRows, initialSlotConfig }: Props) {
                   fixedStepMinutes: Number(e.target.value)
                 })
               }
-              className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-zinc-500"
+              className="w-full rounded-md dash-chip px-3 py-2 text-sm oc-text focus:outline-none focus:ring-2 focus:ring-oc-teal/30"
             >
               <option value={5}>5 minute</option>
               <option value={10}>10 minute</option>

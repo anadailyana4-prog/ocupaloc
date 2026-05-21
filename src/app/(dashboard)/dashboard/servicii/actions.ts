@@ -52,7 +52,7 @@ export async function createService(raw: z.infer<typeof servicePayload>): Promis
     .maybeSingle();
 
   if (existingTenantErr) {
-    return { success: false, message: existingTenantErr.message };
+    return { success: false, message: "Eroare la verificarea tenantului. Încearcă din nou." };
   }
 
   if (!existingTenant) {
@@ -73,7 +73,7 @@ export async function createService(raw: z.infer<typeof servicePayload>): Promis
 
       const isSlugConflict = tenantInsertErr.code === "23505" && tenantInsertErr.message.toLowerCase().includes("slug");
       if (!isSlugConflict) {
-        return { success: false, message: tenantInsertErr.message };
+        return { success: false, message: "Eroare la crearea tenantului. Contactează suportul." };
       }
     }
 
@@ -97,7 +97,7 @@ export async function createService(raw: z.infer<typeof servicePayload>): Promis
     .single();
 
   if (error || !inserted) {
-    return { success: false, message: error?.message ?? "Nu am putut crea serviciul." };
+    return { success: false, message: "Nu am putut crea serviciul. Încearcă din nou." };
   }
 
   revalidatePath("/dashboard/servicii");
@@ -141,7 +141,7 @@ export async function updateService(serviceId: string, raw: z.infer<typeof servi
   const { error } = await admin.from("servicii").update(updatePayload).eq("id", id.data).eq("profesionist_id", prof.id);
 
   if (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: "Nu am putut actualiza serviciul. Încearcă din nou." };
   }
 
   revalidatePath("/dashboard/servicii");
@@ -170,7 +170,7 @@ export async function setServiceFeatured(serviceId: string, isFeatured: boolean)
       .eq("is_featured", true);
 
     if (countError) {
-      return { success: false, message: countError.message };
+      return { success: false, message: "Eroare la verificarea serviciilor. Încearcă din nou." };
     }
 
     if ((count ?? 0) >= MAX_FEATURED_SERVICES) {
@@ -185,7 +185,7 @@ export async function setServiceFeatured(serviceId: string, isFeatured: boolean)
     .eq("profesionist_id", prof.id);
 
   if (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: "Nu am putut actualiza statusul. Încearcă din nou." };
   }
 
   revalidatePath("/dashboard/servicii");
@@ -209,7 +209,7 @@ export async function deleteService(serviceId: string): Promise<ServiceActionRes
   const { error } = await admin.from("servicii").delete().eq("id", id.data).eq("profesionist_id", prof.id);
 
   if (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: "Nu am putut șterge serviciul. Încearcă din nou." };
   }
 
   revalidatePath("/dashboard/servicii");

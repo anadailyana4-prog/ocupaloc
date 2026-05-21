@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { trackAuthEvent, trackOnboardingEvent, trackSignup } from "@/lib/analytics";
+import { mapDemoRowToSignupSeed } from "@/lib/demo/signup-from-demo";
 import { parseClientsCSV } from "@/lib/csv-import";
 import { slugifyBusinessName } from "@/lib/slug";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -160,6 +161,47 @@ function SignupPageContent() {
       if (savedName) setBusinessName(savedName);
       if (savedEmail) setEmail(savedEmail);
     }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const demoId = searchParams.get("demo")?.trim();
+    const nameFromUrl = searchParams.get("name")?.trim();
+    if (!demoId && !nameFromUrl) return;
+    if (typeof window === "undefined") return;
+
+    const savedName = localStorage.getItem(SIGNUP_NAME_STORAGE_KEY)?.trim();
+    if (savedName) return;
+
+    if (!demoId) {
+      if (nameFromUrl) setBusinessName(nameFromUrl);
+      return;
+    }
+
+    void (async () => {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error } = await supabase
+        .from("demos")
+        .select("business_name,business_type,services,expires_at")
+        .eq("id", demoId)
+        .maybeSingle();
+
+      if (error || !data) {
+        if (nameFromUrl) setBusinessName(nameFromUrl);
+        return;
+      }
+
+      if (new Date(data.expires_at).getTime() <= Date.now()) {
+        toast.message("Demo-ul a expirat. Poți continua înscrierea manual.");
+        if (nameFromUrl) setBusinessName(nameFromUrl);
+        return;
+      }
+
+      const seed = mapDemoRowToSignupSeed(data);
+      setBusinessName(seed.orgName);
+      setActivity(seed.activity as Activitate);
+      setServices(seed.services);
+      toast.success("Datele din demo au fost precompletate.");
+    })();
   }, [searchParams]);
 
   useEffect(() => {

@@ -73,6 +73,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/cazuri-de-succes",
     "/intrebari-frecvente",
     "/resurse",
+    "/calculator-roi",
     "/programari-online-salon",
     "/alternativa-fresha-romania",
     "/software-programari-manichiura",

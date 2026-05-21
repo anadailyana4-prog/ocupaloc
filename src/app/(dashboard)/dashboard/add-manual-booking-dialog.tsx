@@ -81,12 +81,12 @@ export function AddManualBookingDialog({ servicii, onSuccess }: Props) {
 
   return (
     <>
-      <Button type="button" onClick={openDialog} size="sm" className="rounded-full border-0 bg-gradient-to-r from-amber-200 via-amber-300 to-orange-300 text-slate-900 hover:brightness-105">
+      <Button type="button" onClick={openDialog} size="sm" className="rounded-full border-0 bg-gradient-to-r from-oc-amber-light to-oc-amber text-white hover:brightness-105">
         + Programare manuală
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="border-zinc-800 bg-zinc-950 text-white sm:max-w-md">
+        <DialogContent className="dash-dialog sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Adaugă programare manuală</DialogTitle>
           </DialogHeader>
@@ -99,7 +99,7 @@ export function AddManualBookingDialog({ servicii, onSuccess }: Props) {
                 value={numeClient}
                 onChange={(e) => setNumeClient(e.target.value)}
                 placeholder="ex: Maria Ionescu"
-                className="mt-1 border-zinc-700 bg-zinc-900"
+                className="mt-1 dash-input"
               />
             </div>
             <div>
@@ -110,13 +110,13 @@ export function AddManualBookingDialog({ servicii, onSuccess }: Props) {
                 value={telefonClient}
                 onChange={(e) => setTelefonClient(e.target.value)}
                 placeholder="ex: 07xx xxx xxx"
-                className="mt-1 border-zinc-700 bg-zinc-900"
+                className="mt-1 dash-input"
               />
             </div>
             <div>
               <Label htmlFor="mb-email">
                 Email client{" "}
-                <span className="text-xs text-zinc-400">(opțional — se trimite confirmare)</span>
+                <span className="text-xs oc-secondary-text">(opțional — se trimite confirmare)</span>
               </Label>
               <Input
                 id="mb-email"
@@ -124,7 +124,7 @@ export function AddManualBookingDialog({ servicii, onSuccess }: Props) {
                 value={emailClient}
                 onChange={(e) => setEmailClient(e.target.value)}
                 placeholder="ex: maria@exemplu.ro"
-                className="mt-1 border-zinc-700 bg-zinc-900"
+                className="mt-1 dash-input"
               />
             </div>
             <div>
@@ -133,7 +133,7 @@ export function AddManualBookingDialog({ servicii, onSuccess }: Props) {
                 id="mb-svc"
                 value={serviciuId}
                 onChange={(e) => setServiciuId(e.target.value)}
-                className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-zinc-500"
+                className="mt-1 w-full rounded-md dash-chip px-3 py-2 text-sm oc-text focus:outline-none focus:ring-1 focus:ring-oc-teal/30"
               >
                 {servicii.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -150,7 +150,7 @@ export function AddManualBookingDialog({ servicii, onSuccess }: Props) {
                   type="date"
                   value={dataStr}
                   onChange={(e) => setDataStr(e.target.value)}
-                  className="mt-1 border-zinc-700 bg-zinc-900"
+                  className="mt-1 dash-input"
                 />
               </div>
               <div>
@@ -160,7 +160,7 @@ export function AddManualBookingDialog({ servicii, onSuccess }: Props) {
                   type="time"
                   value={oraStr}
                   onChange={(e) => setOraStr(e.target.value)}
-                  className="mt-1 border-zinc-700 bg-zinc-900"
+                  className="mt-1 dash-input"
                 />
               </div>
             </div>
