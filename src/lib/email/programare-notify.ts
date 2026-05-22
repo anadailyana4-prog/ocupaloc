@@ -2,12 +2,47 @@ import { formatInTimeZone } from "date-fns-tz";
 
 import { createBookingConfirmationLink } from "@/lib/booking/confirmation-link";
 import { generateCancellationPolicy } from "@/lib/booking/cancellation-policy";
-import { enqueueEmail } from "@/lib/email/email-queue";
 import { sendResendEmail } from "@/lib/email/resend";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { reportError } from "@/lib/observability";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 const TZ = "Europe/Bucharest";
+
+/** Destinatar notificări rezervări: email_contact sau fallback cont auth. */
+export async function resolveProfesionistNotifyEmail(
+  admin: SupabaseClient,
+  profesionistId: string
+): Promise<string | null> {
+  const { data: prof } = await admin
+    .from("profesionisti")
+    .select("email, email_contact, notificari_email_nou, user_id")
+    .eq("id", profesionistId)
+    .maybeSingle();
+
+  if (!prof || prof.notificari_email_nou === false) {
+    return null;
+  }
+
+  const legacyEmail = typeof prof.email === "string" ? prof.email.trim() : "";
+  const fromContact = typeof prof.email_contact === "string" ? prof.email_contact.trim() : "";
+  const resolved = fromContact || legacyEmail;
+  if (resolved) {
+    return resolved;
+  }
+
+  const userId = typeof prof.user_id === "string" ? prof.user_id : null;
+  if (!userId) {
+    return null;
+  }
+
+  const { data: authData, error: authErr } = await admin.auth.admin.getUserById(userId);
+  if (authErr || !authData.user?.email) {
+    return null;
+  }
+
+  return authData.user.email.trim() || null;
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -19,7 +54,7 @@ function escapeHtml(value: string): string {
 }
 
 export type ProgramareNotifyInput = {
-  /** profesionisti.email */
+  /** profesionisti.email_contact sau email cont */
   to: string | null | undefined;
   clientName: string;
   clientPhone: string;
@@ -55,40 +90,43 @@ type ProgramareNotifyContext = {
   profesionistEmail: string | null;
 };
 
-export async function notifyProfesionistDespreProgramare(programareId: string): Promise<ProgramareNotifyContext> {
+export async function notifyProfesionistDespreProgramare(programareId: string): Promise<void> {
   const admin = createSupabaseServiceClient();
-  const { data: row, error } = await admin
+
+  // Fetch booking without foreign key joins
+  const { data: prog, error: progErr } = await admin
     .from("programari")
-    .select("nume_client, telefon_client, data_start, profesionisti(email), servicii(nume)")
+    .select("nume_client, telefon_client, data_start, profesionist_id, serviciu_id")
     .eq("id", programareId)
     .maybeSingle();
 
-  if (error || !row) {
-    console.error("[notifyProfesionistDespreProgramare] programare lipsa:", error?.message ?? "not found");
-    return { profesionistEmail: null };
-  }
+  if (progErr || !prog) return;
 
-  const relProf = row.profesionisti as { email: string | null } | { email: string | null }[] | null;
-  const relServ = row.servicii as { nume: string } | { nume: string }[] | null;
-  const profesionist = Array.isArray(relProf) ? relProf[0] ?? null : relProf;
-  const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
+  const emailDest = await resolveProfesionistNotifyEmail(admin, prog.profesionist_id);
 
-  const dataStr = formatInTimeZone(new Date(row.data_start), TZ, "dd.MM.yyyy");
-  const timeStr = formatInTimeZone(new Date(row.data_start), TZ, "HH:mm");
-  const subject = `Rezervare noua - ${row.nume_client}`;
-  const text = `${row.nume_client} (${row.telefon_client}) a rezervat ${serviciu?.nume ?? "Serviciu"} pe ${dataStr} la ${timeStr}`;
+  // Fetch service name separately
+  const { data: serv } = await admin
+    .from("servicii")
+    .select("nume")
+    .eq("id", prog.serviciu_id)
+    .maybeSingle();
 
-  const to = profesionist?.email?.trim();
-  if (to) {
-    await enqueueEmail({
-      template: "booking_pro_new",
-      toEmail: to,
-      subject,
-      payload: { text }
-    });
-  }
+  const numeServiciu = serv?.nume ?? "serviciu";
 
-  return { profesionistEmail: profesionist?.email ?? null };
+  if (!emailDest) return;
+
+  const dataStr = formatInTimeZone(new Date(prog.data_start), TZ, "dd.MM.yyyy");
+  const timeStr = formatInTimeZone(new Date(prog.data_start), TZ, "HH:mm");
+  const subject = `Rezervare noua - ${prog.nume_client}`;
+  const text = `${prog.nume_client} (${prog.telefon_client}) a rezervat ${numeServiciu} pe ${dataStr} la ${timeStr}`;
+
+  await sendResendEmail({
+    to: [emailDest],
+    subject,
+    text,
+    event: "notify_profesionist_new_booking_failed",
+    context: { programareId, emailDest }
+  });
 }
 
 export async function notifyClientBookingConfirmation(programareId: string): Promise<boolean> {
@@ -98,43 +136,51 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
   }
 
   const admin = createSupabaseServiceClient();
-  const { data: row, error } = await admin
+
+  // Fetch booking without foreign key joins
+  const { data: prog, error: progErr } = await admin
     .from("programari")
-    .select("id, nume_client, email_client, data_start, profesionisti(slug, nume_business), servicii(nume)")
+    .select("id, nume_client, email_client, telefon_client, data_start, status, profesionist_id, serviciu_id")
     .eq("id", programareId)
     .maybeSingle();
 
-  if (error || !row) {
-    return false;
-  }
+  if (progErr || !prog) return false;
+  if (!prog.email_client) return false;
 
-  const clientEmail = row.email_client?.trim();
-  if (!clientEmail) {
-    return false;
-  }
+  // Fetch professional data separately
+  const { data: prof } = await admin
+    .from("profesionisti")
+    .select("slug, nume_business")
+    .eq("id", prog.profesionist_id)
+    .maybeSingle();
 
-  const relProf = row.profesionisti as { slug?: string; nume_business?: string | null } | { slug?: string; nume_business?: string | null }[] | null;
-  const relServ = row.servicii as { nume?: string } | { nume?: string }[] | null;
-  const profesionist = Array.isArray(relProf) ? relProf[0] ?? null : relProf;
-  const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
+  // Fetch service name separately
+  const { data: serv } = await admin
+    .from("servicii")
+    .select("nume")
+    .eq("id", prog.serviciu_id)
+    .maybeSingle();
 
-  const salonName = profesionist?.nume_business?.trim() || "acest furnizor";
-  const serviceName = serviciu?.nume?.trim() || "serviciu";
-  const safeClientName = escapeHtml(String(row.nume_client));
-  const safeSalonName = escapeHtml(salonName);
-  const safeServiceName = escapeHtml(serviceName);
-  const startsAt = new Date(String(row.data_start));
+  const numeBusiness = prof?.nume_business ?? "Salon";
+  const slug = prof?.slug ?? "";
+  const numeServiciu = serv?.nume ?? "serviciu";
+
+  const clientEmail = prog.email_client.trim();
+  const safeClientName = escapeHtml(String(prog.nume_client));
+  const safeSalonName = escapeHtml(numeBusiness);
+  const safeServiceName = escapeHtml(numeServiciu);
+  const startsAt = new Date(String(prog.data_start));
   const dataStr = formatInTimeZone(startsAt, TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(startsAt, TZ, "HH:mm");
-  const confirmLink = createBookingConfirmationLink({ bookingId: row.id, action: "confirm" });
-  const cancelLink = createBookingConfirmationLink({ bookingId: row.id, action: "cancel" });
+  const confirmLink = createBookingConfirmationLink({ bookingId: prog.id, action: "confirm" });
+  const cancelLink = createBookingConfirmationLink({ bookingId: prog.id, action: "cancel" });
   const cancellationPolicy = generateCancellationPolicy(60); // Default 60 days
 
-  const subject = `Rezervare confirmată la ${salonName}`;
+  const subject = `Rezervare confirmată la ${numeBusiness}`;
   const text = [
-    `Salut ${row.nume_client},`,
+    `Salut ${prog.nume_client},`,
     "",
-    `Rezervarea ta la ${salonName} pentru ${serviceName} pe ${dataStr} la ${timeStr} a fost înregistrată.`,
+    `Rezervarea ta la ${numeBusiness} pentru ${numeServiciu} pe ${dataStr} la ${timeStr} a fost înregistrată.`,
     "",
     "Poți confirma sau anula direct din linkurile de mai jos:",
     `Confirmă prezența: ${confirmLink}`,
@@ -159,11 +205,13 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
     <p style="margin:0;color:#6b7280;font-size:13px;">Dacă nu ai făcut tu această rezervare, poți ignora acest email. Reminderul automat rămâne activ înainte de programare.</p>
   </div>`;
 
-  await enqueueEmail({
-    template: "booking_client_confirmation",
-    toEmail: clientEmail,
+  await sendResendEmail({
+    to: [clientEmail],
     subject,
-    payload: { text, html }
+    text,
+    html,
+    event: "notify_client_booking_confirmation_failed",
+    context: { programareId, clientEmail }
   });
 
   return true;
@@ -173,27 +221,36 @@ export async function notifyClientBookingCancelledByProvider(programareId: strin
   const admin = createSupabaseServiceClient();
   const { data: row } = await admin
     .from("programari")
-    .select("nume_client, email_client, data_start, profesionisti(nume_business, slug), servicii(nume)")
+    .select("nume_client, email_client, data_start, profesionist_id, serviciu_id")
     .eq("id", programareId)
     .maybeSingle();
 
   if (!row?.email_client) return;
 
-  const relProf = row.profesionisti as { nume_business?: string | null; slug?: string | null } | { nume_business?: string | null; slug?: string | null }[] | null;
-  const relServ = row.servicii as { nume?: string } | { nume?: string }[] | null;
-  const profesionist = Array.isArray(relProf) ? relProf[0] ?? null : relProf;
-  const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
+  // Fetch professional data separately
+  const { data: prof } = await admin
+    .from("profesionisti")
+    .select("nume_business, slug")
+    .eq("id", row.profesionist_id)
+    .maybeSingle();
 
-  const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://ocupaloc.ro").replace(/\/$/, "");
-  const salonName = profesionist?.nume_business?.trim() || "acest furnizor";
-  const rebookUrl = profesionist?.slug ? `${SITE_URL}/${profesionist.slug}` : null;
+  // Fetch service name separately
+  const { data: serv } = await admin
+    .from("servicii")
+    .select("nume")
+    .eq("id", row.serviciu_id)
+    .maybeSingle();
+
+  const salonName = prof?.nume_business?.trim() || "acest furnizor";
+  const rebookUrl = prof?.slug ? `${(process.env.NEXT_PUBLIC_SITE_URL || "https://ocupaloc.ro").replace(/\/$/, "")}/${prof.slug}` : null;
+  const numeServiciu = serv?.nume ?? "serviciu";
   const dataStr = formatInTimeZone(new Date(String(row.data_start)), TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(new Date(String(row.data_start)), TZ, "HH:mm");
   const subject = `Actualizare programare la ${salonName}`;
   const text = [
     `Salut ${row.nume_client},`,
     "",
-    `Programarea ta pentru ${serviciu?.nume ?? "serviciu"} din ${dataStr}, ora ${timeStr}, a fost anulată de prestator.`,
+    `Programarea ta pentru ${numeServiciu} din ${dataStr}, ora ${timeStr}, a fost anulată de prestator.`,
     "",
     rebookUrl ? `Poți face o nouă rezervare online: ${rebookUrl}` : "Dacă dorești, poți face o nouă rezervare folosind pagina de rezervare."
   ].join("\n");
@@ -202,17 +259,19 @@ export async function notifyClientBookingCancelledByProvider(programareId: strin
 <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
   <h2 style="margin:0 0 8px;">Programare anulată</h2>
   <p style="margin:0 0 12px;">Salut <strong>${escapeHtml(String(row.nume_client))}</strong>,</p>
-  <p style="margin:0 0 16px;">Programarea ta pentru <strong>${escapeHtml(serviciu?.nume ?? "serviciu")}</strong> din <strong>${escapeHtml(dataStr)}</strong> la ora <strong>${escapeHtml(timeStr)}</strong> a fost anulată de prestator.</p>
+  <p style="margin:0 0 16px;">Programarea ta pentru <strong>${escapeHtml(numeServiciu)}</strong> din <strong>${escapeHtml(dataStr)}</strong> la ora <strong>${escapeHtml(timeStr)}</strong> a fost anulată de prestator.</p>
   ${rebookUrl ? `<p style="margin:0 0 12px;">Poți face o nouă rezervare oricând:</p>
   <a href="${rebookUrl}" style="background:#1c1c2e;color:#fbbf24;text-decoration:none;padding:12px 20px;border-radius:999px;font-weight:700;display:inline-block;margin:0 0 20px;">Rezervă din nou →</a>` : ""}
   <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">OcupaLoc · ocupaloc.ro</p>
 </div>`;
 
-  await enqueueEmail({
-    template: "booking_client_cancelled",
-    toEmail: row.email_client.trim(),
+  await sendResendEmail({
+    to: [row.email_client.trim()],
     subject,
-    payload: { text, html }
+    text,
+    html,
+    event: "notify_client_booking_cancelled_failed",
+    context: { programareId }
   });
 }
 
@@ -261,11 +320,13 @@ export async function notifyClientBookingRescheduledByProvider(programareId: str
   <p style="margin:20px 0 0;color:#9ca3af;font-size:12px;">OcupaLoc · ocupaloc.ro</p>
 </div>`;
 
-  await enqueueEmail({
-    template: "booking_client_rescheduled",
-    toEmail: row.email_client.trim(),
+  await sendResendEmail({
+    to: [row.email_client.trim()],
     subject,
-    payload: { text, html }
+    text,
+    html,
+    event: "notify_client_booking_rescheduled_by_provider_failed",
+    context: { programareId }
   });
 }
 
@@ -475,7 +536,7 @@ export async function notifyProfesionistClientResponse(programareId: string, sta
   const admin = createSupabaseServiceClient();
   const { data: row, error } = await admin
     .from("programari")
-    .select("nume_client, telefon_client, data_start, profesionisti(email), servicii(nume)")
+    .select("nume_client, telefon_client, data_start, profesionist_id, servicii(nume)")
     .eq("id", programareId)
     .maybeSingle();
 
@@ -483,12 +544,10 @@ export async function notifyProfesionistClientResponse(programareId: string, sta
     return;
   }
 
-  const relProf = row.profesionisti as { email: string | null } | { email: string | null }[] | null;
   const relServ = row.servicii as { nume: string } | { nume: string }[] | null;
-  const profesionist = Array.isArray(relProf) ? relProf[0] ?? null : relProf;
   const serviciu = Array.isArray(relServ) ? relServ[0] ?? null : relServ;
 
-  const to = profesionist?.email?.trim();
+  const to = await resolveProfesionistNotifyEmail(admin, row.profesionist_id);
   if (!to) {
     return;
   }

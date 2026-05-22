@@ -67,7 +67,9 @@ export async function submitProfesionistiOnboarding(formData: FormData) {
       slug: parsed.data.slug,
       telefon: parsed.data.telefon,
       tip_activitate: parsed.data.tip_activitate,
-      onboarding_pas: 4
+      onboarding_pas: 4,
+      email: user.email?.trim() || null,
+      email_contact: user.email?.trim() || null
     });
     if (error) {
       redirect("/onboarding?error=save_failed");

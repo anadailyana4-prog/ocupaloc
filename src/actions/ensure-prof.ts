@@ -17,7 +17,9 @@ export async function ensureProfesionistRow() {
     user_id: user.id,
     nume_business: "Studio nou",
     tip_activitate: "",
-    slug: base
+    slug: base,
+    email: user.email?.trim() || null,
+    email_contact: user.email?.trim() || null
   });
   if (error) {
     return { ok: false as const, message: error.message };

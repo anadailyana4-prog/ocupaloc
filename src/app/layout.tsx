@@ -118,8 +118,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <html lang="ro" className="dark" suppressHydrationWarning>
+    <html lang="ro" suppressHydrationWarning>
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes" />
         <Script id="organization-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
         <Script id="website-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
         {gaId ? <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" /> : null}
@@ -141,14 +142,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {clarityProjectId ? (
           <Script
             id="clarity-init"
-            strategy="afterInteractive"
+            strategy="lazyOnload"
             dangerouslySetInnerHTML={{
               __html: `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "${clarityProjectId}");`
             }}
           />
         ) : null}
       </head>
-      <body className={`${jakarta.variable} ${cormorant.variable} min-h-screen bg-background font-sans text-foreground antialiased`}>
+      <body className={`${jakarta.variable} ${cormorant.variable} min-h-screen bg-[#FAF9F7] text-[#1E293B] font-sans antialiased`}>
         <Suspense fallback={null}>
           <AnalyticsEvents />
         </Suspense>
@@ -156,13 +157,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <Toaster
           richColors
-          theme="dark"
+          theme="light"
           position="top-center"
           toastOptions={{
             style: {
-              background: "#09090b",
-              color: "#fafafa",
-              border: "1px solid #27272a"
+              background: "#ffffff",
+              color: "#1E293B",
+              border: "1px solid #E2E8F0"
             }
           }}
         />

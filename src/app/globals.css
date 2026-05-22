@@ -208,7 +208,7 @@
 }
 
 .dash-chip-active {
-  @apply border-oc-amber bg-oc-amber text-white hover:text-white;
+  @apply border-oc-teal bg-oc-teal text-white hover:text-white;
 }
 
 .dash-back-link {

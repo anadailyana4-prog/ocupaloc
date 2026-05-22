@@ -34,11 +34,6 @@ type PageProps = {
 
 export const dynamic = "force-dynamic";
 
-function relOne<T>(x: T | T[] | null | undefined): T | null {
-  if (x == null) return null;
-  return Array.isArray(x) ? (x[0] ?? null) : x;
-}
-
 type ProgRow = {
   id: string;
   serviciu_id: string;
@@ -47,8 +42,6 @@ type ProgRow = {
   status: string;
   nume_client: string;
   telefon_client: string;
-  observatii: string | null;
-  servicii: { nume: string } | { nume: string }[] | null;
 };
 
 type DashboardProfile = {
@@ -166,7 +159,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   let progQuery = supabase
     .from("programari")
-    .select("id, serviciu_id, data_start, data_final, status, nume_client, telefon_client, observatii, servicii(nume)")
+    .select("id, serviciu_id, data_start, data_final, status, nume_client, telefon_client")
     .eq("profesionist_id", prof.id)
     .order("data_start", { ascending: filter !== "toate" })
     .limit(100);
@@ -188,7 +181,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     progQuery = progQuery.gte("data_start", subDays(new Date(), 30).toISOString());
   }
 
-  const { data: rawProg, error: progErr } = await progQuery;
+  const { data: rawProg } = await progQuery;
 
   // --- Semafor vizual pentru ziua de azi ---
   type SemaforStatus = "closed" | "free" | "full";
@@ -422,10 +415,12 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
     if (phone) phoneNoShowCount.set(phone, (phoneNoShowCount.get(phone) ?? 0) + 1);
   }
 
+  // Build service lookup map from already-fetched options
+  const serviceMap = new Map(serviciiOptions.map(s => [s.id, s.name]));
+
   const programari: ProgramareRow[] =
-    !progErr && rawProg
+    rawProg
       ? (rawProg as ProgRow[]).map((p) => {
-          const svc = relOne(p.servicii);
           const start = new Date(p.data_start);
           return {
             id: p.id,
@@ -433,9 +428,9 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
             oraStr: formatInTimeZone(start, "Europe/Bucharest", "HH:mm"),
             clientName: p.nume_client ?? "—",
             clientPhone: p.telefon_client ?? "",
-            serviceName: svc?.nume ?? "—",
+            serviceName: serviceMap.get(p.serviciu_id) ?? "—",
             status: p.status,
-            notes: p.observatii,
+            notes: "",
             priorVisits: p.telefon_client ? (phoneVisitCount.get(p.telefon_client) ?? 0) : 0,
             repeatNoShows: p.telefon_client ? (phoneNoShowCount.get(p.telefon_client) ?? 0) : 0
           };
@@ -844,7 +839,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
               <Link
                 key={f}
                 href={`/dashboard?filter=${f}`}
-                className={filter === f ? "dash-chip-active" : "dash-chip"}
+                className="dash-chip"
               >
                 {f === "azi" ? "Azi" : f === "viitoare" ? "Viitoare" : "Toate"}
               </Link>
@@ -912,11 +907,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
             </button>
           </div>
         </form>
-        {progErr ? (
-          <div className="rounded-lg border border-destructive/50 p-4 text-sm text-destructive">{progErr.message}</div>
-        ) : (
-          <ProgramariTable rows={filteredProgramari} />
-        )}
+        <ProgramariTable rows={filteredProgramari} />
       </section>
 
       {/* Top repeat-clients panel — only shown when there are repeat clients */}

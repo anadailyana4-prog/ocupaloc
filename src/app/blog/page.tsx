@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description:
     "Articole pentru saloane beauty despre programari online, creștere fără comision, retenție și optimizare operațională cu software salon.",
   alternates: {
-    canonical: "/blog"
+    canonical: "https://ocupaloc.ro/blog"
   },
   openGraph: {
     url: "https://ocupaloc.ro/blog"
@@ -14,6 +14,30 @@ export const metadata: Metadata = {
 };
 
 const posts = [
+  {
+    slug: "cost-deschidere-salon-romania",
+    title: "Cât costă să deschizi un salon în România 2025",
+    excerpt:
+      "Buget deschidere salon: chirie, utilități, echipamente, licențe, salarii și calcul ROI cu exemple numerice pentru 2025."
+  },
+  {
+    slug: "produse-profesionale-salon",
+    title: "Produse profesionale vs retail: ce să vinzi în salon",
+    excerpt:
+      "Marje, prețuri orientative și strategie retail: diferența între produse profesionale și supermarket în salonul tău."
+  },
+  {
+    slug: "design-interior-salon",
+    title: "Design interior salon: idei și costuri 2025",
+    excerpt:
+      "Amenajare salon beauty: planificare spațiu, bugete renovare 2025, iluminat, mobilier și legătura cu experiența clientului."
+  },
+  {
+    slug: "cum-sa-angajezi-frizeri",
+    title: "Cum să angajezi frizeri buni în 2025",
+    excerpt:
+      "Recrutare salon: unde găsești frizeri, interviu cu probă practică, salarii în România și retenție cu programări online clare."
+  },
   {
     slug: "ghid-seo-saloane-romania",
     title: "SEO pentru saloane: cum să apari pe Google în 2025",

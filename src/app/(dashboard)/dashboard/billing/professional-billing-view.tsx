@@ -83,15 +83,9 @@ export function ProfessionalBillingView({ model }: Props) {
               {model.statusLabel}
             </div>
           </div>
-          <div className="grid gap-3 text-sm oc-secondary-text sm:text-right">
-            <div>
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">Business</div>
-              <div>{model.businessName}</div>
-            </div>
-            <div>
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">Renewal / period end</div>
-              <div>{formatDate(model.currentPeriodEnd)}</div>
-            </div>
+          <div className="text-sm oc-secondary-text sm:text-right">
+            <div className="text-xs uppercase tracking-wide text-muted-foreground">Business</div>
+            <div>{model.businessName}</div>
           </div>
         </div>
         <p className="mt-4 text-sm oc-secondary-text">{model.statusMessage}</p>

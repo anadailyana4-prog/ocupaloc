@@ -41,17 +41,13 @@ export default async function DashboardPreviewPage() {
       <div>
         <h1 className="dash-page-title">Previzualizare pagină publică</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Vezi exact ce vede clientul. Trimite linkul sau codul QR pe WhatsApp. Poți adăuga și scriptul embed:{" "}
-          <a href={`${base}/widget.js`} className="text-oc-amber underline" target="_blank" rel="noopener noreferrer">
-            widget.js
-          </a>
-          .
+          Vezi exact ce vede clientul. Trimite linkul sau codul QR pe WhatsApp.
         </p>
       </div>
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        <div className="min-h-[520px] flex-1 overflow-hidden rounded-xl border oc-border bg-white shadow-inner">
-          <iframe title="Previzualizare publică" src={`/${slug}`} className="h-[720px] w-full border-0 lg:h-[560px]" />
+        <div className="min-h-[520px] flex-1 overflow-hidden rounded-xl border oc-border bg-white">
+          <iframe title="Previzualizare publică" src={`/${slug}`} className="h-[720px] w-full border-0 lg:h-[560px] bg-white" scrolling="no" />
         </div>
 
         <aside className="w-full shrink-0 space-y-4 rounded-xl border oc-border bg-white p-4 lg:max-w-xs">

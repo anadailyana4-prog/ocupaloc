@@ -99,7 +99,9 @@ export async function saveOnboardingProfile(formData: FormData) {
       whatsapp: parsed.data.whatsapp || null,
       tip_activitate: parsed.data.tip_activitate,
       onboarding_pas: completion.onboarding_pas,
-      onboarding_completed_at: completion.onboarding_completed_at
+      onboarding_completed_at: completion.onboarding_completed_at,
+      email: user.email?.trim() || null,
+      email_contact: user.email?.trim() || null
     };
     if (pauseValue !== undefined) {
       values.pauza_intre_clienti = pauseValue;
@@ -128,7 +130,9 @@ export async function saveOnboardingProfile(formData: FormData) {
       whatsapp: parsed.data.whatsapp || null,
       tip_activitate: parsed.data.tip_activitate,
       onboarding_pas: completion.onboarding_pas,
-      onboarding_completed_at: completion.onboarding_completed_at
+      onboarding_completed_at: completion.onboarding_completed_at,
+      email: user.email?.trim() || null,
+      email_contact: user.email?.trim() || null
     };
     if (pauseValue !== undefined) {
       values.pauza_intre_clienti = pauseValue;

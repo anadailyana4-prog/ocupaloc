@@ -18,7 +18,7 @@ Când muți o imagine pe site: copiază din Desktop în același `publicPath`.
 | `niche-psihologi` | `pentru-cine/psihologi.png` | Homepage — card „Psihologi” + hero /programari-online-psiholog | `/`, `/programari-online-psiholog` | `LandingPage.tsx + programari-online-psiholog/page.tsx` |
 | `niche-nutritionisti` | `pentru-cine/nutritionisti.png` | Homepage — card „Nutriționiști” + hero /programari-online-nutritionist | `/`, `/programari-online-nutritionist` | `LandingPage.tsx + programari-online-nutritionist/page.tsx` |
 | `niche-clinici` | `pentru-cine/clinici.png` | Homepage — card „Clinici” (fără landing SEO dedicat încă) | `/` | `LandingPage.tsx #pentru-cine` |
-| `niche-spa-masaj` | `landing-seo/spa-masaj.png` | Hero /programari-online-spa-masaj (nu e în grid homepage) | `/programari-online-spa-masaj` | `programari-online-spa-masaj/page.tsx` |
+| `niche-spa-masaj` | `pentru-cine/spa-masaj.png` | Hero /programari-online-spa-masaj (nu e în grid homepage) | `/programari-online-spa-masaj` | `programari-online-spa-masaj/page.tsx` |
 | `loading-brand` | `loading/ocupaloc-brand.png` | Loading global app / auth / signup | `/login`, `/signup`, `/demo` | `src/app/loading.tsx (root)` |
 | `loading-slots` | `loading/sloturi.png` | Loading la încărcarea sloturilor în BookingCard / pagini publice slug | `/demo-interactiv`, `/pagina-publica-rezervare` | `BookingCard.tsx + src/app/[slug]/loading.tsx` |
 | `loading-confirm` | `loading/confirmare.png` | Loading după submit programare (API /book) | `/pagina-publica-rezervare` | `BookingCard.tsx — stare submitting` |
@@ -27,7 +27,6 @@ Când muți o imagine pe site: copiază din Desktop în același `publicPath`.
 
 - **dashboard/** — 1 imagini
 - **homepage/** — 3 imagini
-- **landing-seo/** — 1 imagini
 - **loading/** — 3 imagini
 - **pentru-cine/** — 8 imagini
 - **preturi/** — 1 imagini

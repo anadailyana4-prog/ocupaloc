@@ -3,6 +3,8 @@
 import Link from "next/link";
 
 import { BookingCard } from "@/components/booking/BookingCard";
+import { DashboardHeroShowcase } from "@/components/landing/DashboardHeroShowcase";
+import { MarketingIllustration } from "@/components/landing/MarketingIllustration";
 import { CONTACT_EMAIL, CONTACT_MAILTO } from "@/lib/contact";
 
 export function LandingPage() {
@@ -48,8 +50,8 @@ export function LandingPage() {
 
       <main>
         <section className="mx-auto max-w-6xl px-4 pb-10 pt-10 md:pb-16 md:pt-14">
-          <div className="grid items-start gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10">
-            <div>
+          <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-10 xl:gap-12">
+            <div className="min-w-0">
               <p className="inline-flex rounded-full border oc-border oc-badge-bg px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] oc-accent">
                 Programări online pentru orice business
               </p>
@@ -93,13 +95,17 @@ export function LandingPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border oc-border bg-white p-3 shadow-[0_20px_45px_-30px_rgba(15,118,110,0.35)]">
-              <div className="mb-3 rounded-xl border oc-border oc-badge-bg p-3 text-sm oc-text">
-                <p className="font-semibold oc-accent">Flux rezervare</p>
-                <p className="mt-1 oc-secondary-text">Serviciu ales → Dată → Oră → Confirmare</p>
-              </div>
-              <BookingCard variant="demo" />
+            <div className="min-w-0 w-full lg:justify-self-end lg:max-w-xl xl:max-w-2xl">
+              <DashboardHeroShowcase priority />
             </div>
+          </div>
+
+          <div className="mt-10 rounded-2xl border oc-border bg-white p-3 shadow-[0_20px_45px_-30px_rgba(15,118,110,0.35)] lg:p-4">
+            <div className="mb-3 rounded-xl border oc-border oc-badge-bg p-3 text-sm oc-text">
+              <p className="font-semibold oc-accent">Încearcă fluxul de rezervare</p>
+              <p className="mt-1 oc-secondary-text">Serviciu ales → Dată → Oră → Confirmare</p>
+            </div>
+            <BookingCard variant="demo" />
           </div>
         </section>
 
@@ -195,21 +201,34 @@ export function LandingPage() {
             <h2 className="font-display text-3xl font-semibold tracking-tight md:text-4xl">Un flux simplu, ușor de urmărit</h2>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <article className="oc-card p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.1em] oc-accent">Pasul 1</p>
-              <h3 className="mt-2 text-xl font-semibold">Primești pagina ta de rezervare</h3>
-              <p className="mt-2 text-sm oc-secondary-text">O poți pune pe Instagram, WhatsApp, site sau Google Maps.</p>
+          <div className="mt-8 grid gap-6 md:grid-cols-3 md:gap-5 lg:gap-6">
+            <article className="oc-card flex flex-col overflow-hidden p-0 shadow-sm">
+              <MarketingIllustration id="05-share-link" aspect="landscape" className="max-h-none shrink-0 rounded-none border-0 border-b oc-border shadow-none" />
+              <div className="flex flex-1 flex-col p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] oc-accent">Pasul 1</p>
+                <h3 className="mt-2 text-xl font-semibold">Primești pagina ta de rezervare</h3>
+                <p className="mt-2 text-sm oc-secondary-text">O poți pune pe Instagram, WhatsApp, site sau Google Maps.</p>
+              </div>
             </article>
-            <article className="oc-card p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.1em] oc-accent">Pasul 2</p>
-              <h3 className="mt-2 text-xl font-semibold">Clientul rezervă singur</h3>
-              <p className="mt-2 text-sm oc-secondary-text">Își alege serviciul și vede doar sloturile libere.</p>
+            <article className="oc-card flex flex-col overflow-hidden p-0 shadow-sm">
+              <MarketingIllustration
+                id="02-client-flow"
+                aspect="portrait"
+                className="mx-auto w-full max-w-[280px] max-h-none shrink-0 rounded-none border-0 border-b oc-border shadow-none md:max-w-none"
+              />
+              <div className="flex flex-1 flex-col p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] oc-accent">Pasul 2</p>
+                <h3 className="mt-2 text-xl font-semibold">Clientul rezervă singur</h3>
+                <p className="mt-2 text-sm oc-secondary-text">Își alege serviciul și vede doar sloturile libere.</p>
+              </div>
             </article>
-            <article className="oc-card p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.1em] oc-accent">Pasul 3</p>
-              <h3 className="mt-2 text-xl font-semibold">Primești confirmări automate</h3>
-              <p className="mt-2 text-sm oc-secondary-text">Status clar în meniu, fără apeluri repetitive.</p>
+            <article className="oc-card flex flex-col overflow-hidden p-0 shadow-sm md:col-span-1">
+              <MarketingIllustration id="01-hero" aspect="landscape" className="max-h-none shrink-0 rounded-none border-0 border-b oc-border shadow-none" />
+              <div className="flex flex-1 flex-col p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] oc-accent">Pasul 3</p>
+                <h3 className="mt-2 text-xl font-semibold">Primești confirmări automate</h3>
+                <p className="mt-2 text-sm oc-secondary-text">Status clar în meniu, fără apeluri repetitive.</p>
+              </div>
             </article>
           </div>
         </section>

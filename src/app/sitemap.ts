@@ -1,8 +1,14 @@
 import { createClient } from "@supabase/supabase-js";
 import type { MetadataRoute } from "next";
 
-const ORASE = ["bucuresti", "cluj-napoca", "timisoara", "iasi", "constanta", "brasov", "sibiu", "oradea", "craiova", "galati", "ploiesti", "buzau", "satu-mare", "bacau", "pitesti"] as const;
+import { ORASE_TARGET } from "@/lib/seo/orase-target";
+
+const ORASE = ORASE_TARGET;
 const BLOG_SLUGS = [
+  "cost-deschidere-salon-romania",
+  "produse-profesionale-salon",
+  "design-interior-salon",
+  "cum-sa-angajezi-frizeri",
   "ghid-seo-saloane-romania",
   "cum-sa-cresti-salon-fara-buget",
   "retentie-clienti-salon",

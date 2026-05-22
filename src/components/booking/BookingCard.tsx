@@ -288,7 +288,7 @@ function BookingCardLive(props: LiveProps) {
  ? `${serviceTitle(selectedService)} ales. Urmează data și ora.`
  : "Alege serviciul, apoi data și ora ca să vezi rezumatul complet.";
 
- const bookingNotice = "Nu introduce date medicale, diagnostice sau alte informații sensibile în câmpul de observații.";
+ const bookingNotice = "";
 
  const monthDays = useMemo(() => {
  const start = startOfMonth(month);
@@ -542,22 +542,6 @@ function BookingCardLive(props: LiveProps) {
 
  return (
  <div className={cardShell}>
- {!publicPageLayout ? (
- <div className="mb-4 flex items-center justify-between">
- <div className="truncate pr-2 text-xs oc-secondary-text md:text-sm">{displayUrl}</div>
- <div className="flex shrink-0 items-center gap-1 text-xs text-emerald-400 md:text-sm">
- <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
- <path
- fillRule="evenodd"
- d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
- clipRule="evenodd"
- />
- </svg>
- Online
- </div>
- </div>
- ) : null}
-
  {successSummary ? (
  <div className={`space-y-6 rounded-2xl border border-emerald-500/35 bg-emerald-950/40 text-center shadow-lg shadow-emerald-950/30 ${publicPageLayout ? "px-6 py-12 md:px-10 md:py-14" : "px-5 py-8"}`}>
  <p className="text-4xl leading-none text-emerald-400" aria-hidden>
@@ -989,7 +973,7 @@ function BookingCardLive(props: LiveProps) {
  onChange={(e) => setEmail(e.target.value)}
  className="mt-1 oc-border bg-white oc-text"
  />
- <p className="mt-1 text-xs oc-secondary-text">Fără cont. Emailul e folosit doar pentru confirmare sau anulare.</p>
+ <p className="mt-1 text-xs oc-secondary-text">Fără cont. Doar pentru confirmare.</p>
  </div>
  <div>
  <Label htmlFor="notes">Observații (opțional)</Label>
@@ -997,27 +981,17 @@ function BookingCardLive(props: LiveProps) {
  id="notes"
  value={clientNotes}
  onChange={(e) => setClientNotes(e.target.value)}
- maxLength={500}
+ maxLength={200}
  placeholder="Ex: vin cu 5 minute întârziere"
- className="mt-1 min-h-20 w-full rounded-md border oc-border bg-white px-3 py-2 text-sm oc-text outline-none focus-visible:ring-2 focus-visible:ring-oc-teal/20"
+ className="mt-1 min-h-16 w-full rounded-md border oc-border bg-white px-3 py-2 text-sm oc-text outline-none focus-visible:ring-2 focus-visible:ring-oc-teal/20"
  />
- <p className="mt-1 text-[11px] oc-secondary-text">Maxim 500 caractere.</p>
  </div>
- {selectedService && selectedPick && selectedDay ? (
- <div className="rounded-lg border oc-border bg-white p-3 text-xs oc-text">
- <p className="font-semibold oc-text">Rezumat înainte de trimitere</p>
- <p className="mt-1">{serviceTitle(selectedService)}</p>
- <p>{format(selectedDay, "EEEE, d MMMM yyyy", { locale: ro })} · {formatSlotLabel(selectedPick.start)}</p>
- </div>
- ) : null}
- <p className="text-xs oc-secondary-text">Emailul este folosit doar pentru confirmare, anulare și reprogramare.</p>
- <p className="text-[11px] leading-5 oc-secondary-text">{bookingNotice}</p>
- <DialogFooter>
- <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>
- Anulează
+ <DialogFooter className="gap-2 pt-2">
+ <Button variant="outline" type="button" onClick={() => setModalOpen(false)} className="rounded-full">
+ Închide
  </Button>
- <Button data-testid="booking-submit" className="oc-primary hover:bg-[#D97706]" disabled={submitting} type="button" onClick={() => void submitBooking()}>
- {submitting ? "Se trimite…" : "Trimite"}
+ <Button data-testid="booking-submit" className="rounded-full oc-primary hover:bg-[#D97706] px-6" disabled={submitting} type="button" onClick={() => void submitBooking()}>
+ {submitting ? "Se trimite…" : "Trimite programarea"}
  </Button>
  </DialogFooter>
  </div>
@@ -1068,7 +1042,7 @@ function BookingCardLive(props: LiveProps) {
  onChange={(e) => setEmail(e.target.value)}
  className="mt-1 oc-border bg-white oc-text"
  />
- <p className="mt-1 text-xs oc-secondary-text">Fără cont. Emailul e folosit doar pentru confirmare sau anulare.</p>
+ <p className="mt-1 text-xs oc-secondary-text">Fără cont. Doar pentru confirmare.</p>
  </div>
  <div>
  <Label htmlFor="notes-public">Observații (opțional)</Label>
@@ -1076,26 +1050,16 @@ function BookingCardLive(props: LiveProps) {
  id="notes-public"
  value={clientNotes}
  onChange={(e) => setClientNotes(e.target.value)}
- maxLength={500}
+ maxLength={200}
  placeholder="Ex: prefer să fiu sunat(ă) la sosire"
- className="mt-1 min-h-20 w-full rounded-md border oc-border bg-white px-3 py-2 text-sm oc-text outline-none focus-visible:ring-2 focus-visible:ring-oc-teal/20"
+ className="mt-1 min-h-16 w-full rounded-md border oc-border bg-white px-3 py-2 text-sm oc-text outline-none focus-visible:ring-2 focus-visible:ring-oc-teal/20"
  />
- <p className="mt-1 text-[11px] oc-secondary-text">Maxim 500 caractere.</p>
  </div>
- {selectedService && selectedPick && selectedDay ? (
- <div className="rounded-lg border oc-border bg-white p-3 text-xs oc-text">
- <p className="font-semibold oc-text">Rezumat înainte de trimitere</p>
- <p className="mt-1">{serviceTitle(selectedService)}</p>
- <p>{format(selectedDay, "EEEE, d MMMM yyyy", { locale: ro })} · {formatSlotLabel(selectedPick.start)}</p>
- </div>
- ) : null}
- <p className="text-xs oc-secondary-text">Emailul este folosit doar pentru confirmare, anulare și reprogramare.</p>
- <p className="text-[11px] leading-5 oc-secondary-text">{bookingNotice}</p>
- <DialogFooter>
- <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>
+ <DialogFooter className="gap-2 pt-2">
+ <Button variant="outline" type="button" onClick={() => setModalOpen(false)} className="rounded-full">
  Înapoi
  </Button>
- <Button data-testid="booking-submit" className="oc-primary hover:bg-[#D97706]" disabled={submitting} type="button" onClick={() => void submitBooking()}>
+ <Button data-testid="booking-submit" className="rounded-full oc-primary hover:bg-[#D97706] px-6" disabled={submitting} type="button" onClick={() => void submitBooking()}>
  {submitting ? "Se trimite…" : "Confirmă programarea"}
  </Button>
  </DialogFooter>

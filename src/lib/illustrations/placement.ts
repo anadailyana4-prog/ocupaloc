@@ -42,7 +42,7 @@ export const ILLUSTRATION_PLACEMENTS: IllustrationPlacement[] = [
     siteLocation: "Homepage — social proof / demo + Dashboard loading fallback",
     routes: ["/", "/dashboard"],
     component: "LandingPage.tsx + src/app/(dashboard)/loading.tsx",
-    alt: "Panou profesionist OcupaLoc cu programări și KPI",
+    alt: "Ecran OcupaLoc cu lista de programări, rezumatul zilei și calendarul săptămânii",
     group: "dashboard",
   },
   {
@@ -137,12 +137,12 @@ export const ILLUSTRATION_PLACEMENTS: IllustrationPlacement[] = [
   },
   {
     id: "niche-spa-masaj",
-    publicPath: "landing-seo/spa-masaj.png",
-    siteLocation: "Hero /programari-online-spa-masaj (nu e în grid homepage)",
+    publicPath: "pentru-cine/spa-masaj.png",
+    siteLocation: "Hero /programari-online-spa-masaj (folder nișe pe Desktop)",
     routes: ["/programari-online-spa-masaj"],
     component: "programari-online-spa-masaj/page.tsx",
-    alt: "Programări online spa și masaj",
-    group: "landing-seo",
+    alt: "Programări online masaj",
+    group: "pentru-cine",
   },
   {
     id: "loading-brand",

@@ -7,10 +7,10 @@ import Script from "next/script";
 import { BookingCard } from "@/components/booking/BookingCard";
 import { parsePublicProfileMedia } from "@/lib/public-profile-media";
 import { isMissingProfesionistiColumn } from "@/lib/supabase/profesionisti-fallback";
+import { ORASE_TARGET } from "@/lib/seo/orase-target";
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
 
 type PageProps = { params: Promise<{ slug: string }> };
-const ORASE_TARGET = ["bucuresti", "cluj-napoca", "timisoara", "iasi", "constanta", "brasov", "sibiu", "oradea"] as const;
 
 function displayInitial(name: string): string {
  const t = name.trim();
@@ -406,37 +406,15 @@ export default async function PublicSalonSlugPage({ params }: PageProps) {
  services={servicii ?? []}
  />
 
- {mediaProfile.galleryImages.length > 0 ? (
- <section className="space-y-4">
- <div className="space-y-1 text-center">
- <h2 className="text-2xl font-semibold tracking-tight oc-text">Galerie</h2>
- <p className="text-sm oc-secondary-text">Imagini publice oferite direct de business.</p>
- </div>
- <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
- {mediaProfile.galleryImages.map((imageUrl, index) => (
- <div key={`${imageUrl}-${index}`} className="overflow-hidden rounded-xl border oc-border bg-white">
- <Image
- src={imageUrl}
- alt={`Galerie ${String(prof.nume_business ?? "business")} ${index + 1}`}
- width={640}
- height={420}
- className="h-44 w-full object-cover"
- />
- </div>
- ))}
- </div>
- </section>
- ) : null}
-
  {mediaProfile.promoVideoUrl ? (
  <section className="space-y-3">
  <div className="space-y-1 text-center">
  <h2 className="text-2xl font-semibold tracking-tight oc-text">Video prezentare</h2>
  <p className="text-sm oc-secondary-text">Material public furnizat de business.</p>
  </div>
- <div className="overflow-hidden rounded-2xl border oc-border bg-black/90">
- <video controls preload="metadata" className="h-auto w-full" src={mediaProfile.promoVideoUrl} />
- </div>
+ <div className="overflow-hidden rounded-2xl border oc-border bg-white">
+          <video controls preload="metadata" className="h-auto w-full" src={mediaProfile.promoVideoUrl} />
+        </div>
  </section>
  ) : null}
 

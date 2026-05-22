@@ -133,8 +133,20 @@ async function run() {
   });
 
   const indexedPages = parseNumericArg("--indexed-pages");
+  const indexedPagesPrev = parseNumericArg("--indexed-pages-prev");
   const impressions = parseNumericArg("--impressions");
+  const impressionsPrev = parseNumericArg("--impressions-prev");
   const clicks = parseNumericArg("--clicks");
+  const clicksPrev = parseNumericArg("--clicks-prev");
+  const keywordsFlagIndex = process.argv.findIndex((arg) => arg === "--keywords");
+  const keywordsRaw =
+    keywordsFlagIndex !== -1 && process.argv[keywordsFlagIndex + 1]
+      ? process.argv[keywordsFlagIndex + 1]
+      : "";
+  const keywordsTop10 = keywordsRaw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
   const internalEmails = parseInternalEmails();
 
   const now = new Date();
@@ -209,9 +221,10 @@ async function run() {
     markdownTableLine("Bookings created", current.bookingCreated, previous.bookingCreated),
     "",
     "Search Console metrics (manual input)",
-    `- Indexed pages: ${indexedPages ?? "missing (use --indexed-pages)"}`,
-    `- Impressions: ${impressions ?? "missing (use --impressions)"}`,
-    `- Clicks: ${clicks ?? "missing (use --clicks)"}`,
+    `- Indexed pages: ${indexedPages ?? "missing (use --indexed-pages)"} | prev: ${indexedPagesPrev ?? "—"} | WoW: ${deltaPercent(indexedPages ?? 0, indexedPagesPrev ?? 0)}`,
+    `- Impressions: ${impressions ?? "missing (use --impressions)"} | prev: ${impressionsPrev ?? "—"} | WoW: ${deltaPercent(impressions ?? 0, impressionsPrev ?? 0)}`,
+    `- Clicks: ${clicks ?? "missing (use --clicks)"} | prev: ${clicksPrev ?? "—"} | WoW: ${deltaPercent(clicks ?? 0, clicksPrev ?? 0)}`,
+    keywordsTop10.length ? `- Keywords top 10: ${keywordsTop10.join("; ")}` : "- Keywords top 10: missing (use --keywords=\"kw1,kw2\")",
     "",
     "Notes",
     "- Real signups exclude test-like emails and addresses listed in WEEKLY_INTERNAL_EMAILS.",
@@ -233,9 +246,17 @@ async function run() {
     `| Bookings created | ${current.bookingCreated} | ${previous.bookingCreated} | ${deltaPercent(current.bookingCreated, previous.bookingCreated)} |`,
     "",
     "## Search Console (manual weekly copy)",
-    `- Indexed pages: ${indexedPages ?? "missing (pass --indexed-pages N)"}`,
-    `- Impressions: ${impressions ?? "missing (pass --impressions N)"}`,
-    `- Clicks: ${clicks ?? "missing (pass --clicks N)"}`,
+    "",
+    "| Metric | Current | Previous | WoW |",
+    "| --- | ---: | ---: | ---: |",
+    `| Indexed pages | ${indexedPages ?? "—"} | ${indexedPagesPrev ?? "—"} | ${deltaPercent(indexedPages ?? 0, indexedPagesPrev ?? 0)} |`,
+    `| Impressions (7d) | ${impressions ?? "—"} | ${impressionsPrev ?? "—"} | ${deltaPercent(impressions ?? 0, impressionsPrev ?? 0)} |`,
+    `| Clicks (7d) | ${clicks ?? "—"} | ${clicksPrev ?? "—"} | ${deltaPercent(clicks ?? 0, clicksPrev ?? 0)} |`,
+    "",
+    "### Keywords in top 10",
+    keywordsTop10.length
+      ? keywordsTop10.map((keyword) => `- ${keyword}`).join("\n")
+      : "- _Pass --keywords=\"query1,query2\" from GSC Performance → Queries (position ≤ 10)._",
     "",
     "## Rules",
     "- Keep WEEKLY_INTERNAL_EMAILS set with internal addresses (comma separated).",

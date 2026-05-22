@@ -2,12 +2,11 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 
 import { SmartRulesForm } from "../smart-rules-form";
-import { updateCommunicationSettings, updatePublicBusinessFields, updatePublicMediaSettings, updatePauzeSettings } from "../actions";
+import { updateCommunicationSettings, updatePublicBusinessFields, updatePauzeSettings } from "../actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { parsePublicProfileMedia } from "@/lib/public-profile-media";
 import { selectWithTelefonFallback } from "@/lib/supabase/profesionisti-fallback";
 import { createSupabaseServerClient, getUser } from "@/lib/supabase/server";
 import { extractProgramPauza } from "@/lib/program";
@@ -54,7 +53,6 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
 
   const sp = searchParams ? await searchParams : {};
   const pauzaProgram = extractProgramPauza(prof.program ?? null);
-  const mediaProfile = parsePublicProfileMedia(prof.bio);
 
   return (
     <div className="space-y-8 px-4 py-8 sm:px-6 lg:px-8 max-w-2xl">
@@ -74,8 +72,11 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
         </div>
       ) : null}
       {sp.error ? (
-        <div className="rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
-          {decodeURIComponent(sp.error)}
+        <div className="rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900 flex items-center justify-between">
+          <span>Eroare la salvare. Încearcă din nou.</span>
+          <Link href="/dashboard/setari" className="text-xs underline">
+            Ascunde
+          </Link>
         </div>
       ) : null}
 
@@ -189,78 +190,6 @@ export default async function DashboardSetariPage({ searchParams }: PageProps) {
             className="rounded-full border-0 bg-gradient-to-r from-oc-amber-light to-oc-amber text-white hover:brightness-105"
           >
             Salvează datele publice
-          </Button>
-        </form>
-      </section>
-
-      <section className="lux-card space-y-4 p-6">
-        <div>
-          <h2 className="dash-section-title">Galerie foto publică</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Imaginile adăugate aici apar pe pagina publică de programări a salonului tău, în secțiunea &ldquo;Galerie&rdquo;.
-          </p>
-        </div>
-
-        <form action={updatePublicMediaSettings} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="gallery_images">Linkuri imagini (una pe linie)</Label>
-            <Textarea
-              id="gallery_images"
-              name="gallery_images"
-              rows={5}
-              defaultValue={mediaProfile.galleryImages.join("\n")}
-              className="resize-y dash-input"
-              placeholder="https://exemplu.ro/poza1.jpg&#10;https://exemplu.ro/poza2.jpg"
-            />
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">
-                Adaugă linkuri directe către imagini (URL-uri care se termină în .jpg, .png, .webp).
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Pentru încărcare: urcă pozele pe Google Drive, Dropbox, Imgur sau site-ul tău, apoi copiază linkul direct aici.
-              </p>
-            </div>
-          </div>
-
-          {mediaProfile.galleryImages.length > 0 && (
-            <div className="rounded-lg border oc-border bg-white p-3">
-              <p className="text-xs font-medium oc-text mb-2">Previzualizare ({mediaProfile.galleryImages.length} imagini active):</p>
-              <div className="flex flex-wrap gap-2">
-                {mediaProfile.galleryImages.slice(0, 6).map((img, i) => (
-                  <div key={i} className="h-16 w-16 rounded-lg border oc-border bg-oc-bg overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  </div>
-                ))}
-                {mediaProfile.galleryImages.length > 6 && (
-                  <div className="h-16 w-16 rounded-lg border oc-border bg-oc-bg flex items-center justify-center text-xs text-muted-foreground">
-                    +{mediaProfile.galleryImages.length - 6}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="trust_badges">Badge-uri de încredere (una pe linie)</Label>
-            <Textarea
-              id="trust_badges"
-              name="trust_badges"
-              rows={3}
-              defaultValue={mediaProfile.trustBadges.join("\n")}
-              className="resize-y dash-input"
-              placeholder={"✓ 10 ani experiență\n✓ Produse profesionale\n✓ Programări online 24/7"}
-            />
-            <p className="text-xs text-muted-foreground">
-              Acestea apar sub numele business-ului pe pagina publică.
-            </p>
-          </div>
-
-          <Button
-            type="submit"
-            className="rounded-full border-0 bg-gradient-to-r from-oc-amber-light to-oc-amber text-white hover:brightness-105"
-          >
-            Salvează galeria
           </Button>
         </form>
       </section>

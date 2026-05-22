@@ -49,11 +49,25 @@ curl -s -o /dev/null -w "%{http_code}" https://ocupaloc.ro/resurse
 3. Adaugă post săptămânal cu link către /ghid-programari-salon
 4. Solicită 3 recenzii de la cunoștințe
 
+**Execuție 22 Mai 2026:**
+- ✅ Materiale: [docs/seo-progress/ziua-02-google-business-profile.md](seo-progress/ziua-02-google-business-profile.md) (texte profil, post, recenzii)
+- ✅ Poze pregătite: `pnpm seo:gbp-assets` → `marketing/gbp-upload/` (10 PNG)
+- ✅ Profil creat în GBP (balascanuanamaria1@gmail.com) — OcupaLoc, neconfirmat
+- ⏸ Verificare telefon: **doar utilizatorul** (nu agent) — vezi Plan B în ziua-02 doc dacă SMS blocat
+- ☐ După verificare: upload 10 poze + post + 3 recenzii
+
 ---
 
 #### Ziua 3 (23 Mai) — CORE WEB VITALS
 **Task:** Verifică și optimizează viteza  
 **Tools:** pagespeed.web.dev
+
+**Status (22 Mai 2026):**
+- ✅ PNG marketing comprimate (−14,7 MiB) — `pnpm seo:optimize-images`
+- ✅ LCP hero: `priority` + `fetchPriority="high"` + `quality={80}`
+- ✅ Clarity → `lazyOnload`; cache `/illustrations/*`
+- ⏸ Scor PageSpeed API: quota 429 — baseline manual după deploy
+- 📄 Detalii: [docs/seo-progress/ziua-03-core-web-vitals.md](seo-progress/ziua-03-core-web-vitals.md)
 
 **Verifică:**
 - LCP < 2.5s
@@ -78,6 +92,10 @@ curl -s -o /dev/null -w "%{http_code}" https://ocupaloc.ro/resurse
 
 **Schema:** Article JSON-LD
 
+**Status (22 Mai 2026):**
+- ✅ Articol live în repo — ~950 cuvinte, JSON-LD, sitemap
+- 📄 [docs/seo-progress/ziua-04-blog-post-1.md](seo-progress/ziua-04-blog-post-1.md)
+
 ---
 
 #### Ziua 5 (25 Mai) — BLOG POST #2
@@ -87,6 +105,10 @@ curl -s -o /dev/null -w "%{http_code}" https://ocupaloc.ro/resurse
 - Include 3-5 imagini (Unsplash gratis)
 - URL: /blog/design-interior-salon
 - Keywords: design salon beauty, amenajare salon, costuri renovare salon
+
+**Status (22 Mai 2026):**
+- ✅ Articol + 5 imagini Unsplash, JSON-LD, sitemap
+- 📄 [docs/seo-progress/ziua-05-blog-post-2.md](seo-progress/ziua-05-blog-post-2.md)
 
 ---
 
@@ -109,6 +131,14 @@ curl -s -o /dev/null -w "%{http_code}" https://ocupaloc.ro/resurse
 
 **Raportează:** Creștere % față de săptămâna precedentă.
 
+**Status (22 Mai 2026):**
+- ✅ GSC: **25** indexate, **14** clicuri / **44** impresii (7 zile)
+- ✅ Fix 404: 15 orașe + blog + deploy — **99** URL sitemap, toate **200**
+- ✅ Indexare solicitată în GSC pentru articol blog #1
+- ⏸ **54** neindexate — scad după recrawl (1–2 săpt.)
+- ⏸ GBP + social (Ziua 6) — manual
+- 📄 [ziua-07-weekly-check.md](seo-progress/ziua-07-weekly-check.md) · [REMAINING-MANUAL.md](seo-progress/REMAINING-MANUAL.md)
+
 ---
 
 ### Săptămâna 2: Content Hub (Zilele 8-14)
@@ -118,6 +148,11 @@ curl -s -o /dev/null -w "%{http_code}" https://ocupaloc.ro/resurse
 **Cuvinte:** 900-1100  
 **URL:** /blog/produse-profesionale-salon  
 **Unic:** Include tabel comparativ prețuri, marje profit.
+
+**Status (22 Mai 2026):**
+- ✅ Articol ~1.050 cuvinte + tabel marje/prețuri
+- ✅ Renderer blog: bloc `{{table}}...{{/table}}`
+- 📄 [docs/seo-progress/ziua-08-blog-post-3.md](seo-progress/ziua-08-blog-post-3.md)
 
 ---
 
@@ -164,6 +199,10 @@ curl -s -o /dev/null -w "%{http_code}" https://ocupaloc.ro/resurse
 }
 ```
 
+**Status (22 Mai 2026):**
+- ✅ `LocalBusiness` pe `/` + `SoftwareApplication` păstrat
+- 📄 `src/lib/seo/homepage-schemas.ts` · [ziua-11-schema-markup.md](seo-progress/ziua-11-schema-markup.md)
+
 ---
 
 #### Ziua 12 (1 Iun) — BLOG POST #5
@@ -174,6 +213,10 @@ curl -s -o /dev/null -w "%{http_code}" https://ocupaloc.ro/resurse
 - Breakdown costuri: chirie, utilități, echipamente, licențe
 - ROI calcul
 - Link către /preturi
+
+**Status (22 Mai 2026):**
+- ✅ Articol ~1.650 cuvinte + 2 tabele (costuri + scenarii) + ROI exemplu
+- 📄 [docs/seo-progress/ziua-12-blog-post-5.md](seo-progress/ziua-12-blog-post-5.md)
 
 ---
 
@@ -195,6 +238,13 @@ curl -s -o /dev/null -w "%{http_code}" https://ocupaloc.ro/resurse
 - CTR mediu
 - Poziție medie
 - Top 3 pagini după trafic
+
+**Status (22 Mai 2026):**
+- ✅ GSC: 14 clicuri, 44 impresii, CTR 31,8%, poziție 13,3 — WoW 0% (volum mic, stabil)
+- ✅ Top pagini: `/` (11), `/demo` (2), `/blog` (1)
+- ✅ 25 indexate / 54 neindexate · sitemap **99** URL
+- ⚠️ Deploy: 2 articole blog încă **404** pe producție
+- 📄 [ziua-14-weekly-check.md](seo-progress/ziua-14-weekly-check.md) · `pnpm seo:weekly-check -- --plan-day=14`
 
 ---
 
