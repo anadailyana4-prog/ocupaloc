@@ -1,61 +1,22 @@
-import { addHours, addMinutes, subMinutes } from "date-fns";
-import { formatInTimeZone, toDate } from "date-fns-tz";
 import { NextRequest, NextResponse } from "next/server";
 
 import { notifyClientReminder } from "@/lib/email/programare-notify";
+import { getEarliestReminderStart, getReminderWindow, type ReminderType } from "@/lib/jobs/reminder-schedule";
 import { reportError } from "@/lib/observability";
 import { validateCronSecret } from "@/lib/cron-auth";
 import { getRequestId, recordOperationalEvent } from "@/lib/ops-events";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 
 /**
- * POST /api/jobs/send-reminders
+ * GET /api/jobs/send-reminders
  *
- * Cron job that sends email reminders to clients with upcoming appointments.
- * Called by Vercel Cron (or any scheduler) every 30 minutes.
+ * Sends email reminders only for upcoming appointments (never after data_start).
  *
- * Authentication: requires `Authorization: Bearer <CRON_SECRET>` header
- *   (or legacy `x-cron-secret` header).
- *
- * @body {{ type: "24h" | "2h" }} Which reminder window to process.
- *   - "24h": appointments starting in ~24 hours
- *   - "2h":  appointments starting in ~2 hours
- * @returns 200 with `{ sent, skipped, errors }` counts, or 401/500.
+ * @query type — "24h" | "2h" | "morning" (recommended: one type per cron entry)
  */
-
-type ReminderType = "24h" | "2h" | "morning";
-const TZ = "Europe/Bucharest";
-
 function isMissingProgramariRemindersTable(error: { message?: string; code?: string } | null | undefined): boolean {
   const message = error?.message?.toLowerCase() ?? "";
   return message.includes("programari_reminders") && message.includes("does not exist");
-}
-
-function getWindow(type: ReminderType): { from: Date; to: Date } {
-  const now = new Date();
-  if (type === "24h") {
-    // Daily at 11:00: target only bookings from the next calendar day
-    // (Europe/Bucharest), so clients get confirm/cancel reminder for "mâine".
-    const nextDay = formatInTimeZone(addHours(now, 24), TZ, "yyyy-MM-dd");
-    return {
-      from: toDate(`${nextDay}T00:00:00`, { timeZone: TZ }),
-      to: toDate(`${nextDay}T23:59:59`, { timeZone: TZ })
-    };
-  }
-  if (type === "morning") {
-    // Morning at 8-9 AM: target bookings for today (Europe/Bucharest)
-    const today = formatInTimeZone(now, TZ, "yyyy-MM-dd");
-    return {
-      from: toDate(`${today}T00:00:00`, { timeZone: TZ }),
-      to: toDate(`${today}T23:59:59`, { timeZone: TZ })
-    };
-  }
-  // 2h reminder: same cadence/tolerance approach as 24h.
-  const target = addHours(now, 2);
-  return {
-    from: subMinutes(target, 2),
-    to: addMinutes(target, 3)
-  };
 }
 
 async function sendReminderWithRetry(programareId: string, type: ReminderType): Promise<boolean> {
@@ -64,7 +25,6 @@ async function sendReminderWithRetry(programareId: string, type: ReminderType): 
     const sent = await notifyClientReminder(programareId, type);
     if (sent) return true;
     if (attempt < maxAttempts) {
-      // Backoff scurt pentru erori tranzitorii la providerul de email.
       await new Promise((resolve) => setTimeout(resolve, attempt * 300));
     }
   }
@@ -78,18 +38,22 @@ async function sendReminderWithRetry(programareId: string, type: ReminderType): 
 type ReminderDeliveryStats = {
   sent: number;
   failed: number;
+  skippedPast: number;
 };
 
 async function sendType(admin: ReturnType<typeof createSupabaseServiceClient>, type: ReminderType): Promise<ReminderDeliveryStats> {
-  const { from, to } = getWindow(type);
+  const now = new Date();
+  const { from, to } = getReminderWindow(type, now);
+  const earliestStart = getEarliestReminderStart(now);
+  const effectiveFrom = from > earliestStart ? from : earliestStart;
 
   const { data: rows, error } = await admin
     .from("programari")
-    .select("id, profesionist_id")
+    .select("id, profesionist_id, data_start")
     .eq("status", "confirmat")
     .not("email_client", "is", null)
     .or("email_reminders_enabled.is.null,email_reminders_enabled.eq.true", { foreignTable: "profesionisti" })
-    .gte("data_start", from.toISOString())
+    .gte("data_start", effectiveFrom.toISOString())
     .lte("data_start", to.toISOString())
     .order("data_start", { ascending: true })
     .limit(500);
@@ -98,7 +62,7 @@ async function sendType(admin: ReturnType<typeof createSupabaseServiceClient>, t
     if (error) {
       reportError("cron", "reminder_query_failed", error, { type });
     }
-    return { sent: 0, failed: 0 };
+    return { sent: 0, failed: 0, skippedPast: 0 };
   }
 
   const { error: trackingCheckError } = await admin
@@ -110,12 +74,20 @@ async function sendType(admin: ReturnType<typeof createSupabaseServiceClient>, t
   if (trackingCheckError && !trackingDisabled) {
     reportError("cron", "reminder_tracking_query_failed", trackingCheckError, { type });
   }
+
   const stats: ReminderDeliveryStats = {
     sent: 0,
-    failed: 0
+    failed: 0,
+    skippedPast: 0
   };
 
   for (const row of rows) {
+    const startMs = new Date(String(row.data_start)).getTime();
+    if (Number.isNaN(startMs) || startMs < earliestStart.getTime()) {
+      stats.skippedPast += 1;
+      continue;
+    }
+
     if (!trackingDisabled) {
       const { data: claimRows, error: claimError } = await admin
         .from("programari_reminders")
@@ -190,17 +162,16 @@ export async function GET(req: NextRequest) {
   const admin = createSupabaseServiceClient();
   let cronError: unknown = null;
 
-  // Determine which reminder types to send
   const typeParam = req.nextUrl.searchParams.get("type");
   const typesToSend: ReminderType[] = typeParam
     ? [typeParam as ReminderType]
-    : ["24h", "2h"];
+    : ["24h"];
 
-  const totals: ReminderDeliveryStats = { sent: 0, failed: 0 };
+  const totals: ReminderDeliveryStats = { sent: 0, failed: 0, skippedPast: 0 };
   const byType: Record<ReminderType, ReminderDeliveryStats> = {
-    "24h": { sent: 0, failed: 0 },
-    "2h": { sent: 0, failed: 0 },
-    "morning": { sent: 0, failed: 0 }
+    "24h": { sent: 0, failed: 0, skippedPast: 0 },
+    "2h": { sent: 0, failed: 0, skippedPast: 0 },
+    "morning": { sent: 0, failed: 0, skippedPast: 0 }
   };
 
   try {
@@ -208,6 +179,7 @@ export async function GET(req: NextRequest) {
       byType[type] = await sendType(admin, type);
       totals.sent += byType[type].sent;
       totals.failed += byType[type].failed;
+      totals.skippedPast += byType[type].skippedPast;
     }
   } catch (err) {
     cronError = err;
@@ -219,6 +191,7 @@ export async function GET(req: NextRequest) {
     sent24h: byType["24h"].sent,
     sent2h: byType["2h"].sent,
     sentMorning: byType["morning"].sent,
+    skippedPast: totals.skippedPast,
     sentEmail: totals.sent,
     failed: totals.failed,
     total: totals.sent,
@@ -236,7 +209,6 @@ export async function GET(req: NextRequest) {
     metadata: result
   });
 
-  // Machine-parseable single-line summary for log scraping / uptime monitors.
   console.log(`[cron:send-reminders] ${JSON.stringify({ ...result, requestId })}`);
 
   return NextResponse.json(result, { status: cronError ? 500 : 200, headers: { "x-request-id": requestId } });

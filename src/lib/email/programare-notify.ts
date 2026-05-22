@@ -2,6 +2,7 @@ import { formatInTimeZone } from "date-fns-tz";
 
 import { createBookingConfirmationLink } from "@/lib/booking/confirmation-link";
 import { generateCancellationPolicy } from "@/lib/booking/cancellation-policy";
+import { enqueueEmail } from "@/lib/email/email-queue";
 import { sendResendEmail } from "@/lib/email/resend";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { reportError } from "@/lib/observability";
@@ -42,6 +43,54 @@ export async function resolveProfesionistNotifyEmail(
   }
 
   return authData.user.email.trim() || null;
+}
+
+async function deliverClientEmailWithRetry(input: {
+  to: string[];
+  subject: string;
+  text: string;
+  html: string;
+  event: string;
+  context: Record<string, unknown>;
+  queueTemplate: string;
+}): Promise<boolean> {
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await sendResendEmail({
+        to: input.to,
+        subject: input.subject,
+        text: input.text,
+        html: input.html,
+        event: input.event,
+        context: input.context
+      });
+      return true;
+    } catch (error) {
+      if (attempt < maxAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 400));
+        continue;
+      }
+      reportError("email", input.event, error, input.context);
+      try {
+        await enqueueEmail({
+          template: input.queueTemplate,
+          toEmail: input.to[0] ?? "",
+          subject: input.subject,
+          payload: {
+            text: input.text,
+            html: input.html,
+            ...input.context
+          }
+        });
+        return true;
+      } catch (queueError) {
+        reportError("email", `${input.event}_queue_failed`, queueError, input.context);
+        return false;
+      }
+    }
+  }
+  return false;
 }
 
 function escapeHtml(value: string): string {
@@ -205,16 +254,15 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
     <p style="margin:0;color:#6b7280;font-size:13px;">Dacă nu ai făcut tu această rezervare, poți ignora acest email. Reminderul automat rămâne activ înainte de programare.</p>
   </div>`;
 
-  await sendResendEmail({
+  return deliverClientEmailWithRetry({
     to: [clientEmail],
     subject,
     text,
     html,
     event: "notify_client_booking_confirmation_failed",
-    context: { programareId, clientEmail }
+    context: { programareId, clientEmail },
+    queueTemplate: "client_booking_confirmation"
   });
-
-  return true;
 }
 
 export async function notifyClientBookingCancelledByProvider(programareId: string): Promise<void> {
@@ -355,7 +403,10 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
   const startsAt = new Date(String(row.data_start));
   const dataStr = formatInTimeZone(startsAt, TZ, "dd.MM.yyyy");
   const timeStr = formatInTimeZone(startsAt, TZ, "HH:mm");
-  const subject = tip === "24h" ? `Reminder: ai programare mâine la ${salonName}` : `Reminder: ai programare în curând la ${salonName}`;
+  const subject =
+    tip === "24h"
+      ? `Reminder (mâine): programare la ${salonName}`
+      : `Reminder: programare în curând la ${salonName}`;
   const serviceName = serviciu?.nume ?? "serviciu";
   const publicAddress = profesionist?.adresa_publica?.trim() || "";
   const locationNote = publicAddress
@@ -371,7 +422,7 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
   const textLines = [
     `Salut ${row.nume_client},`,
     "",
-    `Acesta este un reminder pentru programarea ta la ${salonName}.`,
+    `Acesta este un reminder (nu emailul inițial de rezervare) pentru programarea ta la ${salonName}.`,
     `Business: ${salonName}`,
     `Serviciu: ${serviceName}`,
     `Data: ${dataStr}`,
@@ -396,6 +447,7 @@ export async function notifyClientReminder(programareId: string, tip: "24h" | "2
     html = `
 <div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6;max-width:560px;margin:0 auto;">
   <h2 style="margin:0 0 8px;">Reminder programare 📅</h2>
+  <p style="margin:0 0 8px;color:#6b7280;font-size:13px;">Acest mesaj este un reminder înainte de vizită, nu confirmarea inițială a rezervării.</p>
   <p style="margin:0 0 16px;">Salut <strong>${escapeHtml(row.nume_client ?? "")}</strong>,</p>
 
   <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:0 0 20px;">

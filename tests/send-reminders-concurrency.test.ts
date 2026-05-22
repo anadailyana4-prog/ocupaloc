@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-type ReminderRow = { id: string; profesionist_id: string };
+import { getReminderWindow } from "@/lib/jobs/reminder-schedule";
+
+type ReminderRow = { id: string; profesionist_id: string; data_start: string };
 
 function makeNextRequest(url: string): import("next/server").NextRequest {
   return {
@@ -88,7 +90,9 @@ describe("send-reminders concurrency", () => {
       return true;
     });
 
-    const admin = createAdminStub([{ id: "booking-1", profesionist_id: "prof-1" }]);
+    const { from, to } = getReminderWindow("24h");
+    const dataStart = new Date(from.getTime() + (to.getTime() - from.getTime()) / 2).toISOString();
+    const admin = createAdminStub([{ id: "booking-1", profesionist_id: "prof-1", data_start: dataStart }]);
 
     vi.doMock("@/lib/email/programare-notify", () => ({
       notifyClientReminder

@@ -30,7 +30,8 @@ Orele sunt **UTC** (comportament standard Vercel Cron).
 | `0 10 * * *` | `/api/jobs/send-emails` | `REMINDERS_CRON_SECRET` | — | Resend, coadă email |
 | `0 10 * * *` | `/api/jobs/release-guard` | `RELEASE_GUARD_SECRET` | `OWNER_OPS_CRON_SECRET` | SLO thresholds |
 | `15 10 * * *` | `/api/jobs/trial-expiry-warning` | `REMINDERS_CRON_SECRET` | — | Resend |
-| `0 11 * * *` | `/api/jobs/send-reminders` | `REMINDERS_CRON_SECRET` | — | Resend |
+| `0 11 * * *` | `/api/jobs/send-reminders?type=24h` | `REMINDERS_CRON_SECRET` | — | Resend |
+| `*/30 * * * *` | `/api/jobs/send-reminders?type=2h` | `REMINDERS_CRON_SECRET` | — | Resend |
 | `0 12 * * *` | `/api/jobs/winback-cancel-reasons` | `REMINDERS_CRON_SECRET` | — | Resend |
 | `30 12 * * *` | `/api/jobs/activation-nudge` | `REMINDERS_CRON_SECRET` | — | Resend, Stripe subs |
 | `30 9 * * *` | `/api/jobs/quiet-business-rescue` | `REMINDERS_CRON_SECRET` | — | Resend |
