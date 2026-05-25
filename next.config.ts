@@ -80,6 +80,11 @@ const nextConfig: NextConfig = {
         source: "/intrare/:path*",
         destination: "/login",
         permanent: true
+      },
+      {
+        source: "/business-demo",
+        destination: "/demo-interactiv",
+        permanent: true
       }
     ];
   }

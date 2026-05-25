@@ -21,8 +21,14 @@ Scop: folosim eficient cota zilnica de URL Inspection in Google Search Console p
 9. https://ocupaloc.ro/constanta/frizerie — solicitat (Descoperită – nu indexată)
 10. https://ocupaloc.ro/constanta/salon — solicitat (Descoperită – nu indexată)
 
-## După deploy Ziua 12
-- https://ocupaloc.ro/blog/cost-deschidere-salon-romania
+## După deploy (22 Mai 2026) — indexare GSC
+
+| URL | Status GSC |
+|-----|------------|
+| https://ocupaloc.ro/blog/produse-profesionale-salon | ✅ **Indexare solicitată** (25 Mai 2026) |
+| https://ocupaloc.ro/blog/cost-deschidere-salon-romania | ✅ **Indexare solicitată** (25 Mai 2026, proprietate `sc-domain:ocupaloc.ro`) |
+
+Producție: ambele articole **200** după deploy `a3f4227`.
 
 ## Batch prioritar pentru ziua urmatoare
 1. https://ocupaloc.ro/bucuresti/frizerie

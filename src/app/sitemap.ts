@@ -25,7 +25,6 @@ const ORASE_LOCALE = ["bucuresti", "cluj-napoca", "timisoara", "iasi", "constant
 const SERVICII_LOCALE = ["frizerie", "salon", "manichiura", "cosmetica", "barber"] as const;
 const HIGH_INTENT_ROUTES = new Set([
   "/demo-interactiv",
-  "/business-demo",
   "/programari-online-salon",
   "/alternativa-fresha-romania",
   "/software-programari-manichiura",
@@ -73,7 +72,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/changelog",
     "/suport",
     "/demo-interactiv",
-    "/business-demo",
     "/blog",
     "/ghid-programari-salon",
     "/cazuri-de-succes",
