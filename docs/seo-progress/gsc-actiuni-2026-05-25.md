@@ -39,6 +39,8 @@
 | Validare remediere redirect GSC | ✅ Începută (25 Mai) |
 | `/bucuresti/salon` — solicită indexarea | ✅ |
 | `pnpm seo:audit-sitemap` post-deploy | ✅ 100 URL, toate 200 |
+| **git push** `main` (4 commituri) | ✅ `a3f4227..84f5e6b` pe GitHub |
+| Indexare batch orașe manichiură | cluj, timișoara, constanța, bucurești — solicitate |
 
 **Notă:** GSC raportează „Nu s-au detectat sitemap-uri de recomandare” la inspecție individuală — uneori apare chiar dacă sitemapul general e Succes; important e că URL-ul e în `sitemap.xml`.
 
@@ -65,7 +67,7 @@ Lista completă: [seo-index-queue-next-day.md](../seo-index-queue-next-day.md)
 | **Performanță → Pagini** | URL-uri cu multe impresii, 0 clicuri → rescrie title/meta |
 | **Performanță → Interogări** | Optimizează paginile pentru interogări poziție 11–20 |
 | Așteaptă validarea GSC redirect (~câteva zile) | Status: Validarea începută |
-| **git push** `main` (3 commituri locale) | Deploy Vercel făcut din CLI; push GitHub eșuat aici (credențiale) — rulează local: `git push origin main` |
+| Următor din coadă | `/iasi/manichiura`, `/brasov/frizerie`, `/brasov/salon` |
 | **Îmbunătățiri → FAQ** | Verifică că schema FAQ e validă (deja în plan) |
 
 ---

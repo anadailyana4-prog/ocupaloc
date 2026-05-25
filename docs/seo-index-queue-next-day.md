@@ -33,11 +33,11 @@ Producție: ambele articole **200** după deploy `a3f4227`.
 ## Batch prioritar pentru ziua urmatoare
 1. https://ocupaloc.ro/bucuresti/frizerie — ✅ deja indexată în GSC (25 Mai)
 2. https://ocupaloc.ro/bucuresti/salon — ✅ **Indexare solicitată** (25 Mai 2026)
-3. https://ocupaloc.ro/cluj-napoca/manichiura
-4. https://ocupaloc.ro/timisoara/manichiura
-5. https://ocupaloc.ro/iasi/manichiura
-6. https://ocupaloc.ro/constanta/manichiura
-7. https://ocupaloc.ro/bucuresti/manichiura
+3. https://ocupaloc.ro/cluj-napoca/manichiura — ✅ **Indexare solicitată** (25 Mai 2026)
+4. https://ocupaloc.ro/timisoara/manichiura — ✅ **Indexare solicitată** (25 Mai 2026)
+5. https://ocupaloc.ro/iasi/manichiura — ⏸ reia mâine (inspecție GSC; cotă aproape)
+6. https://ocupaloc.ro/constanta/manichiura — ✅ **Indexare solicitată** (25 Mai 2026)
+7. https://ocupaloc.ro/bucuresti/manichiura — ✅ **Indexare solicitată** (25 Mai 2026, „Google nu cunoaște URL”)
 8. https://ocupaloc.ro/brasov/frizerie (re-verificare dacă nu e încă în SERP)
 9. https://ocupaloc.ro/brasov/salon
 10. https://ocupaloc.ro/blog/produse-profesionale-salon — **după deploy Ziua 8**
