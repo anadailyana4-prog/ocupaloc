@@ -31,8 +31,8 @@ Scop: folosim eficient cota zilnica de URL Inspection in Google Search Console p
 Producție: ambele articole **200** după deploy `a3f4227`.
 
 ## Batch prioritar pentru ziua urmatoare
-1. https://ocupaloc.ro/bucuresti/frizerie
-2. https://ocupaloc.ro/bucuresti/salon
+1. https://ocupaloc.ro/bucuresti/frizerie — ✅ deja indexată în GSC (25 Mai)
+2. https://ocupaloc.ro/bucuresti/salon — ✅ **Indexare solicitată** (25 Mai 2026)
 3. https://ocupaloc.ro/cluj-napoca/manichiura
 4. https://ocupaloc.ro/timisoara/manichiura
 5. https://ocupaloc.ro/iasi/manichiura

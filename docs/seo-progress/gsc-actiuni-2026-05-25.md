@@ -18,7 +18,7 @@
 
 ### Motive neindexare
 
-1. **Eroare redirecționare** — **1 URL**: `https://ocupaloc.ro/business-demo` (307 → `/demo-interactiv`). **Fix în repo:** 301 în `next.config.ts`, scos din sitemap, șters `src/app/business-demo/page.tsx` — **necesită deploy**, apoi „Validează remedierea” în GSC.
+1. **Eroare redirecționare** — **1 URL**: `https://ocupaloc.ro/business-demo`. **Fix deployat** (308 → `/demo-interactiv`, scos din sitemap). **Validare GSC:** „Validarea începută” (25 Mai 2026).
 2. **Descoperită – nu este indexată** — **53 URL** (validare **Începută**; normal după deploy masiv — continuă 1 inspecție/zi)
 
 ### Sitemaps
@@ -35,7 +35,10 @@
 | Sitemap trimis pe proprietatea domeniu | ✅ `https://ocupaloc.ro/sitemap.xml` |
 | `/blog/produse-profesionale-salon` — solicită indexarea | ✅ (sesiune anterioară) |
 | `/blog/cost-deschidere-salon-romania` — solicită indexarea | ✅ (proprietate domeniu) |
-| Eroare redirecționare identificată | `https://ocupaloc.ro/business-demo` — fix în repo, așteaptă deploy |
+| Deploy producție Vercel | ✅ https://ocupaloc.ro — `dpl_HYgFBb21do8WUiNHM2bdedPVGujA` |
+| Validare remediere redirect GSC | ✅ Începută (25 Mai) |
+| `/bucuresti/salon` — solicită indexarea | ✅ |
+| `pnpm seo:audit-sitemap` post-deploy | ✅ 100 URL, toate 200 |
 
 **Notă:** GSC raportează „Nu s-au detectat sitemap-uri de recomandare” la inspecție individuală — uneori apare chiar dacă sitemapul general e Succes; important e că URL-ul e în `sitemap.xml`.
 
@@ -61,7 +64,8 @@ Lista completă: [seo-index-queue-next-day.md](../seo-index-queue-next-day.md)
 | Deschide **Eroare redirecționare (1)** | Un singur URL stricat poate pierde încredere la crawl |
 | **Performanță → Pagini** | URL-uri cu multe impresii, 0 clicuri → rescrie title/meta |
 | **Performanță → Interogări** | Optimizează paginile pentru interogări poziție 11–20 |
-| După deploy redirect fix: **Validează remedierea** la „Eroare redirecționare” | Închide singura eroare tehnică GSC |
+| Așteaptă validarea GSC redirect (~câteva zile) | Status: Validarea începută |
+| **git push** `main` (3 commituri locale) | Deploy Vercel făcut din CLI; push GitHub eșuat aici (credențiale) — rulează local: `git push origin main` |
 | **Îmbunătățiri → FAQ** | Verifică că schema FAQ e validă (deja în plan) |
 
 ---
