@@ -118,10 +118,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 
-  const { data: rows } = await supabase.from("profesionisti_public").select("slug, created_at").not("slug", "is", null);
+  const { data: rows } = await supabase
+    .from("profesionisti_public")
+    .select("id, slug, created_at")
+    .not("slug", "is", null);
+
+  // Doar profilele cu cel puțin un serviciu activ ajung în sitemap. Restul sunt
+  // pagini „în configurare" (thin content) marcate noindex — nu le trimitem la Google.
+  const { data: serviceRows } = await supabase.from("servicii").select("profesionist_id").eq("activ", true);
+  const profWithServices = new Set((serviceRows ?? []).map((row) => row.profesionist_id as string));
 
   const profilPages: MetadataRoute.Sitemap = (rows ?? [])
-    .filter((item) => Boolean(item.slug))
+    .filter((item) => Boolean(item.slug) && profWithServices.has(item.id as string))
     .map((item) => ({
       url: `${baseUrl}/${item.slug}`,
       lastModified: item.created_at ? new Date(item.created_at) : new Date(),
