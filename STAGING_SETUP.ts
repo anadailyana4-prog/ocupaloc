@@ -26,11 +26,10 @@
 //    - SUPABASE_STAGING_SERVICE_ROLE_KEY
 // 
 // 8. Database setup:
-//    a. In Supabase Dashboard → SQL Editor
-//    b. Run the same schema.sql from production
-//       (Copy from your local schema.sql file)
-//    c. Enable Row-Level Security on all tables
-//    d. Copy RLS policies from production
+//    a. From repo root: pnpm dlx supabase link --project-ref <staging-ref>
+//    b. Apply migrations: pnpm dlx supabase db push --linked
+//       (Source of truth: supabase/migrations/*.sql — see supabase/MIGRATIONS.md)
+//    c. Do NOT use docs/archive/schema-d1-legacy.sql (obsolete Cloudflare D1/SQLite)
 
 // ============================================================================
 // PART 2: VERCEL STAGING DEPLOYMENT  
@@ -129,14 +128,10 @@ jobs:
 // PART 5: DATABASE SCHEMA MIGRATION TO STAGING
 // ============================================================================
 //
-// Option A: Manual via Supabase Dashboard
-// 1. Go to staging Supabase project
-// 2. SQL Editor → Create Query
-// 3. Paste contents of schema.sql
-// 4. Execute
-//
-// Option B: Using Supabase CLI (automated)
-// npx supabase db push --project-ref [STAGING_PROJECT_ID] --password [PASSWORD]
+// Recommended: Supabase CLI (same migrations as production)
+// 1. pnpm dlx supabase link --project-ref [STAGING_PROJECT_REF]
+// 2. pnpm dlx supabase db push --linked
+// See supabase/MIGRATIONS.md (do not use docs/archive/schema-d1-legacy.sql)
 
 // ============================================================================
 // PART 6: TESTING STAGING ENVIRONMENT

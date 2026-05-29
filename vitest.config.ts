@@ -5,8 +5,13 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["tests/**/*.test.ts"],
-    exclude: ["node_modules/", "dist/", ".next/"],
+    include: [
+      "tests/billing.test.ts",
+      "tests/owner-portal.test.ts",
+      "tests/reminder-schedule.test.ts",
+      "tests/send-reminders-concurrency.test.ts"
+    ],
+    exclude: ["node_modules/", "dist/", ".next/", "tests/e2e/**"],
     testTimeout: 10000,
     hookTimeout: 10000
   },

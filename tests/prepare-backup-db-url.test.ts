@@ -33,7 +33,8 @@ test("prepare-backup-db-url maps eu-central pooler to eu-west for production ref
     assert.equal(result.status, 0, result.stderr);
     const env = readFileSync(out, "utf-8");
     assert.match(env, /PGUSER=postgres\.tffwoljimpdckvlogyqu/);
-    assert.match(env, /PGHOST=34\.241\.16\.247/);
+    assert.match(env, /PGHOST=\d{1,3}(?:\.\d{1,3}){3}/);
+    assert.doesNotMatch(env, /eu-central/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

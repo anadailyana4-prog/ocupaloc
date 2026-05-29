@@ -1,3 +1,4 @@
+-- Migration 055 (renamed from duplicate prefix 036; see supabase/MIGRATIONS.md).
 -- Fix two correctness issues in book_appointment_atomic (slug-based version from 026):
 --
 --   1) Subscription gate ignored the 'reactivated' status. A professional whose

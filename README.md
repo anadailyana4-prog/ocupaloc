@@ -30,15 +30,18 @@ Comenzi rapide:
 ## Instalare locală
 
 ```bash
+./install.sh
+# sau manual:
 pnpm install
+cp .env.example .env.local   # apoi completează cheile Supabase
 ```
 
 1. Creează un proiect nou în Supabase.
 2. În **SQL Editor**, rulează în ordine:
 
    - `supabase/migrations/001_init.sql`
-   - `supabase/migrations/003_storage_logos.sql` (bucket public **logos** pentru upload din Setări)
-   - Opțional demo: creează în **Authentication → Users** utilizator `demo@ocupaloc.ro` cu parola `DemoOcupaloc2026!`, apoi `supabase/migrations/002_demo.sql` (salon + serviciu demo).
+   - `pnpm dlx supabase db push --linked` (toate migrările `001`–`057`; vezi `supabase/MIGRATIONS.md`)
+   - Opțional demo: user în **Authentication → Users**, apoi `supabase/migrations/002_seed.sql`
 
 3. **Authentication → Providers**: activează Email (și opțional Google). Pentru test rapid, dezactivează confirmarea pe email (Auth → Providers → Email → „Confirm email”).
 4. Copiază `.env.example` → `.env.local` și completează:
@@ -46,7 +49,7 @@ pnpm install
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY` (doar server — folosit la `/api/public/slots` pentru citire programări fără a expune datele în browser)
-   - `NEXT_PUBLIC_SITE_URL` (ex. `http://localhost:3000` sau `http://127.0.0.1:8788` pentru preview Cloudflare)
+   - `NEXT_PUBLIC_SITE_URL` (ex. `http://127.0.0.1:8788` — același port ca `pnpm dev`)
    - `RESEND_API_KEY` + `RESEND_FROM` — pentru trimitere emailuri de confirmare
    - `REMINDERS_CRON_SECRET` — secret pentru jobul cron `/api/jobs/send-reminders`
    - `BOOKING_CONFIRMATION_SECRET` — secret opțional pentru confirmare booking
@@ -55,12 +58,12 @@ pnpm install
 pnpm run dev
 ```
 
-- Landing: [http://localhost:3000/](http://localhost:3000/)
-- Înscriere: [http://localhost:3000/inscriere](http://localhost:3000/inscriere)
-- Intrare: [http://localhost:3000/intrare](http://localhost:3000/intrare)
-- Pagină publică: `http://localhost:3000/s/<slug>`
-- Admin (necesită login): [http://localhost:3000/admin](http://localhost:3000/admin)
-- Demo (login automat demo → admin): [http://localhost:3000/demo](http://localhost:3000/demo) — necesită user-ul din `002_demo.sql` / Dashboard.
+- Landing: [http://127.0.0.1:8788/](http://127.0.0.1:8788/)
+- Înscriere: [http://127.0.0.1:8788/inscriere](http://127.0.0.1:8788/inscriere)
+- Intrare: [http://127.0.0.1:8788/intrare](http://127.0.0.1:8788/intrare)
+- Pagină publică: `http://127.0.0.1:8788/s/<slug>`
+- Admin (necesită login): [http://127.0.0.1:8788/admin](http://127.0.0.1:8788/admin)
+- Demo (login automat demo → admin): [http://127.0.0.1:8788/demo](http://127.0.0.1:8788/demo) — necesită user-ul din `002_demo.sql` / Dashboard.
 
 ## Deploy producție (Vercel, sursa de adevăr)
 
@@ -78,7 +81,7 @@ Verificările manuale obligatorii sunt documentate în `DEPLOY_CHECKLIST.md`.
 - **Hosting producție: Vercel.** Deploy-ul se face automat din branch-ul `main` (Git integration). Nu mai folosim Cloudflare Pages/Workers pentru runtime.
 - **Cloudflare: doar DNS.** Recordurile pentru `ocupaloc.ro` / `www.ocupaloc.ro` trebuie să indice spre Vercel (vezi *Domains* în proiectul Vercel pentru valorile A/CNAME). Recomandat: DNS-only (nor gri, fără proxy) pe recordurile pe care Vercel le validează, ca să nu existe dublu-CDN.
 
-> Notă: configurația istorică OpenNext/Wrangler a fost eliminată (vezi `docs/archive/`). Dacă vrei vreodată să revii la Cloudflare ca runtime, restaurează `wrangler.jsonc` + `open-next.config.ts` din istoricul git.
+> Notă: runtime-ul istoric OpenNext/Wrangler a fost eliminat (vezi `docs/archive/`). Cloudflare rămâne doar pentru DNS și email.
 
 ## Structură utilă
 
@@ -92,7 +95,9 @@ Verificările manuale obligatorii sunt documentate în `DEPLOY_CHECKLIST.md`.
 | `/demo` | Intrare rapidă cont demo (după ce există user în Supabase) |
 
 Preseturi servicii: `src/lib/presets.ts`.  
-Migrări: `001_init.sql`, `002_demo.sql`, `003_storage_logos.sql`.
+Migrări: `supabase/migrations/` (PostgreSQL). Schema D1 veche: `docs/archive/schema-d1-legacy.sql` (nu o folosi).
+
+**Distribuție cod:** nu include fișiere `.env*` cu valori reale în ZIP; rulează `pnpm run prepare:distribution` înainte de arhivare.
 
 ## MVP — ce e livrat vs. următorii pași
 
@@ -167,4 +172,4 @@ Scheduler recomandat pentru setup-ul curent (Vercel Hobby):
 
 ## Billing Status
 
-Stripe subscription billing is active and part of the production path. See [RELEASE_RUNBOOK.md](RELEASE_RUNBOOK.md#stripe-integration-status) and [RELEASE_RUNBOOK.md](RELEASE_RUNBOOK.md#billing-validation-checklist-production) for validation and operational steps.
+Stripe este integrat; enforcement-ul depinde de `BILLING_ENABLED=true` în Vercel (în `.env.example` e `false` până la activare). Vezi [RELEASE_RUNBOOK.md](RELEASE_RUNBOOK.md#stripe-integration-status) și [RELEASE_RUNBOOK.md](RELEASE_RUNBOOK.md#billing-validation-checklist-production).

@@ -68,13 +68,12 @@ for (const [key, config] of Object.entries(services)) {
   console.log(`${'─'.repeat(68)}`);
 
   if (key === 'cloudflare') {
-    console.log('Status: ✅ CONFIGURED AT DNS LEVEL\n');
+    console.log('Status: ✅ DNS + EMAIL (no runtime proxy)\n');
     console.log('Domain: ocupaloc.ro');
-    console.log('Nameservers: Cloudflare DNS (ns1.ns2.ns3.ns4.ns.cloudflare.com)');
-    console.log('Environment: Production');
-    console.log('SSL/TLS: Automatic via Cloudflare');
-    console.log('\nNote: Cloudflare is configured at DNS level, not in env vars');
-    console.log('All API traffic routes through Cloudflare proxy\n');
+    console.log('Nameservers: Cloudflare DNS');
+    console.log('Hosting: Vercel (A/CNAME → vercel-dns, DNS-only / grey cloud)');
+    console.log('SSL/TLS: Vercel (Let\'s Encrypt on origin)');
+    console.log('\nNote: Cloudflare is not in env vars; MX/TXT/DMARC stay on Cloudflare.\n');
     continue;
   }
 

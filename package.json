@@ -6,8 +6,9 @@
     "dev": "next dev -p 8788",
     "start": "next start -p 8788",
     "lint": "eslint . --ignore-pattern next-env.d.ts",
-    "test": "node --import tsx --test tests/api-book-handler.test.ts tests/api-book-route.test.ts tests/auth-bridge.test.ts tests/booking/atomic-booking.test.ts tests/booking/cancellation-policy.test.ts tests/booking/confirmation-link.test.ts tests/client-error-reporting.test.ts tests/email-notify.test.ts tests/idempotency-repository.test.ts tests/insert-programare.test.ts tests/normalize-booking-slug.test.ts tests/professional-milestones.test.ts tests/rate-limit.test.ts tests/send-emails-job.test.ts tests/signout-route.test.ts tests/slo-policy.test.ts tests/slots.test.ts tests/stripe-webhook.test.ts && vitest run tests/billing.test.ts --reporter=verbose",
-    "test:ci": "node --import tsx --test tests/api-book-handler.test.ts tests/api-book-route.test.ts tests/auth-bridge.test.ts tests/booking/atomic-booking.test.ts tests/booking/cancellation-policy.test.ts tests/booking/confirmation-link.test.ts tests/client-error-reporting.test.ts tests/email-notify.test.ts tests/idempotency-repository.test.ts tests/insert-programare.test.ts tests/normalize-booking-slug.test.ts tests/prepare-backup-db-url.test.ts tests/professional-milestones.test.ts tests/rate-limit.test.ts tests/send-emails-job.test.ts tests/signout-route.test.ts tests/signup-from-demo.test.ts tests/outreach-telegram-barber-lead.test.ts tests/outreach-telegram-format.test.ts tests/slo-policy.test.ts tests/slots.test.ts tests/stripe-webhook.test.ts && vitest run tests/billing.test.ts --reporter=verbose",
+    "test": "node scripts/run-unit-tests.mjs && vitest run --reporter=verbose",
+    "test:ci": "node scripts/run-unit-tests.mjs && vitest run --reporter=verbose",
+    "prepare:distribution": "bash scripts/prepare-distribution.sh",
     "test:coverage": "c8 --reporter=text --reporter=lcov node --import tsx --test tests/api-book-handler.test.ts tests/api-book-route.test.ts tests/auth-bridge.test.ts tests/booking/atomic-booking.test.ts tests/booking/cancellation-policy.test.ts tests/booking/confirmation-link.test.ts tests/client-error-reporting.test.ts tests/email-notify.test.ts tests/idempotency-repository.test.ts tests/insert-programare.test.ts tests/normalize-booking-slug.test.ts tests/prepare-backup-db-url.test.ts tests/professional-milestones.test.ts tests/rate-limit.test.ts tests/send-emails-job.test.ts tests/signout-route.test.ts tests/signup-from-demo.test.ts tests/slo-policy.test.ts tests/slots.test.ts tests/stripe-webhook.test.ts",
     "test:coverage:check": "c8 --include='src/lib/booking/**/*.ts' --include='src/app/api/book/**/*.ts' --include='src/lib/repositories/idempotency-repository.ts' --reporter=text --check-coverage --lines 85 --branches 74 --functions 88 --statements 85 node --import tsx --test tests/api-book-handler.test.ts tests/api-book-route.test.ts tests/booking/atomic-booking.test.ts tests/booking/cancellation-policy.test.ts tests/booking/confirmation-link.test.ts tests/idempotency-repository.test.ts tests/insert-programare.test.ts tests/normalize-booking-slug.test.ts tests/professional-milestones.test.ts tests/slots.test.ts",
     "test:e2e": "playwright test",
@@ -43,6 +44,11 @@
     "ops:milestone-backfill": "tsx scripts/run-milestone-backfill.ts",
     "diagnose:business": "tsx scripts/diagnose-business.ts",
     "prepare": "husky"
+  },
+  "pnpm": {
+    "overrides": {
+      "ws": ">=8.20.1"
+    }
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -85,7 +91,6 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
-    "@opennextjs/cloudflare": "^1.19.1",
     "@playwright/test": "^1.59.1",
     "@types/canvas-confetti": "^1.6.4",
     "@types/mailparser": "^3.4.6",
@@ -105,8 +110,7 @@
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.21.0",
     "typescript": "^5.6.2",
-    "vitest": "^4.1.5",
-    "wrangler": "^4.0.0"
+    "vitest": "^4.1.5"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

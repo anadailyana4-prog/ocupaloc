@@ -1,4 +1,8 @@
+import * as Sentry from "@sentry/nextjs";
+
 import { env } from "@/lib/config/env";
+
+export const onRequestError = Sentry.captureRequestError;
 
 export async function register() {
   if (process.env.NODE_ENV !== "test") {

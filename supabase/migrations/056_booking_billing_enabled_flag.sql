@@ -1,3 +1,4 @@
+-- Migration 056 (renamed from duplicate prefix 037; see supabase/MIGRATIONS.md).
 -- Make the subscription gate in book_appointment_atomic conditional on whether
 -- billing is actually turned on for the product.
 --
@@ -106,8 +107,8 @@ BEGIN
 
     IF v_subscription_status IS NULL THEN
       -- No subscription record; assume legacy trial (safety net for old accounts)
-      -- Check if created_at is within trial window (30 days)
-      IF (NOW() - v_prof_record.created_at) <= INTERVAL '30 days' THEN
+      -- Check if created_at is within trial window (14 days — matches BILLING_TRIAL_DAYS)
+      IF (NOW() - v_prof_record.created_at) <= INTERVAL '14 days' THEN
         v_subscription_allowed := TRUE;
       ELSE
         RETURN QUERY SELECT FALSE, NULL::UUID, 'NO_SUBSCRIPTION', 'Abonament inactiv. Contactează furnizor.';

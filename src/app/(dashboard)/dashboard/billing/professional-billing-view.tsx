@@ -37,11 +37,6 @@ function deltaLabel(value: number | null): string {
   return `${value >= 0 ? "+" : ""}${value.toFixed(2)}% vs luna trecută`;
 }
 
-function formatDate(value: string | null): string {
-  if (!value) return "-";
-  return new Date(value).toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" });
-}
-
 export function ProfessionalBillingView({ model }: Props) {
   const emptyState = model.revenueCurrentMonth === 0 && model.revenuePreviousMonth === 0 && model.bookingsCurrentMonth === 0;
 

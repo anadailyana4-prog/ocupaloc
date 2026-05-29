@@ -188,7 +188,7 @@ function buildIcsHref({ title, description, start, end }: { title: string; descr
 }
 
 function BookingCardLive(props: LiveProps) {
- const { slug, publicBase, businessName, services, publicPageLayout = false } = props;
+ const { slug, businessName, services, publicPageLayout = false } = props;
  const tenant = isTenantLive(props);
  const featuredServices = useMemo(() => services.filter((service) => isFeaturedService(service)).slice(0, 6), [services]);
  const defaultServices = useMemo(() => services.slice(0, 6), [services]);
@@ -288,8 +288,6 @@ function BookingCardLive(props: LiveProps) {
  ? `${serviceTitle(selectedService)} ales. Urmează data și ora.`
  : "Alege serviciul, apoi data și ora ca să vezi rezumatul complet.";
 
- const bookingNotice = "";
-
  const monthDays = useMemo(() => {
  const start = startOfMonth(month);
  const end = endOfMonth(month);
@@ -345,8 +343,6 @@ function BookingCardLive(props: LiveProps) {
  useEffect(() => {
  void loadSlots();
  }, [loadSlots]);
-
- const displayUrl = `${publicBase.replace(/\/$/, "")}/${slug}`;
 
  async function submitBooking() {
  if (!selectedService || !selectedPick || !dateStr) return;

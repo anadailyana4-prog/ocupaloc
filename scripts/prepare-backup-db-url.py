@@ -15,7 +15,8 @@ CANONICAL_POOLER_HOST_BY_REF: dict[str, str] = {
     "zezhiteevqfgtmqedduq": "aws-0-eu-west-1.pooler.supabase.com",
 }
 CANONICAL_POOLER_IPV4_BY_HOST: dict[str, str] = {
-    "aws-0-eu-west-1.pooler.supabase.com": "34.241.16.247",
+    # Fallback when CI has no DNS; updated when Supabase pooler IPs change.
+    "aws-0-eu-west-1.pooler.supabase.com": "108.128.216.176",
 }
 
 

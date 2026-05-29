@@ -20,6 +20,8 @@ const eslintConfig = [
       ".open-next/**",
       ".wrangler/**",
       ".npm-cache/**",
+      "coverage/**",
+      "docs/archive/**",
       "tailwind.config.ts",
       "public/widget.js"
     ]

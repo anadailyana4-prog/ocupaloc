@@ -135,10 +135,6 @@ export async function notifyProfesionistNewProgramare(input: ProgramareNotifyInp
   });
 }
 
-type ProgramareNotifyContext = {
-  profesionistEmail: string | null;
-};
-
 export async function notifyProfesionistDespreProgramare(programareId: string): Promise<void> {
   const admin = createSupabaseServiceClient();
 
@@ -211,7 +207,6 @@ export async function notifyClientBookingConfirmation(programareId: string): Pro
     .maybeSingle();
 
   const numeBusiness = prof?.nume_business ?? "Salon";
-  const slug = prof?.slug ?? "";
   const numeServiciu = serv?.nume ?? "serviciu";
 
   const clientEmail = prog.email_client.trim();

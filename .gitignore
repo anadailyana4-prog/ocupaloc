@@ -19,7 +19,7 @@ dist
 .env*.local
 package-lock.json
 
-# Local HOME used for wrangler deploy isolation
+# Local HOME scratch (legacy deploy tooling)
 .home
 .config
 tsconfig.tsbuildinfo
