@@ -110,6 +110,7 @@ const competitorRows = [
 const relatedLinks = [
   { href: "/aplicatie-programari-frizerie", label: "Aplicație programări frizerie" },
   { href: "/programari-online-salon", label: "Programări online salon beauty" },
+  { href: "/programari-online-makeup", label: "Programări online make-up" },
   { href: "/alternativa-fresha-romania", label: "Alternativă Fresha România" },
   { href: "/preturi", label: "Prețuri OcupaLoc" },
   { href: "/demo-interactiv", label: "Testează fluxul de rezervare" }

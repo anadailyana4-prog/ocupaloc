@@ -34,9 +34,11 @@ const faqItems = [
 
 const relatedLinks = [
   { href: "/programari-online-salon", label: "Programări online salon" },
-  { href: "/preturi", label: "Prețuri OcupaLoc" },
+  { href: "/programari-online-epilare", label: "Programări online epilare" },
+  { href: "/programari-online-makeup", label: "Programări online make-up" },
   { href: "/software-programari-manichiura", label: "Software programări manichiură" },
-  { href: "/aplicatie-programari-frizerie", label: "Aplicație programări frizerie" }
+  { href: "/aplicatie-programari-frizerie", label: "Aplicație programări frizerie" },
+  { href: "/preturi", label: "Prețuri OcupaLoc" }
 ];
 
 export default async function ProgramariOnlineCosmeticaPage() {

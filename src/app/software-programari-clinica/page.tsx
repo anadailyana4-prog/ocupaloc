@@ -126,11 +126,13 @@ const competitorRows = [
 ];
 
 const relatedLinks = [
-  { href: "/preturi", label: "Vezi prețul complet" },
+  { href: "/programari-online-stomatologie", label: "Programări online stomatologie" },
+  { href: "/programari-online-kinetoterapie", label: "Programări online kinetoterapie" },
+  { href: "/programari-online-veterinar", label: "Programări online veterinar" },
   { href: "/programari-online-psiholog", label: "Software programări psiholog" },
   { href: "/programari-online-nutritionist", label: "Programări online nutriționist" },
-  { href: "/demo-interactiv", label: "Testează fluxul de rezervare" },
-  { href: "/blog/telefon-vs-programari-online", label: "Telefon vs programări online" }
+  { href: "/preturi", label: "Vezi prețul complet" },
+  { href: "/demo-interactiv", label: "Testează fluxul de rezervare" }
 ];
 
 export default async function SoftwareProgramariClinicaPage() {

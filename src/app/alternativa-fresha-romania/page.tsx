@@ -44,6 +44,7 @@ const comparisons = [
 ];
 
 const relatedLinks = [
+  { href: "/alternativa-booksy-romania", label: "Alternativă Booksy România" },
   { href: "/programari-online-salon", label: "Programări online salon" },
   { href: "/software-programari-manichiura", label: "Software programări manichiură" },
   { href: "/aplicatie-programari-frizerie", label: "Aplicație programări frizerie" },
