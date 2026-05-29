@@ -36,6 +36,7 @@ const faqItems = [
 ];
 
 const relatedLinks = [
+  { href: "/aplicatie-programari-salon", label: "Aplicație programări salon" },
   { href: "/programari-online-salon", label: "Programări online salon" },
   { href: "/preturi", label: "Prețuri OcupaLoc" },
   { href: "/software-programari-manichiura", label: "Software programări manichiură" },
