@@ -49,7 +49,6 @@ function ensureDirForFile(base, relativeFile) {
 function writePlaceholder(base, relativeFile) {
   const full = path.join(base, relativeFile);
   if (fs.existsSync(full)) return;
-  const placeholder = path.join(base, ".gitkeep");
   const dir = path.dirname(full);
   fs.mkdirSync(dir, { recursive: true });
   const keep = path.join(dir, ".gitkeep");

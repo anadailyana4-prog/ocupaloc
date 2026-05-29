@@ -53,7 +53,12 @@ const MIGRATION_FILES_FROM_047 = [
   "048_subscriptions_status_guard_cleanup_and_validate.sql",
   "049_profesionisti_public_add_bio.sql",
   "050_professional_milestones_backfill.sql",
-  "051_drop_outreach_pipeline.sql"
+  "051_drop_outreach_pipeline.sql",
+  "052_remove_galerie_storage.sql",
+  "053_backfill_profesionist_email_contact.sql",
+  "055_fix_booking_overlap_and_reactivated.sql",
+  "056_booking_billing_enabled_flag.sql",
+  "057_align_booking_rpc_trial_days.sql"
 ] as const;
 
 /** Kept after 051 — Telegram manual email tools */
@@ -163,7 +168,7 @@ async function runAudit(): Promise<{ checks: Check[]; apply: boolean }> {
   checks.push({
     name: "Storage bucket logos",
     ok: hasLogos,
-    details: hasLogos ? undefined : "create bucket via migration 003_storage or dashboard"
+    details: hasLogos ? undefined : "create logos bucket in Supabase Storage dashboard"
   });
 
   const { data: publicProf, error: viewError } = await admin.from("profesionisti_public").select("id, bio").limit(1);

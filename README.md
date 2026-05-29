@@ -10,6 +10,7 @@ Pentru structură, schimbări sigure și operare zilnică, folosește:
 - `docs/PROJECT_OPERATING_GUIDE.md`
 - `docs/A_TO_Z_MASTER_INDEX.md`
 - `docs/FEATURE_IMPLEMENTATION_CHECKLIST.md`
+- `docs/ENGINEERING_STANDARDS.md` — reguli pentru modificări safe în producție
 
 Comenzi rapide:
 - `pnpm run dev` -> start local
@@ -63,7 +64,7 @@ pnpm run dev
 - Intrare: [http://127.0.0.1:8788/intrare](http://127.0.0.1:8788/intrare)
 - Pagină publică: `http://127.0.0.1:8788/s/<slug>`
 - Admin (necesită login): [http://127.0.0.1:8788/admin](http://127.0.0.1:8788/admin)
-- Demo (login automat demo → admin): [http://127.0.0.1:8788/demo](http://127.0.0.1:8788/demo) — necesită user-ul din `002_demo.sql` / Dashboard.
+- Demo (login automat demo → admin): [http://127.0.0.1:8788/demo](http://127.0.0.1:8788/demo) — necesită user din `002_seed.sql` / Dashboard Auth.
 
 ## Deploy producție (Vercel, sursa de adevăr)
 

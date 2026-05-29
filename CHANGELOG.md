@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `docs/ENGINEERING_STANDARDS.md` — maintenance rules for production-safe changes
+- `docs/adr/001-atomic-booking-rpc.md` — decision record for `book_appointment_atomic`
+- `install.sh`, `pnpm run prepare:distribution`, `docs/DISTRIBUTION.md`
+- `supabase/config.toml`, `supabase/MIGRATIONS.md`
+- Unified test runners: `scripts/run-unit-tests.mjs` + Vitest for billing/owner/cron tests
+
+### Changed
+
+- Booking RPC migrations renumbered to `055`–`057` (no duplicate `036`/`037` versions)
+- Middleware moved to `src/middleware.ts`
+- Legacy `schema.sql` archived as `docs/archive/schema-d1-legacy.sql`
+- Hosting docs: Vercel runtime + Cloudflare DNS-only (no Workers/Pages runtime)
+- `verify:db` loads `.env.local` automatically
+
+### Fixed
+
+- Booking RPC: `p_billing_enabled` skips subscription gate when billing is off (prod)
+- Booking RPC: overlap uses full `data_final` window; `reactivated` subscription status
+- Legacy trial in RPC aligned to 14 days (`057`, matches `BILLING_TRIAL_DAYS`)
+- Backup DB URL test no longer depends on fixed pooler IPv4
+- Sentry `onRequestError` hook in `instrumentation.ts`
+- `ws` dependency override (security advisory)
+
+## [0.1.1] - 2026-05-29
+
+Same as [Unreleased] above (repo hygiene + booking RPC production alignment).
+
 ## [0.1.0] - 2026-04-24
 
 ### Added
@@ -44,12 +75,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Email**: Resend API
 - **Payments**: Stripe (subscriptions and webhooks)
 - **Monitoring**: Sentry (error tracking), custom synthetic monitors
-- **Infrastructure**: Vercel (primary), Cloudflare Pages (alternative), Cloudflare Workers (background jobs)
+- **Infrastructure**: Vercel (hosting), Cloudflare (DNS + email only)
 - **Testing**: Playwright (E2E), Vitest (unit tests)
 
 ### Database
 
-- **18 migrations** with sequential numbering (001-018)
+- **57 migrations** with sequential numbering (001–053, 055–057; see `supabase/MIGRATIONS.md`)
 - Tables: users, profesionisti, programari, services, subscriptions, rate_limits, operational_events
 - RLS policies for data isolation and security
 - Indexes for performance optimization
@@ -88,4 +119,5 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 
 ## Version History
 
+- **0.1.1** (2026-05-29): Distribution hygiene, booking RPC fixes, migration renumbering
 - **0.1.0** (2026-04-24): Initial MVP release with core booking, authentication, and billing features

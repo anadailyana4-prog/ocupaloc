@@ -8,6 +8,13 @@ Single index for all project documentation.
 - `docs/PROJECT_OPERATING_GUIDE.md`
 - `docs/A_TO_Z_MASTER_INDEX.md`
 - `docs/FEATURE_IMPLEMENTATION_CHECKLIST.md`
+- `docs/ENGINEERING_STANDARDS.md` — production-safe change rules
+- `docs/DISTRIBUTION.md` — no secrets in ZIP exports
+- `supabase/MIGRATIONS.md` — DB migration order (incl. `055`–`057`)
+
+## Architecture
+
+- `docs/adr/001-atomic-booking-rpc.md` — why booking uses PostgreSQL RPC
 
 ## Release and Operations
 
