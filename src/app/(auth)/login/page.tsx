@@ -121,7 +121,13 @@ function LoginForm() {
     trackAuthEvent("login_success", "password");
     void reportAuthOutcome("success");
     const nextUrl = searchParams.get("next");
-    const safeNext = nextUrl && nextUrl.startsWith("/") ? nextUrl : "/dashboard";
+    // Acceptă doar path-uri interne; blochează open-redirect (//evil.com, /\evil.com, scheme-uri).
+    const isSafeInternalPath =
+      typeof nextUrl === "string" &&
+      nextUrl.startsWith("/") &&
+      !nextUrl.startsWith("//") &&
+      !nextUrl.startsWith("/\\");
+    const safeNext = isSafeInternalPath ? (nextUrl as string) : "/dashboard";
     window.location.href = safeNext;
   }
 

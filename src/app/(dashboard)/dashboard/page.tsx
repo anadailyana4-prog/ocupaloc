@@ -42,6 +42,7 @@ type ProgRow = {
   status: string;
   nume_client: string;
   telefon_client: string;
+  observatii: string | null;
 };
 
 type DashboardProfile = {
@@ -159,7 +160,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
 
   let progQuery = supabase
     .from("programari")
-    .select("id, serviciu_id, data_start, data_final, status, nume_client, telefon_client")
+    .select("id, serviciu_id, data_start, data_final, status, nume_client, telefon_client, observatii")
     .eq("profesionist_id", prof.id)
     .order("data_start", { ascending: filter !== "toate" })
     .limit(100);
@@ -430,7 +431,7 @@ export default async function DashboardHomePage({ searchParams }: PageProps) {
             clientPhone: p.telefon_client ?? "",
             serviceName: serviceMap.get(p.serviciu_id) ?? "—",
             status: p.status,
-            notes: "",
+            notes: p.observatii ?? "",
             priorVisits: p.telefon_client ? (phoneVisitCount.get(p.telefon_client) ?? 0) : 0,
             repeatNoShows: p.telefon_client ? (phoneNoShowCount.get(p.telefon_client) ?? 0) : 0
           };

@@ -54,10 +54,6 @@
       "schedule": "30 9 * * *"
     },
     {
-      "path": "/api/jobs/quiet-salon-rescue",
-      "schedule": "0 19 * * *"
-    },
-    {
       "path": "/api/jobs/founder-fleet-digest",
       "schedule": "0 8 * * 1"
     },

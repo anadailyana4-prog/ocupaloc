@@ -73,66 +73,12 @@ Fluxul corect pentru producție:
 
 Verificările manuale obligatorii sunt documentate în `DEPLOY_CHECKLIST.md`.
 
-## Runtime opțional Cloudflare (non-production ownership)
+## Hosting & DNS
 
-### Build settings (Cloudflare Pages)
+- **Hosting producție: Vercel.** Deploy-ul se face automat din branch-ul `main` (Git integration). Nu mai folosim Cloudflare Pages/Workers pentru runtime.
+- **Cloudflare: doar DNS.** Recordurile pentru `ocupaloc.ro` / `www.ocupaloc.ro` trebuie să indice spre Vercel (vezi *Domains* în proiectul Vercel pentru valorile A/CNAME). Recomandat: DNS-only (nor gri, fără proxy) pe recordurile pe care Vercel le validează, ca să nu existe dublu-CDN.
 
-- Framework preset: `None`
-- Build command:
-
-  ```bash
-  pnpm install --no-frozen-lockfile && npx @opennextjs/cloudflare build
-  ```
-
-- Build output directory:
-
-  ```bash
-  .open-next/assets
-  ```
-
-### Environment variables
-
-În dashboard:
-
-`dash.cloudflare.com` → **Pages** → `ocupaloc` → **Settings** → **Variables and Secrets**
-
-Setează minim:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `NEXT_PUBLIC_SITE_URL` (ex: `https://www.ocupaloc.ro`)
-- `NEXT_PUBLIC_GA_ID` (opțional, pentru analytics)
-- `RESEND_API_KEY` și `RESEND_FROM` (dacă folosești email-uri tranzacționale)
-- `DEMO_EMAIL` și `DEMO_PASSWORD` (dacă păstrezi fluxul `/demo`)
-
-### Wrangler commands utile
-
-```bash
-wrangler pages project list
-wrangler pages secret put NEXT_PUBLIC_SUPABASE_URL --project-name ocupaloc
-wrangler pages secret put NEXT_PUBLIC_SUPABASE_ANON_KEY --project-name ocupaloc
-wrangler pages secret put SUPABASE_SERVICE_ROLE_KEY --project-name ocupaloc
-wrangler pages secret put NEXT_PUBLIC_SITE_URL --project-name ocupaloc
-```
-
-### Domeniu custom
-
-În dashboard:
-
-`dash.cloudflare.com` → **Pages** → `ocupaloc` → **Custom domains**
-
-1. Adaugi `www.ocupaloc.ro`
-2. Adaugi apex `ocupaloc.ro` (opțional, cu redirect la www)
-3. Verifici certificatele TLS active și status `Active`
-
-### Test local build Pages
-
-```bash
-pnpm build
-npx @opennextjs/cloudflare build
-wrangler pages dev .open-next/assets
-```
+> Notă: configurația istorică OpenNext/Wrangler a fost eliminată (vezi `docs/archive/`). Dacă vrei vreodată să revii la Cloudflare ca runtime, restaurează `wrangler.jsonc` + `open-next.config.ts` din istoricul git.
 
 ## Structură utilă
 
@@ -161,15 +107,6 @@ Fișierul `index.html` din rădăcină rămâne ca referință statică; aplica�
 2. `pnpm run verify:db`
 3. `pnpm run verify:secrets`
 4. Push pe branch-ul `main` (declanșează deploy-ul de producție în Vercel)
-
-## Deploy pe Cloudflare Pages (opțional)
-
-- Build command: `pnpm install && npx @opennextjs/cloudflare build`
-- Output directory: `.open-next/assets`
-- Variabile de mediu necesare:
-  - `NEXT_PUBLIC_SUPABASE_URL`
-  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-  - `SUPABASE_SERVICE_ROLE_KEY`
 
 ## Operațional
 

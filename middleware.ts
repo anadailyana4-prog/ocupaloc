@@ -88,7 +88,7 @@ export async function middleware(request: NextRequest) {
   const hasSession = user != null;
   const userId = user?.id;
 
-  if ((path.startsWith("/dashboard") || path === "/onboarding") && !hasSession) {
+  if ((path.startsWith("/dashboard") || path.startsWith("/onboarding")) && !hasSession) {
     const redirect = NextResponse.redirect(new URL("/login", request.url));
     redirect.headers.set("x-request-id", forwardHeaders.get("x-request-id") ?? "");
     copyAuthCookies(supabaseResponse, redirect);
@@ -144,5 +144,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding", "/login", "/signup"]
+  matcher: ["/dashboard/:path*", "/onboarding", "/onboarding/:path*", "/login", "/signup"]
 };
