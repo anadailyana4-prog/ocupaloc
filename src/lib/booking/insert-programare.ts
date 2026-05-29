@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { isBillingEnabled } from "@/lib/billing/config";
 import {
   BlockedClientError,
   BookingError,
@@ -99,7 +100,8 @@ export async function insertProgramareForProfSlug(
       p_slot_start: input.slotIso,
       p_client_phone: phone,
       p_client_name: name,
-      p_client_email: email
+      p_client_email: email,
+      p_billing_enabled: isBillingEnabled()
     }) as unknown as {
       data?: Array<{
         success: boolean;
