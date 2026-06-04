@@ -442,17 +442,22 @@ export default function GhidProgramariSalonPage() {
           </div>
         </section>
 
-        {/* Section 6c: Video Tutorial */}
+        {/* Section 6c: Demo rapid */}
         <section className="space-y-4">
-          <h2 className="text-3xl font-bold">Tutorial video: configurare în 10 minute</h2>
+          <h2 className="text-3xl font-bold">Vezi configurarea în practică</h2>
           <p className="leading-relaxed oc-text">
-            Vezi cât de ușor este să configurezi OcupaLoc pentru salonul tău:
+            În loc de un video lung, poți testa fluxul complet în câteva minute: servicii, program și pagină publică de rezervare.
           </p>
-          <div className="aspect-video rounded-xl bg-zinc-900 flex items-center justify-center">
-            <div className="text-center text-white">
-              <p className="text-lg mb-2">🎥 Video tutorial în curând</p>
-              <p className="text-sm opacity-75">Abonează-te pentru a fi notificat când e gata</p>
-            </div>
+          <div className="rounded-xl border oc-border oc-badge-bg p-6 text-center">
+            <p className="mb-4 text-sm oc-secondary-text">
+              Demo interactiv fără cont obligatoriu — ideal înainte să activezi trialul de 14 zile.
+            </p>
+            <Link
+              href="/demo-interactiv"
+              className="inline-flex rounded-lg oc-primary px-6 py-3 font-semibold text-white hover:bg-[#D97706]"
+            >
+              Deschide demo interactiv
+            </Link>
           </div>
         </section>
 
@@ -528,11 +533,11 @@ export default function GhidProgramariSalonPage() {
                 <p className="text-sm oc-secondary-text">Articole despre marketing și management salon</p>
               </div>
             </Link>
-            <Link href="/ghid-programari-salon/checklist.pdf" className="flex items-center gap-4 p-4 rounded-xl border oc-border bg-white hover:oc-badge-bg transition">
+            <Link href="#checklist" className="flex items-center gap-4 p-4 rounded-xl border oc-border bg-white hover:oc-badge-bg transition">
               <span className="text-3xl">✅</span>
               <div>
-                <p className="font-semibold">Checklist PDF</p>
-                <p className="text-sm oc-secondary-text">Descarcă și printează (în curând)</p>
+                <p className="font-semibold">Checklist digitalizare</p>
+                <p className="text-sm oc-secondary-text">Pași pe 4 săptămâni — vezi secțiunea de mai sus</p>
               </div>
             </Link>
           </div>

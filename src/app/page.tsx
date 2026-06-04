@@ -6,7 +6,8 @@ import { ocupalocLocalBusinessSchema, ocupalocSoftwareApplicationSchema } from "
 export const metadata = {
   title: "OcupaLoc | Programări online pentru saloane, clinici și servicii locale",
   description:
-    "OcupaLoc este un SaaS românesc de programări online pentru saloane, clinici și servicii locale. Clienții rezervă singuri, iar business-ul vede totul clar dintr-un singur loc."
+    "OcupaLoc este un SaaS românesc de programări online pentru saloane, clinici și servicii locale. Clienții rezervă singuri, iar business-ul vede totul clar dintr-un singur loc.",
+  alternates: { canonical: "https://ocupaloc.ro" }
 };
 
 export default function Home() {

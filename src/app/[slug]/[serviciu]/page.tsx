@@ -2,6 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import {
+  LOCAL_SERVICE_CITIES,
+  LOCAL_SERVICES,
+  cityDisplay,
+  cityServiceCopy,
+  isLocalServiceCity,
+  isLocalServiceSlug,
+  serviceDisplay
+} from "@/lib/seo/local-service-pages";
 import { createSupabasePublicClient } from "@/lib/supabase/server";
 
 type PageProps = { params: Promise<{ slug: string; serviciu: string }> };
@@ -10,103 +19,52 @@ type PageProps = { params: Promise<{ slug: string; serviciu: string }> };
 export const revalidate = 86400;
 export const dynamic = "force-static";
 
-const orase = ["bucuresti", "cluj-napoca", "timisoara", "iasi", "constanta", "brasov", "oradea", "sibiu"] as const;
-const servicii = ["frizerie", "salon", "manichiura", "cosmetica", "barber"] as const;
-
-const cityCopy: Record<(typeof orase)[number], [string, string]> = {
- bucuresti: [
- "Peste 2000 de saloane din București folosesc deja programări online pentru a reduce apelurile și a crește conversia din Instagram.",
- "Într-o piață aglomerată ca Bucureștiul, un flux simplu de rezervare te ajută să păstrezi clienții aproape și agenda plină."
- ],
- "cluj-napoca": [
- "Cluj-Napoca, orașul tech al României, adoptă rapid soluțiile digitale inclusiv în beauty, unde rezervarea online devine standard.",
- "Clienții din Cluj caută experiențe rapide și clare, iar un sistem de programări bine organizat face diferența."
- ],
- timisoara: [
- "Timișoara are o comunitate urbană activă, iar saloanele care oferă programări online câștigă timp și predictibilitate.",
- "Într-un oraș cu ritm alert, disponibilitatea 24/7 la rezervare aduce conversii în afara orelor clasice."
- ],
- iasi: [
- "Iași este un centru universitar mare, cu clienți care preferă rezervarea rapidă direct din telefon.",
- "Pentru saloanele din Iași, digitalizarea procesului de programare înseamnă mai puține goluri și mai mult control."
- ],
- constanta: [
- "Constanța are sezonalitate ridicată, iar agenda online ajută la gestionarea vârfurilor de cerere din perioadele aglomerate.",
- "Un sistem clar de rezervări îți permite să ajustezi rapid disponibilitatea și să menții experiența clientului constantă."
- ],
- brasov: [
- "Brașov combină clienți locali cu flux turistic, ceea ce face programările online foarte utile pentru organizare.",
- "Saloanele din Brașov care simplifică rezervarea direct pe link câștigă încredere și ritm operațional."
- ],
- oradea: [
- "Oradea are tot mai multe business-uri beauty care investesc în digitalizare și procese eficiente.",
- "Programările online ajută saloanele din Oradea să reducă timpul pierdut pe mesaje și să crească retenția."
- ],
- sibiu: [
- "Sibiul are o piață locală competitivă, iar rezervarea online oferă un avantaj clar în experiența clientului.",
- "Cu un sistem predictibil, saloanele din Sibiu pot menține agenda stabilă și pot răspunde mai bine cererii sezoniere."
- ]
-};
-
-function cityDisplay(slug: string): string {
- return slug
- .split("-")
- .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
- .join(" ");
-}
-
-function serviceDisplay(slug: string): string {
- const labels: Record<string, string> = {
- frizerie: "frizerie",
- salon: "salon",
- manichiura: "manichiură",
- cosmetica: "cosmetică",
- barber: "barber"
- };
- return labels[slug] ?? slug;
-}
-
 export function generateStaticParams() {
- return orase.flatMap((oras) => servicii.map((serviciu) => ({ slug: oras, serviciu })));
+  return LOCAL_SERVICE_CITIES.flatMap((oras) =>
+    LOCAL_SERVICES.map((serviciu) => ({ slug: oras, serviciu }))
+  );
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
- const { slug, serviciu } = await params;
- const orasTitle = cityDisplay(slug);
- const serviciuTitle = serviceDisplay(serviciu);
- const canonical = `https://ocupaloc.ro/${slug}/${serviciu}`;
- const title = `Programări online ${serviciuTitle} ${orasTitle}`;
- const description = `Programări online pentru ${serviciuTitle} în ${orasTitle}. Preț fix 59,99 RON/lună, fără comision.`;
+  const { slug, serviciu } = await params;
+  if (!isLocalServiceCity(slug) || !isLocalServiceSlug(serviciu)) {
+    return { robots: { index: false, follow: false } };
+  }
+  const orasTitle = cityDisplay(slug);
+  const serviciuTitle = serviceDisplay(serviciu);
+  const canonical = `https://ocupaloc.ro/${slug}/${serviciu}`;
+  const title = `Programări online ${serviciuTitle} ${orasTitle}`;
+  const description = `Programări online pentru ${serviciuTitle} în ${orasTitle}. Preț fix 59,99 RON/lună, fără comision.`;
 
- return {
- title,
- description,
- alternates: { canonical },
- openGraph: {
- title,
- description,
- type: "website",
- url: canonical
- },
- twitter: {
- card: "summary_large_image",
- title,
- description
- }
- };
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: canonical
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description
+    }
+  };
 }
 
 export default async function LocalServicePage({ params }: PageProps) {
- const { slug, serviciu } = await params;
+  const { slug, serviciu } = await params;
 
- if (!orase.includes(slug as (typeof orase)[number]) || !servicii.includes(serviciu as (typeof servicii)[number])) {
- return notFound();
- }
+  if (!isLocalServiceCity(slug) || !isLocalServiceSlug(serviciu)) {
+    return notFound();
+  }
 
- const orasName = cityDisplay(slug);
- const serviciuName = serviceDisplay(serviciu);
- const canonical = `https://ocupaloc.ro/${slug}/${serviciu}`;
-  const copy = cityCopy[slug as (typeof orase)[number]];
+  const orasName = cityDisplay(slug);
+  const serviciuName = serviceDisplay(serviciu);
+  const canonical = `https://ocupaloc.ro/${slug}/${serviciu}`;
+  const copy = cityServiceCopy(slug);
   let salons: Array<{ id: string; business_name: string | null; slug: string | null }> = [];
   try {
     const supabase = createSupabasePublicClient();
@@ -177,8 +135,8 @@ export default async function LocalServicePage({ params }: PageProps) {
     }))
   };
 
-  const otherServices = servicii.filter((s) => s !== serviciu);
-  const otherCities = orase.filter((o) => o !== slug).slice(0, 5);
+  const otherServices = LOCAL_SERVICES.filter((s) => s !== serviciu);
+  const otherCities = LOCAL_SERVICE_CITIES.filter((o) => o !== slug).slice(0, 5);
 
   return (
     <main className="min-h-screen bg-white px-6 py-14 oc-text">
@@ -187,15 +145,21 @@ export default async function LocalServicePage({ params }: PageProps) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <div className="mx-auto max-w-4xl space-y-10">
         <nav aria-label="Breadcrumb" className="text-sm oc-secondary-text">
-          <Link href="/" className="hover:underline">Acasă</Link>
+          <Link href="/" className="hover:underline">
+            Acasă
+          </Link>
           <span className="px-1.5">/</span>
-          <Link href={`/${slug}`} className="hover:underline">{orasName}</Link>
+          <Link href={`/${slug}`} className="hover:underline">
+            {orasName}
+          </Link>
           <span className="px-1.5">/</span>
           <span className="oc-text">{serviciuName}</span>
         </nav>
 
         <header className="space-y-4">
-          <h1 className="text-4xl font-bold tracking-tight">Programări online {serviciuName} {orasName}</h1>
+          <h1 className="text-4xl font-bold tracking-tight">
+            Programări online {serviciuName} {orasName}
+          </h1>
           <p className="text-lg oc-text">{copy[0]}</p>
           <p className="oc-secondary-text">{copy[1]}</p>
           <Link
@@ -207,9 +171,7 @@ export default async function LocalServicePage({ params }: PageProps) {
         </header>
 
         <section className="space-y-4">
-          <h2 className="text-2xl font-semibold">
-            De ce folosesc saloanele de {serviciuName} din {orasName} programări online
-          </h2>
+          <h2 className="text-2xl font-semibold">De ce folosesc saloanele de {serviciuName} din {orasName} programări online</h2>
           <p className="leading-relaxed oc-secondary-text">
             Un salon de {serviciuName} din {orasName} pierde zilnic timp prețios răspunzând la telefon și la mesaje pe Instagram sau
             WhatsApp. Cu un sistem de rezervări online, clienții din {orasName} văd intervalele libere și confirmă singuri programarea,
@@ -302,4 +264,3 @@ export default async function LocalServicePage({ params }: PageProps) {
     </main>
   );
 }
-

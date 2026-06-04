@@ -42,10 +42,53 @@ Producție: ambele articole **200** după deploy `a3f4227`.
 9. https://ocupaloc.ro/brasov/salon
 10. https://ocupaloc.ro/blog/produse-profesionale-salon — **după deploy Ziua 8**
 
+## Trimise 29 mai 2026 (batch 10 URL — pagini comerciale)
+1. https://ocupaloc.ro/programari-online-salon — ✅ **Indexare solicitată** (Google nu cunoaște URL)
+2. https://ocupaloc.ro/alternativa-fresha-romania — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+3. https://ocupaloc.ro/alternativa-booksy-romania — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+4. https://ocupaloc.ro/software-programari-manichiura — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+5. https://ocupaloc.ro/aplicatie-programari-salon — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+6. https://ocupaloc.ro/comparativ/fresha — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+7. https://ocupaloc.ro/ghid-programari-salon — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+8. https://ocupaloc.ro/preturi — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+9. https://ocupaloc.ro/iasi/manichiura — ✅ **Indexare solicitată** (Google nu cunoaște URL; reluat din pauza 25 Mai)
+10. https://ocupaloc.ro/brasov/manichiura — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+
+Cotă GSC: **10/10** — fără „Cota depășită”.
+
+## Trimise 31 mai 2026 (batch 10 URL — orașe + comparativ)
+1. https://ocupaloc.ro/oradea/frizerie — ✅ **Indexare solicitată** (Descoperită – nu indexată)
+2. https://ocupaloc.ro/sibiu/frizerie — ✅ **Indexare solicitată** (Descoperită – nu indexată)
+3. https://ocupaloc.ro/cluj-napoca/manichiura — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+4. https://ocupaloc.ro/timisoara/manichiura — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+5. https://ocupaloc.ro/constanta/manichiura — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+6. https://ocupaloc.ro/bucuresti/manichiura — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+7. https://ocupaloc.ro/comparativ/booksy — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+8. https://ocupaloc.ro/blog/cum-sa-reduci-anularile — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+9. https://ocupaloc.ro/brasov/frizerie — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+10. https://ocupaloc.ro/brasov/salon — ✅ **Indexare solicitată** (deja indexată, re-crawl)
+
+Cotă GSC: **10/10** — fără „Cota depășită”.
+
+## Batch următor (prioritate)
+
+> După deploy: `/craiova/*`, `/galati/*` etc. returnează **200** (nu 404). Solicită indexarea după deploy.
+
+1. https://ocupaloc.ro/oradea/salon
+2. https://ocupaloc.ro/sibiu/salon
+3. https://ocupaloc.ro/oradea/manichiura
+4. https://ocupaloc.ro/sibiu/manichiura
+5. https://ocupaloc.ro/craiova/frizerie
+6. https://ocupaloc.ro/craiova/salon
+7. https://ocupaloc.ro/blog/fresha-cat-costa-romania (re-crawl)
+8. https://ocupaloc.ro/blog/telefon-vs-programari-online (re-crawl)
+9. https://ocupaloc.ro/blog/cum-sa-angajezi-frizeri (re-crawl)
+10. https://ocupaloc.ro/demo
+
 ## Batch secundar (dupa cele de mai sus)
 1. https://ocupaloc.ro/cluj-napoca/manichiura
 2. https://ocupaloc.ro/timisoara/manichiura
-3. https://ocupaloc.ro/iasi/manichiura
+3. https://ocupaloc.ro/iasi/manichiura — ✅ trimis 29 Mai
 4. https://ocupaloc.ro/constanta/manichiura
 5. https://ocupaloc.ro/bucuresti/manichiura
 

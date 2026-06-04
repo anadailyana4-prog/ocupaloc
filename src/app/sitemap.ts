@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { MetadataRoute } from "next";
 
+import { LOCAL_SERVICE_CITIES, LOCAL_SERVICES } from "@/lib/seo/local-service-pages";
 import { ORASE_TARGET } from "@/lib/seo/orase-target";
 
 const ORASE = ORASE_TARGET;
@@ -21,8 +22,6 @@ const BLOG_SLUGS = [
   "software-programari-cabinet-medic"
 ] as const;
 const COMPARATIV_SLUGS = ["fresha", "treatwell", "booksy", "stailer"] as const;
-const ORASE_LOCALE = ["bucuresti", "cluj-napoca", "timisoara", "iasi", "constanta", "brasov", "oradea", "sibiu"] as const;
-const SERVICII_LOCALE = ["frizerie", "salon", "manichiura", "cosmetica", "barber"] as const;
 const HIGH_INTENT_ROUTES = new Set([
   "/demo-interactiv",
   "/programari-online-salon",
@@ -106,7 +105,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/programari-online-veterinar",
     "/preturi",
     ...COMPARATIV_SLUGS.map((slug) => `/comparativ/${slug}`),
-    ...ORASE_LOCALE.flatMap((oras) => SERVICII_LOCALE.map((serviciu) => `/${oras}/${serviciu}`)),
+    ...LOCAL_SERVICE_CITIES.flatMap((oras) => LOCAL_SERVICES.map((serviciu) => `/${oras}/${serviciu}`)),
     ...BLOG_SLUGS.map((slug) => `/blog/${slug}`),
     ...ORASE.map((oras) => `/${oras}`)
   ].map((route) => ({

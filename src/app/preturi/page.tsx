@@ -2,9 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { CalculatorEconomii } from "@/components/CalculatorEconomii";
-import { getUser } from "@/lib/supabase/server";
-
-export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
  title: "Prețuri Software Programări Salon | 59,99 RON/lună Fără Comision",
@@ -23,8 +20,7 @@ const comparisonRows = [
  { feature: "Plată online la rezervare", ocupaloc: "Nu este inclusă", standard: "Da", premium: "Da" }
 ] as const;
 
-export default async function PreturiPage() {
- const user = await getUser();
+export default function PreturiPage() {
  const pricingFaq = [
  { question: "Cât costă OcupaLoc?", answer: "OcupaLoc costă 59,99 RON pe lună per locație, TVA inclus." },
  {
@@ -94,15 +90,14 @@ export default async function PreturiPage() {
  <li>✓ Import clienți gratuit</li>
  <li>✓ Suport rapid în limba română</li>
  </ul>
- {user ? (
- <Link href="/api/billing/create-checkout" data-cta-location="preturi_hero_card" className="mt-6 inline-flex rounded-lg oc-primary px-6 py-3 font-semibold text-white hover:bg-[#D97706]">
- Activează abonamentul
- </Link>
- ) : (
- <Link href="/signup?start=1" data-cta-location="preturi_hero_card" className="mt-6 inline-flex rounded-lg oc-primary px-6 py-3 font-semibold text-white hover:bg-[#D97706]">
+ <div className="mt-6 flex flex-col items-center gap-2 sm:flex-row sm:justify-center">
+ <Link href="/signup?start=1" data-cta-location="preturi_hero_card" className="inline-flex rounded-lg oc-primary px-6 py-3 font-semibold text-white hover:bg-[#D97706]">
  Încearcă 14 zile gratis
  </Link>
- )}
+ <Link href="/login" className="text-sm font-medium oc-accent underline underline-offset-2">
+ Ai deja cont? Intră
+ </Link>
+ </div>
  </section>
 
  <section className="grid gap-6 md:grid-cols-3">
@@ -156,16 +151,13 @@ export default async function PreturiPage() {
  </table>
  </section>
 
- <div className="flex justify-center">
- {user ? (
- <Link href="/api/billing/create-checkout" data-cta-location="preturi_footer_cta" className="rounded-lg oc-primary px-6 py-3 font-semibold text-white hover:bg-[#D97706]">
- Activează abonamentul
- </Link>
- ) : (
+ <div className="flex flex-col items-center justify-center gap-2">
  <Link href="/signup?start=1" data-cta-location="preturi_footer_cta" className="rounded-lg oc-primary px-6 py-3 font-semibold text-white hover:bg-[#D97706]">
  Creează cont gratuit
  </Link>
- )}
+ <Link href="/api/billing/create-checkout" data-cta-location="preturi_footer_billing" className="text-sm oc-secondary-text underline underline-offset-2 hover:oc-text">
+ Activează abonamentul (dacă ești deja în cont)
+ </Link>
  </div>
 
  <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">

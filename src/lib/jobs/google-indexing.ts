@@ -60,7 +60,11 @@ function scoreUrl(rawUrl: string): number {
       score += 80;
     }
 
-    if (/^\/(bucuresti|cluj-napoca|timisoara|iasi|constanta|brasov|sibiu|oradea)(\/|$)/.test(path)) {
+    if (
+      /^\/(bucuresti|cluj-napoca|timisoara|iasi|constanta|brasov|sibiu|oradea|craiova|galati|ploiesti|buzau|satu-mare|bacau|pitesti)(\/|$)/.test(
+        path
+      )
+    ) {
       score += 70;
     }
 
@@ -72,7 +76,7 @@ function scoreUrl(rawUrl: string): number {
       score += 40;
     }
 
-    if (path === "/demo-interactiv" || path === "/business-demo") {
+    if (path === "/demo-interactiv") {
       score += 55;
     }
 

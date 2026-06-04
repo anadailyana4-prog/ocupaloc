@@ -1,4 +1,4 @@
-# SEO Weekly Check — 2026-05-22
+# SEO Weekly Check — 2026-05-30
 
 **Plan:** Ziua 14 — Google Search Console · [ziua-14-weekly-check.md](../docs/seo-progress/ziua-14-weekly-check.md)
 
@@ -6,31 +6,31 @@
 
 | Indicator | Valoare | WoW / trend |
 | --- | ---: | --- |
-| URL-uri în sitemap (live) | **99** | — |
-| Pagini indexate (GSC) | 25 | ⚠️ sub țintă (30) |
-| Neindexate (GSC) | 54 | — |
-| Clicuri (7 zile) | 14 | +0.0% → |
-| Impresii (7 zile) | 44 | +0.0% → |
-| CTR mediu | 31.8% | +0.0% |
-| Poziție medie | 13.3 | → |
+| URL-uri în sitemap (live) | **107** | — |
+| Pagini indexate (GSC) | 44 | ✅ ≥ 30 |
+| Neindexate (GSC) | 60 | — |
+| Clicuri (7 zile) | 1 | -92.9% ↓ |
+| Impresii (7 zile) | 63 | +43.2% ↑ |
+| CTR mediu | 1.6% | -95.0% |
+| Poziție medie | 22 | ↓ mai slab |
 
 ## Performanță (7 zile vs. 7 zile anterioare)
 
 | Metrică | Săptămâna curentă | Săptămâna trecută | Δ % |
 | --- | ---: | ---: | ---: |
-| Clicuri | 14 | 14 | +0.0% |
-| Impresii | 44 | 44 | +0.0% |
-| CTR mediu | 31.8% | 31.8% | +0.0% |
-| Poziție medie | 13.3 | 13.3 | — |
-| Pagini indexate | 25 | 25 | +0.0% |
+| Clicuri | 1 | 14 | -92.9% |
+| Impresii | 63 | 44 | +43.2% |
+| CTR mediu | 1.6% | 31.8% | -95.0% |
+| Poziție medie | 22 | 13.3 | — |
+| Pagini indexate | 44 | 25 | +76.0% |
 
 ### Top 3 pagini după clicuri
 
 | Pagină | Clicuri | Impresii |
 | --- | ---: | ---: |
-| https://ocupaloc.ro/ | 11 | 20 |
-| https://ocupaloc.ro/demo | 2 | 6 |
-| https://ocupaloc.ro/blog | 1 | 12 |
+| https://ocupaloc.ro/ | 1 | 35 |
+| https://ocupaloc.ro/demo | 0 | 8 |
+| https://ocupaloc.ro/blog | 0 | 12 |
 
 ### Keywords în top 10 (poziție 1–10)
 

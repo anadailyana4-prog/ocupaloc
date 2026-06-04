@@ -8,6 +8,7 @@ import { BookingCard } from "@/components/booking/BookingCard";
 import { OwnerBanner } from "@/components/public-profile/OwnerBanner";
 import { parsePublicProfileMedia } from "@/lib/public-profile-media";
 import { isMissingProfesionistiColumn } from "@/lib/supabase/profesionisti-fallback";
+import { countPublicProfilesInCity } from "@/lib/seo/city-listing-count";
 import { ORASE_TARGET } from "@/lib/seo/orase-target";
 import { createSupabasePublicClient } from "@/lib/supabase/server";
 
@@ -42,9 +43,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
  .join(" ");
  const title = `Programare online frizer ${orasTitle}`;
  const description = `Găsește frizeri și saloane în ${orasTitle} cu programare online. Rezervă în 30 secunde, fără telefon.`;
+ const listingCount = await countPublicProfilesInCity(slug);
+ const robots = listingCount > 0 ? undefined : { index: false, follow: true };
  return {
  title,
  description,
+ robots,
  alternates: { canonical },
  openGraph: {
  title,

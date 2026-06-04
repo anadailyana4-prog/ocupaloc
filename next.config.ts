@@ -68,7 +68,12 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/inscriere/:path*",
-        destination: "/signup",
+        destination: "/signup/:path*",
+        permanent: true
+      },
+      {
+        source: "/demo",
+        destination: "/demo-interactiv",
         permanent: true
       },
       {
